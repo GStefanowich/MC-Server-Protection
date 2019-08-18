@@ -1,0 +1,36 @@
+{
+  "schemaVersion": 1,
+  "id": "sewing-machine",
+  "version": "${version}",
+
+  "name": "Sewing Machine",
+  "description": "A mod for sewing your worlds chunks together. Provided chunk claiming and other server utilities.",
+  "authors": [
+    "TheElm"
+  ],
+  "contact": {
+    "homepage": "https://fabricmc.net/",
+    "sources": "https://github.com/FabricMC/fabric-example-mod"
+  },
+
+  "license": "CC0-1.0",
+  "icon": "assets/TheElm/icon.png",
+
+  "environment": "*",
+  "entrypoints": {
+    "server": [
+      "net.TheElm.project.CoreMod"
+    ]
+  },
+  "mixins": [
+    "TheElm.mixins.json"
+  ],
+
+  "depends": {
+    "fabricloader": ">=0.4.0",
+    "fabric": "*"
+  },
+  "suggests": {
+    "flamingo": "*"
+  }
+}

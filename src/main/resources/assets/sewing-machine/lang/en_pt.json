@@ -1,0 +1,19 @@
+{
+  "claim.chunk.pvp": "Hostile",
+  "claim.chunk.self": "yer %s",
+  "claim.chunk.entering.generic": "Ent'ring %s",
+  "claim.chunk.entering.owned": "Ent'ring %s's %s",
+  "claim.chunk.entering.town": "Ent'ring %s (%s)",
+  "claim.chunk.entering.town.owned": "Ent'ring %s - %s (%s)",
+  
+  "claim.block.locked": "Shan't plunder %s from %s",
+  
+  "player.money": "Yer doubloons: $%d",
+  
+  "town.found": "%s founded the town \"%s\".",
+  "town.disband": "%s disbanded their town \"%s\".",
+  
+  "warp.random.search": "Setting sail for yer new home.",
+  "warp.random.build": "Seizing yer new lands",
+  "warp.random.teleported": "Yer %d blocks afar from Spawn. Don't wander far from this warp point, it'll help you return back yonder."
+}
