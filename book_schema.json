@@ -1,0 +1,190 @@
+{
+  "definitions": {
+    "color": {
+      "type": "string",
+      "enum": [
+        "dark_red",
+        "red",
+        "gold",
+        "yellow",
+        "dark_green",
+        "green",
+        "aqua",
+        "dark_aqua",
+        "dark_blue",
+        "blue",
+        "light_purple",
+        "dark_purple",
+        "white",
+        "gray",
+        "dark_gray",
+        "black"
+      ],
+      "pattern": "^([a-z_]+)$",
+      "default": null
+    },
+    "click_event": {
+      "type": "object",
+      "required": [
+        "action",
+        "value"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "open_url",
+            "run_command",
+            "suggest_command",
+            "change_page"
+          ],
+          "pattern": "^([a-z_]+)$",
+          "default": ""
+        },
+        "value": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "hover_event": {
+      "type": "object",
+      "required": [
+        "action",
+        "value"
+      ],
+      "properties": {
+        "action": {
+          "type": "string",
+          "enum": [
+            "show_text",
+            "show_achievement",
+            "show_item",
+            "show_entity"
+          ],
+          "pattern": "^([a-z_]+)$",
+          "default": ""
+        },
+        "value": {
+          "type": "string",
+          "default": ""
+        }
+      }
+    },
+    "book": {
+      "type": "object",
+      "title": "Book Schema",
+      "default": null,
+      "required": [
+        "title",
+        "description",
+        "pages"
+      ],
+      "properties": {
+        "author": {
+          "type": "string",
+          "title": "Book Author",
+          "description": "",
+          "default": "",
+          "pattern": "^(.*)$"
+        },
+        "title": {
+          "type": "string",
+          "title": "Book Title",
+          "description": "The displayed title of your book ingame",
+          "default": "",
+          "pattern": "^(.*)$"
+        },
+        "description": {
+          "type": "string",
+          "title": "Book Lore",
+          "description": "The lore of your book displayed ingame",
+          "default": "",
+          "pattern": "^(.*)$"
+        },
+        "lore_color": {
+          "$ref": "#/definitions/color"
+        },
+        "pages": {
+          "type": "array",
+          "title": "Pages Schema",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "type": "array",
+            "title": "Texts Schema",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "title": "Page Contents",
+              "description": "The contents of your page",
+              "default": null,
+              "required": [
+                "text"
+              ],
+              "properties": {
+                "text": {
+                  "type": "string",
+                  "title": "String to display in book",
+                  "pattern": "^(.*)$"
+                },
+                "translate": {
+                  "type": "string",
+                  "title": "Translatable text",
+                  "pattern": "^([a-z.]+)$"
+                },
+                "with": {
+                  "type": "array",
+                  "title": "Fillers for \"translate\" field"
+                },
+                "bold": {
+                  "type": "boolean",
+                  "title": "Bolden text",
+                  "default": true
+                },
+                "italic": {
+                  "type": "boolean",
+                  "title": "Italicize text",
+                  "default": true
+                },
+                "underlined": {
+                  "type": "boolean",
+                  "title": "Underline text",
+                  "default": true
+                },
+                "strikethrough": {
+                  "type": "boolean",
+                  "title": "Strikethrough text",
+                  "default": true
+                },
+                "obfuscated": {
+                  "type": "boolean",
+                  "title": "Obfuscate text",
+                  "default": true
+                },
+                "color": {
+                  "$ref": "#/definitions/color"
+                },
+                "clickEvent": {
+                  "$ref": "#/definitions/click_event"
+                },
+                "hoverEvent": {
+                  "$ref": "#/definitions/hover_event"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "patternProperties": {
+    "^(.*)$": {
+      "$ref": "#/definitions/book"
+    }
+  }
+}
