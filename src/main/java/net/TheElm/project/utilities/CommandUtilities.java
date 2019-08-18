@@ -1,0 +1,69 @@
+/*
+ * This software is licensed under the MIT License
+ * https://github.com/GStefanowich/MC-Server-Protection
+ *
+ * Copyright (c) 2019 Gregory Stefanowich
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package net.TheElm.project.utilities;
+
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.minecraft.entity.Entity;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
+import net.minecraft.server.command.CommandSource;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
+
+import java.util.*;
+import java.util.concurrent.CompletableFuture;
+
+public final class CommandUtilities {
+    
+    public static <S> CompletableFuture<Suggestions> getAllPlayerNames(CommandContext<S> context, SuggestionsBuilder suggestionsBuilder) throws CommandSyntaxException {
+        Set<String> usernames = new HashSet<>();
+        
+        MinecraftServer server = ((ServerCommandSource) context.getSource()).getMinecraftServer();
+        PlayerManager playerManager = server.getPlayerManager();
+        
+        usernames.addAll(Arrays.asList( playerManager.getPlayerNames() ) );
+        usernames.addAll(Arrays.asList( playerManager.getWhitelistedNames() ));
+        
+        return CommandSource.suggestMatching(
+            usernames,
+            suggestionsBuilder
+        );
+    }
+    
+    public static boolean playerIsInTown(ServerCommandSource serverCommandSource) {
+        Entity source = serverCommandSource.getEntity();
+        if (!( source instanceof ServerPlayerEntity ))
+            return false;
+        
+        ServerPlayerEntity player = (ServerPlayerEntity) source;
+        return ClaimantPlayer.get( player.getUuid() ).getTown() != null;
+    }
+    
+}

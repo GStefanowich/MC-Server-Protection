@@ -1,0 +1,45 @@
+{
+  "required": true,
+  "package": "net.TheElm.project.mixins",
+  "compatibilityLevel": "JAVA_8",
+  "mixins": [
+  ],
+  "server": [
+    "Entities.CowMilk",
+    "Entities.SheepShear",
+    "Entities.CreeperDamage",
+    
+    "Entities.EndCrystal",
+    
+    "Entities.EndermenPickup",
+    "Entities.EndermenPlace",
+    
+    "Entities.ArrowDamage",
+    "Entities.PotionDamage",
+    
+    "Player.Interaction.ItemDrops",
+    "Player.Interaction.ItemPickup",
+    
+    "Player.Interaction.BlockInteraction",
+    
+    "Player.Interaction.ArmorStand",
+    "Player.Interaction.FarmProtection",
+    "Player.Interaction.HorseRide",
+    "Player.Interaction.ItemFrames",
+    "Player.Interaction.LeadProtection",
+    "Player.Interaction.MinecartLock",
+    "Player.Interaction.MinecartRide",
+    "Player.Interaction.ShopSign",
+    
+    "Player.DeathChest",
+    
+    "Player.WorldInteraction",
+    "Player.ServerInteraction",
+    
+    "World.DragonFight",
+    "World.WorldSleep"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

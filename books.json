@@ -1,0 +1,449 @@
+{
+  "claims": {
+    "title": "Guide: Claiming your own land",
+    "author": "TheElm",
+    "description": "How to keep small children off of your lawn",
+    "lore_color": "gold",
+    "pages": [
+      [{"text": ""},
+        {"text": "Index\n", "bold": true},
+        {"text": " 1. Claiming Land\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "2"
+          }
+        },
+        {"text": " 2. Claim Access\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "4"
+          }
+        },
+        {"text": " 3. Permissions\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "5"
+          }
+        },
+        {"text": " 4. Friends",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "10"
+          }
+        }
+      ],
+      [{"text": ""},
+        {
+          "text": "Claiming Land\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  Any player can claim chunks to protect their blocks from other players.\n"},
+        {"text": "  Once a chunk is claimed, other players will have limited functionality within the claimed region.\n"},
+        {"text": "  Claiming a chunk is as easy as typing the command "},
+        {"text": "/claim\n","color": "dark_aqua"}
+      ],
+      [
+        {"text": "  Only chunks that are not already claimed by another player can be claimed.\n"},
+        {"text": "  Chunks can be displayed in the world by "},
+        {"text": "holding F3", "color": "dark_aqua"},
+        {"text": " and tapping "},
+        {"text": "G", "color": "dark_aqua"},
+        {"text": "."}
+      ],
+      [{"text": ""},
+        {
+          "text": "Claim Access\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  You can give access to other players to interact with your chunks one of two ways; "},
+        {"text": "Changing permissions", "color": "red",
+          "hoverEvent": {
+            "action": "show_text",
+            "value": "Jump to page 5"
+          },
+          "clickEvent": {
+            "action": "change_page",
+            "value": "5"
+          }
+        },
+        {"text": " or "},
+        {"text": "adding friends", "color": "red",
+          "hoverEvent": {
+            "action": "show_text",
+            "value": "Jump to page 10"
+          },
+          "clickEvent": {
+            "action": "change_page",
+            "value": "10"
+          }
+        },
+        {"text": ".\n"},
+        {"text": "  Be mindful of your permissions, as they may cancel out your protections."}
+      ],
+      [{"text": ""},
+        {
+          "text": "Permissions\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  Permissions determine what level of \"friend\" a player must be to interact with your claims.\n"},
+        {"text": "  There are four \"friend levels\": "},
+        {"text": "Owner", "color": "red"},   {"text": ", "},
+        {"text": "Ally", "color": "red"},    {"text": ", "},
+        {"text": "Passive", "color": "red"}, {"text": ", and "},
+        {"text": "Enemy", "color": "red"},   {"text": "."}
+      ],
+      [
+        {"text": "  There are various permissions you can change:\n\n"},
+        {"text": "- Blocks", "bold": true, "color": "dark_gray", "hoverEvent": {
+          "action": "show_text",
+          "value": "Default: Ally"
+        }},
+        {"text": ": Access to break or place blocks.\n"},
+        {"text": "- Creatures", "bold": true, "color": "dark_gray", "hoverEvent": {
+          "action": "show_text",
+          "value": "Default: Passive"
+        }},
+        {"text": ": Access to harming passive mobs; Cows, Sheep, Pigs, etc.\n"},
+        {"text": "Harming hostiles is always allowed.\n","italic": true,"color": "dark_gray"}
+      ],
+      [{"text": ""},
+        {"text": "- Doors", "bold": true, "color": "dark_gray", "hoverEvent": {
+          "action": "show_text",
+          "value": "Default: Passive"
+        }},
+        {"text": ": Access to doors, trapdoors, gates, levers, and buttons.\n"},
+        {"text": "- Harvest", "bold": true, "color": "dark_gray", "hoverEvent": {
+          "action": "show_text",
+          "value": "Default: Ally"
+        }},
+        {"text": ": Access to breaking fully grown crops.\n"},
+        {"text": "- Pickup", "bold": true, "color": "dark_gray", "hoverEvent": {
+          "action": "show_text",
+          "value": "Default: Ally"
+        }},
+        {"text": ": Access to picking up dropped items.\n"},
+        {"text": "- Riding", "bold": true, "color": "dark_gray", "hoverEvent": {
+          "action": "show_text",
+          "value": "Default: Ally"
+        }},
+        {"text": ": Access to riding tamed horses, minecarts, or boats.\n"}
+      ],
+      [{"text": ""},
+        {"text": "- Storage", "bold": true, "color": "dark_gray", "hoverEvent": {
+          "action": "show_text",
+          "value": "Default: Ally"
+        }},
+        {"text": ": Access to chests, furnaces, hoppers, barrels, crafting tables, enchantment tables, brewing stands, storage minecarts, armor stands, etc.\n"}
+      ],
+      [
+        {"text": "  To set a permissions required level, use the command\n"},
+        {"text": "/protection permissions <permission> <level>\n\n", "color": "dark_aqua"},
+        {"text": "For example;\n"},
+        {"text": "/protection permissions storage owner","color": "dark_gray"}
+      ],
+      [{"text": ""},
+        {
+          "text": "Friends\n",
+          "bold": true,
+          "underlined": true
+        }
+      ]
+    ]
+  },
+  "towns": {
+    "title": "Guide: Towns and Kingdoms",
+    "author": "TheElm",
+    "description": "Adjusting to Democracy in Minecraft",
+    "lore_color": "gold",
+    "pages": [
+      [{"text": ""},
+        {
+          "text": "Towns\n",
+          "bold": true,
+          "underlined": true
+        }
+      ]
+    ]
+  },
+  "shops": {
+    "title": "Guide: Buying & Selling",
+    "author": "TheElm",
+    "description": "An intro to insider trading",
+    "lore_color": "gold",
+    "pages": [
+      [{"text": ""},
+        {"text": "Index\n", "bold": true},
+        {"text": " 1. Shops\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "2"
+          }
+        },
+        {"text": " 2. Money\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "3"
+          }
+        },
+        {"text": " 3. Shop Signs\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "5"
+          }
+        },
+        {"text": "   - Buy\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "7"
+          }
+        },
+        {"text": "   - Sell\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "9"
+          }
+        },
+        {"text": "   - Free\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "11"
+          }
+        },
+        {"text": " 4. Notes",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "13"
+          }
+        }
+      ],
+      [{"text": ""},
+        {
+          "text": "Shops\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  Shops make it easy for players to trade items. Rather than standing around operating a shop by hand, items can be bought and sold- even while the shop owner is offline."}
+      ],
+      [{"text": ""},
+        {
+          "text": "Money\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  \"Money\", an entirely virtual currency, is the backbone of trading; Rather than depending on an item that can be farmed, such as Emeralds or Diamonds, and saving you inventory space."}
+      ],
+      [
+        {"text": "  To view your balance, use the "},
+        {"text": "/money", "color": "dark_aqua"},
+        {"text": " command.\n\n"},
+        {"text": "  Money can be manually traded to others by using the "},
+        {"text": "/pay", "color": "dark_aqua"},
+        {"text": " command.\n\n"},
+        {"text": "For example;\n"},
+        {"text": "/pay 40 TheElm","color": "dark_gray"}
+      ],
+      [{"text": ""},
+        {
+          "text": "Setting Up Shop\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  To set up your first shop you'll need two ingredients: "},
+        {"text": "A sign", "color": "gold"},
+        {"text": " and "},
+        {"text": "a container", "color": "gold"},
+        {"text": ".\n  The sign can be made out of any material, and the container can be either a chest, double chest, or barrel."}
+      ],
+      [
+        {"text": "  Multiple signs can be placed on the same container, however each item will need it's own space inside the container.\n"},
+        {"text": "  The sign must be placed directly adjacent to the chest, above or on the side of. It cannot be diagonal of the chest."}
+      ],
+      [{"text": ""},
+        {
+          "text": "Buy Signs\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  The BUY sign allows players to purchase items from the merchants chest.\n"},
+        {"text": "  Items to purchase must be present within the container, or trading will fail."}
+      ],
+      [{"text": ""},
+        {
+          "text": "Buy Sign Format\n\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "1. "},
+        {"text": "[BUY]\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The sign type"
+        }},
+        {"text": "2. "},
+        {"text": "#", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "Number of items to sell"
+        }},
+        {"text": " "},
+        {"text": "item\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The item name"
+        }},
+        {"text": "3. "},
+        {"text": "price\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The sell price"
+        }},
+        {"text": "4.\n\n"},
+        {"text": "Example:\n", "color": "dark_gray"},
+        {"text": "1. "},
+        {"text": "[BUY]\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The sign type"
+        }},
+        {"text": "2. "},
+        {"text": "10", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "Number of items to sell"
+        }},
+        {"text": " "},
+        {"text": "iron_pickaxe\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The item name"
+        }},
+        {"text": "3. "},
+        {"text": "200\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The sell price"
+        }},
+        {"text": "4."}
+      ],
+      [{"text": ""},
+        {
+          "text": "Sell Signs\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  The SELL sign allows players to sell items to the merchants chest.\n"},
+        {"text": "  The vendor must have enough money to purchase the players items, or trading will fail."}
+      ],
+      [{"text": ""},
+        {
+          "text": "Sell Sign Format\n\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "1. "},
+        {"text": "[SELL]\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The sign type"
+        }},
+        {"text": "2. "},
+        {"text": "#", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "Number of items to buy"
+        }},
+        {"text": " "},
+        {"text": "item\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The item name"
+        }},
+        {"text": "3. "},
+        {"text": "price\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The buy price"
+        }},
+        {"text": "4.\n\n"},
+        {"text": "Example:\n", "color": "dark_gray"},
+        {"text": "1. "},
+        {"text": "[SELL]\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The sign type"
+        }},
+        {"text": "2. "},
+        {"text": "10", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "Number of items to buy"
+        }},
+        {"text": " "},
+        {"text": "iron_pickaxe\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The item name"
+        }},
+        {"text": "3. "},
+        {"text": "200\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The buy price"
+        }},
+        {"text": "4."}
+      ],
+      [{"text": ""},
+        {
+          "text": "Free Signs\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  The FREE sign allows players to freely take items from the merchants chest. This does not interfere with a chunks STORAGE permission, and allows giving away items from within a protected claimed chunk."}
+      ],
+      [{"text": ""},
+        {
+          "text": "Free Sign Format\n\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "1. "},
+        {"text": "[FREE]\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The sign type"
+        }},
+        {"text": "2. "},
+        {"text": "#", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "Number of items to give away"
+        }},
+        {"text": " "},
+        {"text": "item\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The item name"
+        }},
+        {"text": "3.\n"},
+        {"text": "4.\n\n"},
+        {"text": "Example:\n", "color": "dark_gray"},
+        {"text": "1. "},
+        {"text": "[FREE]\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The sign type"
+        }},
+        {"text": "2. "},
+        {"text": "10", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "Number of items to give away"
+        }},
+        {"text": " "},
+        {"text": "iron_pickaxe\n", "color": "red", "hoverEvent": {
+          "action": "show_text",
+          "value": "The item name"
+        }},
+        {"text": "3.\n"},
+        {"text": "4."}
+      ],
+      [{"text": ""},
+        {
+          "text": "Notes\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  The casing on signs is insensitive; whether upper or lower the spelling is what is important.\n"},
+        {"text": "  Item names on the sign use Minecraft's naming scheme:\n \""},
+        {"text": "mod:item_name","color": "dark_gray"},
+        {"text": "\"\n \""},
+        {"text": "minecraft:dirt","color": "dark_gray"},
+        {"text": "\"\n \""},
+        {"text": "iron_block","color": "dark_gray"},
+        {"text": "\""}
+      ]
+    ]
+  }
+}

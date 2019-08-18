@@ -1,0 +1,28 @@
+{
+  "claim.chunk.pvp": "PvP",
+  "claim.chunk.self": "your %s",
+  "claim.chunk.entering.generic": "Entering %s",
+  "claim.chunk.entering.owned": "Entering %s's %s",
+  "claim.chunk.entering.town": "Entering %s (%s)",
+  "claim.chunk.entering.town.owned": "Entering %s - %s (%s)",
+  
+  "claim.block.locked": "This %s belongs to %s",
+  
+  "player.money": "Your wallet: $%d",
+  
+  "town.found": "%s founded the new town of \"%s\".",
+  "town.disband": "%s disbanded their town \"%s\".",
+  
+  "warp.random.search": "Hang tight while we find you a sweet vacation spot.",
+  "warp.random.build": "Setting up your new home!",
+  "warp.random.teleported": "You are now %d blocks from Spawn. Please do not lose this warp point, as it will help you return to spawn.",
+  
+  "shop.error.database": "An error occurred while doing that.",
+  "shop.error.chest_open": "Cannot do that while chest is open.",
+  "shop.error.self_sell": "Cannot sell items to yourself.",
+  "shop.error.self_buy": "Cannot buy items from yourself.",
+  "shop.error.stock_player": "You do not have any %s.",
+  "shop.error.stock_chest": "Chest is out of %s.",
+  "shop.error.money_player": "You do not have enough money.",
+  "shop.error.money_chest": "Shop owner does not have enough money."
+}
