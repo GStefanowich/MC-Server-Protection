@@ -57,7 +57,7 @@ public class CoreMod implements DedicatedServerModInitializer {
     public static final String MOD_ID = "sewing-machine";
     
     // Create ourselves a universal logger
-    private static final Logger logger = LogManager.getLogger( CoreMod.class );
+    private static final Logger logger = LogManager.getLogger( MOD_ID );
     
     public static final Map<ServerPlayerEntity, UUID> PLAYER_LOCATIONS = Collections.synchronizedMap(new WeakHashMap<>()); // Reference of where players are
     public static final Map<ServerPlayerEntity, UUID> PLAYER_WARP_INVITES = Collections.synchronizedMap(new WeakHashMap<>()); // Reference of warp invitations
