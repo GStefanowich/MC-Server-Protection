@@ -11,7 +11,8 @@
   
   "contact": {
     "homepage": "",
-    "sources": "https://github.com/GStefanowich/MC-Server-Protection"
+    "sources": "https://github.com/GStefanowich/MC-Server-Protection",
+    "issues": "https://github.com/GStefanowich/MC-Server-Protection/issues"
   },
   
   "license": "CC0-1.0",
