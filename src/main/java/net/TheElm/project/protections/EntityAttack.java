@@ -31,6 +31,9 @@ import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.InventoryUtils;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
+import net.minecraft.block.BarrelBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.ChestBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.decoration.ItemFrameEntity;
@@ -79,19 +82,29 @@ public class EntityAttack {
             
             // Get blocks
             BlockPos containerPos = itemFrame.getBlockPos().offset( direction, 1 );
+            Block containerBlock = world.getBlockState( containerPos ).getBlock();
             
-            // Check chunk permissions
-            if (!ChunkUtils.canPlayerLootChestsInChunk( player, containerPos ))
-                return ActionResult.FAIL;
-            
-            Inventory containerInventory = InventoryUtils.getInventoryOf( world, containerPos );
-            if ( containerInventory != null ) {
-                // The amount the player wants to take
-                int takeStackSize = ( player.isSneaking() ? Collections.min(Arrays.asList( 64, itemStack.getMaxCount() )) : 1 );
+            // If the block behind the item frame is a storage
+            if ( containerBlock instanceof ChestBlock || containerBlock instanceof BarrelBlock) {
+                // Check chunk permissions
+                if (!ChunkUtils.canPlayerLootChestsInChunk(player, containerPos))
+                    return ActionResult.FAIL;
                 
-                InventoryUtils.chestToPlayer( (ServerPlayerEntity)player, containerInventory, player.inventory, itemStack.getItem(), takeStackSize );
-                return ActionResult.FAIL;
+                Inventory containerInventory = InventoryUtils.getInventoryOf(world, containerPos);
+                if (containerInventory != null) {
+                    // The amount the player wants to take
+                    int takeStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
+                    
+                    InventoryUtils.chestToPlayer((ServerPlayerEntity) player, containerInventory, player.inventory, itemStack.getItem(), takeStackSize);
+                    return ActionResult.FAIL;
+                }
             }
+            
+            // If player should be able to interact with the item frame
+            if (!ChunkUtils.canPlayerBreakInChunk(player, entity.getBlockPos()))
+                return ActionResult.FAIL;
+            
+            return ActionResult.PASS;
         }
         
         // Get chunk protection

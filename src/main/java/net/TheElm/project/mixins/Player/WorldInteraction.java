@@ -31,6 +31,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.commands.PlayerSpawnCommand;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.interfaces.PlayerServerLanguage;
 import net.TheElm.project.utilities.SleepUtils;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -44,13 +45,16 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ServerPlayerEntity.class)
-public abstract class WorldInteraction extends PlayerEntity implements PlayerData {
+public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerServerLanguage {
+
+    @Shadow private String clientLanguage;
     
     private BlockPos warpPos = null;
     
@@ -131,6 +135,13 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     
     /*
+     * Connected players language
+     */
+    public String getClientLanguage() {
+        return this.clientLanguage;
+    }
+    
+    /*
      * Player Warp Point Events
      */
     @Inject(at=@At("TAIL"), method = "writeCustomDataToTag")
@@ -158,4 +169,5 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         // Copy the players warp over
         this.warpPos = ((PlayerData) player).getWarpPos();
     }
+    
 }
