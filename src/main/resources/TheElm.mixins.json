@@ -5,6 +5,8 @@
   "mixins": [
   ],
   "server": [
+    "Commands.Me",
+    
     "Entities.CowMilk",
     "Entities.SheepShear",
     "Entities.CreeperDamage",
@@ -17,7 +19,6 @@
     "Entities.ArrowDamage",
     "Entities.PotionDamage",
     
-    "Player.Interaction.ItemDrops",
     "Player.Interaction.ItemPickup",
     
     "Player.Interaction.BlockInteraction",
@@ -31,6 +32,7 @@
     "Player.Interaction.MinecartRide",
     "Player.Interaction.ShopSign",
     
+    "Player.FullInventory",
     "Player.DeathChest",
     
     "Player.WorldInteraction",

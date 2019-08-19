@@ -23,40 +23,36 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Player.Interaction;
+package net.TheElm.project.mixins.Player;
 
-import com.mojang.authlib.GameProfile;
-import net.TheElm.project.interfaces.PlayerServerLanguage;
-import net.minecraft.container.ContainerListener;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Nameable;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ServerPlayerEntity.class)
-public abstract class ItemDrops extends PlayerEntity implements ContainerListener, PlayerServerLanguage {
+@Mixin(PlayerInventory.class)
+public abstract class FullInventory implements Inventory, Nameable {
     
-    @Shadow private String clientLanguage;
+    @Shadow public PlayerEntity player;
     
-    public ItemDrops(World world_1, GameProfile gameProfile_1) {
-        super(world_1, gameProfile_1);
-    }
-    
-    public String getClientLanguage() {
-        return this.clientLanguage;
-    }
-    
-    @Inject(at = @At("RETURN"), method = "dropItem")
-    private void onItemDrop(ItemStack itemStack, boolean boolean1, boolean boolean2, CallbackInfoReturnable<ItemEntity> callback) {
-        ItemEntity entity = callback.getReturnValue();
-        if ( ( entity != null ) && ( this.getUuid() != null ) )
-            entity.setOwner( this.getUuid() );
+    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/entity/player/PlayerEntity.dropItem(Lnet/minecraft/item/ItemStack;Z)Lnet/minecraft/entity/ItemEntity;"), method = "offerOrDrop", cancellable = true)
+    private void setDropOwner(World world, ItemStack itemStack, CallbackInfo callbackInfo) {
+        // Drop the item from the player
+        ItemEntity drop = this.player.dropItem( itemStack, true );
+        
+        // Set the dropped items owner
+        if ( drop != null ) drop.setOwner(this.player.getUuid());
+        
+        // Cancel a second drop
+        callbackInfo.cancel();
     }
     
 }

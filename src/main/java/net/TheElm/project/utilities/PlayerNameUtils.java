@@ -54,8 +54,13 @@ public final class PlayerNameUtils {
     private PlayerNameUtils() {}
     
     public static Text getPlayerChatDisplay(@NotNull ServerPlayerEntity player) {
+        return PlayerNameUtils.getPlayerChatDisplay( player, null );
+    }
+    public static Text getPlayerChatDisplay(@NotNull ServerPlayerEntity player, @Nullable String prepend, Formatting... playerColors) {
         ClaimantPlayer playerPermissions = ClaimantPlayer.get( player.getUuid() );
         Text playerDisplay = PlayerNameUtils.getPlayerDisplayName( player );
+        if ( playerColors.length > 0 )
+            playerDisplay.formatted( playerColors );
         
         // Add the players world
         Text format = new LiteralText( "[" ).formatted(Formatting.WHITE)
@@ -70,12 +75,18 @@ public final class PlayerNameUtils {
                 .append( town.getName().formatted(Formatting.DARK_AQUA) )
                 .append( "] " );
             
+            if ( prepend != null )
+                format.append( prepend );
+            
             // Add the players title
             if ( town.getOwner().equals( player.getUuid() ) )
                 format.append( CasingUtils.Sentence( town.getOwnerTitle() ) + " " );
             
         } else {
             format.append( "] " );
+            
+            if ( prepend != null )
+                format.append( prepend );
         }
         
         // Append the player name and return

@@ -64,7 +64,7 @@ public abstract class CreeperDamage extends HostileEntity {
         ClaimedChunk claimedChunkInfo = ClaimedChunk.convert( this.getEntityWorld(), blockPos );
         if ( claimedChunkInfo != null ) {
             // If the creeper griefing is disallowed
-            if ( claimedChunkInfo.isSetting( ClaimSettings.CREEPER_GRIEFING ) ) {
+            if ( !claimedChunkInfo.isSetting( ClaimSettings.CREEPER_GRIEFING ) ) {
                 
                 // Log the creeper explosion
                 CoreMod.logMessage("Stopped creeper block damage at X " + blockPos.getX() + ", Z" + blockPos.getZ() + ", Y" + blockPos.getZ() + ".");
