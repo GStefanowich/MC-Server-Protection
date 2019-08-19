@@ -177,6 +177,8 @@ public abstract class BlockInteraction {
             return true;
         if ( block instanceof LecternBlock )
             return true;
+        if ( block instanceof FlowerPotBlock )
+            return true;
         return false;
     }
     private static boolean isLockable( BlockEntity block ) {

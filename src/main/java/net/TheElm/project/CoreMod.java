@@ -170,7 +170,7 @@ public class CoreMod implements DedicatedServerModInitializer {
     }
     public static File getConfDir() throws RuntimeException {
         // Get the directory
-        final File dir = new File("config" + File.separator + "SewingMachine");
+        final File dir = new File("config" + File.separator + CoreMod.MOD_ID);
         // Make sure the directory exists
         if (!(dir.exists() || dir.mkdirs()))
             throw new RuntimeException("Error accessing the config");
