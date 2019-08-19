@@ -45,8 +45,10 @@ public final class ChunkUtils {
         return ChunkUtils.canPlayerDoInChunk( perm, player, ClaimedChunk.convert( player.getEntityWorld(), blockPos ) );
     }
     public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @Nullable ClaimedChunk chunk) {
-        if ( chunk == null )
-            return false;
+        // Return false (Chunks should never BE null, but this is our catch)
+        if ( chunk == null ) return false;
+        
+        // Check if player can do action in chunk
         return chunk.canUserDo( player.getUuid(), perm );
     }
     

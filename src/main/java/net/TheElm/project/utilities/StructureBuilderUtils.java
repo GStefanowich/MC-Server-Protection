@@ -29,8 +29,10 @@ import net.TheElm.project.CoreMod;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.particle.ParticleEffect;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -85,6 +87,28 @@ public final class StructureBuilderUtils {
                 blockEntry.getKey(),
                 blockEntry.getValue()
             );
+        }
+    }
+    public <T extends ParticleEffect> void particlesSounds(T particle, SoundEvent sound, double deltaX, double deltaY, double deltaZ, double speed, int count, BlockPos... blockPositions) throws InterruptedException {
+        for (BlockPos blockPos : blockPositions) {
+            // Spawn the particles
+            ((ServerWorld) this.world).spawnParticles(
+                particle,
+                blockPos.getX() + 0.5,
+                blockPos.getY(),
+                blockPos.getZ() + 0.5,
+                count,
+                deltaX,
+                deltaY,
+                deltaZ,
+                speed
+            );
+            
+            // Play the sound effect
+            world.playSound( null, blockPos, sound, SoundCategory.MASTER, 1.0f, 1.0f );
+            
+            // Sleep
+            Thread.sleep(this.delay * 8);
         }
     }
     

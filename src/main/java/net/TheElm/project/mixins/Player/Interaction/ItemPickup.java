@@ -44,6 +44,7 @@ import java.util.UUID;
 public abstract class ItemPickup extends Entity {
     
     @Shadow private int pickupDelay;
+    @Shadow private UUID thrower;
     @Shadow private UUID owner;
     
     public ItemPickup(EntityType<?> entityType_1, World world_1) {
@@ -55,7 +56,7 @@ public abstract class ItemPickup extends Entity {
         if (!this.world.isClient) {
             if ( this.pickupDelay == 0 ) {
                 // Check if the entity is owned by the player (They dropped it)
-                if (((this.owner != null) && this.owner.equals( player.getUuid() )) || player.isCreative())
+                if (player.getUuid().equals( this.thrower ) || player.getUuid().equals( this.owner ) || player.isCreative())
                     return;
                 
                 // Check if the player can pickup items in the chunk

@@ -179,7 +179,7 @@ public final class ClaimCommand {
                 .executes(ClaimCommand::claimChunkTown)
             )
         );
-        CoreMod.logError( "- Registered Town command" );
+        CoreMod.logMessage( "- Registered Town command" );
         
         /*
          * Register the main command object

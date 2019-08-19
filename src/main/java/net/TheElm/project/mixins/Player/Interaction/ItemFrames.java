@@ -27,6 +27,9 @@ package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.InventoryUtils;
+import net.minecraft.block.BarrelBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.ChestBlock;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.decoration.AbstractDecorationEntity;
 import net.minecraft.entity.decoration.ItemFrameEntity;
@@ -67,22 +70,30 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
             ItemStack itemStack = itemFrame.getHeldItemStack();
             
             // Get blocks
-            BlockPos chestPos = itemFrame.getBlockPos().offset( direction, 1 );
+            BlockPos containerPos = itemFrame.getBlockPos().offset( direction, 1 );
+            Block containerBlock = this.world.getBlockState( containerPos ).getBlock();
             
-            // Check chunk permissions
-            if (!ChunkUtils.canPlayerLootChestsInChunk( player, chestPos )) {
-                callback.setReturnValue( false );
-                return;
-            }
-            
-            Inventory chestInventory = InventoryUtils.getInventoryOf( world, chestPos );
-            if ( ( chestInventory != null ) && (!itemStack.getItem().equals( Items.AIR )) ) {
-                // The amount the player wants to take
-                int putStackSize = ( player.isSneaking() ? Collections.min(Arrays.asList( 64, itemStack.getMaxCount() )) : 1 );
+            // If the block behind the item frame is a storage
+            if ( containerBlock instanceof ChestBlock || containerBlock instanceof BarrelBlock ) {
+                // Check chunk permissions
+                if (!ChunkUtils.canPlayerLootChestsInChunk(player, containerPos)) {
+                    callback.setReturnValue(false);
+                    return;
+                }
                 
-                InventoryUtils.playerToChest( (ServerPlayerEntity) player, player.inventory, chestInventory, itemStack.getItem(), putStackSize );
-                callback.setReturnValue( false );
+                Inventory chestInventory = InventoryUtils.getInventoryOf(world, containerPos);
+                if ((chestInventory != null) && (!itemStack.getItem().equals(Items.AIR))) {
+                    // The amount the player wants to take
+                    int putStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
+                    
+                    InventoryUtils.playerToChest((ServerPlayerEntity) player, player.inventory, chestInventory, itemStack.getItem(), putStackSize);
+                    callback.setReturnValue(false);
+                }
             }
         }
+        
+        // If player should be able to interact with the item frame
+        if (!ChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos()))
+            callback.setReturnValue(false);
     }
 }
