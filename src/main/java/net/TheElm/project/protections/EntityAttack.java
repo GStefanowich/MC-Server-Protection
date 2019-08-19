@@ -114,9 +114,9 @@ public class EntityAttack {
         
         // Check if the tamed entity is tamed
         if ( ( entity instanceof TameableEntity ) && (((TameableEntity) entity).getOwner() != null) ) {
-            // Allow of the entity belongs to the attacker
+            // Deny if the entity belongs to the attacker (Can't hurt friendlies)
             if (player.getUuid().equals(((TameableEntity) entity).getOwnerUuid()))
-                return ActionResult.PASS;
+                return ActionResult.FAIL;
             
             // If player can interact with tameable mobs
             if (( claimedChunkInfo != null ) && claimedChunkInfo.isSetting( ClaimSettings.HURT_TAMED ))

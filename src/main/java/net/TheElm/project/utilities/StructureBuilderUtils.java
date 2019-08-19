@@ -29,6 +29,9 @@ import net.TheElm.project.CoreMod;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 
@@ -72,6 +75,7 @@ public final class StructureBuilderUtils {
                 continue;
             
             this.world.setBlockState( blockPos, block );
+            this.world.playSound(null, blockPos, SoundEvents.BLOCK_STONE_PLACE, SoundCategory.BLOCKS, 1.0f, 1.0f);
             Thread.sleep( this.delay );
         }
         
