@@ -25,6 +25,7 @@
 
 package net.TheElm.project.utilities;
 
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.PlayerCorpse;
 import net.minecraft.block.Block;
@@ -152,12 +153,13 @@ public final class DeathChestUtils {
         
         // Set the armor stands equipped item
         stand.setEquippedStack(EquipmentSlot.HEAD, head);
-        stand.setStackInHand(Hand.MAIN_HAND, inventory.getMainHandStack().copy());
+        stand.setStackInHand( Hand.OFF_HAND, inventory.getMainHandStack().copy());
+        stand.setStackInHand( Hand.MAIN_HAND, player.getOffHandStack().copy());
         
         // Set the pose
-        stand.setHeadRotation(new EulerAngle(334f,37f,0f));
-        stand.setLeftArmRotation(new EulerAngle(261f,339f,261f));
-        stand.setRightArmRotation(new EulerAngle(266f,23f,0f));
+        stand.setHeadRotation(new EulerAngle(334.0f,37.0f,0.0f));
+        stand.setLeftArmRotation(new EulerAngle(325.0f,356.0f,265.0f));
+        stand.setRightArmRotation(new EulerAngle(0.0f,0.0f,82.0f));
         
         /*
          * Add our items to the "Chest"
@@ -173,6 +175,8 @@ public final class DeathChestUtils {
         
         // Set the contents of the item stand
         ((PlayerCorpse) stand).setCorpseData( player.getUuid(), itemsTag );
+        
+        CoreMod.logMessage( "Death chest for " + playerName + " spawned at " + chestPos.getX() + ", " + chestPos.getY() + ", " + chestPos.getZ() );
         
         // Add the entity to the world
         return ( skipGroundBlock || world.setBlockState( chestPos, Blocks.DIRT.getDefaultState() ) ) && world.spawnEntity( stand );

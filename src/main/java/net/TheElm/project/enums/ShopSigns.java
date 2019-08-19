@@ -628,8 +628,6 @@ public enum ShopSigns {
             // Write the guide data to NBT
             guide.writeCustomDataToTag( nbt );
             
-            System.out.println( nbt );
-            
             // Give the player the book
             player.giveItemStack( book );
             player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
