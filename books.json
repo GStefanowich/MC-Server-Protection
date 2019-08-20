@@ -149,7 +149,26 @@
           "text": "Friends\n",
           "bold": true,
           "underlined": true
-        }
+        },
+        {"text": "  Friends can be added to your permission settings to allow other players to interact with blocks in your claimed areas. This allows giving some players access to permissions others may not have."}
+      ],
+      [
+        {"text": "  To add a friend, they must be given a "},
+        {"text": "rank", "color": "red",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "5"
+          },
+          "hoverEvent": {
+            "action": "show_text",
+            "value": "Jump to page 5"
+          }
+        },
+        {"text": ".\n  To do so use the\n"},
+        {"text": "/protection friends set <rank> <player>", "color": "dark_aqua"},
+        {"text": "\ncommand.\n\n"},
+        {"text": "For example;\n"},
+        {"text": "/protection friends set ally TheElm", "color": "dark_gray"}
       ]
     ]
   },
@@ -160,11 +179,21 @@
     "lore_color": "gold",
     "pages": [
       [{"text": ""},
+        {"text": "Index\n", "bold": true},
+        {"text": " 1. Intro",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "2"
+          }
+        }
+      ],
+      [{"text": ""},
         {
           "text": "Towns\n",
           "bold": true,
           "underlined": true
-        }
+        },
+        {"text": "  To Be Added"}
       ]
     ]
   },
@@ -443,6 +472,103 @@
         {"text": "\"\n \""},
         {"text": "iron_block","color": "dark_gray"},
         {"text": "\""}
+      ]
+    ]
+  },
+  "warps": {
+    "title": "Guides: Warping around",
+    "author": "TheElm",
+    "description": "Party tricks for beginner magicians",
+    "lore_color": "gold",
+    "pages": [
+      [{"text": ""},
+        {"text": "Index\n", "bold": true},
+        {"text": " 1. Warp Signs\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "2"
+          }
+        },
+        {"text": " 2. Moving Warps\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "4"
+          }
+        },
+        {"text": " 3. Inviting Friends\n",
+          "clickEvent": {
+            "action": "change_page",
+            "value": "8"
+          }
+        }
+      ],
+      [{"text": ""},
+        {"text": "Warp Signs\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  If you come across a sign titled "},
+        {"text": "[WARP]", "color": "dark_aqua"},
+        {"text": ", right-clicking it will take each player to their own unique location.\n"},
+        {"text": "  Upon warping for the first time, a \"Waystone\" is created that will allow you to return back to spawn."}
+      ],
+      [
+        {"text": "  When a player first interacts with the warp sign, the location that it takes you to is saved. When further interacting with the sign, it will return you to the same location.\n"},
+        {"text": "  If you want to change your warp location, it is possible to move it manually."}
+      ],
+      [{"text": ""},
+        {"text": "Moving your Warp\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  Each player is only given one warp, it may be set to a random location for free using a "},
+        {"text": "[WARP]", "color": "dark_aqua"},
+        {"text": " sign, or by placing down a "},
+        {"text": "[WAYSTONE]", "color": "dark_aqua"},
+        {"text": " sign.\n"},
+        {"text": "  Moving the warp to a new waystone costs "},
+        {"text": "$2000", "color": "dark_gray"}
+      ],
+      [
+        {"text": "  Waystone signs cannot be placed on the edge of chunks. Waystones are flat 3x3 structures that will not overflow chunk boundaries.\n"},
+        {"text": "  The waystone is created underneath where your sign is placed, with the sign becoming a pressure plate."}
+      ],
+      [
+        {"text": "  The location of your waystone sign must be in an unclaimed chunk, as the chunk will become claimed by "},
+        {"text": "Spawn", "color": "gold"},
+        {"text": " protection.\n"},
+        {"text": "  This is done to protect the command block structure from griefing, as well as to give any players that are invited to the warp protection from PvP."}
+      ],
+      [
+        {"text": "  Once you've created your new waystone, interacting with a warp sign will return you to that location.\n"},
+        {"text": "  Pre-existing waystones will become unable to be returned to, however the structures will remain intact and continue to return you to spawn."}
+      ],
+      [{"text": ""},
+        {"text": "Inviting Friends\n",
+          "bold": true,
+          "underlined": true
+        },
+        {"text": "  Due to the nature of warp signs being capable of taking you hundreds of thousands of blocks away, your friends need a way to reach you without having to travel that distance.\n"},
+        {"text": "  Such a way exists, in the form of Friend teleports."}
+      ],
+      [
+        {"text": "  To begin, it is required that the player requesting to teleport be within a chunk protected by Spawn.\n"},
+        {"text": "  They may then use\n"},
+        {"text": "/tpa <friend-name>", "color": "dark_aqua"},
+        {"text": "\n\nFor example;\n"},
+        {"text": "/tpa TheElm", "color": "dark_gray"}
+      ],
+      [
+        {"text": "  Once a player requests to teleport to your waystone, you must then accept it, deny it, or simply ignore it.\n\n"},
+        {"text": "/tpaccept <player>\n", "color": "dark_aqua"},
+        {"text": "/tpdeny <player>\n\n", "color": "dark_aqua"},
+        {"text": "For example;\n"},
+        {"text": "/tpaccept TheElm\n", "color": "dark_gray"},
+        {"text": "/tpdeny TheElm", "color": "dark_gray"}
+      ],
+      [
+        {"text": "  Teleporting will always take the requesting player to the Waystone structure, not the player.\n"},
+        {"text": "  Waystones exist as a way for players to travel from Spawn and their Homes, not as a way out of caves, or if lost."}
       ]
     ]
   }

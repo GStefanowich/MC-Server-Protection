@@ -93,7 +93,7 @@
           "title": "Book Title",
           "description": "The displayed title of your book ingame",
           "default": "",
-          "pattern": "^(.*)$"
+          "pattern": "^(.{0,32})$"
         },
         "description": {
           "type": "string",
@@ -109,7 +109,7 @@
           "type": "array",
           "title": "Pages Schema",
           "minItems": 1,
-          "maxItems": 50,
+          "maxItems": 2147483639,
           "items": {
             "type": "array",
             "title": "Texts Schema",
