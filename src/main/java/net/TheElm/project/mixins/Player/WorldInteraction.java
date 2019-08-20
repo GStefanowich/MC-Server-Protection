@@ -54,11 +54,12 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ServerPlayerEntity.class)
-public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerServerLanguage {
+public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerServerLanguage, Nicknamable {
 
     @Shadow private String clientLanguage;
     
     private BlockPos warpPos = null;
+    private Text playerNickname = null;
     
     public WorldInteraction(World world_1, GameProfile gameProfile_1) {
         super(world_1, gameProfile_1);
@@ -154,6 +155,9 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             tag.putInt("playerWarpY", this.warpPos.getY() );
             tag.putInt("playerWarpZ", this.warpPos.getZ() );
         }
+        if ( this.playerNickname != null ) {
+            tag.putString( "PlayerNickname", Text.Serializer.toJson( this.playerNickname ));
+        }
     }
     @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
@@ -165,16 +169,30 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
                 tag.getInt("playerWarpZ")
             );
         }
+        if (tag.containsKey("PlayerNickname", 8)) {
+            this.playerNickname = Text.Serializer.fromJson( tag.getString("PlayerNickname") );
+        }
     }
     @Inject(at = @At("TAIL"), method = "copyFrom")
     public void onCopyData(ServerPlayerEntity player, boolean alive, CallbackInfo callback) {
         // Copy the players warp over
         this.warpPos = ((PlayerData) player).getWarpPos();
+        // Copy the players nick over
+        this.playerNickname = ((Nicknamable) player).getPlayerNickname();
     }
     
     /*
      * Player names
      */
+    @Override
+    public void setPlayerNickname(@Nullable Text nickname) {
+        this.playerNickname = nickname;
+    }
+    @Nullable @Override
+    public Text getPlayerNickname() {
+        return this.playerNickname;
+    }
+    
     @Inject(at = @At("HEAD"), method = "method_14206", cancellable = true)
     public void getServerlistDisplayName(CallbackInfoReturnable<Text> callback) {
         callback.setReturnValue( ((Nicknamable) this).getPlayerNickname() );

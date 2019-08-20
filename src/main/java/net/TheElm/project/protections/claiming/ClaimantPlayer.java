@@ -31,13 +31,14 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.utilities.PlayerNameUtils;
+import net.minecraft.entity.player.PlayerEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-public final class ClaimantPlayer extends Claimaint {
+public final class ClaimantPlayer extends Claimant {
     
     private static MySQLStatement PERMISSIONS_LOOKUP;
     
@@ -47,7 +48,7 @@ public final class ClaimantPlayer extends Claimaint {
     private UUID townID;
     
     private ClaimantPlayer(@NotNull UUID ownerId) {
-        super( ownerId, PlayerNameUtils.fetchPlayerName( ownerId ) );
+        super( ClaimantType.PLAYER, ownerId, PlayerNameUtils.fetchPlayerName( ownerId ) );
         
         this.townID = ClaimantTown.getPlayersTown( this.getId() );
         
@@ -123,7 +124,14 @@ public final class ClaimantPlayer extends Claimaint {
     
     /* Players Town Reference */
     public void updateTown(UUID townID) {
+        ClaimantTown town;
+        // Update chunks of old-town
+        if ((this.townID != null) && ((town = ClaimantTown.get(this.townID)) != null)) town.chunkCount--;
+        
         this.townID = townID;
+        
+        // Update chunks of new-town
+        if ((this.townID != null) && ((town = ClaimantTown.get(this.townID)) != null)) town.chunkCount++;
     }
     public UUID getTown() {
         return this.townID;
@@ -139,6 +147,9 @@ public final class ClaimantPlayer extends Claimaint {
     }
     
     /* Get the PlayerPermissions object from the cache */
+    public static ClaimantPlayer get(@NotNull PlayerEntity player) {
+        return ClaimantPlayer.get( player.getUuid() );
+    }
     public static ClaimantPlayer get(@NotNull UUID ownerId ) {
         if (CoreMod.OWNER_CACHE.containsKey( ownerId ))
             return CoreMod.OWNER_CACHE.get( ownerId );

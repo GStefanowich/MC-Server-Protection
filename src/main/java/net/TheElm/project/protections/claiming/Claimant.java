@@ -25,23 +25,44 @@
 
 package net.TheElm.project.protections.claiming;
 
+import net.TheElm.project.CoreMod;
+import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.enums.ClaimRanks;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 
-public abstract class Claimaint {
+public abstract class Claimant {
     
     private final Map<UUID, ClaimRanks> USER_RANKS = Collections.synchronizedMap(new HashMap<>());
     
+    private final ClaimantType type;
     private final UUID id;
     private Text name;
     
-    protected Claimaint(@NotNull UUID owner, @Nullable Text name) {
+    protected int chunkCount = 0;
+    
+    protected Claimant(ClaimantType type, @NotNull UUID owner, @Nullable Text name) {
+        this.type = type;
         this.id = owner;
         this.name = name;
+        
+        String sqlSelector = ( this.type.equals(ClaimantType.PLAYER) ? "chunkOwner" : "chunkTown" );
+        try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT COUNT(`" + sqlSelector + "`) AS `count` FROM `chunk_Claimed` WHERE `" + sqlSelector + "` = ?;", false)) {
+            
+            ResultSet rs = stmt.addPrepared( owner )
+                .executeStatement();
+            while (rs.next()) {
+                this.chunkCount += rs.getInt( "count" );
+            }
+            
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
     
     /* Player Friend Options */
@@ -70,4 +91,19 @@ public abstract class Claimaint {
         return this.getName().formatted( playerRank.getColor() );
     }
     
+    /* Town types */
+    public final ClaimantType getType() {
+        return this.type;
+    }
+    public final int adjustCount(int size) {
+        return (this.chunkCount += size);
+    }
+    public final int resetCount() {
+        return (this.chunkCount = 0);
+    }
+    
+    enum ClaimantType {
+        TOWN,
+        PLAYER
+    }
 }

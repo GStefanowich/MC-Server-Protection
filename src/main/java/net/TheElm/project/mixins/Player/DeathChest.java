@@ -32,12 +32,11 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -46,9 +45,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerEntity.class)
-public abstract class DeathChest extends LivingEntity implements Nicknamable {
+public abstract class DeathChest extends LivingEntity {
     
-    private Text playerNickname = null;
     @Shadow public PlayerInventory inventory;
     @Shadow protected native void vanishCursedItems();
     
@@ -78,33 +76,12 @@ public abstract class DeathChest extends LivingEntity implements Nicknamable {
         }
     }
     
-    @Override
-    public void setPlayerNickname(@Nullable Text nickname) {
-        this.playerNickname = nickname;
-    }
-    @Nullable @Override
-    public Text getPlayerNickname() {
-        return this.playerNickname;
-    }
-    
     // Override the players display name
     @Inject(at = @At("RETURN"), method = "getDisplayName", cancellable = true)
     public void getPlayerNickname(CallbackInfoReturnable<Text> callback) {
-        if (this.playerNickname != null)
-            callback.setReturnValue( this.playerNickname );
-    }
-    
-    @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
-    public void onSavingData(CompoundTag compoundTag, CallbackInfo callback) {
-        if ( this.playerNickname != null ) {
-            compoundTag.putString( "PlayerNickname", Text.Serializer.toJson( this.playerNickname ));
-        }
-    }
-    
-    @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
-    public void onReadingData(CompoundTag compoundTag, CallbackInfo callback) {
-        if (compoundTag.containsKey("PlayerNickname", 8)) {
-            this.playerNickname = Text.Serializer.fromJson( compoundTag.getString("PlayerNickname") );
+        if (((LivingEntity)this) instanceof ServerPlayerEntity) {
+            if (((Nicknamable)this).getPlayerNickname() != null)
+                callback.setReturnValue(((Nicknamable)this).getPlayerNickname());
         }
     }
     
