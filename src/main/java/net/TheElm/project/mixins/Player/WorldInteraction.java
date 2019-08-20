@@ -190,7 +190,9 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     @Nullable @Override
     public Text getPlayerNickname() {
-        return this.playerNickname;
+        if (this.playerNickname == null)
+            return null;
+        return this.playerNickname.deepCopy();
     }
     
     @Inject(at = @At("HEAD"), method = "method_14206", cancellable = true)

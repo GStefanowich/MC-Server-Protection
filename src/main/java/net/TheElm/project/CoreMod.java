@@ -197,7 +197,10 @@ public class CoreMod implements DedicatedServerModInitializer {
         logger.info( "[SEW] " + message );
     }
     public static void logMessage( @Nullable Text message ) {
-        logMessage( message == null ? "NULL" : message.getString() );
+        CoreMod.logMessage( message == null ? "NULL" : message.getString() );
+    }
+    public static void logMessage( @Nullable Object message ) {
+        CoreMod.logMessage( message == null ? "NULL" : message.toString() );
     }
     
     public static void logDebug( String message ) {

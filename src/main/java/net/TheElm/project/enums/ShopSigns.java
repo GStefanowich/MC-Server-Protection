@@ -534,12 +534,12 @@ public enum ShopSigns {
                     }
                     warp.save( warp.getSafeTeleportPos( player.getEntityWorld() ), player );
                 })).start();
+                return Either.right( true );
                 
             } catch (SQLException e) {
                 CoreMod.logError( e );
                 return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
             }
-            return Either.right( false );
         }
     },
     /*

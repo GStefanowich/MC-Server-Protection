@@ -61,16 +61,23 @@ public final class ClaimantTown extends Claimant {
         return this.getFriends().size();
     }
     
-    public static ClaimantTown get(@NotNull UUID ownerId) {
+    public static ClaimantTown get(UUID ownerId) {
+        // Return null if null
+        if (ownerId == null)
+            return null;
+        
+        // Get the cached object
         if (CoreMod.TOWNS_CACHE.containsKey( ownerId ))
             return CoreMod.TOWNS_CACHE.get( ownerId );
         
         // Create new object
         Pair<Text, UUID> townInfo = TownNameUtils.fetchTownInfo( ownerId );
         
+        // If owner is null, return null
         if ( townInfo.getRight() == null )
             return null;
         
+        // Return the town object
         ClaimantTown obj = new ClaimantTown( ownerId, townInfo.getRight(), townInfo.getLeft() );
         CoreMod.TOWNS_CACHE.put( ownerId, obj );
         

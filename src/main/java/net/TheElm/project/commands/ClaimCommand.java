@@ -33,6 +33,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
@@ -51,6 +52,7 @@ import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.utilities.CommandUtilities;
 import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.PlayerManager;
@@ -76,13 +78,18 @@ import java.util.UUID;
 
 public final class ClaimCommand {
     
-    private static final DynamicCommandExceptionType NOT_ENOUGH_MONEY = new DynamicCommandExceptionType((amount) -> {
-        NumberFormat formatter = NumberFormat.getInstance();
-        return new LiteralText("Missing ").formatted(Formatting.WHITE).append(new LiteralText("$" + formatter.format( amount )).formatted(Formatting.AQUA)).append(" required to start a town.");
-    });
-    private static final SimpleCommandExceptionType SELF_RANK_CHANGE = new SimpleCommandExceptionType(new LiteralText( "You can't change your own rank." ));
-    private static final SimpleCommandExceptionType CHUNK_ALREADY_CLAIMED_EXCEPTION = new SimpleCommandExceptionType(new LiteralText( "This chunk is already claimed." ));
-    private static final SimpleCommandExceptionType CHUNK_NOT_OWNED_BY_PLAYER = new SimpleCommandExceptionType(new LiteralText("This chunk does not belong to you."));
+    private static final Dynamic2CommandExceptionType NOT_ENOUGH_MONEY = new Dynamic2CommandExceptionType((player, amount) -> 
+        TranslatableServerSide.text( (ServerPlayerEntity) player, "town.found.poor", new LiteralText("$" + NumberFormat.getInstance().format( amount )).formatted(Formatting.AQUA) )
+    );
+    private static final DynamicCommandExceptionType SELF_RANK_CHANGE = new DynamicCommandExceptionType((player) ->
+        TranslatableServerSide.text( (ServerPlayerEntity) player, "friends.rank.self" )
+    );
+    private static final DynamicCommandExceptionType CHUNK_ALREADY_CLAIMED_EXCEPTION = new DynamicCommandExceptionType((player) ->
+        TranslatableServerSide.text( (ServerPlayerEntity) player, "claim.chunk.error.claimed" )
+    );
+    private static final DynamicCommandExceptionType CHUNK_NOT_OWNED_BY_PLAYER = new DynamicCommandExceptionType((player) ->
+        TranslatableServerSide.text( (ServerPlayerEntity) player, "claim.chunk.error.not_players" )
+    );
     private static final SimpleCommandExceptionType WHITELIST_FAILED_EXCEPTION = new SimpleCommandExceptionType(new TranslatableText("commands.whitelist.add.failed", new Object[0]));
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
@@ -283,7 +290,7 @@ public final class ClaimCommand {
     }
     public static int claimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final BlockPos blockPos) throws CommandSyntaxException {
         if (!ClaimCommand.tryClaimChunkAt( chunkFor, claimant, blockPos))
-            throw CHUNK_ALREADY_CLAIMED_EXCEPTION.create();
+            throw CHUNK_ALREADY_CLAIMED_EXCEPTION.create( claimant );
         
         Claimant claimed;
         if ((claimed = ClaimantPlayer.get( chunkFor )) != null) {
@@ -331,7 +338,7 @@ public final class ClaimCommand {
         World world = player.getEntityWorld();
         
         if (!ClaimCommand.tryUnclaimChunkAt( player.getUuid(), player, player.getBlockPos() ))
-            throw CHUNK_NOT_OWNED_BY_PLAYER.create();
+            throw CHUNK_NOT_OWNED_BY_PLAYER.create( player );
         
         // Update runtime
         ClaimedChunk chunk = ClaimedChunk.convert(world, blockPos);
@@ -419,7 +426,7 @@ public final class ClaimCommand {
         // Charge the player money
         try {
             if ((SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get() > 0) && (!MoneyCommand.databaseTakePlayerMoney(founder.getUuid(), SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get())))
-                throw NOT_ENOUGH_MONEY.create(SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get());
+                throw NOT_ENOUGH_MONEY.create(founder, SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get());
         } catch (SQLException e) {
             CoreMod.logError( e );
             return -1;
@@ -673,7 +680,7 @@ public final class ClaimCommand {
         
         // Player tries changing their own rank
         if ( player.getUuid().equals( friend.getId() ) )
-            throw SELF_RANK_CHANGE.create();
+            throw SELF_RANK_CHANGE.create( player );
         
         try ( MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT INTO `chunk_Friends` ( `chunkOwner`, `chunkFriend`, `chunkRank` ) VAlUES ( ?, ?, ? ) ON DUPLICATE KEY UPDATE `chunkRank` = VALUES( `chunkRank` );") ) {
             
@@ -730,7 +737,7 @@ public final class ClaimCommand {
         
         // Player tries changing their own rank
         if ( player.getUuid().equals( friend.getId() ) )
-            throw SELF_RANK_CHANGE.create();
+            throw SELF_RANK_CHANGE.create( player );
         
         try ( MySQLStatement stmt = CoreMod.getSQL().prepare("DELETE FROM `chunk_Friends` WHERE `chunkOwner` = ? AND `chunkFriend` = ?;") ) {
             

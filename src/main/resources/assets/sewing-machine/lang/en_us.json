@@ -5,13 +5,18 @@
   "claim.chunk.entering.owned": "Entering %s's %s",
   "claim.chunk.entering.town": "Entering %s (%s)",
   "claim.chunk.entering.town.owned": "Entering %s - %s (%s)",
+  "claim.chunk.error.claimed": "This chunk is already claimed.",
+  "claim.chunk.error.not_players": "This chunk does not belong to you.",
   
   "claim.block.locked": "This %s belongs to %s",
   
   "player.money": "Your wallet: $%d",
   
+  "friends.rank.self": "You can't change your own rank.",
+  
   "town.found": "%s founded the new town of \"%s\".",
   "town.disband": "%s disbanded their town \"%s\".",
+  "town.found.poor": "You need %s to start a town.",
   
   "warp.random.search": "Hang tight while we find you a sweet vacation spot.",
   "warp.random.build": "Setting up your new home!",
