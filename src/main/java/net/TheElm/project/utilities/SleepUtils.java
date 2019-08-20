@@ -57,7 +57,7 @@ public final class SleepUtils {
                 
                 if ( world.getPlayers().size() > 1 ) {
                     TitleUtils.showPlayerAlert((ServerWorld) player.world,
-                        player.getName().formatted(Formatting.AQUA),
+                        player.getDisplayName().formatted(Formatting.AQUA),
                         new LiteralText(isSleeping ? " is now sleeping (" + percentage + "%)." : " is now in bed")
                     );
                 }
@@ -68,7 +68,7 @@ public final class SleepUtils {
                 
                 if ( world.getPlayers().size() > 1 ) {
                     TitleUtils.showPlayerAlert((ServerWorld) player.world,
-                        player.getName().formatted(Formatting.AQUA),
+                        player.getDisplayName().formatted(Formatting.AQUA),
                         new LiteralText(" left their bed.")
                     );
                 }

@@ -33,6 +33,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.interfaces.Nicknamable;
 import net.minecraft.command.arguments.ColorArgumentType;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -88,8 +89,7 @@ public final class NickNameCommand {
     }
     
     private static int setNickForPlayer(@NotNull ServerPlayerEntity player, @Nullable String nickname, Formatting... formatting) {
-        player.setCustomName( nickname == null ? null : new LiteralText( nickname ).formatted( formatting ) );
-        player.setCustomNameVisible( nickname != null );
+        ((Nicknamable)player).setPlayerNickname( nickname == null ? null : new LiteralText( nickname ).formatted( formatting ) );
         return Command.SINGLE_SUCCESS;
     }
     
