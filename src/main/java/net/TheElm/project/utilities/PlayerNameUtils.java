@@ -30,6 +30,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -94,13 +95,20 @@ public final class PlayerNameUtils {
     }
     private static Text getPlayerDisplayName(@NotNull ServerPlayerEntity player) {
         final String name = player.getGameProfile().getName();
-        if (player.getCustomName() == null)
-            return player.getDisplayName().formatted(Formatting.GOLD);
+        if (((Nicknamable)player).getPlayerNickname() == null)
+            return PlayerNameUtils.applyPlayerNameStyle( player.getName().formatted(Formatting.GOLD), player );
         
-        return new LiteralText("").append( player.getCustomName().deepCopy().styled((styler) -> {
+        return new LiteralText("").append(PlayerNameUtils.applyPlayerNameStyle(
+            player.getDisplayName().deepCopy(),
+            player
+        ));
+    }
+    private static Text applyPlayerNameStyle(@NotNull Text text, @NotNull ServerPlayerEntity player) {
+        final String name = player.getGameProfile().getName();
+        return text.styled((styler) ->
             styler.setHoverEvent(new HoverEvent( HoverEvent.Action.SHOW_TEXT, new LiteralText( "Name: " ).formatted(Formatting.GRAY).append( new LiteralText( name ).formatted(Formatting.AQUA) ) ))
-                .setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tell " + name + " "));
-        }));
+                .setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tell " + name + " "))
+        );
     }
     
     public static Text formattedWorld(DimensionType dimension) {
@@ -179,7 +187,7 @@ public final class PlayerNameUtils {
             else CoreMod.logMessage( "Player name of " + uuid.toString() + " is " + playerName.getString() );
         }
         
-        return ( playerName == null ? new LiteralText("") : playerName );
+        return ( playerName == null ? new LiteralText("Unknown player") : playerName );
     }
     @Nullable
     private static Text getOnlinePlayerName(@NotNull UUID uuid) {
