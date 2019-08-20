@@ -35,11 +35,14 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.command.arguments.EntityArgumentType;
+import net.minecraft.entity.Entity;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.dimension.DimensionType;
@@ -76,6 +79,14 @@ public final class TeleportsCommand {
                     for ( ServerPlayerEntity player : players ) {
                         WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
                     }
+                    
+                    Text spawnText = new LiteralText("Spawn").formatted(Formatting.GOLD);
+                    if (players.size() == 1) {
+                        source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", ((Entity)players.iterator().next()).getDisplayName(), spawnText), true);
+                    } else {
+                        source.sendFeedback(new TranslatableText("commands.teleport.success.entity.multiple", players.size(), spawnText), true);
+                    }
+                    
                     return Command.SINGLE_SUCCESS;
                 })
             )
@@ -86,6 +97,9 @@ public final class TeleportsCommand {
                 ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
                 
                 WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn( world ));
+                
+                source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", player.getDisplayName(), new LiteralText("Spawn").formatted(Formatting.GOLD)), true);
+                
                 return Command.SINGLE_SUCCESS;
             })
         );
@@ -144,6 +158,8 @@ public final class TeleportsCommand {
         // Add the player to the list of invitations
         CoreMod.PLAYER_WARP_INVITES.put( porter, target.getUuid() );
         
+        CoreMod.logMessage( porter.getName().asString() + " has requested to teleport to " + target.getName().asString() );
+        
         // Notify the target
         target.sendMessage(porter.getName().formatted( Formatting.AQUA )
             .append( new LiteralText( " sent you a TP request, type " ).formatted(Formatting.YELLOW)
@@ -158,13 +174,13 @@ public final class TeleportsCommand {
     private static int tpAcceptCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get players info
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity target = source.getPlayer();
         
         // Get targets info
         ServerPlayerEntity porter = EntityArgumentType.getPlayer( context, "player" );
         
         UUID warpToUUID;
-        if ((( warpToUUID = CoreMod.PLAYER_WARP_INVITES.get( porter ) ) == null) || (!player.getUuid().equals( warpToUUID )) )
+        if ((( warpToUUID = CoreMod.PLAYER_WARP_INVITES.get( porter ) ) == null) || (!target.getUuid().equals( warpToUUID )) )
             throw TARGET_NOT_REQUESTING.create();
         
         if (!ChunkUtils.isPlayerWithinSpawn( porter )) {
@@ -172,8 +188,10 @@ public final class TeleportsCommand {
             throw TARGET_NOT_IN_SPAWN.create();
         }
         
-        BlockPos warpPos = ((PlayerData) player).getWarpPos();
+        BlockPos warpPos = ((PlayerData) target).getWarpPos();
         WarpUtils.teleportPlayer( porter.getServerWorld(), porter, warpPos );
+        
+        CoreMod.logMessage( porter.getName().asString() + " was teleport to " + target.getName().asString() );
         
         CoreMod.PLAYER_WARP_INVITES.remove( porter );
         return Command.SINGLE_SUCCESS;
@@ -181,14 +199,16 @@ public final class TeleportsCommand {
     private static int tpDenyCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get players info
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity target = source.getPlayer();
         
         // Get targets info
         ServerPlayerEntity porter = EntityArgumentType.getPlayer( context, "player" );
         
         UUID warpToUUID;
-        if ((( warpToUUID = CoreMod.PLAYER_WARP_INVITES.get( porter ) ) == null) || (!player.getUuid().equals( warpToUUID )) )
+        if ((( warpToUUID = CoreMod.PLAYER_WARP_INVITES.get( porter ) ) == null) || (!target.getUuid().equals( warpToUUID )) )
             throw TARGET_NOT_REQUESTING.create();
+
+        CoreMod.logMessage( porter.getName().asString() + "'s teleport was rejected by " + target.getName().asString() );
         
         CoreMod.PLAYER_WARP_INVITES.remove( porter );
         return Command.SINGLE_SUCCESS;

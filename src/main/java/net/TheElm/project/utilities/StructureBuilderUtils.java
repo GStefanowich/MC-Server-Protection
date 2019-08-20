@@ -108,7 +108,7 @@ public final class StructureBuilderUtils {
             world.playSound( null, blockPos, sound, SoundCategory.MASTER, 1.0f, 1.0f );
             
             // Sleep
-            Thread.sleep(this.delay * 8);
+            Thread.sleep(this.delay * 10);
         }
     }
     
