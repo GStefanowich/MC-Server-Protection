@@ -38,23 +38,21 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
 
-public final class ClaimantTown extends Claimaint {
+public final class ClaimantTown extends Claimant {
     
     private final UUID ownerId;
     
-    private int chunkCount = 0;
-    
     protected ClaimantTown(@NotNull UUID townId, @NotNull UUID founderId, @Nullable Text name) {
-        super(townId, name);
+        super(ClaimantType.TOWN, townId, name);
         this.ownerId = founderId;
         this.updateFriend( founderId, ClaimRanks.OWNER );
     }
     
     public String getTownType() {
-        return TownNameUtils.getTownName( chunkCount, this.getResidentCount() );
+        return TownNameUtils.getTownName( this.chunkCount, this.getResidentCount() );
     }
     public String getOwnerTitle() {
-        return TownNameUtils.getOwnerTitle( chunkCount, this.getResidentCount(), true );
+        return TownNameUtils.getOwnerTitle( this.chunkCount, this.getResidentCount(), true );
     }
     public UUID getOwner() {
         return this.ownerId;

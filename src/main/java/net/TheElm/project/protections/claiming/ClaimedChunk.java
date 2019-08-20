@@ -88,6 +88,8 @@ public class ClaimedChunk {
     }
     
     public void updateTownOwner(@Nullable UUID owner) {
+        
+        
         this.chunkTown = owner;
         
         // Make sure we have the towns permissions cached
