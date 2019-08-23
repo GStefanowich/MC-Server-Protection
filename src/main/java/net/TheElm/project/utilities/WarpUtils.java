@@ -39,6 +39,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -296,10 +297,11 @@ public final class WarpUtils {
     private static void teleportPoof(final World world, final ServerPlayerEntity player) {
         BlockPos blockPos = player.getBlockPos();
         if (world instanceof ServerWorld) {
+            world.playSound( null, blockPos, SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.MASTER, 1.0f, 1.0f );
             ((ServerWorld) world).spawnParticles(ParticleTypes.POOF,
-                blockPos.getX() + 0.5D,
-                blockPos.getY() + 1.0D,
-                blockPos.getZ() + 0.5D,
+                player.x,
+                player.y + 1.0D,
+                player.z,
                 50,
                 0.0D,
                 0.0D,
