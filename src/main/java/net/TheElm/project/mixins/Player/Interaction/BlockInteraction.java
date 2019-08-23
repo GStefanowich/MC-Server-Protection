@@ -25,6 +25,7 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.protections.claiming.ClaimedChunk;
@@ -93,7 +94,7 @@ public abstract class BlockInteraction {
         }
         
         // If player is in creative ignore permissions
-        if ( player.isCreative() || ( blockEntity instanceof EnderChestBlockEntity ) )
+        if ( (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || player.isCreative() || ( blockEntity instanceof EnderChestBlockEntity ) )
             return;
         
         // If block is a button, door, trapdoor, or gate

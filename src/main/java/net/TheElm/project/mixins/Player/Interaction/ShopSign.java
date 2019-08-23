@@ -26,6 +26,7 @@
 package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.ShopSignBuilder;
 import net.minecraft.block.entity.BlockEntity;

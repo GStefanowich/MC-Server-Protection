@@ -125,7 +125,7 @@ public final class ShopSignBuilder {
          */
         try {
             ShopSigns signType = ShopSigns.valueOf( this.lines[0] );
-            if ( signType == null )
+            if (( signType == null ) || (!signType.isEnabled()))
                 return false;
             if (!signType.formatSign( this, player ))
                 this.breakSign();

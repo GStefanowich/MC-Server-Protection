@@ -27,6 +27,7 @@ package net.TheElm.project.protections.claiming;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.utilities.TownNameUtils;
 import net.minecraft.text.Text;
@@ -61,7 +62,12 @@ public final class ClaimantTown extends Claimant {
         return this.getFriends().size();
     }
     
+    @Nullable
     public static ClaimantTown get(UUID ownerId) {
+        // If claims are disabled
+        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+            return null;
+        
         // Return null if null
         if (ownerId == null)
             return null;
@@ -84,6 +90,9 @@ public final class ClaimantTown extends Claimant {
         return obj;
     }
     public static UUID getPlayersTown(@NotNull UUID playerId) {
+        // If claims are disabled
+        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) return null;
+        
         UUID townId = null;
         
         try (MySQLStatement statement = CoreMod.getSQL().prepare("SELECT `t`.`townId` FROM `chunk_Towns` AS `t`, `player_Towns` AS `p` WHERE `p`.`townId` = `t`.`townId` AND `p`.`townPlayer` = ?;", false ).addPrepared( playerId )) {
