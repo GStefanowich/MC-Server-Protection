@@ -40,6 +40,7 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.ClickEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -163,9 +164,11 @@ public final class TeleportsCommand {
         // Notify the target
         target.sendMessage(porter.getName().formatted( Formatting.AQUA )
             .append( new LiteralText( " sent you a TP request, type " ).formatted(Formatting.YELLOW)
-            .append( new LiteralText( "/tpaccept " ).formatted(Formatting.GREEN).append( porter.getName() ) )
+            .append( new LiteralText( "/tpaccept " ).formatted(Formatting.GREEN).append( porter.getName() ).styled(
+                (consumer) -> consumer.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tpaccept" + porter.getName()))))
             .append( " to accept it, or " )
-            .append( new LiteralText( "/tpdeny " ).formatted(Formatting.RED).append( porter.getName() ) )
+            .append( new LiteralText( "/tpdeny " ).formatted(Formatting.RED).append( porter.getName() ).styled(
+                (consumer) -> consumer.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tpdeny " + porter.getName()))))
             .append( " to deny it." )
         ));
         
