@@ -82,8 +82,6 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         if (!SewingMachineConfig.INSTANCE.DO_SLEEP_VOTE.get())
             return;
         
-        //System.out.println( "Try-Sleep" );
-        
         // If player is unable to sleep, ignore
         if ( !this.isSleeping() )
             return;

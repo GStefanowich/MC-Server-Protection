@@ -52,6 +52,7 @@ public final class SewingMachineConfig {
     // Player Death Chests
     public final ConfigOption<Boolean> DO_DEATH_CHESTS;
     public final ConfigOption<Integer> MAX_DEATH_SCAN;
+    public final ConfigOption<Integer> MAX_DEATH_ELEVATION;
     
     // Player nicks
     public final ConfigOption<Boolean> DO_PLAYER_NICKS;
@@ -82,6 +83,7 @@ public final class SewingMachineConfig {
     // Warp options
     public final ConfigOption<Integer> WARP_MAX_DISTANCE;
     public final ConfigOption<Integer> WARP_WAYSTONE_COST;
+    public final ConfigOption<Boolean> WARP_SPAWN_REQUIRES_OP;
     
     // End
     public final ConfigOption<Integer> DRAGON_PLAYERS;
@@ -121,6 +123,7 @@ public final class SewingMachineConfig {
          */
         this.DO_DEATH_CHESTS = this.addConfig( new ConfigOption<>("death_chest.enabled", true, JsonElement::getAsBoolean));
         this.MAX_DEATH_SCAN = this.addConfig( new ConfigOption<>("death_chest.max_distance", 4, JsonElement::getAsInt));
+        this.MAX_DEATH_ELEVATION = this.addConfig( new ConfigOption<>("death_chest.max_elevation", 256, JsonElement::getAsInt));
         
         /*
          * Naming
@@ -147,6 +150,8 @@ public final class SewingMachineConfig {
          */
         this.WARP_MAX_DISTANCE = this.addConfig( new ConfigOption<>( "warp.max_distance", 1000000, JsonElement::getAsInt ));
         this.WARP_WAYSTONE_COST = this.addConfig( new ConfigOption<>( "warp.waystone.cost", 2000, JsonElement::getAsInt ));
+        
+        this.WARP_SPAWN_REQUIRES_OP = this.addConfig( new ConfigOption<>( "warp.command.spawn.requires_op", true, JsonElement::getAsBoolean));
         
         /*
          * Ender Dragon Options

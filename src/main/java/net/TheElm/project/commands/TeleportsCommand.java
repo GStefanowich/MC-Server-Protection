@@ -31,6 +31,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.WarpUtils;
@@ -69,7 +70,7 @@ public final class TeleportsCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register( CommandManager.literal("spawn")
-            .requires((source) -> source.hasPermissionLevel( 1 ))
+            .requires((source) -> (!SewingMachineConfig.INSTANCE.WARP_SPAWN_REQUIRES_OP.get()) || source.hasPermissionLevel( 1 ))
             .then(CommandManager.argument("player", EntityArgumentType.players())
                 .executes((context) -> {
                     // Get location information
