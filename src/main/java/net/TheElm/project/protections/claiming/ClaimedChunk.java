@@ -178,6 +178,9 @@ public class ClaimedChunk {
     
     @Nullable
     public static ClaimedChunk convert(World world, BlockPos blockPos) {
+        // If claims are disabled
+        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) return null;
+        
         try {
             
             return ClaimedChunk.convertNonNull( world, blockPos );
@@ -189,6 +192,7 @@ public class ClaimedChunk {
         return null;
     }
     public static ClaimedChunk convertNonNull(World world, BlockPos blockPos) throws SQLException {
+        // Get the cached claim
         WorldChunk worldChunk = world.getWorldChunk( blockPos );
         if ( CoreMod.CHUNK_CACHE.containsKey( worldChunk ) )
             return CoreMod.CHUNK_CACHE.get( worldChunk );

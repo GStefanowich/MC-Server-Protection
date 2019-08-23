@@ -27,12 +27,14 @@ package net.TheElm.project.protections.claiming;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.entity.player.PlayerEntity;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -147,10 +149,17 @@ public final class ClaimantPlayer extends Claimant {
     }
     
     /* Get the PlayerPermissions object from the cache */
+    @Nullable
     public static ClaimantPlayer get(@NotNull PlayerEntity player) {
         return ClaimantPlayer.get( player.getUuid() );
     }
+    @Nullable
     public static ClaimantPlayer get(@NotNull UUID ownerId ) {
+        // If claims are disabled
+        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+            return null;
+        
+        // If contained in the cache
         if (CoreMod.OWNER_CACHE.containsKey( ownerId ))
             return CoreMod.OWNER_CACHE.get( ownerId );
         
