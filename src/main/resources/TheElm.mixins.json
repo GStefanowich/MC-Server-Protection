@@ -10,6 +10,7 @@
     "Entities.CowMilk",
     "Entities.SheepShear",
     "Entities.CreeperDamage",
+    "Entities.Damage",
     
     "Entities.EndCrystal",
     

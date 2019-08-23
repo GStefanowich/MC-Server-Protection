@@ -29,7 +29,12 @@ import net.TheElm.project.utilities.ChunkUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -37,6 +42,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 
@@ -66,4 +72,16 @@ public abstract class ItemPickup extends Entity {
             }
         }
     }
+    
+    @Inject(at = @At("RETURN"), method = "damage")
+    public void onDamage(DamageSource damageSource, float damage, CallbackInfoReturnable<Boolean> callback) {
+        ItemEntity entity = ((ItemEntity)(Entity)this);
+        ItemStack stack = entity.getStack();
+        if ((damageSource == DamageSource.LAVA) && (Items.GUNPOWDER.equals(stack.getItem()))) {
+            float volume = ((float) stack.getCount() / stack.getMaxCount() );
+            if (volume > 0)
+                this.world.playSound( null, this.getBlockPos(), SoundEvents.ENTITY_FIREWORK_ROCKET_BLAST, SoundCategory.MASTER, volume, 1.0f );
+        }
+    }
+    
 }
