@@ -52,7 +52,7 @@ shadowJar {
 
 remapJar {
 	dependsOn shadowJar
-	archiveFileName = "chunk-protector.jar"
+	archiveFileName = "sewing-machine-${project.mod_version}_mc-${project.minecraft_version}.jar"
 	input = shadowJar.archiveFile
 }
 

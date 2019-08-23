@@ -111,7 +111,7 @@ public enum ShopSigns {
             
             // If shops disabled
             if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
-                return Either.right( false );
+                return Either.right( true );
             
             if ((sign.getShopItem() == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null))
                 return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
@@ -231,7 +231,7 @@ public enum ShopSigns {
             
             // If shops disabled
             if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
-                return Either.right( false );
+                return Either.right( true );
             
             // Check if the attached chest exists
             if (CoreMod.spawnID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
@@ -343,7 +343,7 @@ public enum ShopSigns {
             
             // If shops disabled
             if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
-                return Either.right( false );
+                return Either.right( true );
             
             // Check if the attached chest exists
             if (CoreMod.spawnID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
@@ -407,7 +407,7 @@ public enum ShopSigns {
             try {
                 // If shops disabled
                 if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
-                    return Either.right( false );
+                    return Either.right( true );
                 
                 long playerHas = MoneyCommand.checkPlayerMoney( player.getUuid() );
                 player.sendMessage(TranslatableServerSide.text( player, "player.money",
@@ -616,7 +616,7 @@ public enum ShopSigns {
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
             // If shops disabled
             if (!(SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.DO_CLAIMS.get()))
-                return Either.right( false );
+                return Either.right( true );
             
             player.getEntityWorld().breakBlock(signPos, true);
             return Either.right( false );
