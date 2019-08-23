@@ -49,6 +49,9 @@ import net.minecraft.util.math.EulerAngle;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 public final class DeathChestUtils {
     
     private DeathChestUtils() {}
@@ -59,6 +62,8 @@ public final class DeathChestUtils {
         
         int tmp = SewingMachineConfig.INSTANCE.MAX_DEATH_SCAN.get();
         int maxI = 1 + ((tmp * tmp) * 4) + (tmp * 4);
+        
+        int upper = Collections.min(Arrays.asList( 256, deathPoint.getY() + SewingMachineConfig.INSTANCE.MAX_DEATH_ELEVATION.get() ));
         
         for ( int y = deathPoint.getY(); y < 256; y++ ) {
             int x = 0;
