@@ -16,9 +16,11 @@
     
     "Entities.EndermenPickup",
     "Entities.EndermenPlace",
-    
+
     "Entities.ArrowDamage",
     "Entities.PotionDamage",
+    
+    "Entities.LimitedSkeletons",
     
     "Player.Interaction.ItemPickup",
     
