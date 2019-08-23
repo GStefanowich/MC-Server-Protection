@@ -109,6 +109,10 @@ public enum ShopSigns {
             LootableContainerBlockEntity chest = null;
             Inventory chestInventory = null;
             
+            // If shops disabled
+            if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
+                return Either.right( false );
+            
             if ((sign.getShopItem() == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null))
                 return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
             
@@ -166,6 +170,10 @@ public enum ShopSigns {
             }
             return Either.right( false );
         }
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.DO_MONEY.get();
+        }
     },
     /*
      * Chest is SELLING
@@ -220,6 +228,10 @@ public enum ShopSigns {
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
             LootableContainerBlockEntity chest = null;
             Inventory chestInventory = null;
+            
+            // If shops disabled
+            if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
+                return Either.right( false );
             
             // Check if the attached chest exists
             if (CoreMod.spawnID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
@@ -276,6 +288,10 @@ public enum ShopSigns {
             }
             return Either.right( false );
         }
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.DO_MONEY.get();
+        }
     },
     /*
      * Chest is FREE
@@ -325,6 +341,10 @@ public enum ShopSigns {
             LootableContainerBlockEntity chest = null;
             Inventory chestInventory = null;
             
+            // If shops disabled
+            if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
+                return Either.right( false );
+            
             // Check if the attached chest exists
             if (CoreMod.spawnID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
                 if (player.getUuid().equals(sign.getShopOwner()))
@@ -358,6 +378,10 @@ public enum ShopSigns {
             }
             return Either.right( false );
         }
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.DO_MONEY.get();
+        }
     },
     /*
      * Check player balance
@@ -381,6 +405,9 @@ public enum ShopSigns {
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
             try {
+                // If shops disabled
+                if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
+                    return Either.right( false );
                 
                 long playerHas = MoneyCommand.checkPlayerMoney( player.getUuid() );
                 player.sendMessage(TranslatableServerSide.text( player, "player.money",
@@ -393,6 +420,10 @@ public enum ShopSigns {
             }
             
             return Either.right( true );
+        }
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.DO_MONEY.get();
         }
     },
     /*
@@ -434,6 +465,10 @@ public enum ShopSigns {
                 this.teleportPlayer( server.getWorld(DimensionType.OVERWORLD), playerWarpLocation, player );
             }
             return Either.right( true );
+        }
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.WARP_MAX_DISTANCE.get() <= 0;
         }
         private boolean generateNewWarp(final ServerPlayerEntity player) {
             // Create a new warp point asynchronously
@@ -579,8 +614,16 @@ public enum ShopSigns {
         }
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
+            // If shops disabled
+            if (!(SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.DO_CLAIMS.get()))
+                return Either.right( false );
+            
             player.getEntityWorld().breakBlock(signPos, true);
             return Either.right( false );
+        }
+        @Override
+        public boolean isEnabled() {
+            return (SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.DO_CLAIMS.get());
         }
     },
     /*
@@ -640,6 +683,8 @@ public enum ShopSigns {
     ShopSigns(Formatting... formatting) {
         this.formattings = formatting;
     }
+    
+    public boolean isEnabled() { return true; }
     
     public final Formatting[] getFormatting() {
         return this.formattings;

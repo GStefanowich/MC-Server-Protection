@@ -26,6 +26,7 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.minecraft.entity.player.PlayerEntity;
@@ -45,6 +46,9 @@ public final class ChunkUtils {
         return ChunkUtils.canPlayerDoInChunk( perm, player, ClaimedChunk.convert( player.getEntityWorld(), blockPos ) );
     }
     public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @Nullable ClaimedChunk chunk) {
+        // If claims are disabled
+        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) return true;
+        
         // Return false (Chunks should never BE null, but this is our catch)
         if ( chunk == null ) return false;
         

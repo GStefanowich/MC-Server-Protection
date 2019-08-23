@@ -164,6 +164,9 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
     }
     
     public void movedPlayer( final ServerPlayerEntity player ) {
+        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+            return;
+        
         World world = player.getEntityWorld();
         BlockPos blockPos = player.getBlockPos();
         
