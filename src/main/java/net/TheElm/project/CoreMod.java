@@ -92,6 +92,7 @@ public class CoreMod implements DedicatedServerModInitializer {
         REGISTRY.register(true, GameModesCommand::register );
         REGISTRY.register(true, HoldingCommand::register );
         REGISTRY.register(true, MiscCommands::register );
+        REGISTRY.register(true, ModsCommand::register );
         REGISTRY.register(true, MoneyCommand::register );
         REGISTRY.register(true, NickNameCommand::register );
         REGISTRY.register(true, PlayerSpawnCommand::register );

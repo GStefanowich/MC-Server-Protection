@@ -257,15 +257,12 @@ public final class ClaimCommand {
         // Get the players positioning
         BlockPos blockPos = player.getBlockPos();
         
-        List<WorldChunk> ignoreChunks = new ArrayList<>();
-        
         // Check the radius that the player wants to claim
         final int radius = IntegerArgumentType.getInteger( context, "radius" );
         ClaimedChunk[] claimedChunks = ClaimedChunk.getOwnedAround( player.getServerWorld(), player.getBlockPos(), radius );
         for ( ClaimedChunk claimedChunk : claimedChunks ) {
             if (!player.getUuid().equals( claimedChunk.getOwner() ))
                 throw CHUNK_RADIUS_OWNED.create( player, claimedChunk.getOwnerName(player.getUuid()));
-            ignoreChunks.add(world.getWorldChunk(claimedChunk.getBlockPos()));
         }
         
         int chunkX = blockPos.getX() >> 4;
@@ -277,10 +274,12 @@ public final class ClaimCommand {
             // For the Z axis
             for ( int z = chunkZ - radius; z <= chunkZ + radius; z++ ) {
                 // Create the chunk position
-                WorldChunk chunkPos = world.getWorldChunk(new BlockPos( x << 4, 0, z << 4 ));
+                WorldChunk worldChunk = world.getWorldChunk(new BlockPos( x << 4, 0, z << 4 ));
+                // Get the protected chunk
+                ClaimedChunk chunk = ClaimedChunk.convert( worldChunk );
                 // Add if not already claimed
-                if (!ignoreChunks.contains(chunkPos))
-                    chunksToClaim.add(chunkPos);
+                if (chunk == null || (!player.getUuid().equals(chunk.getOwner())))
+                    chunksToClaim.add(worldChunk);
             }
         }
         
