@@ -47,6 +47,9 @@ public final class TranslatableServerSide {
     
     private TranslatableServerSide() {}
     
+    public static void send(@NotNull PlayerEntity player, String key, Object... objects) {
+        player.sendMessage(TranslatableServerSide.text(player, key, objects));
+    }
     public static Text text(PlayerEntity player, String key, Object... objects) {
         if (!(player instanceof ServerPlayerEntity))
             return null;

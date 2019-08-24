@@ -68,13 +68,13 @@ import net.minecraft.text.Texts;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 
 import java.sql.SQLException;
 import java.text.NumberFormat;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.UUID;
+import java.util.*;
 
 public final class ClaimCommand {
     
@@ -84,11 +84,11 @@ public final class ClaimCommand {
     private static final DynamicCommandExceptionType SELF_RANK_CHANGE = new DynamicCommandExceptionType((player) ->
         TranslatableServerSide.text( (ServerPlayerEntity) player, "friends.rank.self" )
     );
-    private static final DynamicCommandExceptionType CHUNK_ALREADY_CLAIMED_EXCEPTION = new DynamicCommandExceptionType((player) ->
-        TranslatableServerSide.text( (ServerPlayerEntity) player, "claim.chunk.error.claimed" )
-    );
     private static final DynamicCommandExceptionType CHUNK_NOT_OWNED_BY_PLAYER = new DynamicCommandExceptionType((player) ->
         TranslatableServerSide.text( (ServerPlayerEntity) player, "claim.chunk.error.not_players" )
+    );
+    private static final Dynamic2CommandExceptionType CHUNK_RADIUS_OWNED = new Dynamic2CommandExceptionType((player, ownerName) ->
+        TranslatableServerSide.text( (ServerPlayerEntity)player, "claim.chunk.error.radius_owned", ownerName )
     );
     private static final SimpleCommandExceptionType WHITELIST_FAILED_EXCEPTION = new SimpleCommandExceptionType(new TranslatableText("commands.whitelist.add.failed", new Object[0]));
     
@@ -250,17 +250,42 @@ public final class ClaimCommand {
     }
     private static int claimChunkSelfRadius(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the player running the command
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        World world = source.getWorld();
         
         // Get the players positioning
         BlockPos blockPos = player.getBlockPos();
         
+        List<WorldChunk> ignoreChunks = new ArrayList<>();
+        
         // Check the radius that the player wants to claim
-        int radius = IntegerArgumentType.getInteger( context, "radius" );
+        final int radius = IntegerArgumentType.getInteger( context, "radius" );
+        ClaimedChunk[] claimedChunks = ClaimedChunk.getOwnedAround( player.getServerWorld(), player.getBlockPos(), radius );
+        for ( ClaimedChunk claimedChunk : claimedChunks ) {
+            if (!player.getUuid().equals( claimedChunk.getOwner() ))
+                throw CHUNK_RADIUS_OWNED.create( player, claimedChunk.getOwnerName(player.getUuid()));
+            ignoreChunks.add(world.getWorldChunk(claimedChunk.getBlockPos()));
+        }
         
-        System.out.println( radius );
+        int chunkX = blockPos.getX() >> 4;
+        int chunkZ = blockPos.getZ() >> 4;
         
-        return Command.SINGLE_SUCCESS;
+        List<WorldChunk> chunksToClaim = new ArrayList<>();
+        // For the X axis
+        for ( int x = chunkX - radius; x <= chunkX + radius; x++ ) {
+            // For the Z axis
+            for ( int z = chunkZ - radius; z <= chunkZ + radius; z++ ) {
+                // Create the chunk position
+                WorldChunk chunkPos = world.getWorldChunk(new BlockPos( x << 4, 0, z << 4 ));
+                // Add if not already claimed
+                if (!ignoreChunks.contains(chunkPos))
+                    chunksToClaim.add(chunkPos);
+            }
+        }
+        
+        // Claim all chunks
+        return ClaimCommand.claimChunkAt( player.getUuid(), player, chunksToClaim.toArray(new WorldChunk[0]));
     }
     private static int claimChunkTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return Command.SINGLE_SUCCESS;
@@ -286,39 +311,50 @@ public final class ClaimCommand {
     private static int claimChunk(final UUID chunkFor, final PlayerEntity claimant) throws CommandSyntaxException {
         // Get run from positioning
         BlockPos blockPos = claimant.getBlockPos();
-        return ClaimCommand.claimChunkAt( chunkFor, claimant, blockPos );
+        return ClaimCommand.claimChunkAt( chunkFor, claimant, claimant.world.getWorldChunk(blockPos) );
     }
-    public static int claimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final BlockPos blockPos) throws CommandSyntaxException {
-        if (!ClaimCommand.tryClaimChunkAt( chunkFor, claimant, blockPos))
-            throw CHUNK_ALREADY_CLAIMED_EXCEPTION.create( claimant );
-        
-        Claimant claimed;
-        if ((claimed = ClaimantPlayer.get( chunkFor )) != null) {
-            claimed.adjustCount( 1 );
-            
-            if ((claimed = ClaimantTown.get(((ClaimantPlayer) claimed).getTown())) != null) claimed.adjustCount( 1 );
-        }
-        
+    public static int claimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final WorldChunk... worldChunks) {
+        new Thread(ClaimCommand.claimChunkThread( chunkFor, claimant, worldChunks)).start();
         return Command.SINGLE_SUCCESS;
     }
-    public static boolean tryClaimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final BlockPos blockPos) {
+    private static Runnable claimChunkThread(final UUID chunkFor, final PlayerEntity claimant, final WorldChunk... worldChunks) {
+        return (() -> {
+            if (!ClaimCommand.tryClaimChunkAt(chunkFor, claimant, worldChunks))
+                claimant.sendMessage(TranslatableServerSide.text(claimant, "claim.chunk.error.claimed"));
+            
+            Claimant claimed;
+            if ((claimed = ClaimantPlayer.get(chunkFor)) != null) {
+                claimed.adjustCount(worldChunks.length);
+                
+                if ((claimed = ClaimantTown.get(((ClaimantPlayer) claimed).getTown())) != null) claimed.adjustCount(worldChunks.length);
+            }
+        });
+    }
+    public static boolean tryClaimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final WorldChunk... worldChunks) {
         World world = claimant.getEntityWorld();
         
-        try ( MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT INTO `chunk_Claimed` ( `chunkX`, `chunkZ`, `chunkOwner`, `chunkWorld` ) VALUES ( ?, ?, ?, ? );") ) {
+        int claimed = 0;
+        try ( MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT INTO `chunk_Claimed` ( `chunkX`, `chunkZ`, `chunkOwner`, `chunkWorld` ) VALUES ( ?, ?, ?, ? );", true) ) {
+            for ( WorldChunk pos : worldChunks ) {
+                ChunkPos chunk = pos.getPos();
+                
+                if (stmt
+                    .addPrepared(chunk.x)
+                    .addPrepared(chunk.z)
+                    .addPrepared(chunkFor)
+                    .addPrepared(world.dimension.getType().getRawId())
+                    .executeUpdate() <= 0) continue;
+                
+                // Log that the chunk was claimed
+                CoreMod.logMessage(claimant.getName().asString() + " has claimed chunk " + chunk.x + ", " + chunk.z);
+                
+                ++claimed;
+                
+                // Update the owners of existing chunks
+                ClaimedChunk claimedChunk;
+                if ((claimedChunk = ClaimedChunk.convertFromCache(pos)) != null) claimedChunk.updatePlayerOwner( chunkFor );
+            }
             
-            stmt
-                .addPrepared(blockPos.getX() >> 4)
-                .addPrepared(blockPos.getZ() >> 4)
-                .addPrepared(chunkFor)
-                .addPrepared(world.dimension.getType().getRawId())
-                .executeUpdate();
-            
-            // Save object and cache to the load storage
-            ClaimedChunk chunk = ClaimedChunk.convertNonNull(world, blockPos);
-            chunk.updatePlayerOwner(chunkFor);
-            
-            CoreMod.logMessage( claimant.getName().asString() + " has claimed chunk " + (blockPos.getX() >> 4) + ", " + (blockPos.getZ() >> 4) );
-        
         } catch ( SQLException e ) {
             // If the chunk is already claimed
             if ( e.getErrorCode() == 1062 )
@@ -326,6 +362,9 @@ public final class ClaimCommand {
             
             CoreMod.logError( e );
         }
+        
+        if ( worldChunks.length > 1 )
+            TranslatableServerSide.send( claimant, "claim.chunk.claimed", claimed );
         
         return true;
     }
@@ -388,6 +427,8 @@ public final class ClaimCommand {
             // Update total count
             Claimant claimed;
             if ((claimed = ClaimantPlayer.get( player )) != null) {
+                TranslatableServerSide.send( player, "claim.chunk.unclaimed", claimed.getCount() );
+                
                 claimed.resetCount();
                 
                 CoreMod.CHUNK_CACHE.values().stream().filter((chunk) -> player.getUuid().equals(chunk.getOwner())).forEach((chunk) -> {

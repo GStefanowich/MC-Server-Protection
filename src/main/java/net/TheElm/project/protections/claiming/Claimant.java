@@ -101,6 +101,9 @@ public abstract class Claimant {
     public final int resetCount() {
         return (this.chunkCount = 0);
     }
+    public final int getCount() {
+        return this.chunkCount;
+    }
     
     enum ClaimantType {
         TOWN,

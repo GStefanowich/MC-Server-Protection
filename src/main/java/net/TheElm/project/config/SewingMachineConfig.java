@@ -49,6 +49,10 @@ public final class SewingMachineConfig {
     public final ConfigOption<String> DB_PASS;
     public final ConfigOption<Integer> DB_PORT;
     
+    // Chat
+    public final ConfigOption<Boolean> CHAT_MODIFY;
+    public final ConfigOption<Boolean> CHAT_SHOW_TOWNS;
+    
     // Player Death Chests
     public final ConfigOption<Boolean> DO_DEATH_CHESTS;
     public final ConfigOption<Integer> MAX_DEATH_SCAN;
@@ -105,6 +109,12 @@ public final class SewingMachineConfig {
          * Primary Functions Booleans
          */
         this.DO_CLAIMS = this.addConfig( new ConfigOption<>("claims.enabled", true, JsonElement::getAsBoolean ));
+        
+        /*
+         * Chat Booleans
+         */
+        this.CHAT_MODIFY = this.addConfig( new ConfigOption<>("chat.modify", true, JsonElement::getAsBoolean ));
+        this.CHAT_SHOW_TOWNS = this.addConfig( new ConfigOption<>("chat.show_towns", true, JsonElement::getAsBoolean ));
         
         /*
          * Sleep

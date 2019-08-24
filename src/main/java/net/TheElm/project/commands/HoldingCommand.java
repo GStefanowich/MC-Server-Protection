@@ -100,9 +100,9 @@ public final class HoldingCommand {
         }
         
         final Text enchantsText = enchantsBuilder;
-        final Text output = new LiteralText("[" + count + "x ").formatted( stack.hasEnchantments() ? Formatting.AQUA : Formatting.GRAY )
+        final Text output = new LiteralText("[" + count + "x ").formatted( enchantments.size() > 0 ? Formatting.AQUA : Formatting.GRAY )
             .styled((style) -> {
-                if (stack.hasEnchantments())
+                if (enchantments.size() > 0)
                     style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, enchantsText));
             })
             .append(new TranslatableText(item.getTranslationKey()))
