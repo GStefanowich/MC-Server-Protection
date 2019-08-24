@@ -78,18 +78,17 @@ public class MySQLStatement implements AutoCloseable {
         return this.addPrepared( e.name() );
     }
     
-    public void addBatch() {
+    public boolean addBatch() throws SQLException {
         if ( !this.batched )
-            return;
+            return false;
         if ( this.stmt == null )
-            return;
-        try {
-            this.stmt.addBatch();
-            this.slider = 0;
-            this.batchCount++;
-        } catch ( SQLException e ) {
-            CoreMod.logError( e );
-        }
+            return false;
+        
+        this.stmt.addBatch();
+        this.slider = 0;
+        this.batchCount++;
+        
+        return true;
     }
     public int batchCount() {
         return this.batchCount;

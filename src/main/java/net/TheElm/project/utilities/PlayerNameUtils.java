@@ -58,7 +58,7 @@ public final class PlayerNameUtils {
         return PlayerNameUtils.getPlayerChatDisplay( player, null );
     }
     public static Text getPlayerChatDisplay(@NotNull ServerPlayerEntity player, @Nullable String prepend, Formatting... playerColors) {
-        ClaimantPlayer playerPermissions = ClaimantPlayer.get( player.getUuid() );
+        ClaimantPlayer playerPermissions;
         Text playerDisplay = PlayerNameUtils.getPlayerDisplayName( player );
         if ( playerColors.length > 0 )
             playerDisplay.formatted( playerColors );
@@ -68,7 +68,7 @@ public final class PlayerNameUtils {
             .append( formattedWorld( player.dimension ) );
         
         // If the player is in a town, prepend the town name
-        if ( playerPermissions.getTown() != null ) {
+        if (SewingMachineConfig.INSTANCE.CHAT_SHOW_TOWNS.get() && ((playerPermissions = ClaimantPlayer.get( player.getUuid() )) != null) && (playerPermissions.getTown() != null)) {
             ClaimantTown town = ClaimantTown.get( playerPermissions.getTown() );
             
             // Add the players town

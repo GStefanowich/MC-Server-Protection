@@ -44,7 +44,6 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.minecraft.world.level.LevelProperties;
 import org.jetbrains.annotations.NotNull;
@@ -64,17 +63,17 @@ public final class WarpUtils {
         this.createWarpAt = pos;
     }
     
-    public BlockPos getWarpPositionIn(final BlockView view) {
+    public BlockPos getWarpPositionIn(final World world) {
         int x = this.createWarpAt.getX();
         int z = this.createWarpAt.getZ();
         do {
             CoreMod.logMessage( "Finding a new warp position!" );
             this.createWarpAt = new BlockPos( getRandom( x ), 256, getRandom( z ) );
-        } while ((this.createWarpAt = this.isValid( view, this.createWarpAt,50,true ) ) == null);
+        } while ((this.createWarpAt = this.isValid( world, this.createWarpAt,50,true ) ) == null);
         
         return this.createWarpAt;
     }
-    public BlockPos getSafeTeleportPos(final BlockView view) {
+    public BlockPos getSafeTeleportPos(final World world) {
         BlockPos tpPos;
         
         int count = 1;
@@ -99,7 +98,7 @@ public final class WarpUtils {
                 }
             }
             
-        } while (( tpPos = this.isValid( view, tpPos, this.createWarpAt.getY() - 5,false ) ) == null );
+        } while (( tpPos = this.isValid( world, tpPos, this.createWarpAt.getY() - 5,false ) ) == null );
         
         return tpPos.up( 2 );
     }
@@ -112,9 +111,9 @@ public final class WarpUtils {
         return ( 16 * Math.round(random >> 4) ) + 8;
     }
     
-    private BlockPos isValid(final BlockView view, final BlockPos startingPos, final int minY, final boolean mustBeUnowned) {
+    private BlockPos isValid(final World world, final BlockPos startingPos, final int minY, final boolean mustBeUnowned) {
         // If the chunks are claimed.
-        if (mustBeUnowned && ClaimedChunk.isOwnedAround( this.createWarpAt, 5 ))
+        if (mustBeUnowned && ClaimedChunk.isOwnedAround( world, this.createWarpAt, 5 ))
             return null;
         
         BlockPos pos = startingPos;
@@ -124,7 +123,7 @@ public final class WarpUtils {
                 return null;
             
             pos = pos.down();
-            blockState = view.getBlockState( pos );
+            blockState = world.getBlockState( pos );
         } while ( blockState.isAir() || ( mustBeUnowned && ( blockState.getMaterial() == Material.SNOW || blockState.getMaterial() == Material.PLANT )));
         
         Material material = blockState.getMaterial();
@@ -136,7 +135,7 @@ public final class WarpUtils {
             && ( material != Material.LEAVES )
             && ( material != Material.ICE )
             && ( material != Material.PACKED_ICE )
-            && ( mustBeUnowned || view.getBlockState( pos.up() ).isAir() ) ? pos : null;
+            && ( mustBeUnowned || world.getBlockState( pos.up() ).isAir() ) ? pos : null;
     }
     
     public boolean build(final ServerPlayerEntity player, final World world) {
@@ -147,10 +146,10 @@ public final class WarpUtils {
         BlockPos spawnPos = WarpUtils.getWorldSpawn( world );
         
         // Claim the chunk in the name of Spawn
-        if ( !ClaimCommand.tryClaimChunkAt( CoreMod.spawnID, player, this.createWarpAt ) )
+        if ( !ClaimCommand.tryClaimChunkAt( CoreMod.spawnID, player, world.getWorldChunk(this.createWarpAt)))
             return false; // Return false (Try again!)
         
-        StructureBuilderUtils structure = new StructureBuilderUtils( world,"waystone" );
+        StructureBuilderUtils structure = new StructureBuilderUtils( world, "waystone" );
         
         final BlockState air = Blocks.AIR.getDefaultState();
         

@@ -124,8 +124,11 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         CoreMod.PLAYER_LOCATIONS.remove( this.player );
     }
     
-    @Override
-    public void onChatMessage(ChatMessageC2SPacket chatMessageC2SPacket) {
+    @Inject(at = @At("HEAD"), method = "onChatMessage", cancellable = true)
+    public void onChatMessage(ChatMessageC2SPacket chatMessageC2SPacket, CallbackInfo callback) {
+        if (!SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
+            return;
+        
         NetworkThreadUtils.forceMainThread(chatMessageC2SPacket, this, this.player.getServerWorld());
         if (this.player.getClientChatVisibility() == ChatVisibility.HIDDEN) {
             this.sendPacket(new ChatMessageS2CPacket((new TranslatableText("chat.cannotSend", new Object[0])).formatted(Formatting.RED)));
@@ -161,6 +164,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
                 this.disconnect(new TranslatableText("disconnect.spam", new Object[0]));
             }
         }
+        callback.cancel();
     }
     
     public void movedPlayer( final ServerPlayerEntity player ) {
