@@ -35,6 +35,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
@@ -42,6 +43,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class ClaimedChunk {
@@ -81,6 +84,13 @@ public class ClaimedChunk {
     }
     public int getZ() {
         return this.z;
+    }
+    
+    public ChunkPos getChunkPos() {
+        return new ChunkPos( this.x, this.z );
+    }
+    public BlockPos getBlockPos() {
+        return new BlockPos( this.x << 4, 0, this.z << 4 );
     }
     
     public int getWorld() {
@@ -194,37 +204,50 @@ public class ClaimedChunk {
     public static ClaimedChunk convertNonNull(World world, BlockPos blockPos) throws SQLException {
         // Get the cached claim
         WorldChunk worldChunk = world.getWorldChunk( blockPos );
-        if ( CoreMod.CHUNK_CACHE.containsKey( worldChunk ) )
-            return CoreMod.CHUNK_CACHE.get( worldChunk );
+        ClaimedChunk chunk;
+        if ((chunk = ClaimedChunk.convertFromCache(world.getWorldChunk(blockPos))) != null)
+            return chunk;
         
         // Save this chunk to the cache (To be delisted when the chunk unloads)
-        ClaimedChunk chunk = new ClaimedChunk(world, blockPos);
+        chunk = new ClaimedChunk(world, blockPos);
         CoreMod.CHUNK_CACHE.put(worldChunk, chunk);
         
         return chunk;
     }
+    @Nullable
+    public static ClaimedChunk convertFromCache(WorldChunk worldChunk) {
+        if ( CoreMod.CHUNK_CACHE.containsKey( worldChunk ) )
+            return CoreMod.CHUNK_CACHE.get( worldChunk );
+        return null;
+    }
     
-    public static boolean isOwnedAround( BlockPos blockPos, int leniency ) {
+    public static boolean isOwnedAround( World world, BlockPos blockPos, int leniency ) {
+        return ClaimedChunk.getOwnedAround( world, blockPos, leniency).length > 0;
+    }
+    public static ClaimedChunk[] getOwnedAround(final World world, final BlockPos blockPos, final int leniency) {
         int chunkX = blockPos.getX() >> 4;
         int chunkZ = blockPos.getZ() >> 4;
         
-        int count = 0;
-        try (MySQLStatement statement = CoreMod.getSQL().prepare("SELECT `chunkOwner` FROM `chunk_Claimed` WHERE `chunkX` > ? - " + leniency + " AND `chunkX` < ? + " + leniency + " AND `chunkZ` > ? - " + leniency + " AND `chunkZ` < ? +" + leniency, false)
+        List<ClaimedChunk> claimedChunks = new ArrayList<>();
+        try (MySQLStatement statement = CoreMod.getSQL().prepare("SELECT `chunkOwner`, `chunkX`, `chunkZ` FROM `chunk_Claimed` WHERE `chunkX` >= ? - " + leniency + " AND `chunkX` <= ? + " + leniency + " AND `chunkZ` >= ? - " + leniency + " AND `chunkZ` <= ? +" + leniency + " AND `chunkWorld` = ?", false)
             .addPrepared(chunkX)
             .addPrepared(chunkX)
             .addPrepared(chunkZ)
-            .addPrepared(chunkZ)) {
+            .addPrepared(chunkZ)
+            .addPrepared(world.dimension.getType().getRawId())) {
             
             ResultSet resultSet = statement.executeStatement();
-            while (resultSet.next())
-                ++count;
+            while (resultSet.next()) {
+                ClaimedChunk chunk = new ClaimedChunk(world, new BlockPos(resultSet.getInt("chunkX"), 0, resultSet.getInt("chunkZ")));
+                chunk.updatePlayerOwner(UUID.fromString(resultSet.getString("chunkOwner")));
+                claimedChunks.add( chunk );
+            }
             
         } catch (SQLException e) {
             e.printStackTrace();
             
         }
         
-        return count > 0;
+        return claimedChunks.toArray(new ClaimedChunk[0]);
     }
-    
 }
