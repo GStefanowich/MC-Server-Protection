@@ -56,11 +56,11 @@ public class ClaimedChunk {
     private final int x;
     private final int z;
     
-    private ClaimedChunk(World world, BlockPos blockPos) throws SQLException {
+    private ClaimedChunk(@NotNull WorldChunk worldChunk) throws SQLException {
         // Get the chunk details
-        this.world = world.getDimension().getType().getRawId();
-        this.x = blockPos.getX() >> 4;
-        this.z = blockPos.getZ() >> 4;
+        this.world = worldChunk.getWorld().getDimension().getType().getRawId();
+        this.x = worldChunk.getPos().x;
+        this.z = worldChunk.getPos().z;
         
         try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `chunkOwner`, `chunkTown` FROM `chunk_Claimed` WHERE `chunkX` = ? AND `chunkZ` = ? AND `chunkWorld` = ?;")) {
             
@@ -186,14 +186,19 @@ public class ClaimedChunk {
         return permission;
     }
     
+    // Read from database (Can be a null result)
     @Nullable
     public static ClaimedChunk convert(World world, BlockPos blockPos) {
+        return ClaimedChunk.convert(world.getWorldChunk(blockPos));
+    }
+    @Nullable
+    public static ClaimedChunk convert(WorldChunk worldChunk) {
         // If claims are disabled
         if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) return null;
         
         try {
             
-            return ClaimedChunk.convertNonNull( world, blockPos );
+            return ClaimedChunk.convertNonNull( worldChunk );
             
         } catch (SQLException e) {
             CoreMod.logError( e );
@@ -201,19 +206,23 @@ public class ClaimedChunk {
         
         return null;
     }
-    public static ClaimedChunk convertNonNull(World world, BlockPos blockPos) throws SQLException {
+    // Read from database (Result should be NULL or EXCEPTION)
+    public static ClaimedChunk convertNonNull(WorldChunk worldChunk) throws SQLException {
         // Get the cached claim
-        WorldChunk worldChunk = world.getWorldChunk( blockPos );
         ClaimedChunk chunk;
-        if ((chunk = ClaimedChunk.convertFromCache(world.getWorldChunk(blockPos))) != null)
+        if ((chunk = ClaimedChunk.convertFromCache(worldChunk)) != null)
             return chunk;
-        
+
         // Save this chunk to the cache (To be delisted when the chunk unloads)
-        chunk = new ClaimedChunk(world, blockPos);
+        chunk = new ClaimedChunk(worldChunk);
         CoreMod.CHUNK_CACHE.put(worldChunk, chunk);
-        
+
         return chunk;
     }
+    public static ClaimedChunk convertNonNull(World world, BlockPos blockPos) throws SQLException {
+        return ClaimedChunk.convertNonNull( world.getWorldChunk( blockPos ) );
+    }
+    // Read from cache
     @Nullable
     public static ClaimedChunk convertFromCache(WorldChunk worldChunk) {
         if ( CoreMod.CHUNK_CACHE.containsKey( worldChunk ) )
@@ -238,7 +247,7 @@ public class ClaimedChunk {
             
             ResultSet resultSet = statement.executeStatement();
             while (resultSet.next()) {
-                ClaimedChunk chunk = new ClaimedChunk(world, new BlockPos(resultSet.getInt("chunkX"), 0, resultSet.getInt("chunkZ")));
+                ClaimedChunk chunk = new ClaimedChunk(world.method_8497( resultSet.getInt("chunkX"), resultSet.getInt("chunkZ") ));
                 chunk.updatePlayerOwner(UUID.fromString(resultSet.getString("chunkOwner")));
                 claimedChunks.add( chunk );
             }
