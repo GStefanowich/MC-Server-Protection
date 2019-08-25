@@ -30,6 +30,8 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
@@ -45,18 +47,24 @@ public final class MiscCommands {
     private static String SHRUG = "¯\\_(ツ)_/¯";
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal( "shrug" )
-            .then( CommandManager.argument( "message", StringArgumentType.greedyString())
-                .executes(MiscCommands::shrugMessage)
-            )
-            .executes(MiscCommands::shrug)
-        );
-        dispatcher.register(CommandManager.literal( "tableflip" )
-            .then( CommandManager.argument( "message", StringArgumentType.greedyString())
-                .executes(MiscCommands::flipMessage)
-            )
-            .executes(MiscCommands::flip)
-        );
+        if (SewingMachineConfig.INSTANCE.COMMAND_SHRUG.get()) {
+            dispatcher.register(CommandManager.literal("shrug")
+                    .then(CommandManager.argument("message", StringArgumentType.greedyString())
+                            .executes(MiscCommands::shrugMessage)
+                    )
+                    .executes(MiscCommands::shrug)
+            );
+            CoreMod.logDebug("- Registered Nick command");
+        }
+        if (SewingMachineConfig.INSTANCE.COMMAND_TABLEFLIP.get()) {
+            dispatcher.register(CommandManager.literal("tableflip")
+                    .then(CommandManager.argument("message", StringArgumentType.greedyString())
+                            .executes(MiscCommands::flipMessage)
+                    )
+                    .executes(MiscCommands::flip)
+            );
+            CoreMod.logDebug("- Registered Nick command");
+        }
     }
     
     private static int shrug(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

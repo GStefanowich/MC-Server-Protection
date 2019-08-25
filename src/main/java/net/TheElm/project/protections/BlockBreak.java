@@ -25,15 +25,18 @@
 
 package net.TheElm.project.protections;
 
+import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.interfaces.BlockBreakCallback;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.enums.ClaimSettings;
-import net.fabricmc.fabric.api.event.player.AttackBlockCallback;
+import net.TheElm.project.utilities.LoggingUtils;
 import net.minecraft.block.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.server.network.packet.PlayerActionC2SPacket.Action;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -49,12 +52,18 @@ public final class BlockBreak {
     private BlockBreak() {}
     
     public static void init() {
-        AttackBlockCallback.EVENT.register(BlockBreak::blockBreak);
+        BlockBreakCallback.EVENT.register(BlockBreak::blockBreak);
     }
     
-    private static ActionResult blockBreak(PlayerEntity player, World world, Hand hand, BlockPos blockPos, Direction blockFace) {
+    private static ActionResult blockBreak(PlayerEntity player, World world, Hand hand, BlockPos blockPos, Direction blockFace, Action action) {
+        ActionResult result;
+        if (((result = BlockBreak.canBlockBreak( player, world, hand, blockPos, blockFace, action)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get() && (action == Action.STOP_DESTROY_BLOCK))
+            LoggingUtils.logAction( LoggingUtils.BlockAction.BREAK, world.getBlockState(blockPos).getBlock(), blockPos, player );
+        return result;
+    }
+    private static ActionResult canBlockBreak(PlayerEntity player, World world, Hand hand, BlockPos blockPos, Direction blockFace, Action action) {
         // If player is in creative
-        if (player.isCreative())
+        if (player.isCreative() || (action == Action.ABORT_DESTROY_BLOCK))
             return ActionResult.PASS;
         
         BlockState blockState = world.getBlockState(blockPos);

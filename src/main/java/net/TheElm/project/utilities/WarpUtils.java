@@ -45,6 +45,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.level.LevelProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,6 +78,7 @@ public final class WarpUtils {
         BlockPos tpPos;
         
         int count = 1;
+        int maxHeight = ( world.dimension.hasVisibleSky() ? 256 : this.createWarpAt.getY() + 10 );
         boolean negX = false;
         boolean negZ = false;
         
@@ -84,7 +86,7 @@ public final class WarpUtils {
             int x = this.createWarpAt.getX() + ( 2 * count * ( negX ? -1 : 1 ));
             int z = this.createWarpAt.getZ() + ( 2 * count * ( negZ ? -1 : 1 ));
             
-            tpPos = new BlockPos( x, 256, z );
+            tpPos = new BlockPos( x, maxHeight, z );
             
             if (!negX) {
                 negX = true;
@@ -247,12 +249,13 @@ public final class WarpUtils {
         return true;
     }
     
-    public void save(final BlockPos warpPos, final ServerPlayerEntity player) {
+    public void save(final World world, final BlockPos warpPos, final ServerPlayerEntity player) {
         // Remove the player from the build list
         warpPlayers.remove( player.getUuid() );
         
         // Set the players warp position to save
         ((PlayerData) player).setWarpPos( warpPos );
+        ((PlayerData) player).setWarpDimension( world );
         
         // Update the players Teleporting commands
         MinecraftServer server = player.getServer();
@@ -264,8 +267,10 @@ public final class WarpUtils {
      * Static checks
      */
     @Nullable
-    public static BlockPos getPlayerWarp(final ServerPlayerEntity player) {
-        return ((PlayerData) player).getWarpPos();
+    public static Warp getPlayerWarp(final ServerPlayerEntity player) {
+        if ( ((PlayerData) player).getWarpPos() == null )
+            return null;
+        return new Warp(((PlayerData) player).getWarpWorld(), ((PlayerData) player).getWarpPos());
     }
     public static boolean isPlayerCreating(final ServerPlayerEntity player) {
         return warpPlayers.contains( player.getUuid() );
@@ -273,6 +278,10 @@ public final class WarpUtils {
     public static void teleportPlayer(@NotNull final World world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
         // Get the chunks
         ChunkPos chunkPos = new ChunkPos( tpPos );
+        
+        // Load the chunk getting teleported to
+        if (!world.isChunkLoaded( chunkPos.x, chunkPos.z ))
+            world.getChunk( chunkPos.x, chunkPos.z, ChunkStatus.FULL, true );
         
         // Spawn the particles
         WarpUtils.teleportPoof( world, player );
@@ -314,4 +323,13 @@ public final class WarpUtils {
         return new BlockPos( properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ() );
     }
     
+    public static class Warp {
+        public final BlockPos warpPos;
+        public final World world;
+        
+        public Warp(World world, BlockPos blockPos) {
+            this.warpPos = blockPos;
+            this.world = world;
+        }
+    }
 }
