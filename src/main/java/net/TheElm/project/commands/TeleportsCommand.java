@@ -70,7 +70,7 @@ public final class TeleportsCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register( CommandManager.literal("spawn")
-            .requires((source) -> (!SewingMachineConfig.INSTANCE.WARP_SPAWN_REQUIRES_OP.get()) || source.hasPermissionLevel( 1 ))
+            .requires((source) -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_SPAWN.get()))
             .then(CommandManager.argument("player", EntityArgumentType.players())
                 .executes((context) -> {
                     // Get location information
@@ -107,28 +107,30 @@ public final class TeleportsCommand {
         );
         CoreMod.logDebug( "- Registered Spawn command" );
         
-        dispatcher.register( CommandManager.literal("tpa")
-            .then( CommandManager.argument( "player", EntityArgumentType.player() )
-                .executes(TeleportsCommand::tpaCommand)
-            )
-        );
-        CoreMod.logDebug( "- Registered TPA command" );
-        
-        dispatcher.register( CommandManager.literal("tpaccept")
-            .then( CommandManager.argument( "player", EntityArgumentType.player() )
-                .requires(TeleportsCommand::sourceHasWarp)
-                .executes(TeleportsCommand::tpAcceptCommand)
-            )
-        );
-        CoreMod.logDebug( "- Registered TPAccept command" );
-        
-        dispatcher.register( CommandManager.literal("tpdeny")
-            .then( CommandManager.argument( "player", EntityArgumentType.player() )
-                .requires(TeleportsCommand::sourceHasWarp)
-                .executes(TeleportsCommand::tpDenyCommand)
-            )
-        );
-        CoreMod.logDebug( "- Registered TPDeny command" );
+        if (SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get()) {
+            dispatcher.register(CommandManager.literal("tpa")
+                .then(CommandManager.argument("player", EntityArgumentType.player())
+                    .executes(TeleportsCommand::tpaCommand)
+                )
+            );
+            CoreMod.logDebug("- Registered TPA command");
+
+            dispatcher.register(CommandManager.literal("tpaccept")
+                .then(CommandManager.argument("player", EntityArgumentType.player())
+                    .requires(TeleportsCommand::sourceHasWarp)
+                    .executes(TeleportsCommand::tpAcceptCommand)
+                )
+            );
+            CoreMod.logDebug("- Registered TPAccept command");
+
+            dispatcher.register(CommandManager.literal("tpdeny")
+                .then(CommandManager.argument("player", EntityArgumentType.player())
+                    .requires(TeleportsCommand::sourceHasWarp)
+                    .executes(TeleportsCommand::tpDenyCommand)
+                )
+            );
+            CoreMod.logDebug("- Registered TPDeny command");
+        }
     }
     
     private static boolean sourceHasWarp(final ServerCommandSource source) {
@@ -193,7 +195,7 @@ public final class TeleportsCommand {
         }
         
         BlockPos warpPos = ((PlayerData) target).getWarpPos();
-        WarpUtils.teleportPlayer( porter.getServerWorld(), porter, warpPos );
+        WarpUtils.teleportPlayer( ((PlayerData) target).getWarpWorld(), porter, warpPos );
         
         CoreMod.logMessage( porter.getName().asString() + " was teleport to " + target.getName().asString() );
         

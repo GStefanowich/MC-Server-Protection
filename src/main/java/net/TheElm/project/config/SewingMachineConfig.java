@@ -27,6 +27,7 @@ package net.TheElm.project.config;
 
 import com.google.gson.*;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.utilities.LoggingUtils.LoggingIntervals;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -69,6 +70,15 @@ public final class SewingMachineConfig {
     public final ConfigOption<Integer> CLAIM_OP_LEVEL_SPAWN;
     public final ConfigOption<Integer> CLAIM_OP_LEVEL_OTHER;
     
+    // Logging
+    public final ConfigOption<Boolean> LOG_BLOCKS_BREAKING;
+    public final ConfigOption<Boolean> LOG_BLOCKS_PLACING;
+    public final ConfigOption<Boolean> LOG_CHUNKS_CLAIMED;
+    public final ConfigOption<Boolean> LOG_CHUNKS_UNCLAIMED;
+    public final ConfigOption<LoggingIntervals> LOG_RESET_INTERVAL;
+    public final ConfigOption<Long> LOG_RESET_TIME;
+    public final ConfigOption<Integer> LOG_VIEW_OP_LEVEL;
+    
     // Players
     public final ConfigOption<Integer> PLAYER_CLAIMS_LIMIT;
     
@@ -87,10 +97,21 @@ public final class SewingMachineConfig {
     // Warp options
     public final ConfigOption<Integer> WARP_MAX_DISTANCE;
     public final ConfigOption<Integer> WARP_WAYSTONE_COST;
-    public final ConfigOption<Boolean> WARP_SPAWN_REQUIRES_OP;
     
     // End
     public final ConfigOption<Integer> DRAGON_PLAYERS;
+    
+    // Commands
+    public final ConfigOption<Integer> COMMAND_SPAWN_OP_LEVEL;
+    public final ConfigOption<Integer> COMMAND_MODS_OP_LEVEL;
+    public final ConfigOption<Boolean> COMMAND_WARP_TPA;
+    public final ConfigOption<Boolean> COMMAND_EQUIPMENT;
+    public final ConfigOption<Boolean> COMMAND_SHRUG;
+    public final ConfigOption<Boolean> COMMAND_TABLEFLIP;
+    
+    // Miscellaneous
+    public final ConfigOption<Boolean> LIMIT_SKELETON_ARROWS;
+    public final ConfigOption<Boolean> EXTINGUISH_CAMPFIRES;
     
     private SewingMachineConfig() {
         // Initialize all configurations
@@ -149,6 +170,17 @@ public final class SewingMachineConfig {
         this.CLAIM_OP_LEVEL_OTHER = this.addConfig( new ConfigOption<>("claims.op_level.other_player", 1, JsonElement::getAsInt));
         
         /*
+         * Logging
+         */
+        this.LOG_BLOCKS_BREAKING = this.addConfig( new ConfigOption<>("logging.blocks.break", true, JsonElement::getAsBoolean));
+        this.LOG_BLOCKS_PLACING = this.addConfig( new ConfigOption<>("logging.blocks.place", true, JsonElement::getAsBoolean));
+        this.LOG_CHUNKS_CLAIMED = this.addConfig( new ConfigOption<>("logging.chunks.claimed", true, JsonElement::getAsBoolean));
+        this.LOG_CHUNKS_UNCLAIMED = this.addConfig( new ConfigOption<>("logging.chunks.wilderness", true, JsonElement::getAsBoolean));
+        this.LOG_RESET_INTERVAL = this.addConfig( new ConfigOption<>("logging.reset.interval", LoggingIntervals.DAY, this::getAsTimeInterval));
+        this.LOG_RESET_TIME = this.addConfig( new ConfigOption<>("logging.reset.time", 7L, JsonElement::getAsLong));
+        this.LOG_VIEW_OP_LEVEL = this.addConfig( new ConfigOption<>("logging.read.op_level", 1, JsonElement::getAsInt));
+        
+        /*
          * Claiming
          */
         this.PLAYER_CLAIMS_LIMIT = this.addConfig( new ConfigOption<>( "claims.players.limit", 40, JsonElement::getAsInt));
@@ -161,12 +193,26 @@ public final class SewingMachineConfig {
         this.WARP_MAX_DISTANCE = this.addConfig( new ConfigOption<>( "warp.max_distance", 1000000, JsonElement::getAsInt ));
         this.WARP_WAYSTONE_COST = this.addConfig( new ConfigOption<>( "warp.waystone.cost", 2000, JsonElement::getAsInt ));
         
-        this.WARP_SPAWN_REQUIRES_OP = this.addConfig( new ConfigOption<>( "warp.command.spawn.requires_op", true, JsonElement::getAsBoolean));
-        
         /*
          * Ender Dragon Options
          */
         this.DRAGON_PLAYERS = this.addConfig( new ConfigOption<>("bosses.dragon.players", 5, JsonElement::getAsInt ));
+        
+        /*
+         * Commands
+         */
+        this.COMMAND_SPAWN_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.spawn_tp_level", 2, JsonElement::getAsInt));
+        this.COMMAND_MODS_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.mods_op_level", 0, JsonElement::getAsInt));
+        this.COMMAND_WARP_TPA = this.addConfig( new ConfigOption<>("commands.warp_tpa", true, JsonElement::getAsBoolean));
+        this.COMMAND_EQUIPMENT = this.addConfig( new ConfigOption<>("commands.misc.equipment", true, JsonElement::getAsBoolean));
+        this.COMMAND_SHRUG = this.addConfig( new ConfigOption<>("commands.misc.shrug", true, JsonElement::getAsBoolean));
+        this.COMMAND_TABLEFLIP = this.addConfig( new ConfigOption<>("commands.misc.tableflip", true, JsonElement::getAsBoolean));
+        
+        /*
+         * Miscellaneous
+         */
+        this.EXTINGUISH_CAMPFIRES = this.addConfig( new ConfigOption<>("fun.world.extinguish_campfires", true, JsonElement::getAsBoolean));
+        this.LIMIT_SKELETON_ARROWS = this.addConfig( new ConfigOption<>("fun.mobs.skeletons.limit_arrows", true, JsonElement::getAsBoolean));
         
         this.initialize();
     }
@@ -253,6 +299,8 @@ public final class SewingMachineConfig {
                 inner.addProperty( path[p], (Number) config.get());
             else if ( config.get() instanceof Boolean )
                 inner.addProperty( path[p], (Boolean) config.get());
+            else if ( config.get() instanceof Enum )
+                inner.addProperty( path[p], ((Enum) config.get()).name() );
         }
         
         return json;
@@ -284,9 +332,17 @@ public final class SewingMachineConfig {
                 inner.addProperty( path[p], (Number) config.get());
             else if ( config.get() instanceof Boolean )
                 inner.addProperty( path[p], (Boolean) config.get());
+            else if ( config.get() instanceof Enum )
+                inner.addProperty( path[p], ((Enum)config.get()).name() );
         }
         
         return baseObject;
+    }
+    
+    private LoggingIntervals getAsTimeInterval(JsonElement element) {
+        if (!LoggingIntervals.contains(element.getAsString()))
+            throw new RuntimeException( "Unacceptable time interval \"" + element.getAsString() + "\"" );
+        return LoggingIntervals.valueOf(element.getAsString().toUpperCase());
     }
     
 }

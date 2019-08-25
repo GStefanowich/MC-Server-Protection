@@ -54,15 +54,13 @@ import net.minecraft.world.World;
 import java.util.Arrays;
 import java.util.Collections;
 
-public class EntityAttack {
+public final class EntityAttack {
     
     private EntityAttack() {}
     
     public static void init() {
-        
         // Register our event for when an entity is attacked
         DamageEntityCallback.EVENT.register( EntityAttack::attack );
-        
     }
     
     private static ActionResult attack(final Entity target, final World world, final Entity attacker, final DamageSource source) {

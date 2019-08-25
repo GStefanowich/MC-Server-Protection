@@ -49,24 +49,23 @@ public final class NickNameCommand {
     private NickNameCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        if (!SewingMachineConfig.INSTANCE.DO_PLAYER_NICKS.get())
-            return;
-        
-        LiteralCommandNode<ServerCommandSource> pay = dispatcher.register( CommandManager.literal( "nick" )
-            .then( CommandManager.literal( "reset" )
-                .executes((context) -> {
-                    ServerPlayerEntity player = context.getSource().getPlayer();
-                    return setNickForPlayer( player, null );
-                })
-            )
-            .then( CommandManager.argument( "nick", StringArgumentType.string())
-                .then( CommandManager.argument( "color", ColorArgumentType.color())
-                    .executes( NickNameCommand::commandNickSetColored )
+        if (SewingMachineConfig.INSTANCE.DO_PLAYER_NICKS.get()) {
+            LiteralCommandNode<ServerCommandSource> pay = dispatcher.register(CommandManager.literal("nick")
+                .then(CommandManager.literal("reset")
+                    .executes((context) -> {
+                        ServerPlayerEntity player = context.getSource().getPlayer();
+                        return setNickForPlayer(player, null);
+                    })
                 )
-                .executes( NickNameCommand::commandNickSet )
-            )
-        );
-        CoreMod.logDebug( "- Registered Nick command" );
+                .then(CommandManager.argument("nick", StringArgumentType.string())
+                    .then(CommandManager.argument("color", ColorArgumentType.color())
+                        .executes(NickNameCommand::commandNickSetColored)
+                    )
+                    .executes(NickNameCommand::commandNickSet)
+                )
+            );
+            CoreMod.logDebug("- Registered Nick command");
+        }
     }
     
     private static int commandNickSet(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

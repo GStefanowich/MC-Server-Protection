@@ -452,17 +452,16 @@ public enum ShopSigns {
         }
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
-            BlockPos playerWarpLocation = WarpUtils.getPlayerWarp( player );
-            MinecraftServer server;
-            if ( playerWarpLocation == null ) {
+            WarpUtils.Warp warp = WarpUtils.getPlayerWarp( player );
+            if ( warp == null ) {
                 // Create new warp
                 if ( WarpUtils.isPlayerCreating( player ) )
                     return Either.right( false );
                 // Make a new warp
                 return Either.right(this.generateNewWarp(player));
-            } else if ((server = player.getServer()) != null) {
+            } else {
                 // Warp the player to their home
-                this.teleportPlayer( server.getWorld(DimensionType.OVERWORLD), playerWarpLocation, player );
+                this.teleportPlayer( warp.world, warp.warpPos, player );
             }
             return Either.right( true );
         }
@@ -506,7 +505,7 @@ public enum ShopSigns {
                 this.teleportPlayer(world, safeTeleportPos, player);
                 
                 // Save the warp for later
-                newWarp.save(safeTeleportPos, player);
+                newWarp.save(world, safeTeleportPos, player);
                 
                 // Notify the player of their new location
                 player.sendChatMessage(TranslatableServerSide.text(
@@ -567,7 +566,7 @@ public enum ShopSigns {
                         player.sendMessage(new LiteralText("Can't build that here").formatted(Formatting.RED));
                         return;
                     }
-                    warp.save( warp.getSafeTeleportPos( player.getEntityWorld() ), player );
+                    warp.save(player.getServerWorld(), warp.getSafeTeleportPos( player.getEntityWorld() ), player);
                 })).start();
                 return Either.right( true );
                 

@@ -16,7 +16,7 @@
     
     "Entities.EndermenPickup",
     "Entities.EndermenPlace",
-
+    
     "Entities.ArrowDamage",
     "Entities.PotionDamage",
     
@@ -41,6 +41,7 @@
     "Player.WorldInteraction",
     "Player.ServerInteraction",
     
+    "World.Campfires",
     "World.DragonFight",
     "World.WorldSleep"
   ],
