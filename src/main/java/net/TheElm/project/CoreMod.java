@@ -32,10 +32,13 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.protections.BlockInteraction;
+import net.TheElm.project.protections.ItemInteraction;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.protections.BlockBreak;
+import net.TheElm.project.utilities.LoggingUtils;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.TheElm.project.MySQL.MySQLConnection;
 import net.TheElm.project.MySQL.MySQLStatement;
@@ -91,6 +94,7 @@ public class CoreMod implements DedicatedServerModInitializer {
         REGISTRY.register(true, ClaimCommand::register );
         REGISTRY.register(true, GameModesCommand::register );
         REGISTRY.register(true, HoldingCommand::register );
+        REGISTRY.register(true, LoggingCommand::register );
         REGISTRY.register(true, MiscCommands::register );
         REGISTRY.register(true, ModsCommand::register );
         REGISTRY.register(true, MoneyCommand::register );
@@ -101,13 +105,21 @@ public class CoreMod implements DedicatedServerModInitializer {
         
         // Create registry based listeners
         BlockBreak.init();
+        BlockInteraction.init();
         EntityAttack.init();
+        ItemInteraction.init();
         
         CoreMod.logMessage( "Initializing Database." );
         try {
-            if (CoreMod.initDB())
-                CoreMod.logMessage( "Database initialization finished" );
-            else CoreMod.logMessage( "Skipping Database Initialization (Unused)" );
+            // Initialize the database
+            if (CoreMod.initDB()) {
+                CoreMod.logMessage("Database initialization finished");
+                
+                // Clear out old logs
+                LoggingUtils.doCleanup();
+            } else {
+                CoreMod.logMessage( "Skipping Database Initialization (Unused)" );
+            }
         } catch (SQLException e) {
             CoreMod.logMessage( "Error executing MySQL Database setup." );
             
@@ -119,15 +131,16 @@ public class CoreMod implements DedicatedServerModInitializer {
     }
     
     private static boolean initDB() throws SQLException {
+        SewingMachineConfig CONFIG = SewingMachineConfig.INSTANCE;
         ArrayList<String> tables = new ArrayList<>();
         ArrayList<String> alters = new ArrayList<>();
         
-        if ( SewingMachineConfig.INSTANCE.DO_MONEY.get() ) {
+        if ( CONFIG.DO_MONEY.get() ) {
             tables.addAll(Collections.singletonList(
                 "CREATE TABLE IF NOT EXISTS `player_Data` (`dataOwner` varchar(36) NOT NULL, `dataMoney` bigint(20) UNSIGNED NOT NULL, UNIQUE KEY `dataOwner` (`dataOwner`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;"
             ));
         }
-        if ( SewingMachineConfig.INSTANCE.DO_CLAIMS.get() ) {
+        if ( CONFIG.DO_CLAIMS.get() ) {
             String permissionEnum = getDatabaseReadyEnumerators( ClaimPermissions.class );
             String ranksEnum = getDatabaseReadyEnumerators( ClaimRanks.class );
             String settingEnum = getDatabaseReadyEnumerators( ClaimSettings.class );
@@ -145,6 +158,16 @@ public class CoreMod implements DedicatedServerModInitializer {
                 "ALTER TABLE `chunk_Settings` CHANGE `settingOption` `settingOption` ENUM(" + permissionEnum + ") CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;",
                 "ALTER TABLE `chunk_Options` CHANGE `optionName` `optionName` ENUM(" + settingEnum + ") CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;"
             ));
+        }
+        if (( CONFIG.LOG_CHUNKS_CLAIMED.get() || CONFIG.LOG_CHUNKS_UNCLAIMED.get() ) && ( CONFIG.LOG_BLOCKS_BREAKING.get() || CONFIG.LOG_BLOCKS_PLACING.get() )) {
+            String blockUpdateEnums = getDatabaseReadyEnumerators( LoggingUtils.BlockAction.class );
+            
+            tables.add(
+                "CREATE TABLE IF NOT EXISTS `logging_Blocks` (`blockWorld` int(11) NOT NULL, `blockX` bigint(20) NOT NULL, `blockY` bigint(20) NOT NULL, `blockZ` bigint(20) NOT NULL, `block` blob NOT NULL, `updatedBy` varchar(36) NOT NULL, `updatedEvent` enum(" + blockUpdateEnums + ") NOT NULL, `updatedAt` datetime NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;"
+            );
+            alters.add(
+                "ALTER TABLE `logging_Blocks` CHANGE `updatedEvent` `updatedEvent` ENUM(" + blockUpdateEnums + ") CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;"
+            );
         }
         
         for ( String table : tables ) {

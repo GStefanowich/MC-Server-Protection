@@ -31,6 +31,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.SewingMachineConfig;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.Item;
@@ -52,14 +53,16 @@ public final class HoldingCommand {
     private HoldingCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        // Command to display the object the player is holding
-        dispatcher.register( CommandManager.literal("hand" )
-            .then( CommandManager.argument( "message", StringArgumentType.greedyString())
-                .executes(HoldingCommand::handMessage)
-            )
-            .executes(HoldingCommand::hand)
-        );
-        CoreMod.logDebug( "- Registered Hand command" );
+        if (SewingMachineConfig.INSTANCE.COMMAND_EQUIPMENT.get()) {
+            // Command to display the object the player is holding
+            dispatcher.register(CommandManager.literal("hand")
+                .then(CommandManager.argument("message", StringArgumentType.greedyString())
+                    .executes(HoldingCommand::handMessage)
+                )
+                .executes(HoldingCommand::hand)
+            );
+            CoreMod.logDebug("- Registered Hand command");
+        }
     }
     
     private static int hand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

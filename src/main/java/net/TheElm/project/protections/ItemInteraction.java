@@ -23,18 +23,14 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.interfaces;
+package net.TheElm.project.protections;
 
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
-
-public interface PlayerData {
+public final class ItemInteraction {
     
-    World getWarpWorld();
-    Integer getWarpDimensionId();
-    BlockPos getWarpPos();
-    void setWarpPos(@Nullable BlockPos blockPos);
-    void setWarpDimension(World world);
+    private ItemInteraction() {}
+    
+    public static void init() {
+        
+    }
     
 }

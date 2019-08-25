@@ -25,16 +25,25 @@
 
 package net.TheElm.project.interfaces;
 
-import net.minecraft.util.math.BlockPos;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
 
-public interface PlayerData {
+public interface BlockInteractionCallback {
+    Event<BlockInteractionCallback> EVENT = EventFactory.createArrayBacked( BlockInteractionCallback.class, (listeners) -> (player, world, hand, itemStack, blockHitResult) -> {
+        for (BlockInteractionCallback event : listeners) {
+            ActionResult result = event.interact(player, world, hand, itemStack, blockHitResult);
+            if (result != ActionResult.PASS)
+                return result;
+        }
+        
+        return ActionResult.PASS;
+    });
     
-    World getWarpWorld();
-    Integer getWarpDimensionId();
-    BlockPos getWarpPos();
-    void setWarpPos(@Nullable BlockPos blockPos);
-    void setWarpDimension(World world);
-    
+    ActionResult interact(ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack, BlockHitResult blockHitResult);
 }

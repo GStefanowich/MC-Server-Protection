@@ -45,6 +45,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Unit;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -58,6 +59,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
 
     @Shadow private String clientLanguage;
     
+    private Integer warpDimension = null;
     private BlockPos warpPos = null;
     private Text playerNickname = null;
     
@@ -65,13 +67,31 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         super(world_1, gameProfile_1);
     }
     
+    @Nullable
+    public Integer getWarpDimensionId() {
+        return this.warpDimension;
+    }
+    @Nullable @Override
+    public World getWarpWorld() {
+        if (this.getWarpPos() == null)
+            return null;
+        if (this.warpDimension == null)
+            this.warpDimension = 0;
+        return this.getServer().getWorld(DimensionType.byRawId(this.warpDimension));
+    }
     @Nullable @Override
     public BlockPos getWarpPos() {
         return this.warpPos;
     }
     @Override
     public void setWarpPos(@Nullable BlockPos blockPos) {
+        if (blockPos == null)
+            this.warpDimension = null;
         this.warpPos = blockPos;
+    }
+    @Override
+    public void setWarpDimension(World world) {
+        this.warpDimension = world.dimension.getType().getRawId();
     }
     
     /*
@@ -152,6 +172,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             tag.putInt("playerWarpX", this.warpPos.getX() );
             tag.putInt("playerWarpY", this.warpPos.getY() );
             tag.putInt("playerWarpZ", this.warpPos.getZ() );
+            tag.putInt("playerWarpD", this.warpDimension );
         }
         if ( this.playerNickname != null ) {
             tag.putString( "PlayerNickname", Text.Serializer.toJson( this.playerNickname ));
@@ -166,6 +187,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
                 tag.getInt("playerWarpY"),
                 tag.getInt("playerWarpZ")
             );
+            if ( tag.containsKey( "playerWarpD" ) )
+                this.warpDimension = tag.getInt("playerWarpD");
         }
         if (tag.containsKey("PlayerNickname", 8)) {
             this.playerNickname = Text.Serializer.fromJson( tag.getString("PlayerNickname") );
@@ -175,6 +198,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     public void onCopyData(ServerPlayerEntity player, boolean alive, CallbackInfo callback) {
         // Copy the players warp over
         this.warpPos = ((PlayerData) player).getWarpPos();
+        this.warpDimension = ((PlayerData) player).getWarpDimensionId();
         // Copy the players nick over
         this.playerNickname = ((Nicknamable) player).getPlayerNickname();
     }

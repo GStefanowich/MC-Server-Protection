@@ -564,7 +564,7 @@ public final class ClaimCommand {
         return Command.SINGLE_SUCCESS;
     }
     private static void playerJoinsTown(final PlayerManager manager, final ServerPlayerEntity player, final UUID townUUID) throws SQLException {
-        ClaimantPlayer claimaint = ClaimantPlayer.get( player );
+        ClaimantPlayer claimant = ClaimantPlayer.get( player );
         MySQLStatement stmt;
         
         /*
@@ -575,12 +575,6 @@ public final class ClaimCommand {
             .addPrepared( player.getUuid() )
             .executeUpdate();
         
-        // Update players town
-        claimaint.updateTown( townUUID );
-        
-        // Refresh the command tree
-        manager.sendCommandTree( player );
-        
         /*
          * Convert players chunks to their town
          */
@@ -589,6 +583,13 @@ public final class ClaimCommand {
             .addPrepared( player.getUuid() )
             .executeUpdate();
         
+        // Update players town
+        claimant.updateTown( townUUID );
+        
+        // Refresh the command tree
+        manager.sendCommandTree( player );
+        
+        // Notify the players in claimed chunks
         ClaimCommand.notifyChangedClaimed( player.getUuid() );
     }
     private static void playerPartsTown(final PlayerManager manager, final ServerPlayerEntity player, final ClaimantTown town) throws SQLException {

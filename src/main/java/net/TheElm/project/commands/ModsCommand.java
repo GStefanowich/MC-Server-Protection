@@ -29,6 +29,8 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.SewingMachineConfig;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
@@ -36,6 +38,7 @@ import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -45,13 +48,15 @@ import java.util.Collection;
 public final class ModsCommand {
     
     private ModsCommand() {}
-
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("mods")
+            .requires((source -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.COMMAND_MODS_OP_LEVEL.get())))
             .executes(ModsCommand::getModList)
         );
+        CoreMod.logDebug("- Registered Mods command");
     }
-
+    
     private static int getModList(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
@@ -63,26 +68,26 @@ public final class ModsCommand {
             ModMetadata meta = mod.getMetadata();
             String name = meta.getName();
             String desc = meta.getDescription();
-            String type = meta.getType();
+            String type = meta.getType(); // Type should always be FABRIC
+            String version = meta.getVersion().getFriendlyString();
             
             // Skip if it doesn't have a name
             if ( name == null ) continue;
             
-            Text modText = new LiteralText("\n  ")
-                .append(new LiteralText("(" + type.toUpperCase() + ") ").formatted(Formatting.RED))
-                .append(name);
-            
-            System.out.println( type );
+            Text modText = new LiteralText("\n ").formatted(Formatting.WHITE)
+                .append(new LiteralText(name).formatted(Formatting.RED))
+                .append(" v")
+                .append(new LiteralText(version).formatted(Formatting.YELLOW));
             
             Collection<Person> authors = meta.getAuthors();
-            Text authorText = new LiteralText(", by: ");
+            Text authorText = new LiteralText(", by: ").formatted(Formatting.WHITE);
             int authorC = 0;
             for ( Person author : authors )
                 authorText.append(( ++authorC > 1 ? ", " : "" )).append(new LiteralText( author.getName() ).formatted(Formatting.AQUA));
             
             // Append information
             if ( authorC > 0 ) modText.append( authorText );
-            if ( !"".equals( desc ) ) modText.append(new LiteralText("\n    " + desc).formatted(Formatting.WHITE));
+            if ( !"".equals( desc ) ) modText.styled((styler) -> styler.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText(desc).formatted(Formatting.WHITE))));
             
             // Append to lines
             output.append( modText );

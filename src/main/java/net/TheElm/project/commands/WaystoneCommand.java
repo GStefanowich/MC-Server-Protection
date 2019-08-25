@@ -67,6 +67,7 @@ public class WaystoneCommand {
         
         // Update the positioning
         ((PlayerData) target).setWarpPos( blockPos );
+        ((PlayerData) target).setWarpDimension( player.getServerWorld() );
         
         player.sendMessage(new LiteralText("").formatted(Formatting.YELLOW)
             .append(target.getName().formatted(Formatting.AQUA))

@@ -150,4 +150,13 @@ public class MySQLStatement implements AutoCloseable {
             CoreMod.logError( e );
         }
     }
+    
+    public static int getRowCount(ResultSet rs) throws SQLException {
+        try {
+            rs.last();
+            return rs.getRow();
+        } finally {
+            rs.beforeFirst();
+        }
+    }
 }
