@@ -25,7 +25,6 @@
 
 package net.TheElm.project.commands;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -34,7 +33,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.config.SewingMachineConfig;
-import net.TheElm.project.utilities.LoggingUtils;
 import net.TheElm.project.utilities.LoggingUtils.BlockAction;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.command.arguments.BlockPosArgumentType;

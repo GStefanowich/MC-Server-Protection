@@ -39,6 +39,8 @@ import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 
 public final class LoggingUtils {
     
@@ -49,9 +51,8 @@ public final class LoggingUtils {
         if (SewingMachineConfig.INSTANCE.LOG_RESET_TIME.get() <= 0)
             return;
         
-        try (MySQLStatement stmt = CoreMod.getSQL().prepare("DELETE FROM `logging_Blocks` WHERE `updatedAt` <= (NOW() - INTERVAL ? ?)")
-            .addPrepared(SewingMachineConfig.INSTANCE.LOG_RESET_TIME.get())
-            .addPrepared(SewingMachineConfig.INSTANCE.LOG_RESET_INTERVAL.get())) {
+        try (MySQLStatement stmt = CoreMod.getSQL().prepare("DELETE FROM `logging_Blocks` WHERE `updatedAt` <= (NOW() - INTERVAL ? MINUTE)")
+            .addPrepared(SewingMachineConfig.INSTANCE.LOG_RESET_INTERVAL.get().converToMinutes(SewingMachineConfig.INSTANCE.LOG_RESET_TIME.get()))) {
             
             stmt.executeUpdate();
             CoreMod.logMessage( "Database cleanup completed" );
@@ -101,14 +102,24 @@ public final class LoggingUtils {
     }
     
     public enum LoggingIntervals {
-        DAY,
-        HOUR,
-        MINUTE,
-        MONTHS,
-        QUARTER,
-        SECOND,
-        WEEK,
-        YEAR;
+        MINUTE( ChronoUnit.MINUTES ),
+        HOUR( ChronoUnit.HOURS ),
+        HALF_DAY( ChronoUnit.HALF_DAYS ),
+        DAY( ChronoUnit.DAYS ),
+        WEEK( ChronoUnit.WEEKS ),
+        MONTHS( ChronoUnit.MONTHS ),
+        YEAR( ChronoUnit.YEARS ),
+        DECADE( ChronoUnit.DECADES );
+        
+        private final ChronoUnit timeUnit;
+        
+        LoggingIntervals(ChronoUnit timeUnit) {
+            this.timeUnit = timeUnit;
+        }
+        
+        public long converToMinutes( Long span ) {
+            return Duration.of( span, this.timeUnit ).toMinutes();
+        }
         
         public static boolean contains(@NotNull String key) {
             for ( LoggingIntervals i : LoggingIntervals.values() ) {
