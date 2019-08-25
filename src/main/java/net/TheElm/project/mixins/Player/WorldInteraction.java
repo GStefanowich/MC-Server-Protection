@@ -69,14 +69,14 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     
     @Nullable
     public Integer getWarpDimensionId() {
-        return this.warpDimension;
-    }
-    @Nullable @Override
-    public World getWarpWorld() {
         if (this.getWarpPos() == null)
             return null;
         if (this.warpDimension == null)
             this.warpDimension = 0;
+        return this.warpDimension;
+    }
+    @Nullable @Override
+    public World getWarpWorld() {
         return this.getServer().getWorld(DimensionType.byRawId(this.warpDimension));
     }
     @Nullable @Override
@@ -168,11 +168,11 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
     public void onSavingData(CompoundTag tag, CallbackInfo callback) {
         // Save the player warp location for restarts
-        if ( this.warpPos != null ) {
-            tag.putInt("playerWarpX", this.warpPos.getX() );
-            tag.putInt("playerWarpY", this.warpPos.getY() );
-            tag.putInt("playerWarpZ", this.warpPos.getZ() );
-            tag.putInt("playerWarpD", this.warpDimension );
+        if (( this.warpPos != null ) && ( this.getWarpDimensionId() != null )) {
+            tag.putInt("playerWarpX", this.warpPos.getX());
+            tag.putInt("playerWarpY", this.warpPos.getY());
+            tag.putInt("playerWarpZ", this.warpPos.getZ());
+            tag.putInt("playerWarpD", this.getWarpDimensionId());
         }
         if ( this.playerNickname != null ) {
             tag.putString( "PlayerNickname", Text.Serializer.toJson( this.playerNickname ));
