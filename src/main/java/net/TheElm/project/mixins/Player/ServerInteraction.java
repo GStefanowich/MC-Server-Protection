@@ -216,7 +216,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
                     // If player is in spawn protection
                     if (local.getOwner().equals(CoreMod.spawnID)) {
                         popupText.append(
-                            local.getOwnerName(player.getUuid())
+                            local.getOwnerName( player )
                         );
                         return;
                     }
@@ -235,7 +235,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
                         }
                         
                         // If player is in another players area (No Town)
-                        popupText.append(local.getOwnerName(player.getUuid()))
+                        popupText.append(local.getOwnerName( player ))
                             .append(new LiteralText("'s " + landName));
                         return;
                     }
@@ -243,7 +243,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
                     // If player is in another players town
                     popupText.append(town.getName(player.getUuid())); // Town name
                     if (!local.getOwner().equals(town.getOwner())) // Append the chunk owner (If not the towns)
-                        popupText.append(" - ").append(local.getOwnerName(player.getUuid()));
+                        popupText.append(" - ").append(local.getOwnerName( player ));
                     popupText.append( // Town type
                         new LiteralText(" (")
                             .append(new LiteralText(CasingUtils.Words(town.getTownType())).formatted(Formatting.DARK_AQUA))

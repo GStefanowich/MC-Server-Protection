@@ -29,14 +29,13 @@ import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.world.World;
 
 public interface DamageEntityCallback {
-    Event<DamageEntityCallback> EVENT = EventFactory.createArrayBacked( DamageEntityCallback.class, (listeners) -> (target, world, attacker, source) -> {
+    Event<DamageEntityCallback> EVENT = EventFactory.createArrayBacked( DamageEntityCallback.class, (listeners) -> (target, world, source, damage) -> {
         for (DamageEntityCallback event : listeners) {
-            ActionResult result = event.interact(target, world, attacker, source);
+            ActionResult result = event.interact(target, world, source, damage);
             if (result != ActionResult.PASS)
                 return result;
         }
@@ -44,5 +43,5 @@ public interface DamageEntityCallback {
         return ActionResult.PASS;
     });
     
-    ActionResult interact(Entity target, World world, PlayerEntity attacker, DamageSource source);
+    ActionResult interact(Entity target, World world, DamageSource source, float damage);
 }

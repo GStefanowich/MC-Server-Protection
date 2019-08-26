@@ -33,6 +33,7 @@ import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,8 +42,6 @@ import java.sql.SQLException;
 import java.util.*;
 
 public final class ClaimantPlayer extends Claimant {
-    
-    private static MySQLStatement PERMISSIONS_LOOKUP;
     
     private final Map<ClaimSettings, Boolean> CHUNK_CLAIM_OPTIONS = Collections.synchronizedMap(new HashMap<>());
     private final Map<ClaimPermissions, ClaimRanks> RANK_PERMISSIONS = Collections.synchronizedMap(new HashMap<>());
@@ -137,6 +136,22 @@ public final class ClaimantPlayer extends Claimant {
     }
     public UUID getTown() {
         return this.townID;
+    }
+
+    /* Player Friend Options */
+    public ClaimRanks getFriendRank( UUID player ) {
+        if ( this.getId().equals( player ) )
+            return ClaimRanks.OWNER;
+        return super.getFriendRank( player );
+    }
+    
+    /* Nickname Override */
+    @Override
+    public Text getName() {
+        Text out;
+        if ((out = PlayerNameUtils.fetchPlayerNick( this.getId() )) != null)
+            return out;
+        return super.getName();
     }
     
     /* Claimed chunk options */

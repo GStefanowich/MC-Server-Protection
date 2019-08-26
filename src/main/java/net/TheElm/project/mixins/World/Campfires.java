@@ -53,7 +53,8 @@ public abstract class Campfires extends BlockEntity implements Clearable, Tickab
         if ((!this.world.isClient) && SewingMachineConfig.INSTANCE.EXTINGUISH_CAMPFIRES.get()) {
             BlockState blockState = this.getCachedState();
             boolean isLit = blockState.get(CampfireBlock.LIT);
-            if (this.world.isRaining() && isLit && (this.world.getBiome(this.getPos()).getPrecipitation() == Biome.Precipitation.RAIN)) {
+            // If RAINING, currently LIT, is in a raining BIOME, and VISIBLE TO SKY
+            if (this.world.isRaining() && isLit && (this.world.getBiome(this.getPos()).getPrecipitation() == Biome.Precipitation.RAIN) && this.world.isSkyVisible(this.getPos())) {
                 this.world.setBlockState(this.getPos(), blockState.with(CampfireBlock.LIT, false));
                 this.world.playSound( null, this.getPos(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 1.0f, 1.0f );
             }

@@ -28,7 +28,10 @@ package net.TheElm.project.protections;
 public final class ItemInteraction {
     
     private ItemInteraction() {}
-    
+
+    /**
+     * Initialize our callback listener for Item Usage
+     */
     public static void init() {
         
     }

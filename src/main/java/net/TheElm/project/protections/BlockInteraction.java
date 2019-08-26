@@ -55,6 +55,9 @@ import net.minecraft.world.World;
 public final class BlockInteraction {
     private BlockInteraction() {}
     
+    /**
+     * Initialize our callback listener for Block Interaction
+     */
     public static void init() {
         BlockInteractionCallback.EVENT.register(BlockInteraction::blockInteract);
     }
@@ -117,7 +120,7 @@ public final class BlockInteraction {
             // Display that this item can't be opened
             TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
                 EntityUtils.getLockedName( block ),
-                ( claimedChunkInfo == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : claimedChunkInfo.getOwnerName() )
+                ( claimedChunkInfo == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : claimedChunkInfo.getOwnerName( player ) )
             ));
             
             return ActionResult.FAIL;
@@ -161,6 +164,10 @@ public final class BlockInteraction {
         return ActionResult.FAIL;
     }
     
+    /**
+     * @param block A block to determine if it should be lockable
+     * @return If the block type provided is a protected container
+     */
     private static boolean isLockable( Block block ) {
         if ( block instanceof FletchingTableBlock )
             return true;
@@ -190,6 +197,11 @@ public final class BlockInteraction {
             return true;
         return false;
     }
+    
+    /**
+     * @param block A block entity to determine if it should be lockable
+     * @return If the block type provided is a protected container
+     */
     private static boolean isLockable( BlockEntity block ) {
         return ( block instanceof LockableContainerBlockEntity);
     }
