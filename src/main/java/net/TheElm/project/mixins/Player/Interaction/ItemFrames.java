@@ -25,12 +25,15 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
+import net.TheElm.project.interfaces.DamageEntityCallback;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.InventoryUtils;
 import net.minecraft.block.BarrelBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.ChestBlock;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.decoration.AbstractDecorationEntity;
 import net.minecraft.entity.decoration.ItemFrameEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -38,6 +41,7 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -55,6 +59,16 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
     
     protected ItemFrames(EntityType<? extends AbstractDecorationEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
+    }
+    
+    @Override
+    public boolean handleAttack(Entity entity) {
+        if (entity instanceof PlayerEntity) {
+            ActionResult result = DamageEntityCallback.EVENT.invoker().interact(this, this.getEntityWorld(), DamageSource.player((PlayerEntity) entity), 0.0f);
+            if (result != ActionResult.PASS)
+                return result == ActionResult.FAIL;
+        }
+        return super.handleAttack( entity );
     }
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
@@ -96,4 +110,6 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
         if (!ChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos()))
             callback.setReturnValue(false);
     }
+    
+    
 }

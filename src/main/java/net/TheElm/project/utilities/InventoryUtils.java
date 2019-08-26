@@ -141,7 +141,7 @@ public final class InventoryUtils {
                                 if (putable <= 0) {
                                     success = ( put > 0 );
                                     if (success)
-                                        player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
+                                        player.playSound( SoundEvents.ENTITY_ITEM_PICKUP,1.0f, 1.0f );
                                     return success;
                                 }
                             }
@@ -151,9 +151,9 @@ public final class InventoryUtils {
             }
         }
         
-        success = ( itemStackSize >= count );
+        success = ( itemStackSize > 0 );
         if (success)
-            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
+            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, 1.0f, 1.0f );
         return success;
     }
     
@@ -230,7 +230,7 @@ public final class InventoryUtils {
         
         boolean success = ( stackSize >= count );
         if ( success )
-            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
+            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP,1.0f, 1.0f );
         return success;
     }
     

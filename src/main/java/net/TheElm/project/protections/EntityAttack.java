@@ -58,12 +58,23 @@ public final class EntityAttack {
     
     private EntityAttack() {}
     
+    /**
+     * Initialize our callback listener for Entity Attacks
+     */
     public static void init() {
         // Register our event for when an entity is attacked
         DamageEntityCallback.EVENT.register( EntityAttack::attack );
     }
     
-    private static ActionResult attack(final Entity target, final World world, final Entity attacker, final DamageSource source) {
+    /**
+     * The event to trigger when an attack event occurs on an entity
+     * @param target The target entity of the attack
+     * @param world The world that the damage took place in
+     * @param source The damage source, damage applied, attacker, etc
+     * @return SUCCESS - Cancel and return true; PASS - Allow the interaction; FAIL - Cancel the interaction
+     */
+    private static ActionResult attack(final Entity target, final World world, final DamageSource source, float damage) {
+        final Entity attacker = source.getAttacker();
         SoundEvent sound = null;
         
         if (attacker instanceof PlayerEntity) {
@@ -95,7 +106,7 @@ public final class EntityAttack {
                     if (containerInventory != null) {
                         // The amount the player wants to take
                         int takeStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
-                        
+
                         InventoryUtils.chestToPlayer((ServerPlayerEntity) player, containerInventory, player.inventory, itemStack.getItem(), takeStackSize);
                         return ActionResult.FAIL;
                     }

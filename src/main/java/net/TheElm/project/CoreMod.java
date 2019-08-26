@@ -44,6 +44,8 @@ import net.TheElm.project.MySQL.MySQLConnection;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.protections.EntityAttack;
 import net.fabricmc.fabric.api.registry.CommandRegistry;
+import net.fabricmc.loader.FabricLoader;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.world.chunk.WorldChunk;
@@ -82,6 +84,18 @@ public class CoreMod implements DedicatedServerModInitializer {
             }
         }
         return MySQL;
+    }
+    
+    // Server
+    @Nullable
+    public static MinecraftServer getServer() {
+        Object server;
+        if ((server = getFabric().getGameInstance()) instanceof MinecraftServer)
+            return (MinecraftServer) server;
+        return null;
+    }
+    public static FabricLoader getFabric() {
+        return FabricLoader.INSTANCE;
     }
     
     @Override
@@ -194,7 +208,8 @@ public class CoreMod implements DedicatedServerModInitializer {
     }
     public static File getConfDir() throws RuntimeException {
         // Get the directory
-        final File dir = new File("config" + File.separator + CoreMod.MOD_ID);
+        final File config = CoreMod.getFabric().getConfigDirectory();
+        final File dir = new File(config.getAbsolutePath() + File.separator + CoreMod.MOD_ID);
         // Make sure the directory exists
         if (!(dir.exists() || dir.mkdirs()))
             throw new RuntimeException("Error accessing the config");

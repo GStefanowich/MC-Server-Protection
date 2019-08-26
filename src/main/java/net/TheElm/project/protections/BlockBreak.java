@@ -51,17 +51,41 @@ public final class BlockBreak {
     
     private BlockBreak() {}
     
+    /**
+     * Initialize our callback listener for Block Breaking
+     */
     public static void init() {
         BlockBreakCallback.EVENT.register(BlockBreak::blockBreak);
     }
     
-    private static ActionResult blockBreak(PlayerEntity player, World world, Hand hand, BlockPos blockPos, Direction blockFace, Action action) {
+    /**
+     * Check if a block can be broken, and log it if it can
+     * @param player The player that broke the block
+     * @param world The world that the block is in
+     * @param hand The hand that the player is using
+     * @param blockPos The blocks X, Y, Z position
+     * @param blockFace The side of the block that is being broken from
+     * @param action The break status of the block
+     * @return If the block is allowed to be broken
+     */
+    private static ActionResult blockBreak(final PlayerEntity player, final World world, final Hand hand, final BlockPos blockPos, final Direction blockFace, final Action action) {
         ActionResult result;
         if (((result = BlockBreak.canBlockBreak( player, world, hand, blockPos, blockFace, action)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get() && (action == Action.STOP_DESTROY_BLOCK))
             LoggingUtils.logAction( LoggingUtils.BlockAction.BREAK, world.getBlockState(blockPos).getBlock(), blockPos, player );
         return result;
     }
-    private static ActionResult canBlockBreak(PlayerEntity player, World world, Hand hand, BlockPos blockPos, Direction blockFace, Action action) {
+
+    /**
+     * Check if a block can be broken
+     * @param player The player that broke the block
+     * @param world The world that the block is in
+     * @param hand The hand that the player is using
+     * @param blockPos The blocks X, Y, Z position
+     * @param blockFace The side of the block that is being broken from
+     * @param action The break status of the block
+     * @return If the block is allowed to be broken
+     */
+    private static ActionResult canBlockBreak(final PlayerEntity player, final World world, final Hand hand, final BlockPos blockPos, final Direction blockFace, final Action action) {
         // If player is in creative
         if (player.isCreative() || (action == Action.ABORT_DESTROY_BLOCK))
             return ActionResult.PASS;

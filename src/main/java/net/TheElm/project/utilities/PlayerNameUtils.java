@@ -33,6 +33,8 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
@@ -138,6 +140,12 @@ public final class PlayerNameUtils {
         }
         return text;
     }
+    public static Text fetchPlayerNick(@NotNull UUID uuid) {
+        Text out;
+        if ((!uuid.equals(CoreMod.spawnID)) && ((out = PlayerNameUtils.getOfflinePlayerNickname( uuid )) != null))
+            return out;
+        return PlayerNameUtils.fetchPlayerName( uuid );
+    }
     public static Text fetchPlayerName(@NotNull UUID uuid) {
         // If we're looking up UUID 0, 0 (Spawn) don't try to do a lookup
         if ( uuid.equals( CoreMod.spawnID ) )
@@ -191,14 +199,20 @@ public final class PlayerNameUtils {
     }
     @Nullable
     private static Text getOnlinePlayerName(@NotNull UUID uuid) {
-        Text name = null;
-        Optional<ServerPlayerEntity> search;
-        // Search our player locations map for the UUID
-        if ((search = CoreMod.PLAYER_LOCATIONS.keySet().stream().filter((player) -> uuid.equals(player.getUuid())).findFirst()).isPresent()) {
-            name = search.get().getName();
-        }
-        // Return the name
-        return name;
+        MinecraftServer server;
+        if ((server = CoreMod.getServer()) == null)
+            return null;
+        ServerPlayerEntity player;
+        if ((player = server.getPlayerManager().getPlayer( uuid )) == null)
+            return null;
+        return player.getName();
+    }
+    @Nullable
+    private static Text getOfflinePlayerNickname(@NotNull UUID uuid) {
+        CompoundTag tag = NbtUtils.readOfflinePlayerData( uuid );
+        if ((tag != null) && tag.containsKey("PlayerNickname", 8))
+            return Text.Serializer.fromJson(tag.getString("PlayerNickname"));
+        return null;
     }
     
     private static String stripUUID(@NotNull UUID uuid) {

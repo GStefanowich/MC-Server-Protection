@@ -27,6 +27,8 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.ClaimRanks;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.minecraft.entity.player.PlayerEntity;
@@ -58,6 +60,9 @@ public final class ChunkUtils {
     
     /**
      * Check the database if a user can ride entities within the specified chunk
+     * @param player The player to check
+     * @param blockPos The block position of the interaction
+     * @return If the player can ride entities
      */
     public static boolean canPlayerRideInChunk(PlayerEntity player, BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.RIDING, player, blockPos );
@@ -65,6 +70,9 @@ public final class ChunkUtils {
     
     /**
      * Check the database if a user can place/break blocks within the specified chunk
+     * @param player The player to check
+     * @param blockPos The block position of the interaction
+     * @return If the player can break blocks
      */
     public static boolean canPlayerBreakInChunk(PlayerEntity player, BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.BLOCKS, player, blockPos );
@@ -72,6 +80,9 @@ public final class ChunkUtils {
     
     /**
      * Check the database if a user can loot chests within the specified chunk
+     * @param player The player to check
+     * @param blockPos The block position of the interaction
+     * @return If the player can loot storages
      */
     public static boolean canPlayerLootChestsInChunk(PlayerEntity player, BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.STORAGE, player, blockPos );
@@ -82,6 +93,9 @@ public final class ChunkUtils {
     
     /**
      * Check the database if a user can  within the specified chunk
+     * @param player The player to check
+     * @param blockPos The block position of the interaction
+     * @return If player can pick up dropped items
      */
     public static boolean canPlayerLootDropsInChunk(PlayerEntity player, BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.PICKUP, player, blockPos );
@@ -89,6 +103,9 @@ public final class ChunkUtils {
     
     /**
      * Check the database if a user can interact with doors within the specified chunk
+     * @param player The player to check
+     * @param blockPos The block position of the interaction
+     * @return If player can interact with doors
      */
     public static boolean canPlayerToggleDoor(PlayerEntity player, BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.DOORS, player, blockPos );
@@ -99,6 +116,9 @@ public final class ChunkUtils {
     
     /**
      * Check the database if a user can interact with mobs within the specified chunk
+     * @param player The player to check
+     * @param blockPos The block position of the interaction
+     * @return If player can harm or loot friendly entities
      */
     public static boolean canPlayerInteractFriendlies(PlayerEntity player, BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.CREATURES, player, blockPos );
@@ -106,9 +126,30 @@ public final class ChunkUtils {
     
     /**
      * Check the database if a user can harvest crops within the specified chunk
+     * @param player The player to check
+     * @param blockPos The block position of the interaction
+     * @return If the player is allowed to harvest crops
      */
     public static boolean canPlayerHarvestCrop(PlayerEntity player, BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.HARVEST, player, blockPos );
+    }
+    
+    /**
+     * @param player The player that wants to teleport
+     * @param target The destination to teleport to
+     * @return If the player is a high enough rank to teleport to the target
+     */
+    public static boolean canPlayerWarpTo(PlayerEntity player, UUID target) {
+        // Check our chunk permissions
+        ClaimantPlayer permissions = ClaimantPlayer.get( target );
+        if ( permissions == null ) return false; // Permissions should not be NULL unless something is wrong
+        
+        // Get the ranks of the user and the rank required for performing
+        ClaimRanks userRank = permissions.getFriendRank( player.getUuid() );
+        ClaimRanks permReq = permissions.getPermissionRankRequirement( ClaimPermissions.WARP );
+        
+        // Return the test if the user can perform the action
+        return permReq.canPerform( userRank );
     }
     
     /*
@@ -119,6 +160,8 @@ public final class ChunkUtils {
         return CoreMod.PLAYER_LOCATIONS.get( player );
     }
     public static boolean isPlayerWithinSpawn(@NotNull final ServerPlayerEntity player) {
+        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+            return true;
         return CoreMod.spawnID.equals(ChunkUtils.getPlayerLocation( player ));
     }
     

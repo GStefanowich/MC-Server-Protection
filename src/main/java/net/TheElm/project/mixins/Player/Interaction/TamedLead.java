@@ -97,7 +97,7 @@ public abstract class TamedLead extends LivingEntity {
         } else {
             // Get the name of the CHUNK OWNER
             if ( claimedChunkInfo != null )
-                owner = claimedChunkInfo.getOwnerName( player.getUuid() );
+                owner = claimedChunkInfo.getOwnerName( player );
             else
                 owner = new LiteralText( "unknown player" )
                     .formatted(Formatting.LIGHT_PURPLE);

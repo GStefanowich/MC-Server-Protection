@@ -62,6 +62,13 @@ public final class ClaimantTown extends Claimant {
         return this.getFriends().size();
     }
     
+    /* Player Friend Options */
+    public ClaimRanks getFriendRank( UUID player ) {
+        if ( this.getOwner().equals( player ) )
+            return ClaimRanks.OWNER;
+        return super.getFriendRank( player );
+    }
+    
     @Nullable
     public static ClaimantTown get(UUID ownerId) {
         // If claims are disabled

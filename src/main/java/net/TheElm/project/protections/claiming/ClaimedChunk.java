@@ -31,6 +31,7 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -98,8 +99,6 @@ public class ClaimedChunk {
     }
     
     public void updateTownOwner(@Nullable UUID owner) {
-        
-        
         this.chunkTown = owner;
         
         // Make sure we have the towns permissions cached
@@ -111,7 +110,9 @@ public class ClaimedChunk {
         
         // Make sure we have the players permissions cached
         if (owner != null)
-            ClaimantPlayer.get( this.chunkPlayer);
+            ClaimantPlayer.get( this.chunkPlayer );
+        else 
+            this.updateTownOwner( null );
     }
     
     @Nullable
@@ -138,26 +139,14 @@ public class ClaimedChunk {
         return town;
     }
     
-    public Text getOwnerName() {
-        return this.getOwnerName( null );
-    }
-    public Text getOwnerName(@Nullable UUID zonePlayer) {
-        if ( this.chunkPlayer == null ) {
+    public Text getOwnerName(@NotNull PlayerEntity zonePlayer) {
+        ClaimantPlayer permissions;
+        if ( this.chunkPlayer == null || ((permissions = ClaimantPlayer.get( this.chunkPlayer )) == null))
             return new LiteralText(SewingMachineConfig.INSTANCE.NAME_WILDERNESS.get())
                 .formatted(Formatting.GREEN);
-        } else {
-            // Get the permissions
-            ClaimantPlayer permissions = ClaimantPlayer.get( this.chunkPlayer);
-            
-            // Get the players rank
-            ClaimRanks zonePlayerRank = permissions.getFriendRank( zonePlayer );
-            
-            // Get the owners name
-            Text output = permissions.getName();
-            
-            // Color based on the players rank with the owner
-            return output.formatted(zonePlayerRank.getColor());
-        }
+        
+        // Get the owners name
+        return permissions.getName( zonePlayer.getUuid() );
     }
     
     public boolean canUserDo(@NotNull UUID player, ClaimPermissions perm) {
@@ -168,6 +157,7 @@ public class ClaimedChunk {
         
         // Check our chunk permissions
         ClaimantPlayer permissions = ClaimantPlayer.get( this.chunkPlayer );
+        if ( permissions == null ) return false; // Permissions should not be NULL unless something is wrong
         
         // Get the ranks of the user and the rank required for performing
         ClaimRanks userRank = permissions.getFriendRank( player );
