@@ -39,6 +39,8 @@ import org.jetbrains.annotations.Nullable;
 
 public final class EntityUtils {
     
+    private EntityUtils() {}
+    
     // Default lock sound
     public static SoundEvent getDefaultLockSound() {
         return SoundEvents.BLOCK_WOODEN_DOOR_OPEN;

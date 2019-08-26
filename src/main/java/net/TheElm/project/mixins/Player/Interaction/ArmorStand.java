@@ -106,7 +106,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
         // Display that this item can't be opened
         TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
             EntityUtils.getLockedName( this ),
-            ( claimedChunkInfo == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : claimedChunkInfo.getOwnerName() )
+            ( claimedChunkInfo == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : claimedChunkInfo.getOwnerName( player ) )
         ));
         
         callback.setReturnValue(ActionResult.FAIL);

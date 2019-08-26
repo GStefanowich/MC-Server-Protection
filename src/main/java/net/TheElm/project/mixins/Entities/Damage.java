@@ -29,13 +29,11 @@ import net.TheElm.project.interfaces.DamageEntityCallback;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.decoration.ItemFrameEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.HorseBaseEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.passive.WolfEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -43,7 +41,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = {AnimalEntity.class, HostileEntity.class, HorseBaseEntity.class, WolfEntity.class, ItemFrameEntity.class})
+@Mixin(value = {AnimalEntity.class, HostileEntity.class, HorseBaseEntity.class, WolfEntity.class})
 public abstract class Damage extends Entity {
     
     protected Damage(EntityType<? extends TameableEntity> entityType_1, World world_1) {
@@ -52,11 +50,9 @@ public abstract class Damage extends Entity {
     
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
     public void damage(DamageSource damageSource, float damage, CallbackInfoReturnable<Boolean> callback) {
-        if (!( damageSource.getAttacker() instanceof PlayerEntity))
-            return;
-        ActionResult result = DamageEntityCallback.EVENT.invoker().interact( this, this.getEntityWorld(), (PlayerEntity)damageSource.getAttacker(), damageSource );
-        if (result == ActionResult.FAIL)
-            callback.setReturnValue( false );
+        ActionResult result = DamageEntityCallback.EVENT.invoker().interact(this, this.getEntityWorld(), damageSource, 0.0f);
+        if (result != ActionResult.PASS)
+            callback.setReturnValue(result == ActionResult.SUCCESS);
     }
     
 }

@@ -32,7 +32,8 @@ public enum ClaimPermissions {
     STORAGE( ClaimRanks.ALLY ), // Access storage containers
     DOORS( ClaimRanks.PASSIVE ), // Open doors and gates
     PICKUP( ClaimRanks.ALLY ), // Pickup entities
-    RIDING( ClaimRanks.ALLY ) // Ride carts and animals
+    RIDING( ClaimRanks.ALLY ), // Ride carts and animals
+    WARP( ClaimRanks.OWNER ) // Warp to the players warp location
     ;
     
     private final ClaimRanks defaultRank;

@@ -43,16 +43,13 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.commands.ArgumentTypes.EnumArgumentType;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.utilities.CasingUtils;
+import net.TheElm.project.utilities.*;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
-import net.TheElm.project.utilities.CommandUtilities;
-import net.TheElm.project.utilities.MessageUtils;
-import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.PlayerManager;
@@ -86,6 +83,9 @@ public final class ClaimCommand {
     );
     private static final DynamicCommandExceptionType CHUNK_NOT_OWNED_BY_PLAYER = new DynamicCommandExceptionType((player) ->
         TranslatableServerSide.text( (ServerPlayerEntity) player, "claim.chunk.error.not_players" )
+    );
+    private static final DynamicCommandExceptionType CHUNK_NOT_OWNED = new DynamicCommandExceptionType((player) ->
+        TranslatableServerSide.text( (ServerPlayerEntity) player, "claim.chunk.error.not_claimed" )
     );
     private static final Dynamic2CommandExceptionType CHUNK_RADIUS_OWNED = new Dynamic2CommandExceptionType((player, ownerName) ->
         TranslatableServerSide.text( (ServerPlayerEntity)player, "claim.chunk.error.radius_owned", ownerName )
@@ -132,6 +132,10 @@ public final class ClaimCommand {
             // Unclaim all chunks
             .then(CommandManager.literal("all")
                 .executes(ClaimCommand::unclaimAll)
+            )
+            .then(CommandManager.literal("force")
+                .requires((source -> source.hasPermissionLevel( SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_OTHER.get() )))
+                .executes(ClaimCommand::unclaimOther)
             )
             // Unclaim current chunk
             .executes(ClaimCommand::unclaimChunk)
@@ -188,7 +192,7 @@ public final class ClaimCommand {
                 .executes(ClaimCommand::claimChunkTown)
             )
         );
-        CoreMod.logMessage( "- Registered Town command" );
+        CoreMod.logDebug( "- Registered Town command" );
         
         /*
          * Register the main command object
@@ -262,7 +266,7 @@ public final class ClaimCommand {
         ClaimedChunk[] claimedChunks = ClaimedChunk.getOwnedAround( player.getServerWorld(), player.getBlockPos(), radius );
         for ( ClaimedChunk claimedChunk : claimedChunks ) {
             if (!player.getUuid().equals( claimedChunk.getOwner() ))
-                throw CHUNK_RADIUS_OWNED.create( player, claimedChunk.getOwnerName(player.getUuid()));
+                throw CHUNK_RADIUS_OWNED.create( player, claimedChunk.getOwnerName( player ));
         }
         
         int chunkX = blockPos.getX() >> 4;
@@ -375,13 +379,8 @@ public final class ClaimCommand {
         BlockPos blockPos = player.getBlockPos();
         World world = player.getEntityWorld();
         
-        if (!ClaimCommand.tryUnclaimChunkAt( player.getUuid(), player, player.getBlockPos() ))
-            throw CHUNK_NOT_OWNED_BY_PLAYER.create( player );
-        
-        // Update runtime
-        ClaimedChunk chunk = ClaimedChunk.convert(world, blockPos);
-        if (chunk != null)
-            chunk.updatePlayerOwner( null );
+        if (!ClaimCommand.tryUnclaimChunkAt( player.getUuid(), player, blockPos ))
+            throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create( player );
         
         // Update total count
         Claimant claimed;
@@ -390,6 +389,42 @@ public final class ClaimCommand {
             
             if ((claimed = ClaimantTown.get(((ClaimantPlayer) claimed).getTown())) != null) claimed.adjustCount( -1 );
         }
+        
+        // Update runtime
+        ClaimedChunk chunk = ClaimedChunk.convert(world, blockPos);
+        if (chunk != null)
+            chunk.updatePlayerOwner( null );
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int unclaimOther(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+
+        // Get run from positioning
+        BlockPos blockPos = player.getBlockPos();
+        World world = player.getEntityWorld();
+        
+        // Convert from position
+        ClaimedChunk chunk = ClaimedChunk.convert(world, blockPos);
+        if ( chunk == null )
+            throw ClaimCommand.CHUNK_NOT_OWNED.create( player );
+        
+        final UUID currentOwner = chunk.getOwner();
+        
+        if ((currentOwner == null) || (!ClaimCommand.tryUnclaimChunkAt( currentOwner, player, blockPos )))
+            throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create( player );
+        
+        // Update total count
+        Claimant claimed;
+        if ((claimed = ClaimantPlayer.get( currentOwner )) != null) {
+            claimed.adjustCount( -1 );
+            
+            if ((claimed = ClaimantTown.get(((ClaimantPlayer) claimed).getTown())) != null) claimed.adjustCount( -1 );
+        }
+        
+        // Update the owner to NONE
+        chunk.updatePlayerOwner( null );
         
         return Command.SINGLE_SUCCESS;
     }

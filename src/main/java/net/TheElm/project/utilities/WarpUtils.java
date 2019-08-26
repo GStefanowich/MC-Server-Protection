@@ -33,6 +33,7 @@ import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -46,6 +47,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.LevelProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -267,6 +269,39 @@ public final class WarpUtils {
      * Static checks
      */
     @Nullable
+    public static Warp getPlayerWarp(final UUID uuid) {
+        MinecraftServer server;
+        if ((server = CoreMod.getServer()) == null)
+            return null;
+        
+        // Read from the player
+        ServerPlayerEntity player;
+        if ((player = server.getPlayerManager().getPlayer( uuid )) != null)
+            return WarpUtils.getPlayerWarp( player );
+        
+        // Read from the NBT file
+        CompoundTag playerNBT;
+        if ((playerNBT = NbtUtils.readOfflinePlayerData( uuid )) == null)
+            return null;
+        
+        Warp warp = null;
+        
+        // Read the player warp location after restarting
+        if ( playerNBT.containsKey( "playerWarpX" ) && playerNBT.containsKey( "playerWarpY" ) && playerNBT.containsKey( "playerWarpZ" ) ) {
+            int warpDimension = ( playerNBT.containsKey( "playerWarpD" ) ? playerNBT.getInt("playerWarpD") : 0 );
+            warp = new Warp(
+                server.getWorld(DimensionType.byRawId( warpDimension )),
+                new BlockPos(
+                    playerNBT.getInt("playerWarpX"),
+                    playerNBT.getInt("playerWarpY"),
+                    playerNBT.getInt("playerWarpZ")
+                )
+            );
+        }
+        
+        return warp;
+    }
+    @Nullable
     public static Warp getPlayerWarp(final ServerPlayerEntity player) {
         if ( ((PlayerData) player).getWarpPos() == null )
             return null;
@@ -274,6 +309,9 @@ public final class WarpUtils {
     }
     public static boolean isPlayerCreating(final ServerPlayerEntity player) {
         return warpPlayers.contains( player.getUuid() );
+    }
+    public static void teleportPlayer(@NotNull final Warp warp, @NotNull final ServerPlayerEntity player) {
+        WarpUtils.teleportPlayer( warp.world, player, warp.warpPos );
     }
     public static void teleportPlayer(@NotNull final World world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
         // Get the chunks
@@ -327,7 +365,7 @@ public final class WarpUtils {
         public final BlockPos warpPos;
         public final World world;
         
-        public Warp(World world, BlockPos blockPos) {
+        private Warp(World world, BlockPos blockPos) {
             this.warpPos = blockPos;
             this.world = world;
         }

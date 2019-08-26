@@ -66,7 +66,7 @@ public abstract class Claimant {
     }
     
     /* Player Friend Options */
-    public final ClaimRanks getFriendRank( UUID player ) {
+    public ClaimRanks getFriendRank( UUID player ) {
         return this.USER_RANKS.getOrDefault( player, ClaimRanks.PASSIVE );
     }
     public final void updateFriend( UUID player, ClaimRanks rank ) {
@@ -83,7 +83,7 @@ public abstract class Claimant {
     public final UUID getId() {
         return this.id;
     }
-    public final Text getName() {
+    public Text getName() {
         return this.name.deepCopy();
     }
     public final Text getName(@NotNull UUID player) {

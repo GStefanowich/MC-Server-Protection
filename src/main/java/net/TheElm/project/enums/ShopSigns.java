@@ -452,7 +452,7 @@ public enum ShopSigns {
         }
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
-            WarpUtils.Warp warp = WarpUtils.getPlayerWarp( player );
+            WarpUtils.Warp warp = WarpUtils.getPlayerWarp( player.getUuid() );
             if ( warp == null ) {
                 // Create new warp
                 if ( WarpUtils.isPlayerCreating( player ) )
