@@ -31,7 +31,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
-import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.fabricmc.loader.api.metadata.Person;
@@ -61,7 +60,7 @@ public final class ModsCommand {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
-        Collection<ModContainer> mods = FabricLoader.getInstance().getAllMods();
+        Collection<ModContainer> mods = CoreMod.getFabric().getAllMods();
         
         Text output = new LiteralText("Server Mods:").formatted(Formatting.YELLOW);
         for ( ModContainer mod : mods ) {
