@@ -94,6 +94,8 @@ public class CoreMod implements DedicatedServerModInitializer {
             return (MinecraftServer) server;
         return null;
     }
+    
+    @SuppressWarnings("deprecation")
     public static FabricLoader getFabric() {
         return FabricLoader.INSTANCE;
     }

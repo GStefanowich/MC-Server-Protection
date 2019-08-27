@@ -32,6 +32,8 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.utilities.InventoryUtils;
+import net.TheElm.project.utilities.InventoryUtils.ItemRarity;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.Item;
@@ -85,21 +87,22 @@ public final class HoldingCommand {
             return Command.SINGLE_SUCCESS;
         }
         
-        Text enchantsBuilder = ( stack.hasCustomName() ? stack.getName().formatted(Formatting.AQUA) : null );
-        
         // List all enchantments
         Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments( stack );
+        
+        Text enchantsBuilder = ( stack.hasCustomName() ? stack.getName().formatted(Formatting.AQUA) : new TranslatableText(stack.getTranslationKey()) );
+        if (enchantments.size() > 0) {
+            ItemRarity rarity = InventoryUtils.getItemRarity( stack );
+            enchantsBuilder.append(new LiteralText(" " + rarity.name()).formatted(rarity.formatting));
+        }
+        
+        // Append all translations to the hovertext
         for ( Map.Entry<Enchantment, Integer> enchantment : enchantments.entrySet() ) {
             Enchantment enchant = enchantment.getKey();
             Integer level = enchantment.getValue();
             
-            if (enchantsBuilder != null)
-                enchantsBuilder.append( "\n" );
-            
-            Text row = enchant.getName( level );
-            if (enchantsBuilder == null)
-                enchantsBuilder = row;
-            else enchantsBuilder.append( row );
+            enchantsBuilder.append( "\n" )
+                .append(enchant.getName( level ));
         }
         
         final Text enchantsText = enchantsBuilder;
