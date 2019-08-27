@@ -30,14 +30,16 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.ChestBlock;
 import net.minecraft.block.entity.BarrelBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
@@ -45,6 +47,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
 
 public final class InventoryUtils {
     
@@ -234,4 +237,52 @@ public final class InventoryUtils {
         return success;
     }
     
+    public static ItemRarity getItemRarity(ItemStack stack) {
+        float total = 0.0f;
+        
+        // Get all enchantments
+        Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments( stack );
+        for ( Map.Entry<Enchantment, Integer> e : enchantments.entrySet() ) {
+            Enchantment enchantment = e.getKey();
+            
+            // If the enchantment is a curse, the tool is ALWAYS cursed
+            if (enchantment.isCursed()) return ItemRarity.CURSED;
+            
+            int level = e.getValue();
+            float levelP = (float)level / enchantment.getMaximumLevel();
+            if (enchantment.isTreasure()) levelP += 1;
+            
+            float rarity = (float)( 11 - enchantment.getWeight().getWeight() ) * levelP;
+            total += rarity;
+        }
+        
+        int iRarity = Math.round(total / enchantments.size());
+        
+        // Offset the levels by TWO for books
+        int o = ( stack.getItem() == Items.ENCHANTED_BOOK ? 2 : 0 );
+        
+        if (iRarity >= (8 + o))
+            return ItemRarity.LEGENDARY;
+        if (iRarity >= (6 + o))
+            return ItemRarity.EPIC;
+        if (iRarity >= (4 + o))
+            return ItemRarity.RARE;
+        if (iRarity >= (2 + o))
+            return ItemRarity.UNCOMMON;
+        return ItemRarity.COMMON;
+    }
+    public enum ItemRarity {
+        CURSED( Formatting.RED ),
+        COMMON( Formatting.GRAY ),
+        UNCOMMON( Formatting.GREEN ),
+        RARE( Formatting.AQUA ),
+        EPIC( Formatting.DARK_PURPLE ),
+        LEGENDARY( Formatting.GOLD );
+        
+        public final Formatting[] formatting;
+        
+        ItemRarity(Formatting... formatting) {
+            this.formatting = formatting;
+        }
+    }
 }

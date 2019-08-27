@@ -36,6 +36,8 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.EnderChestBlockEntity;
 import net.minecraft.block.entity.LockableContainerBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
+import net.minecraft.block.enums.DoorHinge;
+import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.client.network.packet.GuiSlotUpdateS2CPacket;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.BlockItem;
@@ -50,6 +52,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 
 public final class BlockInteraction {
@@ -64,7 +67,8 @@ public final class BlockInteraction {
     
     private static ActionResult blockInteract(ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack, BlockHitResult blockHitResult) {
         BlockPos blockPos = blockHitResult.getBlockPos();
-        final Block block = world.getBlockState(blockPos).getBlock();
+        final BlockState blockState = world.getBlockState(blockPos);
+        final Block block = blockState.getBlock();
         final BlockEntity blockEntity = world.getBlockEntity( blockPos );
         
         // Check if the block interacted with is a sign (For shop signs)
@@ -75,11 +79,11 @@ public final class BlockInteraction {
             ShopSigns shopSignType;
             // Interact with the sign
             if ((shopSign.getShopOwner() != null) && ((shopSignType = ShopSigns.valueOf( sign.text[0] )) != null)) {
-                shopSignType.onInteract((ServerPlayerEntity) player, blockPos, shopSign)
+                shopSignType.onInteract(player, blockPos, shopSign)
                     // Literal Text (Error)
                     .ifLeft((text) -> {
                         player.playSound(SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.MASTER, 1.0f, 1.0f);
-                        ((ServerPlayerEntity) player).sendChatMessage(text.formatted(Formatting.RED), MessageType.GAME_INFO);
+                        player.sendChatMessage(text.formatted(Formatting.RED), MessageType.GAME_INFO);
                     })
                     // Boolean if success/fail
                     .ifRight((bool) -> {
@@ -98,8 +102,31 @@ public final class BlockInteraction {
         if ( block instanceof AbstractButtonBlock || block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock) {
             ClaimedChunk claimedChunkInfo = ClaimedChunk.convert( player.getEntityWorld(), blockPos );
             
-            if (ChunkUtils.canPlayerToggleDoor( player, claimedChunkInfo ))
+            if (ChunkUtils.canPlayerToggleDoor( player, claimedChunkInfo )) {
+                // Toggle double doors
+                if ((!player.isSneaking()) && block instanceof DoorBlock && (blockState.getMaterial() != Material.METAL)) {
+                    DoubleBlockHalf doorHalf = blockState.get(DoorBlock.HALF);
+                    Direction doorDirection = blockState.get(DoorBlock.FACING);
+                    DoorHinge doorHinge = blockState.get(DoorBlock.HINGE);
+                    
+                    BlockPos otherDoorPos = blockPos.offset(doorHinge == DoorHinge.LEFT ? doorDirection.rotateYClockwise() : doorDirection.rotateYCounterclockwise())
+                        .offset( Direction.UP, doorHalf == DoubleBlockHalf.UPPER ? 0 : 1 );
+                    BlockState otherDoorState = world.getBlockState(otherDoorPos);
+                    
+                    if ((otherDoorState.getBlock() instanceof DoorBlock) && (otherDoorState.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER)) {
+                        boolean doorIsOpen = blockState.get(DoorBlock.OPEN);
+                        boolean otherIsOpen = otherDoorState.get(DoorBlock.OPEN);
+                        
+                        if ( doorIsOpen == otherIsOpen ) {
+                            // Toggle the doors
+                            world.setBlockState(otherDoorPos, otherDoorState.with(DoorBlock.OPEN, !doorIsOpen), 10);
+                            world.playLevelEvent(player, otherIsOpen ? 1006 : 1012, otherDoorPos, 0 );
+                        }
+                    }
+                }
+                // Allow the action
                 return ActionResult.PASS;
+            }
             
             return ActionResult.FAIL;
         }
