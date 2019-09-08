@@ -25,9 +25,9 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
-import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
+import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
@@ -40,6 +40,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -74,9 +75,9 @@ public abstract class HorseRide extends HorseBaseEntity {
                 .getName();
         } else {
             // Get the name of the CHUNK OWNER
-            ClaimedChunk claimedChunkInfo = ClaimedChunk.convert(world, this.getBlockPos());
-            if ( claimedChunkInfo != null )
-                owner = claimedChunkInfo.getOwnerName( player );
+            WorldChunk chunk = world.getWorldChunk( this.getBlockPos() );
+            if ( chunk != null )
+                owner = ((IClaimedChunk) chunk).getOwnerName( player );
             else
                 owner = new LiteralText( "unknown player" )
                     .formatted(Formatting.LIGHT_PURPLE);

@@ -26,92 +26,147 @@
 package net.TheElm.project.protections.claiming;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimRanks;
+import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.TownNameUtils;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.Tag;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.util.Pair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.UUID;
 
 public final class ClaimantTown extends Claimant {
     
-    private final UUID ownerId;
+    private UUID ownerId;
     
-    protected ClaimantTown(@NotNull UUID townId, @NotNull UUID founderId, @Nullable Text name) {
-        super(ClaimantType.TOWN, townId, name);
-        this.ownerId = founderId;
-        this.updateFriend( founderId, ClaimRanks.OWNER );
+    protected ClaimantTown(@NotNull UUID townId) {
+        super(ClaimantType.TOWN, townId);
+    }
+    protected ClaimantTown(@NotNull UUID townId, @NotNull Text townName) {
+        this( townId );
+        this.name = townName;
     }
     
-    public String getTownType() {
-        return TownNameUtils.getTownName( this.chunkCount, this.getResidentCount() );
+    public final String getTownType() {
+        return TownNameUtils.getTownName( this.getCount(), this.getResidentCount() );
     }
-    public String getOwnerTitle() {
-        return TownNameUtils.getOwnerTitle( this.chunkCount, this.getResidentCount(), true );
+    public final String getOwnerTitle() {
+        return TownNameUtils.getOwnerTitle( this.getCount(), this.getResidentCount(), true );
     }
-    public UUID getOwner() {
+    public final UUID getOwner() {
         return this.ownerId;
     }
-    public int getResidentCount() {
+    public final void setOwner(@NotNull UUID owner) {
+        this.updateFriend( owner, ClaimRanks.OWNER );
+        this.ownerId = owner;
+        this.markDirty();
+    }
+    public final int getResidentCount() {
         return this.getFriends().size();
     }
     
+    @Override
+    public Text getName() {
+        return this.name.deepCopy();
+    }
+    
     /* Player Friend Options */
-    public ClaimRanks getFriendRank( UUID player ) {
+    @Override
+    public final ClaimRanks getFriendRank( UUID player ) {
         if ( this.getOwner().equals( player ) )
             return ClaimRanks.OWNER;
         return super.getFriendRank( player );
     }
-    
-    @Nullable
-    public static ClaimantTown get(UUID ownerId) {
-        // If claims are disabled
-        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
-            return null;
-        
-        // Return null if null
-        if (ownerId == null)
-            return null;
-        
-        // Get the cached object
-        if (CoreMod.TOWNS_CACHE.containsKey( ownerId ))
-            return CoreMod.TOWNS_CACHE.get( ownerId );
-        
-        // Create new object
-        Pair<Text, UUID> townInfo = TownNameUtils.fetchTownInfo( ownerId );
-        
-        // If owner is null, return null
-        if ( townInfo.getRight() == null )
-            return null;
-        
-        // Return the town object
-        ClaimantTown obj = new ClaimantTown( ownerId, townInfo.getRight(), townInfo.getLeft() );
-        CoreMod.TOWNS_CACHE.put( ownerId, obj );
-        
-        return obj;
+    @Override
+    public final boolean updateFriend(@NotNull final UUID player, @Nullable final ClaimRanks rank) {
+        if ( super.updateFriend( player, rank ) ) {
+            ClaimantPlayer claim = ClaimantPlayer.get( player );
+            if (claim != null)
+                claim.setTown(rank == null ? null : this);
+            return true;
+        }
+        return false;
     }
-    public static UUID getPlayersTown(@NotNull UUID playerId) {
-        // If claims are disabled
-        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) return null;
+    
+    /* Nbt saving */
+    @Override
+    public final void writeCustomDataToTag(@NotNull CompoundTag tag) {
+        if (this.ownerId == null) throw new RuntimeException("Town owner should not be null");
         
-        UUID townId = null;
+        tag.putUuid( "owner", this.ownerId );
         
-        try (MySQLStatement statement = CoreMod.getSQL().prepare("SELECT `t`.`townId` FROM `chunk_Towns` AS `t`, `player_Towns` AS `p` WHERE `p`.`townId` = `t`.`townId` AND `p`.`townPlayer` = ?;", false ).addPrepared( playerId )) {
-            ResultSet rs = statement.executeStatement();
-            while (rs.next()) {
-                townId = UUID.fromString( rs.getString( "townId" ) );
+        if ( this.name != null )
+            tag.putString("name", Text.Serializer.toJson( this.name ));
+        
+        // Write to tag
+        super.writeCustomDataToTag( tag );
+    }
+    @Override
+    public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
+        // Read the towns ranks
+        if (tag.containsKey("members", 9)) {
+            for (Tag member : tag.getList("members", 10)) {
+                super.USER_RANKS.put(
+                    ((CompoundTag) member).getUuid("i"),
+                    ClaimRanks.valueOf(((CompoundTag) member).getString("r"))
+                );
             }
-        } catch (SQLException e) {
-            CoreMod.logError( e );
         }
         
-        return townId;
+        // Get the towns owner
+        this.ownerId = (tag.hasUuid("owner") ? tag.getUuid("owner") : null);
+        
+        // Get the town name
+        if (tag.containsKey("name",8))
+            this.name = Text.Serializer.fromJson(tag.getString("name"));
+        
+        // Read from tag
+        super.readCustomDataFromTag( tag );
+    }
+    
+    public final void delete() {
+        // Remove all players from the town
+        
+        
+        // Remove from the cache (So it doesn't save again)
+        CoreMod.removeFromCache( this );
+    }
+    
+    @Nullable
+    public static ClaimantTown get(UUID townId) {
+        Claimant town;
+        
+        // If claims are disabled
+        if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || (townId == null))
+            return null;
+        
+        // If contained in the cache
+        if ((town = CoreMod.getFromCache( ClaimantType.TOWN, townId )) != null)
+            return (ClaimantTown) town;
+        
+        // Return the town object
+        return new ClaimantTown( townId );
+    }
+    public static ClaimantTown makeTown(@NotNull ServerPlayerEntity founder, @NotNull Text townName) {
+        // Generate a random UUID
+        UUID townUUID;
+        do {
+            townUUID = UUID.randomUUID();
+        } while (NbtUtils.exists( ClaimantType.TOWN, townUUID ));
+        
+        // Create our town
+        ClaimantTown town = new ClaimantTown( townUUID, townName );
+        
+        // Save the town
+        town.setOwner( founder.getUuid() );
+        town.save();
+        
+        // Return the town
+        return town;
     }
     
 }

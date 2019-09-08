@@ -35,12 +35,11 @@ import net.minecraft.server.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.Serializable;
 import java.util.EnumSet;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
-public class EnumArgumentType<E extends Enum<E>> implements ArgumentType<Enum<E>>, Serializable {
+public class EnumArgumentType<E extends Enum<E>> implements ArgumentType<Enum<E>> {
     private final EnumSet<E> enumValues;
     
     private EnumArgumentType( final Class<E> enumClass ) {
@@ -54,6 +53,7 @@ public class EnumArgumentType<E extends Enum<E>> implements ArgumentType<Enum<E>
     public static <T extends Enum<T>> EnumArgumentType<T> create( Class<T> enumClass ) {
         return new EnumArgumentType<>( enumClass );
     }
+    
     @Nullable
     public static <T extends Enum<T>> T getEnum(Class<T> tClass, String search) {
         return EnumSet.allOf( tClass ).stream().filter((enumValue) -> {
@@ -68,6 +68,7 @@ public class EnumArgumentType<E extends Enum<E>> implements ArgumentType<Enum<E>
         return findVal.orElse(null);
     }
     
+    @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder suggestionsBuilder) {
         return CommandSource.suggestMatching(
             enumValues.stream().map((enumValue) -> {

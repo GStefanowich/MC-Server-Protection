@@ -31,11 +31,14 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.exceptions.NbtNotFoundException;
+import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.utilities.CommandUtilities;
+import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.GameProfileArgumentType;
@@ -44,18 +47,24 @@ import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.ClickEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.Collection;
-import java.util.UUID;
 
 public final class MoneyCommand {
     
-    private static final long DEFAULT_STATE = SewingMachineConfig.INSTANCE.STARTING_MONEY.get();
+    private static final DynamicCommandExceptionType NOT_ENOUGH_MONEY = new DynamicCommandExceptionType((source) ->
+        new LiteralText("You do not have enough money.")
+    );
+    private static final DynamicCommandExceptionType PLAYER_NOT_FOUND = new DynamicCommandExceptionType((source) ->
+        new LiteralText("Could not find data on that player (Maybe they haven't joined the server?).")
+    );
+    private static final float DEFAULT_STATE = SewingMachineConfig.INSTANCE.STARTING_MONEY.get();
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         if (!SewingMachineConfig.INSTANCE.DO_MONEY.get())
             return;
@@ -150,20 +159,27 @@ public final class MoneyCommand {
         ServerPlayerEntity op = context.getSource().getPlayer();
         
         // Get the amount to give
-        long amount = IntegerArgumentType.getInteger( context, "amount" );
+        int amount = IntegerArgumentType.getInteger( context, "amount" );
         
         try {
-            MoneyCommand.databaseGivePlayerMoney( target.getId(), amount );
-            op.sendMessage( new LiteralText( "Gave " ).formatted(Formatting.YELLOW)
-                .append( new LiteralText( "$" + NumberFormat.getInstance().format( amount ) ).formatted(Formatting.GREEN) )
-                .append( " to " )
-                .append( new LiteralText( target.getName() ).formatted(Formatting.DARK_PURPLE) )
-                .append( "." )
-            );
-        } catch (SQLException e) {
-            e.printStackTrace();
+            // Give the player the money
+            if ( MoneyUtils.givePlayerMoney( target.getId(), amount ) ) {
+                // Notify the command sender
+                op.sendMessage(new LiteralText("Gave ").formatted(Formatting.YELLOW)
+                    .append(new LiteralText("$" + NumberFormat.getInstance().format(amount)).formatted(Formatting.GREEN))
+                    .append(" to ")
+                    .append(new LiteralText(target.getName()).formatted(Formatting.DARK_PURPLE))
+                    .append(".")
+                );
+                
+                // Notify the player
+                MoneyCommand.tellPlayersTransaction(null, target, amount);
+            }
+        } catch (NbtNotFoundException e) {
+            throw PLAYER_NOT_FOUND.create( op );
+            
         }
-
+        
         return Command.SINGLE_SUCCESS;
     }
     
@@ -176,23 +192,30 @@ public final class MoneyCommand {
         ServerPlayerEntity op = context.getSource().getPlayer();
         
         // Get the amount to take
-        long amount = IntegerArgumentType.getInteger( context, "amount" );
+        int amount = IntegerArgumentType.getInteger( context, "amount" );
         
         try {
-            if ( MoneyCommand.databaseTakePlayerMoney( target.getId(), amount ) ) {
+            // Take the players money
+            if ( MoneyUtils.takePlayerMoney( target.getId(), amount ) ) {
+                // Notify the command sender
                 op.sendMessage( new LiteralText( "Took " ).formatted(Formatting.YELLOW)
                     .append( new LiteralText( "$" + NumberFormat.getInstance().format( amount ) ).formatted(Formatting.RED) )
                     .append( " from " )
                     .append( new LiteralText( target.getName() ).formatted(Formatting.DARK_PURPLE) )
                     .append( "." )
                 );
-            } else {
                 
+                // Notify the player
+                MoneyCommand.tellPlayersTransaction(null, target, -amount);
             }
-        } catch (SQLException e) {
+        } catch (NbtNotFoundException e) {
+            throw PLAYER_NOT_FOUND.create( op );
+            
+        } catch (NotEnoughMoneyException e) {
             e.printStackTrace();
+            
         }
-        
+
         return Command.SINGLE_SUCCESS;
     }
     
@@ -204,19 +227,26 @@ public final class MoneyCommand {
         // Get the running player
         ServerPlayerEntity op = context.getSource().getPlayer();
         
-        // Get the amount to set
-        long amount = IntegerArgumentType.getInteger( context, "amount" );
-        
         try {
-            MoneyCommand.databaseGivePlayerMoney( target.getId(), amount, true );
-            op.sendMessage( new LiteralText( "Set money for " ).formatted(Formatting.YELLOW)
-                .append( new LiteralText( target.getName() ).formatted(Formatting.DARK_PURPLE) )
-                .append( " to " )
-                .append( new LiteralText( "$" + NumberFormat.getInstance().format( amount ) ).formatted( amount >= 0 ? Formatting.GREEN : Formatting.RED ) )
-                .append( "." )
-            );
-        } catch (SQLException e) {
-            e.printStackTrace();
+            // Get the amount to set
+            int balance = MoneyUtils.getPlayerMoney( target.getId() );
+            int amount = IntegerArgumentType.getInteger( context, "amount" );
+            
+            // Set the players money
+            if ( MoneyUtils.setPlayerMoney( target.getId(), amount ) ) {
+                // Notify the command sender
+                op.sendMessage(new LiteralText("Set money for ").formatted(Formatting.YELLOW)
+                    .append(new LiteralText(target.getName()).formatted(Formatting.DARK_PURPLE))
+                    .append(" to ")
+                    .append(new LiteralText("$" + NumberFormat.getInstance().format(amount)).formatted(amount >= 0 ? Formatting.GREEN : Formatting.RED))
+                    .append(".")
+                );
+                
+                // Notify the player
+                MoneyCommand.tellPlayersTransaction(null, target, amount - balance);
+            }
+        } catch (NbtNotFoundException e) {
+            throw PLAYER_NOT_FOUND.create( op );
         }
         
         return Command.SINGLE_SUCCESS;
@@ -231,15 +261,15 @@ public final class MoneyCommand {
         ServerPlayerEntity op = context.getSource().getPlayer();
         
         try {
-            MoneyCommand.databaseGivePlayerMoney( target.getId(), 0, true );
+            MoneyUtils.setPlayerMoney( target.getId(), SewingMachineConfig.INSTANCE.STARTING_MONEY.get() );
             op.sendMessage( new LiteralText( "Set money for " ).formatted(Formatting.YELLOW)
                 .append( new LiteralText( target.getName() ).formatted(Formatting.DARK_PURPLE) )
                 .append( " to " )
                 .append( new LiteralText( "$" + NumberFormat.getInstance().format( DEFAULT_STATE ) ).formatted( DEFAULT_STATE >= 0 ? Formatting.GREEN : Formatting.RED ) )
                 .append( "." )
             );
-        } catch (SQLException e) {
-            e.printStackTrace();
+        } catch (NbtNotFoundException e) {
+            throw PLAYER_NOT_FOUND.create( op );
         }
         
         return Command.SINGLE_SUCCESS;
@@ -248,7 +278,6 @@ public final class MoneyCommand {
     /*
      * Player commands
      */
-    
     private static int commandMoneyPay(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource commandSource = context.getSource();
         
@@ -262,35 +291,60 @@ public final class MoneyCommand {
         // Get our player reference
         ServerPlayerEntity player = commandSource.getPlayer();
         
+        boolean took = false;
+        boolean sent = false;
         try {
-            if (MoneyCommand.databaseTakePlayerMoney( player.getUuid(), amount )) {
+            if (took = MoneyUtils.takePlayerMoney( player, amount )) {
                 // Give player money
-                MoneyCommand.databaseGivePlayerMoney( target.getId(), amount );
+                sent = MoneyUtils.givePlayerMoney( target.getId(), amount );
                 
                 // Alert players
                 MoneyCommand.tellPlayersTransaction( player, target, amount );
-            } else {
-                player.sendMessage(new LiteralText("You do not have enough money.").formatted(Formatting.RED));
             }
-        } catch ( SQLException e ) {
-            CoreMod.logError( e );
+        } catch ( NbtNotFoundException e ) {
+            throw PLAYER_NOT_FOUND.create( player );
+            
+        } catch ( NotEnoughMoneyException e ) {
+            throw NOT_ENOUGH_MONEY.create( player );
+            
+        } finally {
+            // Refund
+            if (took && (!sent))
+                MoneyUtils.givePlayerMoney( player, amount );
         }
         
         return Command.SINGLE_SUCCESS;
     }
     
     private static int commandMoneyRequest(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerCommandSource commandSource = context.getSource();
+        ServerCommandSource source = context.getSource();
         
         // Get the reference of the player to request money from
         Collection<GameProfile> argumentType = GameProfileArgumentType.getProfileArgument( context, "player" );
-        GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        GameProfile targetProfile = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Get our player reference
-        ServerPlayerEntity player = commandSource.getPlayer();
+        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity target = source.getMinecraftServer().getPlayerManager().getPlayer( targetProfile.getId() );
         
         // Get the amount to request
         int amount = IntegerArgumentType.getInteger( context, "amount" );
+        if (target == null) {
+            // Player not online
+            throw PLAYER_NOT_FOUND.create( player );
+        } else {
+            // Send the pay request
+            player.sendMessage(new LiteralText("Sent request to ").append(target.getDisplayName().formatted(Formatting.AQUA)).formatted(Formatting.YELLOW));
+            target.sendMessage(
+                new LiteralText("").formatted(Formatting.YELLOW)
+                    .append(player.getDisplayName().formatted(Formatting.AQUA))
+                    .append(" is requesting ")
+                    .append(new LiteralText("$" + NumberFormat.getInstance().format(amount)).formatted(Formatting.AQUA))
+                    .append(" from you. ")
+                    .append(new LiteralText("Click Here").formatted(Formatting.BLUE, Formatting.BOLD).styled((styler) -> styler.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pay " + amount + " " + player.getName().asString()))))
+                    .append(" to pay.")
+            );
+        }
         
         return Command.SINGLE_SUCCESS;
     }
@@ -303,80 +357,43 @@ public final class MoneyCommand {
         
         try {
             
-            long playerHas = MoneyCommand.checkPlayerMoney( player.getUuid() );
+            int playerHas = MoneyUtils.getPlayerMoney( player.getUuid() );
             player.sendMessage(TranslatableServerSide.text( player, "player.money",
                 playerHas
             ));
             
-        } catch (SQLException e) {
-            CoreMod.logError( e );
-            
+        } catch (NbtNotFoundException e) {
+            e.printStackTrace();
         }
-        
+
         return Command.SINGLE_SUCCESS;
     }
     
     /*
      * Money adaptation
      */
-    public static long checkPlayerMoney(UUID uuid) throws SQLException {
-        try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `dataMoney` FROM `player_Data` WHERE `dataOwner` = ?;", false)) {
-            try ( ResultSet rs = stmt.addPrepared(uuid)
-                .executeStatement(false) ) {
-                
-                while (rs.next()) {
-                    return rs.getLong("dataMoney");
-                }
-            }
-        }
-        
-        return 0;
-    }
-    public static void tellPlayersTransaction( ServerPlayerEntity payer, GameProfile recipient, long amount ) {
-        MinecraftServer server = payer.getServer();
-        if ( server == null )
+    public static void tellPlayersTransaction(@Nullable ServerPlayerEntity payer, @NotNull GameProfile recipient, long amount ) {
+        MinecraftServer server = CoreMod.getServer();
+        if ((server == null) || (amount == 0))
             return;
         
         // Get the recipient and notify them if they are online
         PlayerManager playerManager = server.getPlayerManager();
         ServerPlayerEntity recipientEntity = playerManager.getPlayer( recipient.getId() );
         if ( recipientEntity != null ) {
-            TitleUtils.showPlayerAlert( recipientEntity, Formatting.YELLOW,
-                new LiteralText( "You received " ),
-                new LiteralText( "$" + NumberFormat.getInstance().format( amount ) ).formatted(Formatting.BLUE, Formatting.BOLD),
-                new LiteralText( " from " ),
-                payer.getName().formatted(Formatting.DARK_PURPLE)
-            );
-        }
-    }
-    
-    /*
-     * Methods to update the database
-     */
-    public static void databaseGivePlayerMoney(UUID playerUUID, Number giveAmount) throws SQLException {
-        MoneyCommand.databaseGivePlayerMoney(playerUUID, giveAmount, false);
-    }
-    public static void databaseGivePlayerMoney(UUID playerUUID, Number giveAmount, boolean set) throws SQLException {
-        if ((giveAmount.longValue() <= 0) && (!set))
-            return;
-        CoreMod.getSQL().prepare("INSERT INTO `player_Data` ( `dataOwner`, `dataMoney` ) VALUES ( ?, ? ) ON DUPLICATE KEY UPDATE `dataMoney` =" + (set ? "" : " `dataMoney` +") + " VALUES( `dataMoney` );", false)
-            .addPrepared(playerUUID)
-            .addPrepared(giveAmount)
-            .executeUpdate(true);
-    }
-    public static boolean databaseTakePlayerMoney(UUID playerUUID, Number takeAmount) throws SQLException {
-        if ( takeAmount.longValue() <= 0 )
-            return true;
-        try ( MySQLStatement stmt = CoreMod.getSQL().prepare("UPDATE `player_Data` SET `dataMoney` = `dataMoney` - ? WHERE `dataOwner` = ?;", false) ) {
-            int result = stmt
-                .addPrepared(takeAmount)
-                .addPrepared(playerUUID)
-                .executeUpdate(true);
-            return ( result > 0 );
-        } catch ( SQLException e ){
-            if ( e.getErrorCode() == 1690 )
-                return false;
-            throw e;
+            if (payer == null) {
+                TitleUtils.showPlayerAlert(recipientEntity, ( amount > 0 ? Formatting.GREEN : Formatting.RED ),
+                    new LiteralText("You " + ( amount > 0 ? "received" : "lost" )),
+                    new LiteralText(" $" + NumberFormat.getInstance().format(Math.abs( amount ))).formatted(Formatting.AQUA, Formatting.BOLD)
+                );
+            } else {
+                TitleUtils.showPlayerAlert(recipientEntity, Formatting.GREEN,
+                    new LiteralText("You received"),
+                    new LiteralText(" $" + NumberFormat.getInstance().format(Math.abs( amount ))).formatted(Formatting.AQUA, Formatting.BOLD),
+                    new LiteralText(" from "),
+                    payer.getName().formatted(Formatting.DARK_PURPLE)
+                );
+            }
         }
     }
 }

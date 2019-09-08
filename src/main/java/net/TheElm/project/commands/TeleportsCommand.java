@@ -31,7 +31,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
-import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.utilities.*;
@@ -180,7 +179,7 @@ public final class TeleportsCommand {
         if ( ChunkUtils.canPlayerWarpTo( porter, target.getId() ) ) {
             WarpUtils.teleportPlayer( warp, porter );
             
-            CoreMod.logMessage(porter.getName().asString() + " was teleported to " + (porter.getUuid().equals(target.getId()) ? "their" : target.getName() + "'s") + " warp");
+            CoreMod.logInfo(porter.getName().asString() + " was teleported to " + (porter.getUuid().equals(target.getId()) ? "their" : target.getName() + "'s") + " warp");
             
             // Notify the player
             if ((targetPlayer != null) && (!target.getId().equals(porter.getUuid()))) {
@@ -200,7 +199,7 @@ public final class TeleportsCommand {
             // Add the player to the list of invitations
             CoreMod.PLAYER_WARP_INVITES.put(porter, target.getId());
             
-            CoreMod.logMessage(porter.getName().asString() + " has requested to teleport to " + (porter.getUuid().equals(target.getId()) ? "their" : target.getName() + "'s") + " warp");
+            CoreMod.logInfo(porter.getName().asString() + " has requested to teleport to " + (porter.getUuid().equals(target.getId()) ? "their" : target.getName() + "'s") + " warp");
             
             // Notify the target
             targetPlayer.sendMessage(porter.getName().formatted(Formatting.AQUA)
@@ -235,7 +234,7 @@ public final class TeleportsCommand {
         Warp warp = WarpUtils.getPlayerWarp( target.getUuid() );
         WarpUtils.teleportPlayer( warp, porter );
         
-        CoreMod.logMessage(porter.getName().asString() + " was teleported to " + (porter.getUuid().equals(target.getUuid()) ? "their" : target.getName().asString() + "'s") + " warp");
+        CoreMod.logInfo(porter.getName().asString() + " was teleported to " + (porter.getUuid().equals(target.getUuid()) ? "their" : target.getName().asString() + "'s") + " warp");
         
         CoreMod.PLAYER_WARP_INVITES.remove( porter );
         return Command.SINGLE_SUCCESS;
@@ -252,7 +251,7 @@ public final class TeleportsCommand {
         if ((( warpToUUID = CoreMod.PLAYER_WARP_INVITES.get( porter ) ) == null) || (!target.getUuid().equals( warpToUUID )) )
             throw TARGET_NOT_REQUESTING.create( target );
         
-        CoreMod.logMessage( porter.getName().asString() + "'s teleport was rejected by " + target.getName().asString() );
+        CoreMod.logInfo( porter.getName().asString() + "'s teleport was rejected by " + target.getName().asString() );
         
         CoreMod.PLAYER_WARP_INVITES.remove( porter );
         return Command.SINGLE_SUCCESS;

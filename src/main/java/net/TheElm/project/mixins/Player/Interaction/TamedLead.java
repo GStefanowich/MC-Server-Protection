@@ -25,9 +25,9 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.enums.ClaimSettings;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
+import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
@@ -44,6 +44,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -83,10 +84,10 @@ public abstract class TamedLead extends LivingEntity {
         if ((this.getOwnerUuid() != null) && (player.getUuid().equals(this.getOwnerUuid())))
             return;
 
-        ClaimedChunk claimedChunkInfo = ClaimedChunk.convert(this.getEntityWorld(), this.getBlockPos());
+        WorldChunk chunk = this.getEntityWorld().getWorldChunk( this.getBlockPos() );
         
         // If player can interact with tameable
-        if (( claimedChunkInfo != null ) && claimedChunkInfo.isSetting( ClaimSettings.HURT_TAMED ))
+        if (( chunk != null ) && ((IClaimedChunk) chunk).isSetting( ClaimSettings.HURT_TAMED ))
             return;
         
         Text owner;
@@ -96,8 +97,8 @@ public abstract class TamedLead extends LivingEntity {
                 .getName();
         } else {
             // Get the name of the CHUNK OWNER
-            if ( claimedChunkInfo != null )
-                owner = claimedChunkInfo.getOwnerName( player );
+            if ( chunk != null )
+                owner = ((IClaimedChunk) chunk).getOwnerName( player );
             else
                 owner = new LiteralText( "unknown player" )
                     .formatted(Formatting.LIGHT_PURPLE);

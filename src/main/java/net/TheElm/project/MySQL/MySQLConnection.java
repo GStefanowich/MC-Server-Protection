@@ -69,7 +69,7 @@ public class MySQLConnection implements MySQLHost {
         
         dataSource.setDatabaseName(SewingMachineConfig.INSTANCE.DB_NAME.get() );
         
-        CoreMod.logMessage( "Opening our SQL connection" );
+        CoreMod.logInfo( "Opening our SQL connection" );
         
         // Allow multiple queries
         dataSource.setAllowMultiQueries( true );

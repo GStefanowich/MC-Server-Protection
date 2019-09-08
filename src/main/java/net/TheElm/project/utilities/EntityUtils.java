@@ -25,17 +25,22 @@
 
 package net.TheElm.project.utilities;
 
+import net.TheElm.project.CoreMod;
 import net.minecraft.block.*;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.passive.*;
 import net.minecraft.entity.vehicle.*;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 public final class EntityUtils {
     
@@ -150,4 +155,27 @@ public final class EntityUtils {
             .formatted(Formatting.AQUA);
     }
     
+    /*
+     * Get Online Players
+     */
+    @Nullable
+    public static ServerPlayerEntity getPlayer(String username) {
+        // Get the server
+        MinecraftServer server = CoreMod.getServer();
+        if (server == null)
+            return null;
+        
+        // If the player is online
+        return server.getPlayerManager().getPlayer( username );
+    }
+    @Nullable
+    public static ServerPlayerEntity getPlayer(UUID playerId) {
+        // Get the server
+        MinecraftServer server = CoreMod.getServer();
+        if (server == null)
+            return null;
+        
+        // If the player is online
+        return server.getPlayerManager().getPlayer( playerId );
+    }
 }

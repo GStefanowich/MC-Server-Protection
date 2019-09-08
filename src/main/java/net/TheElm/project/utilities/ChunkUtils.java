@@ -27,13 +27,17 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
-import net.TheElm.project.enums.ClaimRanks;
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.enums.ClaimPermissions;
+import net.TheElm.project.enums.ClaimRanks;
+import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -45,9 +49,9 @@ public final class ChunkUtils {
      * Check the database if a user can perform an action within the specified chunk
      */
     public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( perm, player, ClaimedChunk.convert( player.getEntityWorld(), blockPos ) );
+        return ChunkUtils.canPlayerDoInChunk( perm, player, player.getEntityWorld().getWorldChunk( blockPos ));
     }
-    public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @Nullable ClaimedChunk chunk) {
+    public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @Nullable WorldChunk chunk) {
         // If claims are disabled
         if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) return true;
         
@@ -55,7 +59,7 @@ public final class ChunkUtils {
         if ( chunk == null ) return false;
         
         // Check if player can do action in chunk
-        return chunk.canUserDo( player.getUuid(), perm );
+        return ((IClaimedChunk) chunk).canUserDo( player.getUuid(), perm );
     }
     
     /**
@@ -87,7 +91,7 @@ public final class ChunkUtils {
     public static boolean canPlayerLootChestsInChunk(PlayerEntity player, BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.STORAGE, player, blockPos );
     }
-    public static boolean canPlayerLootChestsInChunk(PlayerEntity player, ClaimedChunk chunk) {
+    public static boolean canPlayerLootChestsInChunk(PlayerEntity player, WorldChunk chunk) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.STORAGE, player, chunk );
     }
     
@@ -110,7 +114,7 @@ public final class ChunkUtils {
     public static boolean canPlayerToggleDoor(PlayerEntity player, BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.DOORS, player, blockPos );
     }
-    public static boolean canPlayerToggleDoor(PlayerEntity player, ClaimedChunk chunk) {
+    public static boolean canPlayerToggleDoor(PlayerEntity player, WorldChunk chunk) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.DOORS, player, chunk );
     }
     
@@ -163,6 +167,21 @@ public final class ChunkUtils {
         if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
             return true;
         return CoreMod.spawnID.equals(ChunkUtils.getPlayerLocation( player ));
+    }
+    public static int getPositionWithinChunk(BlockPos blockPos) {
+        int chunkIndex = blockPos.getX() & 0xF;
+        return (chunkIndex |= (blockPos.getZ() & 0xF) << 4);
+    }
+    
+    public static Text getPlayerWorldWilderness(@NotNull final PlayerEntity player) {
+        if (player.getEntityWorld().dimension.getType() == DimensionType.THE_END) {
+            return TranslatableServerSide.text( player, "claim.wilderness.end" ).formatted( Formatting.BLACK );
+            
+        } else if (player.getEntityWorld().dimension.getType() == DimensionType.THE_NETHER) {
+            return TranslatableServerSide.text( player, "claim.wilderness.nether" ).formatted( Formatting.RED );
+            
+        }
+        return TranslatableServerSide.text( player, "claim.wilderness.general" ).formatted( Formatting.GREEN );
     }
     
 }

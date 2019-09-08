@@ -30,17 +30,21 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.utilities.LoggingUtils.LoggingIntervals;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 public final class SewingMachineConfig {
     public static final SewingMachineConfig INSTANCE;
+    private final String version_key = "config_version";
+    private final boolean fileExists;
     
     static {
         INSTANCE = new SewingMachineConfig();
     }
     
     private final List<ConfigOption<?>> configOptions = new ArrayList<>();
+    
+    // Mod version
+    public final ConfigOption<String> CONFIG_VERSION;
     
     // Database
     public final ConfigOption<Boolean> DB_LITE;
@@ -58,6 +62,7 @@ public final class SewingMachineConfig {
     public final ConfigOption<Boolean> DO_DEATH_CHESTS;
     public final ConfigOption<Integer> MAX_DEATH_SCAN;
     public final ConfigOption<Integer> MAX_DEATH_ELEVATION;
+    public final ConfigOption<Boolean> PRINT_DEATH_CHEST_LOC;
     
     // Player nicks
     public final ConfigOption<Boolean> DO_PLAYER_NICKS;
@@ -88,7 +93,8 @@ public final class SewingMachineConfig {
     
     // Economy
     public final ConfigOption<Boolean> DO_MONEY;
-    public final ConfigOption<Long> STARTING_MONEY;
+    public final ConfigOption<Integer> STARTING_MONEY;
+    public final ConfigOption<Integer> DAILY_ALLOWANCE;
     
     // Sleeping
     public final ConfigOption<Boolean> DO_SLEEP_VOTE;
@@ -115,11 +121,12 @@ public final class SewingMachineConfig {
     
     private SewingMachineConfig() {
         // Initialize all configurations
+        this.CONFIG_VERSION = this.addConfig( new ConfigOption<>(this.version_key, CoreMod.getMod().getMetadata().getVersion().getFriendlyString(), JsonElement::getAsString));
         
         /*
          * Database handling
          */
-        this.DB_LITE = this.addConfig( new ConfigOption<>( "database.sqlite", true, JsonElement::getAsBoolean ) );
+        this.DB_LITE = this.addConfig( new ConfigOption<>("database.sqlite", true, JsonElement::getAsBoolean ) );
         this.DB_HOST = this.addConfig( new ConfigOption<>("database.host", "", JsonElement::getAsString ));
         this.DB_NAME = this.addConfig( new ConfigOption<>("database.name", "", JsonElement::getAsString ));
         this.DB_USER = this.addConfig( new ConfigOption<>("database.user", "", JsonElement::getAsString ));
@@ -147,7 +154,8 @@ public final class SewingMachineConfig {
          * Money options
          */
         this.DO_MONEY = this.addConfig( new ConfigOption<>("money.enabled", true, JsonElement::getAsBoolean));
-        this.STARTING_MONEY = this.addConfig( new ConfigOption<>("money.starting", 0L, JsonElement::getAsLong));
+        this.STARTING_MONEY = this.addConfig( new ConfigOption<>("money.starting", 0, JsonElement::getAsInt));
+        this.DAILY_ALLOWANCE = this.addConfig( new ConfigOption<>("money.daily_reward", 0, JsonElement::getAsInt));
         
         /*
          * Death chests
@@ -155,6 +163,7 @@ public final class SewingMachineConfig {
         this.DO_DEATH_CHESTS = this.addConfig( new ConfigOption<>("death_chest.enabled", true, JsonElement::getAsBoolean));
         this.MAX_DEATH_SCAN = this.addConfig( new ConfigOption<>("death_chest.max_distance", 4, JsonElement::getAsInt));
         this.MAX_DEATH_ELEVATION = this.addConfig( new ConfigOption<>("death_chest.max_elevation", 256, JsonElement::getAsInt));
+        this.PRINT_DEATH_CHEST_LOC = this.addConfig( new ConfigOption<>("death_chest.print_coordinates", true, JsonElement::getAsBoolean));
         
         /*
          * Naming
@@ -172,10 +181,10 @@ public final class SewingMachineConfig {
         /*
          * Logging
          */
-        this.LOG_BLOCKS_BREAKING = this.addConfig( new ConfigOption<>("logging.blocks.break", true, JsonElement::getAsBoolean));
-        this.LOG_BLOCKS_PLACING = this.addConfig( new ConfigOption<>("logging.blocks.place", true, JsonElement::getAsBoolean));
-        this.LOG_CHUNKS_CLAIMED = this.addConfig( new ConfigOption<>("logging.chunks.claimed", true, JsonElement::getAsBoolean));
-        this.LOG_CHUNKS_UNCLAIMED = this.addConfig( new ConfigOption<>("logging.chunks.wilderness", true, JsonElement::getAsBoolean));
+        this.LOG_BLOCKS_BREAKING = this.addConfig( new ConfigOption<>("logging.blocks.break", false, JsonElement::getAsBoolean));
+        this.LOG_BLOCKS_PLACING = this.addConfig( new ConfigOption<>("logging.blocks.place", false, JsonElement::getAsBoolean));
+        this.LOG_CHUNKS_CLAIMED = this.addConfig( new ConfigOption<>("logging.chunks.claimed", false, JsonElement::getAsBoolean));
+        this.LOG_CHUNKS_UNCLAIMED = this.addConfig( new ConfigOption<>("logging.chunks.wilderness", false, JsonElement::getAsBoolean));
         this.LOG_RESET_INTERVAL = this.addConfig( new ConfigOption<>("logging.reset.interval", LoggingIntervals.DAY, this::getAsTimeInterval));
         this.LOG_RESET_TIME = this.addConfig( new ConfigOption<>("logging.reset.time", 7L, JsonElement::getAsLong));
         this.LOG_VIEW_OP_LEVEL = this.addConfig( new ConfigOption<>("logging.read.op_level", 1, JsonElement::getAsInt));
@@ -214,26 +223,16 @@ public final class SewingMachineConfig {
         this.EXTINGUISH_CAMPFIRES = this.addConfig( new ConfigOption<>("fun.world.extinguish_campfires", true, JsonElement::getAsBoolean));
         this.LIMIT_SKELETON_ARROWS = this.addConfig( new ConfigOption<>("fun.mobs.skeletons.limit_arrows", true, JsonElement::getAsBoolean));
         
-        this.initialize();
-    }
-    
-    private <T> ConfigOption<T> addConfig( ConfigOption<T> config ) {
-        this.configOptions.add( config );
-        return config;
-    }
-    
-    /*
-     * File save / load
-     */
-    private void initialize() {
-        CoreMod.logMessage( "Loading configuration file." );
+        CoreMod.logInfo( "Loading configuration file." );
         
         // Load from the folder
+        final File dir = CoreMod.getConfDir();
+        final File config = new File( dir.getAbsolutePath() + File.separator + "config.json" );
+        
+        this.fileExists = config.exists();
+        
         try {
-            final File dir = CoreMod.getConfDir();
-            final File config = new File( dir.getAbsolutePath() + File.separator + "config.json" );
-            
-            if (config.exists()) {
+            if (this.fileExists) {
             } else if (config.createNewFile()) {
                 /*
                  * Create a new config
@@ -258,12 +257,24 @@ public final class SewingMachineConfig {
         }
     }
     
+    public final boolean preExisting() {
+        return this.fileExists;
+    }
+    
+    private <T> ConfigOption<T> addConfig( ConfigOption<T> config ) {
+        this.configOptions.add( config );
+        return config;
+    }
+    
+    /*
+     * File save / load
+     */
     private void saveToFile(File configFile, JsonElement json) throws IOException {
         // GSON Parser
         Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
         
         try (FileWriter fw = new FileWriter(configFile)) {
-            fw.append(gson.toJson( json ));
+            fw.append(gson.toJson(sortObject( json )));
         }
     }
     private JsonObject loadFromFile(File configFile) throws FileNotFoundException {
@@ -272,11 +283,11 @@ public final class SewingMachineConfig {
         return element.getAsJsonObject();
     }
     
-    private JsonElement loadFromJSON(JsonObject json ) {
+    private JsonElement loadFromJSON(JsonObject json) {
         for ( ConfigOption<?> config : this.configOptions ) {
             JsonObject inner = json;
             String[] path = config.getPath().split("\\.");
-
+            
             int p;
             for (p = 0; p < (path.length - 1); p++) {
                 String seg = path[p];
@@ -292,15 +303,9 @@ public final class SewingMachineConfig {
             
             // Set value for config (From file)
             if ( inner.has(path[p]) )
-                config.set(inner.get(path[p]));
-            else if ( config.get() instanceof String || ( config.get() == null ) )
-                inner.addProperty( path[p], (String) config.get());
-            else if ( config.get() instanceof Number )
-                inner.addProperty( path[p], (Number) config.get());
-            else if ( config.get() instanceof Boolean )
-                inner.addProperty( path[p], (Boolean) config.get());
-            else if ( config.get() instanceof Enum )
-                inner.addProperty( path[p], ((Enum) config.get()).name() );
+                config.set(inner.get(path[p]), true);
+            else
+                inner.add( path[p], config.getElement() );
         }
         
         return json;
@@ -343,6 +348,38 @@ public final class SewingMachineConfig {
         if (!LoggingIntervals.contains(element.getAsString()))
             throw new RuntimeException( "Unacceptable time interval \"" + element.getAsString() + "\"" );
         return LoggingIntervals.valueOf(element.getAsString().toUpperCase());
+    }
+    private JsonElement sortObject(JsonElement element) {
+        // If not an object, no sort
+        if (!(element instanceof JsonObject))
+            return element;
+        
+        // Get our element as an object
+        JsonObject object = element.getAsJsonObject();
+        
+        // Create our new blank object
+        JsonObject sorted = new JsonObject();
+        List<String> keys = new ArrayList<>();
+        
+        // Get all keys from the main object
+        Set<Map.Entry<String, JsonElement>> set = object.entrySet();
+        for ( Map.Entry<String, JsonElement> pair : set ) {
+            if ( !this.version_key.equals( pair.getKey() ) )
+                keys.add( pair.getKey() );
+        }
+        
+        // Add them back in sorted order
+        Collections.sort( keys );
+        
+        // Add Version - Should always be first in the sorted list
+        keys.add( 0, this.version_key );
+        
+        for ( String key : keys ) {
+            if ( object.has( key ) )
+                sorted.add( key, object.get( key ) );
+        }
+        
+        return sorted;
     }
     
 }

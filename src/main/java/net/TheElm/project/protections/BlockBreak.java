@@ -26,10 +26,10 @@
 package net.TheElm.project.protections;
 
 import net.TheElm.project.config.SewingMachineConfig;
-import net.TheElm.project.interfaces.BlockBreakCallback;
-import net.TheElm.project.utilities.ChunkUtils;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.interfaces.BlockBreakCallback;
+import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.LoggingUtils;
 import net.minecraft.block.*;
 import net.minecraft.entity.player.PlayerEntity;
@@ -44,6 +44,7 @@ import net.minecraft.util.ItemScatterer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 
 import java.util.List;
 
@@ -132,8 +133,8 @@ public final class BlockBreak {
                 
                 if ( cropFullyGrown ) {
                     // Get the chunk information if we should replant
-                    ClaimedChunk chunkData = ClaimedChunk.convert(world, blockPos);
-                    if ((chunkData != null) && chunkData.isSetting(ClaimSettings.CROP_AUTOREPLANT)) {
+                    WorldChunk chunk = world.getWorldChunk( blockPos );
+                    if ((chunk != null) && ((IClaimedChunk) chunk).isSetting(ClaimSettings.CROP_AUTOREPLANT)) {
                         /*
                          * Automatically Replant the plant
                          */

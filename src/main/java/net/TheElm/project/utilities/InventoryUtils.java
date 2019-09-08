@@ -38,6 +38,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
@@ -144,7 +145,7 @@ public final class InventoryUtils {
                                 if (putable <= 0) {
                                     success = ( put > 0 );
                                     if (success)
-                                        player.playSound( SoundEvents.ENTITY_ITEM_PICKUP,1.0f, 1.0f );
+                                        player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
                                     return success;
                                 }
                             }
@@ -156,7 +157,7 @@ public final class InventoryUtils {
         
         success = ( itemStackSize > 0 );
         if (success)
-            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, 1.0f, 1.0f );
+            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
         return success;
     }
     
@@ -233,7 +234,7 @@ public final class InventoryUtils {
         
         boolean success = ( stackSize >= count );
         if ( success )
-            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP,1.0f, 1.0f );
+            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
         return success;
     }
     

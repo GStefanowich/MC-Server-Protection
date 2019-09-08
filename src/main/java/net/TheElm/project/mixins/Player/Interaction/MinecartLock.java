@@ -25,9 +25,9 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
-import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
+import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
@@ -39,6 +39,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -54,7 +55,7 @@ public abstract class MinecartLock extends AbstractMinecartEntity {
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     public void cartInteraction(PlayerEntity player, Hand hand, CallbackInfoReturnable<Boolean> callback) {
         Type minecartType = this.getMinecartType();
-        CoreMod.logMessage( minecartType.name() );
+        CoreMod.logInfo( minecartType.name() );
         
         if ( minecartType.equals( Type.RIDEABLE ) )
             return;
@@ -68,12 +69,12 @@ public abstract class MinecartLock extends AbstractMinecartEntity {
         // Play sound to player
         this.playSound(EntityUtils.getLockSound( this ), 1, 1);
         
-        ClaimedChunk claimedChunkInfo = ClaimedChunk.convert(world, this.getBlockPos());
+        WorldChunk chunk = world.getWorldChunk( this.getBlockPos() );
         
         // Display that this item can't be opened
         TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
             EntityUtils.getLockedName( this ),
-            ( claimedChunkInfo == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : claimedChunkInfo.getOwnerName( player ) )
+            ( chunk == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName( player ) )
         ));
         
         // Cancel the event

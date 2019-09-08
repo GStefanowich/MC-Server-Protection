@@ -51,7 +51,7 @@ public final class StructureBuilderUtils {
     
     public StructureBuilderUtils(World world, String structureName) {
         this.world = world;
-        CoreMod.logMessage( "Building new " + structureName );
+        CoreMod.logInfo( "Building new " + structureName );
     }
     
     public void addBlock(BlockPos blockPos, BlockState blockState) {

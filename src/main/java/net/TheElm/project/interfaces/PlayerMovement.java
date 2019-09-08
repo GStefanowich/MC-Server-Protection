@@ -25,14 +25,14 @@
 
 package net.TheElm.project.interfaces;
 
-import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 
 public interface PlayerMovement {
     
     void movedPlayer(final ServerPlayerEntity player);
-    void showPlayerNewLocation(@NotNull PlayerEntity player, ClaimedChunk local);
+    void showPlayerNewLocation(@NotNull PlayerEntity player, WorldChunk local);
     
 }

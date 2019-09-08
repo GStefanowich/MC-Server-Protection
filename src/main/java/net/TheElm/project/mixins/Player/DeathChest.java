@@ -26,12 +26,14 @@
 package net.TheElm.project.mixins.Player;
 
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.utilities.DeathChestUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
@@ -45,7 +47,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerEntity.class)
-public abstract class DeathChest extends LivingEntity {
+public abstract class DeathChest extends LivingEntity implements MoneyHolder {
     
     @Shadow public PlayerInventory inventory;
     @Shadow protected native void vanishCursedItems();
@@ -54,7 +56,9 @@ public abstract class DeathChest extends LivingEntity {
         super(entityType_1, world_1);
     }
     
-    // If player drops inventory (At death, stop that!)
+    /* 
+     * If player drops inventory (At death, stop that!)
+     */
     @Inject(at = @At("HEAD"), method = "dropInventory", cancellable = true)
     public void onInventoryDrop(CallbackInfo callback) {
         if (!SewingMachineConfig.INSTANCE.DO_DEATH_CHESTS.get())
@@ -76,13 +80,42 @@ public abstract class DeathChest extends LivingEntity {
         }
     }
     
-    // Override the players display name
+    /* 
+     * Override the players display name to their nick
+     */
     @Inject(at = @At("RETURN"), method = "getDisplayName", cancellable = true)
     public void getPlayerNickname(CallbackInfoReturnable<Text> callback) {
         if (((LivingEntity)this) instanceof ServerPlayerEntity) {
             if (((Nicknamable)this).getPlayerNickname() != null)
                 callback.setReturnValue(((Nicknamable)this).getPlayerNickname());
         }
+    }
+    
+    /*
+     * Tracked Data
+     */
+    @Inject(at = @At("RETURN"), method = "initDataTracker")
+    public void onInitDataTracking(CallbackInfo callback) {
+        this.dataTracker.startTracking( MONEY, SewingMachineConfig.INSTANCE.STARTING_MONEY.get() );
+    }
+    @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
+    public void onSavingData(CompoundTag tag, CallbackInfo callback) {
+        // Save the players money
+        tag.putInt( MoneyHolder.SAVE_KEY, this.getPlayerWallet() );
+    }
+    @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
+    public void onReadingData(CompoundTag tag, CallbackInfo callback) {
+        // Read the players money
+        if (tag.containsKey( MoneyHolder.SAVE_KEY ))
+            this.dataTracker.set( MONEY, tag.getInt( MoneyHolder.SAVE_KEY ) );
+    }
+    
+    /*
+     * Money
+     */
+    @Override
+    public int getPlayerWallet() {
+        return this.dataTracker.get( MONEY );
     }
     
 }
