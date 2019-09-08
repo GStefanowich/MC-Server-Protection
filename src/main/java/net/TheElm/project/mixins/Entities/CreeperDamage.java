@@ -25,14 +25,15 @@
 
 package net.TheElm.project.mixins.Entities;
 
-import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.explosion.Explosion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -61,13 +62,15 @@ public abstract class CreeperDamage extends HostileEntity {
             return;
         
         // Get the chunk info
-        ClaimedChunk claimedChunkInfo = ClaimedChunk.convert( this.getEntityWorld(), blockPos );
-        if ( claimedChunkInfo != null ) {
+        WorldChunk chunk = this.getEntityWorld().getWorldChunk( blockPos );
+        if ( chunk != null ) {
+            IClaimedChunk chunkInfo = (IClaimedChunk) chunk;
+            
             // If the creeper griefing is disallowed
-            if ( !claimedChunkInfo.isSetting( ClaimSettings.CREEPER_GRIEFING ) ) {
+            if ( !chunkInfo.isSetting( ClaimSettings.CREEPER_GRIEFING ) ) {
                 
                 // Log the creeper explosion
-                CoreMod.logMessage("Stopped creeper block damage at X " + blockPos.getX() + ", Z" + blockPos.getZ() + ", Y" + blockPos.getZ() + ".");
+                CoreMod.logInfo("Stopped creeper block damage at X " + blockPos.getX() + ", Z" + blockPos.getZ() + ", Y" + blockPos.getZ() + ".");
                 
                 // Imitate the real explosion that happened;
                 this.dead = true;

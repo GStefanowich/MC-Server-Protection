@@ -25,50 +25,44 @@
 
 package net.TheElm.project;
 
+import net.TheElm.project.MySQL.MySQLConnection;
 import net.TheElm.project.MySQL.MySQLHost;
+import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.MySQL.MySQLite;
-import net.TheElm.project.commands.*;
+import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewingMachineConfig;
-import net.TheElm.project.enums.ClaimPermissions;
-import net.TheElm.project.enums.ClaimRanks;
-import net.TheElm.project.enums.ClaimSettings;
-import net.TheElm.project.protections.BlockInteraction;
-import net.TheElm.project.protections.ItemInteraction;
+import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
-import net.TheElm.project.protections.BlockBreak;
 import net.TheElm.project.utilities.LoggingUtils;
-import net.fabricmc.api.DedicatedServerModInitializer;
-import net.TheElm.project.MySQL.MySQLConnection;
-import net.TheElm.project.MySQL.MySQLStatement;
-import net.TheElm.project.protections.EntityAttack;
-import net.fabricmc.fabric.api.registry.CommandRegistry;
-import net.fabricmc.loader.FabricLoader;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.world.chunk.WorldChunk;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.lang.ref.WeakReference;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.stream.Stream;
 
-public class CoreMod implements DedicatedServerModInitializer {
+public abstract class CoreMod {
     
     public static final String MOD_ID = "sewing-machine";
     
     // Create ourselves a universal logger
     private static final Logger logger = LogManager.getLogger( MOD_ID );
     
+    // Mod memory cache for claims
     public static final Map<ServerPlayerEntity, UUID> PLAYER_LOCATIONS = Collections.synchronizedMap(new WeakHashMap<>()); // Reference of where players are
     public static final Map<ServerPlayerEntity, UUID> PLAYER_WARP_INVITES = Collections.synchronizedMap(new WeakHashMap<>()); // Reference of warp invitations
-    public static final Map<UUID, ClaimantPlayer> OWNER_CACHE = Collections.synchronizedMap(new HashMap<>()); // Reference from player UUID
-    public static final Map<UUID, ClaimantTown> TOWNS_CACHE = Collections.synchronizedMap(new HashMap<>()); // Reference from owner UUID
-    public static final Map<WorldChunk, ClaimedChunk> CHUNK_CACHE = Collections.synchronizedMap(new WeakHashMap<>()); // Reference from loaded Chunks
+    private static final Map<UUID, WeakReference<ClaimantPlayer>> PLAYER_CLAIM_CACHE = Collections.synchronizedMap(new HashMap<>()); // Reference from player UUID
+    private static final Map<UUID, WeakReference<ClaimantTown>> TOWN_CLAIM_CACHE = Collections.synchronizedMap(new HashMap<>()); // Reference from owner UUID
     
     public static final UUID spawnID = new UUID( 0, 0 );
     
@@ -86,77 +80,85 @@ public class CoreMod implements DedicatedServerModInitializer {
         return MySQL;
     }
     
-    // Server
+    /*
+     * Claimant storage
+     */
+    public static void addToCache(Claimant claimant) {
+        if (claimant instanceof ClaimantPlayer)
+            PLAYER_CLAIM_CACHE.put(claimant.getId(), new WeakReference<>((ClaimantPlayer) claimant));
+        else if (claimant instanceof ClaimantTown)
+            TOWN_CLAIM_CACHE.put(claimant.getId(), new WeakReference<>((ClaimantTown) claimant));
+    }
     @Nullable
+    public static Claimant removeFromCache(Claimant claimant) {
+        if (claimant instanceof ClaimantPlayer) {
+            WeakReference<ClaimantPlayer> reference;
+            if ((reference = PLAYER_CLAIM_CACHE.remove(claimant.getId())) != null)
+                return reference.get();
+        } else if (claimant instanceof ClaimantTown) {
+            WeakReference<ClaimantTown> reference;
+            if ((reference = TOWN_CLAIM_CACHE.remove(claimant.getId())) != null)
+                return reference.get();
+        }
+        return null;
+    }
+    @Nullable
+    public static Claimant getFromCache(@NotNull Claimant.ClaimantType type, @NotNull UUID uuid) {
+        return CoreMod.getCacheStream( type ).filter((claimant -> claimant.getId().equals(uuid))).findFirst().orElse( null );
+    }
+    public static Stream<Claimant> getCacheStream() {
+        return CoreMod.getCacheStream( null );
+    }
+    public static Stream<Claimant> getCacheStream(@Nullable Claimant.ClaimantType type) {
+        List<Claimant> out = new ArrayList<>();
+        if ((type == null) || type.equals(Claimant.ClaimantType.PLAYER)) {
+            ClaimantPlayer player;
+            for (WeakReference<ClaimantPlayer> reference : PLAYER_CLAIM_CACHE.values()) {
+                if ((player = reference.get()) != null)
+                    out.add(player);
+            }
+        }
+        if ((type == null) || type.equals(Claimant.ClaimantType.TOWN)) {
+            ClaimantTown town;
+            for ( WeakReference<ClaimantTown> reference : TOWN_CLAIM_CACHE.values() ) {
+                if ((town = reference.get()) != null)
+                    out.add( town );
+            }
+        }
+        return out.stream();
+    }
+    
+    /*
+     * Fabric Elements
+     */
+    @NotNull
     public static MinecraftServer getServer() {
         Object server;
         if ((server = getFabric().getGameInstance()) instanceof MinecraftServer)
             return (MinecraftServer) server;
-        return null;
+        throw new RuntimeException("Called Server object from illegal position.");
     }
-    
-    @SuppressWarnings("deprecation")
     public static FabricLoader getFabric() {
-        return FabricLoader.INSTANCE;
+        return FabricLoader.getInstance();
+    }
+    public static ModContainer getMod() {
+        return CoreMod.getFabric().getModContainer(CoreMod.MOD_ID).orElseThrow(RuntimeException::new);
     }
     
-    @Override
-    public void onInitializeServer() {
-        CoreMod.logMessage( "Sewing Machine utilities mod is starting." );
-        
-        CommandRegistry REGISTRY = CommandRegistry.INSTANCE;
-        
-        CoreMod.logMessage( "Registering our commands." );
-        REGISTRY.register(true, ClaimCommand::register );
-        REGISTRY.register(true, GameModesCommand::register );
-        REGISTRY.register(true, HoldingCommand::register );
-        REGISTRY.register(true, LoggingCommand::register );
-        REGISTRY.register(true, MiscCommands::register );
-        REGISTRY.register(true, ModsCommand::register );
-        REGISTRY.register(true, MoneyCommand::register );
-        REGISTRY.register(true, NickNameCommand::register );
-        REGISTRY.register(true, PlayerSpawnCommand::register );
-        REGISTRY.register(true, TeleportsCommand::register );
-        REGISTRY.register(true, WaystoneCommand::register );
-        
-        // Create registry based listeners
-        BlockBreak.init();
-        BlockInteraction.init();
-        EntityAttack.init();
-        ItemInteraction.init();
-        
-        CoreMod.logMessage( "Initializing Database." );
-        try {
-            // Initialize the database
-            if (CoreMod.initDB()) {
-                CoreMod.logMessage("Database initialization finished");
-                
-                // Clear out old logs
-                LoggingUtils.doCleanup();
-            } else {
-                CoreMod.logMessage( "Skipping Database Initialization (Unused)" );
-            }
-        } catch (SQLException e) {
-            CoreMod.logMessage( "Error executing MySQL Database setup." );
-            
-            throw new RuntimeException( "Could not connect to database server.", e );
-        }
-        
-        // Alert the mod presence
-        CoreMod.logMessage( "Finished loading." );
-    }
-    
-    private static boolean initDB() throws SQLException {
+    /*
+     * Configurations
+     */
+    protected static boolean initDB() throws SQLException {
         SewingMachineConfig CONFIG = SewingMachineConfig.INSTANCE;
         ArrayList<String> tables = new ArrayList<>();
         ArrayList<String> alters = new ArrayList<>();
         
-        if ( CONFIG.DO_MONEY.get() ) {
+        /*if ( CONFIG.DO_MONEY.get() ) {
             tables.addAll(Collections.singletonList(
                 "CREATE TABLE IF NOT EXISTS `player_Data` (`dataOwner` varchar(36) NOT NULL, `dataMoney` bigint(20) UNSIGNED NOT NULL, UNIQUE KEY `dataOwner` (`dataOwner`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;"
             ));
-        }
-        if ( CONFIG.DO_CLAIMS.get() ) {
+        }*/
+        /*if ( CONFIG.DO_CLAIMS.get() ) {
             String permissionEnum = getDatabaseReadyEnumerators( ClaimPermissions.class );
             String ranksEnum = getDatabaseReadyEnumerators( ClaimRanks.class );
             String settingEnum = getDatabaseReadyEnumerators( ClaimSettings.class );
@@ -174,7 +176,7 @@ public class CoreMod implements DedicatedServerModInitializer {
                 "ALTER TABLE `chunk_Settings` CHANGE `settingOption` `settingOption` ENUM(" + permissionEnum + ") CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;",
                 "ALTER TABLE `chunk_Options` CHANGE `optionName` `optionName` ENUM(" + settingEnum + ") CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;"
             ));
-        }
+        }*/
         if (( CONFIG.LOG_CHUNKS_CLAIMED.get() || CONFIG.LOG_CHUNKS_UNCLAIMED.get() ) && ( CONFIG.LOG_BLOCKS_BREAKING.get() || CONFIG.LOG_BLOCKS_PLACING.get() )) {
             String blockUpdateEnums = getDatabaseReadyEnumerators( LoggingUtils.BlockAction.class );
             
@@ -197,16 +199,53 @@ public class CoreMod implements DedicatedServerModInitializer {
             statement.executeUpdate( true );
         }
         
-        if ( alters.size() > 0 ) {
-            CoreMod.logMessage("Checking database enumerator fields");
+        if (!alters.isEmpty()) {
+            CoreMod.logInfo("Checking database enumerator fields");
             for (String prepare : alters) {
                 // Prepare the statement
                 getSQL().prepare(prepare, false)
-                        .executeUpdate(true);
+                    .executeUpdate(true);
             }
         }
         
-        return tables.size() > 0;
+        return !tables.isEmpty();
+    }
+    protected static void checkLegacyDatabase() {
+        ConfigOption<String> version = SewingMachineConfig.INSTANCE.CONFIG_VERSION;
+        boolean isLegacy = (SewingMachineConfig.INSTANCE.preExisting() && (!version.wasUserDefined()));
+        
+        // Check if our version is considered legacy
+        if (!isLegacy) {
+            String versionString = version.get();
+            switch (versionString) {
+                case "${version}":
+                case "1.0.0":
+                case "1.0.1":
+                case "1.0.2":
+                case "1.0.3":
+                case "1.0.4": {
+                    isLegacy = true;
+                    break;
+                }
+                default:
+                    return;
+            }
+        }
+        
+        // Convert our database
+        String[] notice = new String[]{
+            "====================================================",
+            "| SEWING MACHINE UTILS:",
+            "|  YOU HAVE UPGRADED FROM A LEGACY VERSION",
+            "|  PLEASE CONVERT YOUR CHUNK CLAIMS, IF ENABLED",
+            "|  USING THE FOLLOWING COMMAND:",
+            "|      /protection legacy-import",
+            "====================================================="
+        };
+        CoreMod.logInfo(
+            "Detected a legacy version"
+            + System.lineSeparator() + String.join( System.lineSeparator(), notice )
+        );
     }
     public static File getConfDir() throws RuntimeException {
         // Get the directory
@@ -234,25 +273,26 @@ public class CoreMod implements DedicatedServerModInitializer {
     /*
      * Our logger
      */
-    public static void logMessage( String message ) {
-        logger.info( "[SEW] " + message );
+    public static final String logPrefix = "[SEW] ";
+    public static void logInfo(@Nullable String message ) {
+        logger.info( logPrefix + message );
     }
-    public static void logMessage( @Nullable Text message ) {
-        CoreMod.logMessage( message == null ? "NULL" : message.getString() );
+    public static void logInfo(@Nullable Text message ) {
+        CoreMod.logInfo( message == null ? "NULL" : message.getString() );
     }
-    public static void logMessage( @Nullable Object message ) {
-        CoreMod.logMessage( message == null ? "NULL" : message.toString() );
+    public static void logInfo(@Nullable Object message ) {
+        CoreMod.logInfo( message == null ? "NULL" : message.toString() );
     }
     
     public static void logDebug( String message ) {
-        logger.debug( "[SEW] " + message );
+        logger.debug( logPrefix + message );
     }
     public static void logDebug( @Nullable Text message ) {
         logDebug( message == null ? "NULL" : message.getString() );
     }
     
     public static void logError( String message ) {
-        logger.error( "[SEW] " + message );
+        logger.error( logPrefix + message );
     }
     public static void logError( Text message ) {
         logError( message.getString() );

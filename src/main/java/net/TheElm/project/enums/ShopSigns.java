@@ -27,15 +27,18 @@ package net.TheElm.project.enums;
 
 import com.google.gson.JsonSyntaxException;
 import com.mojang.datafixers.util.Either;
-import net.TheElm.project.config.SewingMachineConfig;
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.commands.MoneyCommand;
+import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.exceptions.NbtNotFoundException;
+import net.TheElm.project.exceptions.NotEnoughMoneyException;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.utilities.*;
-import net.minecraft.block.*;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.HorizontalFacingBlock;
+import net.minecraft.block.WallSignBlock;
 import net.minecraft.block.entity.*;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
@@ -52,11 +55,11 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
@@ -138,14 +141,14 @@ public enum ShopSigns {
                  */
                 try {
                     // Take shop keepers money
-                    if (!(sign.getShopOwner().equals(CoreMod.spawnID) || MoneyCommand.databaseTakePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice())))
+                    if (!(sign.getShopOwner().equals(CoreMod.spawnID) || MoneyUtils.takePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice())))
                         return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
                     
                     // Put players item into chest
                     if (!InventoryUtils.playerToChest( player, player.inventory, chestInventory, sign.getShopItem(), sign.getShopItemCount(), true )) {
                         // Refund the shopkeeper
                         if (!(sign.getShopOwner().equals(CoreMod.spawnID))) {
-                            MoneyCommand.databaseGivePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
+                            MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
                         }
                         
                         // Error message
@@ -153,19 +156,21 @@ public enum ShopSigns {
                     }
                     
                     // Give player money for item
-                    MoneyCommand.databaseGivePlayerMoney(player.getUuid(), sign.getShopItemPrice());
+                    MoneyUtils.givePlayerMoney(player, sign.getShopItemPrice());
                     
                     ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
                     
                     // Log the event
-                    CoreMod.logMessage( player.getName().asString() + " sold " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay().asString() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " to " + permissions.getName().asString() );
+                    CoreMod.logInfo( player.getName().asString() + " sold " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay().asString() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " to " + permissions.getName().asString() );
                     
                     return Either.right( true );
                     
-                } catch ( SQLException e ) {
+                } catch ( NbtNotFoundException e ) {
+                    CoreMod.logError( "Failed to give " + sign.getShopItemPrice() + " money to \"" + sign.getShopOwner() + "\" (Maybe they haven't joined the server?)." );
                     // If a database problem occurs
-                    CoreMod.logError( e );
                     return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
+                } catch ( NotEnoughMoneyException e ) {
+                    return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
                 }
             }
             return Either.right( false );
@@ -254,13 +259,13 @@ public enum ShopSigns {
                 
                 try {
                     // Take the players money
-                    if (!MoneyCommand.databaseTakePlayerMoney(player.getUuid(), sign.getShopItemPrice()))
+                    if (!MoneyUtils.takePlayerMoney(player, sign.getShopItemPrice()))
                         return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                     
                     // Give item to player from chest
                     if (!InventoryUtils.chestToPlayer( player, chestInventory, player.inventory, sign.getShopItem(), sign.getShopItemCount(), true )) {
                         // Refund the player
-                        MoneyCommand.databaseGivePlayerMoney(player.getUuid(), sign.getShopItemPrice());
+                        MoneyUtils.givePlayerMoney(player, sign.getShopItemPrice());
                         
                         // Error message
                         return Either.left(TranslatableServerSide.text(player, "shop.error.stock_chest", sign.getShopItemDisplay()));
@@ -270,20 +275,22 @@ public enum ShopSigns {
                     
                     // Give the shop keeper money
                     if (!sign.getShopOwner().equals(CoreMod.spawnID)) {
-                        MoneyCommand.databaseGivePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
+                        try {
+                            MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
+                        } catch (NbtNotFoundException e) {
+                            CoreMod.logError( "Failed to give " + sign.getShopItemPrice() + " money to \"" + sign.getShopOwner() + "\" (Maybe they haven't joined the server?)." );
+                        }
                     }
                     
                     ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
                     
                     // Log the event
-                    CoreMod.logMessage( player.getName().asString() + " bought " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay().asString() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " from " + permissions.getName().asString() );
+                    CoreMod.logInfo( player.getName().asString() + " bought " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay().asString() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " from " + permissions.getName().asString() );
                     
                     return Either.right( true );
                     
-                } catch (SQLException e) {
-                    // If a database problem occurs
-                    CoreMod.logError( e );
-                    return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
+                } catch (NotEnoughMoneyException e) {
+                    return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                 }
             }
             return Either.right( false );
@@ -372,7 +379,7 @@ public enum ShopSigns {
                 ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
                 
                 // Log the event
-                CoreMod.logMessage( player.getName().asString() + " got " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay() + " from " + permissions.getName().asString() );
+                CoreMod.logInfo( player.getName().asString() + " got " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay() + " from " + permissions.getName().asString() );
                 
                 return Either.right( true );
             }
@@ -404,20 +411,14 @@ public enum ShopSigns {
         }
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
-            try {
-                // If shops disabled
-                if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
-                    return Either.right( true );
-                
-                long playerHas = MoneyCommand.checkPlayerMoney( player.getUuid() );
-                player.sendMessage(TranslatableServerSide.text( player, "player.money",
-                    playerHas
-                ));
-                
-            } catch (SQLException e) {
-                CoreMod.logError( e );
-                return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
-            }
+            // If shops disabled
+            if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
+                return Either.right( true );
+            
+            long playerHas = MoneyUtils.getPlayerMoney( player );
+            player.sendMessage(TranslatableServerSide.text( player, "player.money",
+                playerHas
+            ));
             
             return Either.right( true );
         }
@@ -554,7 +555,7 @@ public enum ShopSigns {
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
             try {
-                if (!MoneyCommand.databaseTakePlayerMoney(player.getUuid(), SewingMachineConfig.INSTANCE.WARP_WAYSTONE_COST.get()))
+                if (!MoneyUtils.takePlayerMoney(player, SewingMachineConfig.INSTANCE.WARP_WAYSTONE_COST.get()))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                 
                 if (!ChunkUtils.canPlayerBreakInChunk( player, signPos ))
@@ -563,16 +564,21 @@ public enum ShopSigns {
                 (new Thread(() -> {
                     WarpUtils warp = new WarpUtils( player, signPos.down() );
                     if (!warp.build(player, player.getServerWorld())) {
+                        // Notify the player
                         player.sendMessage(new LiteralText("Can't build that here").formatted(Formatting.RED));
+                        
+                        // Refund the player
+                        MoneyUtils.givePlayerMoney(player, SewingMachineConfig.INSTANCE.WARP_WAYSTONE_COST.get());
+                        
+                        // Cancel the build
                         return;
                     }
                     warp.save(player.getServerWorld(), warp.getSafeTeleportPos( player.getEntityWorld() ), player);
                 })).start();
                 return Either.right( true );
                 
-            } catch (SQLException e) {
-                CoreMod.logError( e );
-                return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
+            } catch (NotEnoughMoneyException e) {
+                return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
             }
         }
     },
@@ -586,15 +592,15 @@ public enum ShopSigns {
             
             SignBlockEntity sign = signBuilder.getSign();
             if (signBuilder.textMatchPrice(signBuilder.getLines()[1])) {
-                ClaimedChunk chunk = ClaimedChunk.convert( sign.getWorld(), sign.getPos() );
+                WorldChunk chunk = sign.getWorld().getWorldChunk( sign.getPos() );
                 ClaimantTown town;
                 
-                if ((chunk == null) || ((town = chunk.getTown()) == null)) {
+                if ((chunk == null) || ((town = ((IClaimedChunk) chunk).getTown()) == null)) {
                     creator.sendMessage(new LiteralText("Deed sign must be placed within a town.").formatted(Formatting.RED));
                     return false;
                 }
                 
-                if (!(creator.getUuid().equals(town.getOwner())) && creator.getUuid().equals(chunk.getOwner())) {
+                if (!(creator.getUuid().equals(town.getOwner())) && creator.getUuid().equals(((IClaimedChunk) chunk).getOwner())) {
                     creator.sendMessage(new LiteralText("Deed signs may only be placed in chunks belonging to the town owner, by the town owner.").formatted(Formatting.RED));
                     return false;
                 }

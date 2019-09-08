@@ -44,6 +44,6 @@ public interface ShopSignBlockEntity {
     @Nullable
     Integer getShopItemCount();
     @Nullable
-    Long getShopItemPrice();
+    Integer getShopItemPrice();
     
 }

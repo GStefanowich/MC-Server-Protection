@@ -26,56 +26,48 @@
 package net.TheElm.project.protections.claiming;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.utilities.PlayerNameUtils;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.*;
+import java.util.UUID;
 
 public final class ClaimantPlayer extends Claimant {
     
-    private final Map<ClaimSettings, Boolean> CHUNK_CLAIM_OPTIONS = Collections.synchronizedMap(new HashMap<>());
-    private final Map<ClaimPermissions, ClaimRanks> RANK_PERMISSIONS = Collections.synchronizedMap(new HashMap<>());
+    private ClaimantTown town;
     
-    private UUID townID;
-    
-    private ClaimantPlayer(@NotNull UUID ownerId) {
-        super( ClaimantType.PLAYER, ownerId, PlayerNameUtils.fetchPlayerName( ownerId ) );
-        
-        this.townID = ClaimantTown.getPlayersTown( this.getId() );
+    private ClaimantPlayer(@NotNull UUID playerUUID) {
+        super( ClaimantType.PLAYER, playerUUID );
         
         /*
          * Get Rank Permissions
          */
-        try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `settingOption`, `settingRank` FROM `chunk_Settings` WHERE `settingOwner` = ?;")) {
+        /*try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `settingOption`, `settingRank` FROM `chunk_Settings` WHERE `settingOwner` = ?;")) {
             stmt.addPrepared(this.getId());
             try (ResultSet ranks = stmt.executeStatement()) {
                 while (ranks.next()) {
                     // Get rank options
                     ClaimPermissions perm = ClaimPermissions.valueOf(ranks.getString("settingOption"));
                     ClaimRanks rank = ClaimRanks.valueOf(ranks.getString("settingRank"));
-
+                    
                     // Save rank option
                     this.updatePermission(perm, rank);
                 }
             }
         } catch (SQLException e) {
             CoreMod.logError( e );
-        }
+        }*/
         
         /*
          * Get additional options
          */
-        try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `optionName`, `optionValue` FROM `chunk_Options` WHERE `optionOwner` = ?;")) {
+        /*try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `optionName`, `optionValue` FROM `chunk_Options` WHERE `optionOwner` = ?;")) {
             stmt.addPrepared(this.getId());
             try (ResultSet settings = stmt.executeStatement()) {
                 while (settings.next()) {
@@ -88,12 +80,12 @@ public final class ClaimantPlayer extends Claimant {
             }
         } catch (SQLException e) {
             CoreMod.logError( e );
-        }
+        }*/
         
         /*
          * Get Friend Ranks
          */
-        try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `chunkFriend`, `chunkRank` FROM `chunk_Friends` WHERE `chunkOwner` = ?;")) {
+        /*try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `chunkFriend`, `chunkRank` FROM `chunk_Friends` WHERE `chunkOwner` = ?;")) {
             stmt.addPrepared(this.getId());
             try (ResultSet friends = stmt.executeStatement()) {
                 while (friends.next()) {
@@ -106,7 +98,7 @@ public final class ClaimantPlayer extends Claimant {
             }
         } catch (SQLException e) {
             CoreMod.logError( e );
-        }
+        }*/
     }
     
     public final ClaimRanks getPermissionRankRequirement( ClaimPermissions permission ) {
@@ -115,43 +107,32 @@ public final class ClaimantPlayer extends Claimant {
         return permission.getDefault();
     }
     
-    /* Owner Options */
-    public final void updateSetting(ClaimSettings setting, Boolean bool) {
-        this.CHUNK_CLAIM_OPTIONS.put( setting, bool );
+    /* Players Town Reference */
+    @Nullable
+    public final ClaimantTown getTown() {
+        return this.town;
     }
-    public final void updatePermission(ClaimPermissions permission, ClaimRanks rank) {
-        this.RANK_PERMISSIONS.put( permission, rank );
+    public final void setTown(@Nullable ClaimantTown town) {
+        this.town = town;
+        this.markDirty();
     }
     
-    /* Players Town Reference */
-    public void updateTown(UUID townID) {
-        ClaimantTown town;
-        // Update chunks of old-town
-        if ((this.townID != null) && ((town = ClaimantTown.get(this.townID)) != null)) town.chunkCount--;
-        
-        this.townID = townID;
-        
-        // Update chunks of new-town
-        if ((this.townID != null) && ((town = ClaimantTown.get(this.townID)) != null)) town.chunkCount++;
-    }
-    public UUID getTown() {
-        return this.townID;
-    }
-
     /* Player Friend Options */
-    public ClaimRanks getFriendRank( UUID player ) {
+    @Override
+    public final ClaimRanks getFriendRank( UUID player ) {
         if ( this.getId().equals( player ) )
             return ClaimRanks.OWNER;
+        if (this.town != null)
+            return this.town.getFriendRank( player );
         return super.getFriendRank( player );
     }
     
     /* Nickname Override */
     @Override
-    public Text getName() {
-        Text out;
-        if ((out = PlayerNameUtils.fetchPlayerNick( this.getId() )) != null)
-            return out;
-        return super.getName();
+    public final Text getName() {
+        if (this.name == null)
+            return (this.name = PlayerNameUtils.fetchPlayerNick( this.getId() ));
+        return this.name;
     }
     
     /* Claimed chunk options */
@@ -162,27 +143,43 @@ public final class ClaimantPlayer extends Claimant {
             return setting.getSpawnDefault();
         return setting.getPlayerDefault();
     }
+    public final int getMaxChunkLimit() {
+        return SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get();
+    }
+    
+    /* Nbt saving */
+    @Override
+    public final void writeCustomDataToTag(@NotNull CompoundTag tag) {
+        // Write the town ID
+        if (this.town != null)
+            tag.putUuid("town", this.town.getId());
+        
+        super.writeCustomDataToTag( tag );
+    }
+    @Override
+    public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
+        // Get the players town
+        this.town = ( tag.hasUuid("town") ? ClaimantTown.get( tag.getUuid("town") ) : null );
+        
+        // Read from SUPER
+        super.readCustomDataFromTag( tag );
+    }
     
     /* Get the PlayerPermissions object from the cache */
     @Nullable
-    public static ClaimantPlayer get(@NotNull PlayerEntity player) {
-        return ClaimantPlayer.get( player.getUuid() );
-    }
-    @Nullable
-    public static ClaimantPlayer get(@NotNull UUID ownerId ) {
+    public static ClaimantPlayer get(@NotNull UUID playerUUID) {
+        Claimant player;
+        
         // If claims are disabled
         if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
             return null;
         
         // If contained in the cache
-        if (CoreMod.OWNER_CACHE.containsKey( ownerId ))
-            return CoreMod.OWNER_CACHE.get( ownerId );
+        if ((player = CoreMod.getFromCache( ClaimantType.PLAYER, playerUUID )) != null)
+            return (ClaimantPlayer) player;
         
         // Create new object
-        ClaimantPlayer obj = new ClaimantPlayer( ownerId );
-        CoreMod.OWNER_CACHE.put( ownerId, obj );
-        
-        return obj;
+        return new ClaimantPlayer( playerUUID );
     }
     
 }

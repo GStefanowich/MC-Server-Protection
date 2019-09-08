@@ -25,10 +25,10 @@
 
 package net.TheElm.project.protections;
 
-import net.TheElm.project.interfaces.DamageEntityCallback;
-import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.enums.ClaimSettings;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
+import net.TheElm.project.interfaces.DamageEntityCallback;
+import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.InventoryUtils;
 import net.minecraft.block.BarrelBlock;
@@ -50,6 +50,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -124,13 +125,13 @@ public final class EntityAttack {
                 return ActionResult.PASS;
             
             // Get chunk protection
-            ClaimedChunk claimedChunkInfo = ClaimedChunk.convert(world, target.getBlockPos());
+            WorldChunk chunk = world.getWorldChunk( target.getBlockPos() );
             
             // If entity is a player always allow PvP, and always allow defending self from hostiles
             if ((target instanceof PlayerEntity)) {
-                if (claimedChunkInfo != null) {
+                if (chunk != null) {
                     // If PvP is disallowed, stop the swing
-                    if (!claimedChunkInfo.isSetting(ClaimSettings.PLAYER_COMBAT))
+                    if (!((IClaimedChunk) chunk).isSetting(ClaimSettings.PLAYER_COMBAT))
                         return ActionResult.FAIL;
                 }
                 
@@ -144,7 +145,7 @@ public final class EntityAttack {
                     return ActionResult.FAIL;
                 
                 // If player can interact with tameable mobs
-                if ((claimedChunkInfo != null) && claimedChunkInfo.isSetting(ClaimSettings.HURT_TAMED))
+                if ((chunk != null) && ((IClaimedChunk) chunk).isSetting(ClaimSettings.HURT_TAMED))
                     return ActionResult.PASS;
                 
             } else {
@@ -165,13 +166,18 @@ public final class EntityAttack {
             // Protect item frames if creeper damage is off
             if (target instanceof ItemFrameEntity) {
                 ItemFrameEntity itemFrame = (ItemFrameEntity) target;
-                ClaimedChunk chunk = ClaimedChunk.convert( world, itemFrame.getBlockPos() );
-                
-                if ((chunk == null) || chunk.isSetting(ClaimSettings.CREEPER_GRIEFING))
+                WorldChunk chunk = world.getWorldChunk( itemFrame.getBlockPos() );
+                if ((chunk == null) || ((IClaimedChunk) chunk).isSetting(ClaimSettings.CREEPER_GRIEFING))
                     return ActionResult.PASS;
             }
+            
+        } else {
+            // Pass for all other entity attackers
+            return ActionResult.PASS;
+            
         }
         
+        // Fail as a callback
         return ActionResult.FAIL;
     }
     

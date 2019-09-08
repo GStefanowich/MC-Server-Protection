@@ -106,7 +106,7 @@ public final class TranslatableServerSide {
             return TranslatableServerSide.getTranslation( "en_us", key );
         JsonElement element = object.get( key );
         if ( element == null ) {
-            CoreMod.logMessage( "Missing translation key \"" + key + "\"!" );
+            CoreMod.logInfo( "Missing translation key \"" + key + "\"!" );
             return "";
         }
         return element.getAsString();

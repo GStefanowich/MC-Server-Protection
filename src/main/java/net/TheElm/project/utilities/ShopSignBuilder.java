@@ -65,7 +65,7 @@ public final class ShopSignBuilder {
     private UUID ownerUUID = null;
     private Identifier tradeItemIdentifier = null;
     private Item tradeItem = null;
-    private long tradePrice = 0;
+    private int tradePrice = 0;
     private int stackSize = 0;
     
     private ShopSignBuilder(@NotNull World world, @NotNull BlockPos blockPos, @NotNull SignBlockEntity sign) {
@@ -89,7 +89,7 @@ public final class ShopSignBuilder {
     public UUID shopOwner() {
         return this.ownerUUID;
     }
-    public long shopPrice() {
+    public int shopPrice() {
         return this.tradePrice;
     }
     public int itemSize() {
@@ -169,7 +169,7 @@ public final class ShopSignBuilder {
             str = str.substring( 1 );
         
         try {
-            this.tradePrice = Long.parseUnsignedLong( str );
+            this.tradePrice = Integer.parseUnsignedInt( str );
             return true;
         } catch ( NumberFormatException e ) {
             return false;

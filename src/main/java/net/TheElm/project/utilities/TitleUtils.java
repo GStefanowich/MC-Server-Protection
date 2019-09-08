@@ -56,7 +56,7 @@ public final class TitleUtils {
     public static void showPlayerAlert(@NotNull final ServerWorld world, Text... text) {
         Text builtText = combineTextChunks( Formatting.YELLOW, text );
         
-        CoreMod.logMessage( builtText );
+        CoreMod.logInfo( builtText );
         
         for ( ServerPlayerEntity player : world.getPlayers() ) {
             player.networkHandler.sendPacket(new TitleS2CPacket(Action.CLEAR, null));
@@ -74,7 +74,7 @@ public final class TitleUtils {
         
         Text builtText = combineTextChunks( Formatting.YELLOW, text );
         
-        CoreMod.logMessage( builtText );
+        CoreMod.logInfo( builtText );
         
         playerManager.sendToAll(new TitleS2CPacket(Action.CLEAR, null));
         playerManager.sendToAll(new TitleS2CPacket(

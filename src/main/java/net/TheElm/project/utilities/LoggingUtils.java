@@ -55,7 +55,7 @@ public final class LoggingUtils {
             .addPrepared(SewingMachineConfig.INSTANCE.LOG_RESET_INTERVAL.get().converToMinutes(SewingMachineConfig.INSTANCE.LOG_RESET_TIME.get()))) {
             
             stmt.executeUpdate();
-            CoreMod.logMessage( "Database cleanup completed" );
+            CoreMod.logInfo( "Database cleanup completed" );
             
         } catch (SQLException e) {
             CoreMod.logError( e );
@@ -63,7 +63,7 @@ public final class LoggingUtils {
     }
     public static void logAction(BlockAction blockAction, Block block, BlockPos blockPos, PlayerEntity player) {
         // Return if AIR
-        if (block == Blocks.AIR) return;
+        if (block == Blocks.AIR || block == Blocks.CAVE_AIR) return;
         LoggingUtils.logAction(blockAction, block.getTranslationKey(), blockPos, player);
     }
     public static void logAction(BlockAction blockAction, Item item, BlockPos blockPos, PlayerEntity player) {

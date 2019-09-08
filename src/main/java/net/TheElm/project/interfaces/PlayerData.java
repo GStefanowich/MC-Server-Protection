@@ -25,6 +25,7 @@
 
 package net.TheElm.project.interfaces;
 
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
@@ -36,5 +37,14 @@ public interface PlayerData {
     BlockPos getWarpPos();
     void setWarpPos(@Nullable BlockPos blockPos);
     void setWarpDimension(World world);
+    
+    ClaimantPlayer getClaim();
+    
+    @Nullable
+    Long getFirstJoinAt();
+    void updateFirstJoin();
+    @Nullable
+    Long getLastJoinAt();
+    void updateLastJoin();
     
 }

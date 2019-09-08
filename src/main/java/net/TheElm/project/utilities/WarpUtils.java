@@ -28,9 +28,14 @@ package net.TheElm.project.utilities;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.commands.ClaimCommand;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.exceptions.NbtNotFoundException;
+import net.TheElm.project.exceptions.TranslationKeyException;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerData;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
-import net.minecraft.block.*;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.Material;
+import net.minecraft.block.MushroomBlock;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.nbt.CompoundTag;
@@ -52,7 +57,10 @@ import net.minecraft.world.level.LevelProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class WarpUtils {
@@ -70,7 +78,7 @@ public final class WarpUtils {
         int x = this.createWarpAt.getX();
         int z = this.createWarpAt.getZ();
         do {
-            CoreMod.logMessage( "Finding a new warp position!" );
+            CoreMod.logInfo( "Finding a new warp position!" );
             this.createWarpAt = new BlockPos( getRandom( x ), 256, getRandom( z ) );
         } while ((this.createWarpAt = this.isValid( world, this.createWarpAt,50,true ) ) == null);
         
@@ -117,7 +125,7 @@ public final class WarpUtils {
     
     private BlockPos isValid(final World world, final BlockPos startingPos, final int minY, final boolean mustBeUnowned) {
         // If the chunks are claimed.
-        if (mustBeUnowned && ClaimedChunk.isOwnedAround( world, this.createWarpAt, 5 ))
+        if (mustBeUnowned && IClaimedChunk.isOwnedAround( world, this.createWarpAt, 5 ))
             return null;
         
         BlockPos pos = startingPos;
@@ -150,8 +158,12 @@ public final class WarpUtils {
         BlockPos spawnPos = WarpUtils.getWorldSpawn( world );
         
         // Claim the chunk in the name of Spawn
-        if ( !ClaimCommand.tryClaimChunkAt( CoreMod.spawnID, player, world.getWorldChunk(this.createWarpAt)))
-            return false; // Return false (Try again!)
+        try {
+            if (!ClaimCommand.tryClaimChunkAt(CoreMod.spawnID, player, world.getWorldChunk(this.createWarpAt)))
+                return false; // Return false (Try again!)
+        } catch (TranslationKeyException ignored) {
+            return false;
+        }
         
         StructureBuilderUtils structure = new StructureBuilderUtils( world, "waystone" );
         
@@ -279,25 +291,26 @@ public final class WarpUtils {
         if ((player = server.getPlayerManager().getPlayer( uuid )) != null)
             return WarpUtils.getPlayerWarp( player );
         
-        // Read from the NBT file
-        CompoundTag playerNBT;
-        if ((playerNBT = NbtUtils.readOfflinePlayerData( uuid )) == null)
-            return null;
-        
         Warp warp = null;
-        
-        // Read the player warp location after restarting
-        if ( playerNBT.containsKey( "playerWarpX" ) && playerNBT.containsKey( "playerWarpY" ) && playerNBT.containsKey( "playerWarpZ" ) ) {
-            int warpDimension = ( playerNBT.containsKey( "playerWarpD" ) ? playerNBT.getInt("playerWarpD") : 0 );
-            warp = new Warp(
-                server.getWorld(DimensionType.byRawId( warpDimension )),
-                new BlockPos(
-                    playerNBT.getInt("playerWarpX"),
-                    playerNBT.getInt("playerWarpY"),
-                    playerNBT.getInt("playerWarpZ")
-                )
-            );
-        }
+        try {
+            // Read from the NBT file
+            CompoundTag playerNBT;
+            if ((playerNBT = NbtUtils.readOfflinePlayerData(uuid)) == null)
+                return null;
+            
+            // Read the player warp location after restarting
+            if (playerNBT.containsKey("playerWarpX") && playerNBT.containsKey("playerWarpY") && playerNBT.containsKey("playerWarpZ")) {
+                int warpDimension = (playerNBT.containsKey("playerWarpD") ? playerNBT.getInt("playerWarpD") : 0);
+                warp = new Warp(
+                    server.getWorld(DimensionType.byRawId(warpDimension)),
+                    new BlockPos(
+                        playerNBT.getInt("playerWarpX"),
+                        playerNBT.getInt("playerWarpY"),
+                        playerNBT.getInt("playerWarpZ")
+                    )
+                );
+            }
+        } catch (NbtNotFoundException ignored) {}
         
         return warp;
     }

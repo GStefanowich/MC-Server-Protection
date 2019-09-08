@@ -27,7 +27,7 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimSettings;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -38,6 +38,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -64,8 +65,9 @@ public abstract class ArrowDamage extends Entity {
             return;
         
         // Get the chunk that the player was harmed in
-        ClaimedChunk chunkInfo = ClaimedChunk.convert(hitEntity.getEntityWorld(), hitEntity.getBlockPos());
-        if ( ( chunkInfo != null ) && ( this.getOwner() instanceof ServerPlayerEntity ) ) {
+        WorldChunk chunk = hitEntity.getEntityWorld().getWorldChunk( hitEntity.getBlockPos() );
+        if ( ( chunk != null ) && ( this.getOwner() instanceof ServerPlayerEntity ) ) {
+            IClaimedChunk chunkInfo = (IClaimedChunk) chunk;
             ServerPlayerEntity owner = (ServerPlayerEntity) this.getOwner();
             
             // If player hurt themselves

@@ -62,7 +62,6 @@ public class MySQLite implements MySQLHost {
             
             if (this.conn != null)
                 System.out.println( this.conn.getMetaData().getDriverName() );
-            else System.out.println( "We're null" );
             
         } catch (RuntimeException e) {
             CoreMod.logError( e );

@@ -32,6 +32,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
@@ -94,7 +95,7 @@ public final class MiscCommands {
         MinecraftServer server = player.getServer();
         
         // Create the player display for chat
-        Text text = PlayerNameUtils.getPlayerChatDisplay( player )
+        Text text = PlayerNameUtils.getPlayerChatDisplay( player, ((PlayerChat) player).getChatRoom() )
             .append(new LiteralText( ": " ).formatted(Formatting.GRAY));
         
         // Append the users message

@@ -25,9 +25,9 @@
 
 package net.TheElm.project.mixins.Entities;
 
-import net.TheElm.project.interfaces.EndermanGoal;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.interfaces.EndermanGoal;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.ai.goal.Goal;
@@ -43,6 +43,7 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RayTraceContext;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
@@ -85,10 +86,10 @@ public abstract class EndermenPickup extends Goal implements EndermanGoal {
         if (block.matches(BlockTags.ENDERMAN_HOLDABLE) && bool) {
             
             // Get the chunk permissions
-            ClaimedChunk claimedChunkInfo = ClaimedChunk.convert(world, blockPos);
+            WorldChunk chunk = world.getWorldChunk( blockPos );
             
             // Check if enderman griefing is allowed (Invert because FALSE == NOT ALLOWED)
-            if ((claimedChunkInfo != null) && (!claimedChunkInfo.isSetting( ClaimSettings.ENDERMAN_GRIEFING ))) {
+            if ((chunk != null) && (!((IClaimedChunk) chunk).isSetting( ClaimSettings.ENDERMAN_GRIEFING ))) {
                 this.sadEnderman();
                 return;
             }

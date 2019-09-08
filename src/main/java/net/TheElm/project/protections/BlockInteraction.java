@@ -28,8 +28,8 @@ package net.TheElm.project.protections;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.BlockInteractionCallback;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
 import net.TheElm.project.utilities.*;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
@@ -54,6 +54,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 
 public final class BlockInteraction {
     private BlockInteraction() {}
@@ -95,14 +96,14 @@ public final class BlockInteraction {
         }
         
         // If player is in creative ignore permissions
-        if ( (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || player.isCreative() || ( blockEntity instanceof EnderChestBlockEntity) )
+        if ( (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || ( blockEntity instanceof EnderChestBlockEntity) )
             return ActionResult.PASS;
         
         // If block is a button, door, trapdoor, or gate
         if ( block instanceof AbstractButtonBlock || block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock) {
-            ClaimedChunk claimedChunkInfo = ClaimedChunk.convert( player.getEntityWorld(), blockPos );
+            WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk( blockPos );
             
-            if (ChunkUtils.canPlayerToggleDoor( player, claimedChunkInfo )) {
+            if (player.isCreative() || ChunkUtils.canPlayerToggleDoor( player, claimedChunkInfo )) {
                 // Toggle double doors
                 if ((!player.isSneaking()) && block instanceof DoorBlock && (blockState.getMaterial() != Material.METAL)) {
                     DoubleBlockHalf doorHalf = blockState.get(DoorBlock.HALF);
@@ -113,7 +114,8 @@ public final class BlockInteraction {
                         .offset( Direction.UP, doorHalf == DoubleBlockHalf.UPPER ? 0 : 1 );
                     BlockState otherDoorState = world.getBlockState(otherDoorPos);
                     
-                    if ((otherDoorState.getBlock() instanceof DoorBlock) && (otherDoorState.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER)) {
+                    // Other block is DOOR, Material matches, is same door half, and opposite hinge
+                    if ((otherDoorState.getBlock() instanceof DoorBlock) && (blockState.getMaterial() == otherDoorState.getMaterial()) && (otherDoorState.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER) && (doorHinge != otherDoorState.get(DoorBlock.HINGE))) {
                         boolean doorIsOpen = blockState.get(DoorBlock.OPEN);
                         boolean otherIsOpen = otherDoorState.get(DoorBlock.OPEN);
                         
@@ -130,13 +132,17 @@ public final class BlockInteraction {
             
             return ActionResult.FAIL;
         }
-
+        
+        // If player is in creative, allow
+        if (player.isCreative())
+            return ActionResult.PASS;
+        
         // If the block is something that can be accessed (Like a chest)
         if ( (!player.isSneaking() || (!(itemStack.getItem() instanceof BlockItem))) && ( isLockable( blockEntity ) || isLockable( block ) ) ) {
             if ( player.isSpectator() )
                 return ActionResult.PASS;
             
-            ClaimedChunk claimedChunkInfo = ClaimedChunk.convert( player.getEntityWorld(), blockPos );
+            WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk( blockPos );
             
             if (ChunkUtils.canPlayerLootChestsInChunk( player, claimedChunkInfo ))
                 return ActionResult.PASS;
@@ -147,7 +153,7 @@ public final class BlockInteraction {
             // Display that this item can't be opened
             TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
                 EntityUtils.getLockedName( block ),
-                ( claimedChunkInfo == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : claimedChunkInfo.getOwnerName( player ) )
+                ( claimedChunkInfo == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) claimedChunkInfo).getOwnerName( player ) )
             ));
             
             return ActionResult.FAIL;

@@ -29,7 +29,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.interfaces.PlayerData;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -37,7 +37,9 @@ import net.minecraft.server.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public final class CommandUtilities {
@@ -63,7 +65,7 @@ public final class CommandUtilities {
             return false;
         
         ServerPlayerEntity player = (ServerPlayerEntity) source;
-        return ClaimantPlayer.get( player.getUuid() ).getTown() != null;
+        return ((PlayerData)player).getClaim().getTown() != null;
     }
     
 }
