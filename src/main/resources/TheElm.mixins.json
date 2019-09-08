@@ -7,8 +7,12 @@
   "server": [
     "Commands.Me",
     
+    "Entities.CorralMobs",
     "Entities.CowMilk",
     "Entities.SheepShear",
+    
+    "Entities.ArrowDamage",
+    "Entities.PotionDamage",
     "Entities.CreeperDamage",
     "Entities.Damage",
     
@@ -17,8 +21,7 @@
     "Entities.EndermenPickup",
     "Entities.EndermenPlace",
     
-    "Entities.ArrowDamage",
-    "Entities.PotionDamage",
+    "Entities.WitherBoss",
     
     "Entities.LimitedSkeletons",
     
@@ -35,6 +38,7 @@
     "Player.Interaction.MinecartRide",
     "Player.Interaction.ShopSign",
     
+    "Player.AnvilCost",
     "Player.FullInventory",
     "Player.DeathChest",
     
@@ -42,8 +46,12 @@
     "Player.ServerInteraction",
     
     "World.Campfires",
+    "World.ChunkSaving",
+    "World.ClaimedChunk",
     "World.DragonFight",
-    "World.WorldSleep"
+    "World.WorldSleep",
+    
+    "Server"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -25,6 +25,7 @@
 
 package net.TheElm.project.config;
 
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 
 import java.util.function.Function;
@@ -34,6 +35,7 @@ public class ConfigOption<T extends Object> {
     private final Function<JsonElement, T> setter;
     private final String path;
     private T value;
+    private boolean wasDefined = false;
     
     ConfigOption(String location, Function<JsonElement, T> setter) {
         this( location, null, setter );
@@ -47,11 +49,23 @@ public class ConfigOption<T extends Object> {
     public final T get() {
         return this.value;
     }
+    public final JsonElement getElement() {
+        return new GsonBuilder().create().toJsonTree(this.value);
+    }
     public final String getPath() {
         return this.path;
     }
+    
     public final void set( JsonElement value ) {
         this.value = ( value == null ? null : this.setter.apply( value ) );
+    }
+    public final void set( JsonElement value, boolean wasDefined ) {
+        this.set( value );
+        this.wasDefined = wasDefined;
+    }
+    
+    public final boolean wasUserDefined() {
+        return this.wasDefined;
     }
     
 }

@@ -1,10 +1,15 @@
 {
+  "chat.change.town": "Switched to Town chat.",
+  "chat.change.global": "Switched to Global chat.",
+  "chat.change.local": "Switched to Local chat.",
+  
   "claim.chunk.pvp": "PvP",
   "claim.chunk.self": "your %s",
   "claim.chunk.entering.generic": "Entering %s",
   "claim.chunk.entering.owned": "Entering %s's %s",
   "claim.chunk.entering.town": "Entering %s (%s)",
   "claim.chunk.entering.town.owned": "Entering %s - %s (%s)",
+  "claim.chunk.error.max": "You cannot claim any more chunks.",
   "claim.chunk.error.claimed": "This chunk is already claimed.",
   "claim.chunk.error.not_players": "This chunk does not belong to you.",
   "claim.chunk.error.not_claimed": "This chunk is not claimed.",
@@ -14,7 +19,12 @@
   
   "claim.block.locked": "This %s belongs to %s",
   
+  "claim.wilderness.general": "Wilderness",
+  "claim.wilderness.end": "The Void",
+  "claim.wilderness.nether": "Barren Wastes",
+  
   "player.money": "Your wallet: $%d",
+  "player.death_chest.location": "A new death chest has been spawned at %s.",
   
   "friends.rank.self": "You can't change your own rank.",
   

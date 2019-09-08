@@ -4,7 +4,7 @@
   "version": "${version}",
   
   "name": "Sewing Machine",
-  "description": "A mod for sewing your worlds chunks together. Provided chunk claiming and other server utilities.",
+  "description": "A mod for sewing your worlds chunks together. Provides chunk claiming and other server utilities.",
   "authors": [
     "TheElm"
   ],
@@ -20,8 +20,11 @@
   
   "environment": "*",
   "entrypoints": {
+    "client": [
+      "net.TheElm.project.ClientCore"
+    ],
     "server": [
-      "net.TheElm.project.CoreMod"
+      "net.TheElm.project.ServerCore"
     ]
   },
   "mixins": [

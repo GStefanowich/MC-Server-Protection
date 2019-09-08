@@ -26,23 +26,18 @@
 package net.TheElm.project.mixins.Player;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.interfaces.PlayerChat;
+import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.PlayerMovement;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
-import net.TheElm.project.utilities.CasingUtils;
-import net.TheElm.project.utilities.PlayerNameUtils;
-import net.TheElm.project.utilities.TitleUtils;
-import net.TheElm.project.utilities.TranslatableServerSide;
-import net.minecraft.SharedConstants;
-import net.minecraft.client.network.packet.ChatMessageS2CPacket;
-import net.minecraft.client.options.ChatVisibility;
+import net.TheElm.project.utilities.*;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.ClientConnection;
-import net.minecraft.network.NetworkThreadUtils;
 import net.minecraft.network.Packet;
 import net.minecraft.network.listener.ServerPlayPacketListener;
 import net.minecraft.server.MinecraftServer;
@@ -53,10 +48,10 @@ import net.minecraft.server.network.packet.PlayerMoveC2SPacket;
 import net.minecraft.server.network.packet.VehicleMoveC2SPacket;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
@@ -65,11 +60,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.sql.SQLException;
+import java.text.NumberFormat;
+import java.util.Calendar;
 import java.util.UUID;
 
 @Mixin(ServerPlayNetworkHandler.class)
-public abstract class ServerInteraction implements ServerPlayPacketListener, PlayerMovement {
+public abstract class ServerInteraction implements ServerPlayPacketListener, PlayerMovement, PlayerChat, PlayerData {
     
     /*
      * Shadow Methods
@@ -82,6 +78,34 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
     @Shadow public native void sendPacket(Packet<?> packet);
     @Shadow public native void disconnect(Text text);
     @Shadow private native void executeCommand(String string);
+
+    /*
+     * Claims
+     */
+    private ClaimantPlayer playerClaimData = null;
+    
+    @Override
+    public ClaimantPlayer getClaim() {
+        return this.playerClaimData;
+    }
+    
+    /*
+     * Chat Handlers
+     */
+    private ChatRooms chatRoom = ChatRooms.GLOBAL;
+    
+    @Override @NotNull
+    public ChatRooms getChatRoom() {
+        return this.chatRoom;
+    }
+    @Override
+    public void setChatRoom(@NotNull ChatRooms room) {
+        // Set the chat room
+        this.chatRoom = room;
+        
+        // Tell the player
+        player.sendMessage(TranslatableServerSide.text(player, "chat.change." + room.name().toLowerCase()));
+    }
     
     /*
      * Modified methods
@@ -92,31 +116,57 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         CoreMod.PLAYER_LOCATIONS.put( player, null );
         
         // Initialize user claims from database
-        ClaimantPlayer.get( player.getUuid() );
+        this.playerClaimData = ClaimantPlayer.get( player.getUuid() );
         
-        if ( SewingMachineConfig.INSTANCE.DO_MONEY.get() ) {
-            // Make sure the user has the default money
-            try (MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT IGNORE INTO `player_Data` ( `dataOwner`, `dataMoney` ) VALUES ( ?, ? );")) {
+        // Check if server has been joined before
+        if (((PlayerData) player).getFirstJoinAt() == null) {
+            // Get starting money
+            int startingMoney = SewingMachineConfig.INSTANCE.STARTING_MONEY.get();
+            
+            // Give the player the starting amount
+            if ( SewingMachineConfig.INSTANCE.DO_MONEY.get() && (startingMoney > 0))
+                MoneyUtils.givePlayerMoney( player, startingMoney );
+            
+            // Set first join for later referencing
+            ((PlayerData) player).updateFirstJoin();
+        } else {
+            Long lastJoin;
+            int allowance = SewingMachineConfig.INSTANCE.DAILY_ALLOWANCE.get();
+            
+            // If we should give a daily allowance
+            if ((allowance > 0) && ((lastJoin = ((PlayerData) player).getLastJoinAt()) != null)) {
                 
-                stmt.addPrepared(player.getUuid())
-                    .addPrepared(SewingMachineConfig.INSTANCE.STARTING_MONEY.get())
-                    .executeUpdate();
+                // Get the timestamp of the start of today
+                Calendar calendar = Calendar.getInstance();
+                calendar.set(Calendar.HOUR_OF_DAY, 0);
+                calendar.set(Calendar.MINUTE, 0);
+                calendar.set(Calendar.SECOND, 0);
+                calendar.set(Calendar.MILLISECOND, 0);
+                long startOfDay = calendar.getTimeInMillis();
                 
-            } catch (SQLException e) {
-                CoreMod.logError(e);
-
+                // If players last join was before the start of TODAY
+                if (lastJoin <= startOfDay) {
+                    // Give that player money
+                    MoneyUtils.givePlayerMoney(player, allowance);
+                    
+                    // Tell them they were awarded money
+                    player.sendMessage(new LiteralText("You were given ").formatted(Formatting.YELLOW).append(new LiteralText(NumberFormat.getInstance().format(allowance)).formatted(Formatting.AQUA, Formatting.BOLD)).append(" for logging in today!"));
+                }
             }
         }
+        
+        // Always update join time to NOW
+        ((PlayerData) player).updateLastJoin();
     }
     
     @Inject(at = @At("TAIL"), method = "onPlayerMove")
     public void onPlayerMove(final PlayerMoveC2SPacket movement, final CallbackInfo callback) {
-        this.movedPlayer( player );
+        this.movedPlayer( this.player );
     }
     
     @Inject(at = @At("TAIL"), method = "onVehicleMove")
     public void onVehicleMove(final VehicleMoveC2SPacket movement, final CallbackInfo callback) {
-        this.movedPlayer( player );
+        this.movedPlayer( this.player );
     }
     
     @Inject(at = @At("RETURN"), method = "onDisconnected")
@@ -124,46 +174,40 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         CoreMod.PLAYER_LOCATIONS.remove( this.player );
     }
     
-    @Inject(at = @At("HEAD"), method = "onChatMessage", cancellable = true)
+    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/server/PlayerManager.broadcastChatMessage(Lnet/minecraft/text/Text;Z)V"), method = "onChatMessage", cancellable = true)
     public void onChatMessage(ChatMessageC2SPacket chatMessageC2SPacket, CallbackInfo callback) {
         if (!SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
             return;
         
-        NetworkThreadUtils.forceMainThread(chatMessageC2SPacket, this, this.player.getServerWorld());
-        if (this.player.getClientChatVisibility() == ChatVisibility.HIDDEN) {
-            this.sendPacket(new ChatMessageS2CPacket((new TranslatableText("chat.cannotSend", new Object[0])).formatted(Formatting.RED)));
-            
-        } else {
-            this.player.updateLastActionTime();
-            String rawString = chatMessageC2SPacket.getChatMessage();
-            rawString = StringUtils.normalizeSpace(rawString);
-            
-            for(int int_1 = 0; int_1 < rawString.length(); ++int_1) {
-                if (!SharedConstants.isValidChar(rawString.charAt(int_1))) {
-                    this.disconnect(new TranslatableText("multiplayer.disconnect.illegal_characters", new Object[0]));
-                    return;
-                }
+        // Parse the users message
+        String rawString = StringUtils.normalizeSpace(chatMessageC2SPacket.getChatMessage());
+        
+        // Create a chat message
+        Text chatText = PlayerNameUtils.getPlayerChatDisplay( this.player, this.getChatRoom() )
+            .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
+            .append(new LiteralText( rawString ).formatted(this.getChatRoom().getFormatting()));
+        
+        // Send the new chat message to the currently selected chat room
+        switch (this.getChatRoom()) {
+            // Local message
+            case LOCAL: {
+                break;
             }
-            
-            if (rawString.startsWith("/")) {
-                // For a command
-                this.executeCommand( rawString );
-                
-            } else {
-                // Create a chat message
-                Text chatText = PlayerNameUtils.getPlayerChatDisplay( this.player )
-                    .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
-                    .append(new LiteralText( rawString ).formatted(Formatting.WHITE));
-                
-                // Send the new chat message to all players
-                this.server.getPlayerManager().broadcastChatMessage(chatText, false);
+            // Global message
+            case GLOBAL: {
+                MessageUtils.sendToAll( chatText );
+                break;
             }
-            
-            this.messageCooldown += 20;
-            if (this.messageCooldown > 200 && !this.server.getPlayerManager().isOperator(this.player.getGameProfile())) {
-                this.disconnect(new TranslatableText("disconnect.spam", new Object[0]));
+            // Message to the players town
+            case TOWN: {
+                ClaimantPlayer claimantPlayer = ((PlayerData) this.player).getClaim();
+                ClaimantTown town = claimantPlayer.getTown();
+                MessageUtils.sendToTown( town, chatText );
+                break;
             }
         }
+        
+        // Cancel the original
         callback.cancel();
     }
     
@@ -174,15 +218,13 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         World world = player.getEntityWorld();
         BlockPos blockPos = player.getBlockPos();
         
-        ClaimedChunk chunk = ClaimedChunk.convert( world, blockPos );
-        
+        WorldChunk chunk = world.getWorldChunk( blockPos );
         if ( !CoreMod.PLAYER_LOCATIONS.containsKey( player ) ) {
-            
             this.showPlayerNewLocation( player, chunk );
             
         } else {
             UUID playerLocation = CoreMod.PLAYER_LOCATIONS.get( player );
-            UUID chunkOwner = ( chunk == null ? null : chunk.getOwner() );
+            UUID chunkOwner = ( chunk == null ? null : ((IClaimedChunk) chunk).getOwner( blockPos ) );
             
             // If the location has changed
             if ( ( ( playerLocation != null ) && (!playerLocation.equals( chunkOwner )) ) || ( ( chunkOwner != null ) && (!chunkOwner.equals( playerLocation )) ) ) {
@@ -191,9 +233,10 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         }
     }
     
-    public void showPlayerNewLocation(@NotNull final PlayerEntity player, final ClaimedChunk local) {
-        if ( ( local == null ) || ( local.getOwner() == null ) ) {
-            Text popupText = new LiteralText( SewingMachineConfig.INSTANCE.NAME_WILDERNESS.get() ).formatted( Formatting.GREEN )
+    public void showPlayerNewLocation(@NotNull final PlayerEntity player, final WorldChunk local) {
+        BlockPos playerPos = player.getBlockPos();
+        if ( ( local == null ) || ( ((IClaimedChunk) local).getOwner( playerPos ) == null ) ) {
+            Text popupText = ChunkUtils.getPlayerWorldWilderness( player )
                 .append(
                     new LiteralText( " [" ).formatted(Formatting.RED)
                         .append( TranslatableServerSide.text( player, "claim.chunk.pvp" ) )
@@ -205,8 +248,9 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
             TitleUtils.showPlayerAlert(player, Formatting.GREEN, popupText );
             
         } else {
-            CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, local.getOwner());
+            CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, ((IClaimedChunk) local).getOwner( playerPos ));
             (new Thread(() -> {
+                IClaimedChunk claimedChunk = (IClaimedChunk) local;
                 Text popupText = null;
                 popupText = new LiteralText("Entering ")
                     .formatted(Formatting.WHITE);
@@ -214,36 +258,36 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
                 try {
                     
                     // If player is in spawn protection
-                    if (local.getOwner().equals(CoreMod.spawnID)) {
+                    if (claimedChunk.getOwner().equals(CoreMod.spawnID)) {
                         popupText.append(
-                            local.getOwnerName( player )
+                            claimedChunk.getOwnerName( player )
                         );
                         return;
                     }
                     
                     String landName = "homestead";
                     ClaimantTown town;
-                    if ((town = local.getTown()) != null) {
+                    if ((town = claimedChunk.getTown()) != null) {
                         landName = town.getTownType();
                     }
                     
                     if (town == null) {
                         // If player is in their own land (No Town)
-                        if ((local.getOwner().equals(player.getUuid()))) {
+                        if ((claimedChunk.getOwner().equals(player.getUuid()))) {
                             popupText.append(new LiteralText("your " + landName).formatted(Formatting.DARK_GREEN));
                             return;
                         }
                         
                         // If player is in another players area (No Town)
-                        popupText.append(local.getOwnerName( player ))
+                        popupText.append(claimedChunk.getOwnerName( player ))
                             .append(new LiteralText("'s " + landName));
                         return;
                     }
                     
                     // If player is in another players town
                     popupText.append(town.getName(player.getUuid())); // Town name
-                    if (!local.getOwner().equals(town.getOwner())) // Append the chunk owner (If not the towns)
-                        popupText.append(" - ").append(local.getOwnerName( player ));
+                    if (!claimedChunk.getOwner().equals(town.getOwner())) // Append the chunk owner (If not the towns)
+                        popupText.append(" - ").append(claimedChunk.getOwnerName( player ));
                     popupText.append( // Town type
                         new LiteralText(" (")
                             .append(new LiteralText(CasingUtils.Words(town.getTownType())).formatted(Formatting.DARK_AQUA))
@@ -253,7 +297,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
                 } finally {
                     if (popupText != null) {
                         // Show that PvP is enabled
-                        if (local.isSetting(ClaimSettings.PLAYER_COMBAT)) {
+                        if (claimedChunk.isSetting(ClaimSettings.PLAYER_COMBAT)) {
                             popupText.append(
                                 new LiteralText(" [").formatted(Formatting.RED)
                                     .append(TranslatableServerSide.text(player, "claim.chunk.pvp"))

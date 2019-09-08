@@ -30,7 +30,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.ChatRooms;
+import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.Nicknamable;
+import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.nbt.CompoundTag;
@@ -50,29 +53,29 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.*;
+import java.util.UUID;
 
 public final class PlayerNameUtils {
     
     private PlayerNameUtils() {}
     
-    public static Text getPlayerChatDisplay(@NotNull ServerPlayerEntity player) {
-        return PlayerNameUtils.getPlayerChatDisplay( player, null );
+    public static Text getPlayerChatDisplay(@NotNull ServerPlayerEntity player, ChatRooms chatRoom) {
+        return PlayerNameUtils.getPlayerChatDisplay( player, null, chatRoom );
     }
-    public static Text getPlayerChatDisplay(@NotNull ServerPlayerEntity player, @Nullable String prepend, Formatting... playerColors) {
-        ClaimantPlayer playerPermissions;
+    public static Text getPlayerChatDisplay(@NotNull ServerPlayerEntity player, @Nullable String prepend, ChatRooms chatRoom, Formatting... playerColors) {
+        ClaimantPlayer playerPermissions = ((PlayerData) player).getClaim();
         Text playerDisplay = PlayerNameUtils.getPlayerDisplayName( player );
         if ( playerColors.length > 0 )
             playerDisplay.formatted( playerColors );
         
         // Add the players world
-        Text format = new LiteralText( "[" ).formatted(Formatting.WHITE)
-            .append( formattedWorld( player.dimension ) );
+        Text format = new LiteralText( "[" ).formatted(chatRoom.getFormatting());
+        if (!chatRoom.equals(ChatRooms.TOWN)) format.append( formattedWorld( player.dimension ) );
+        else format.append( formattedChat( chatRoom ) );
         
+        ClaimantTown town;
         // If the player is in a town, prepend the town name
-        if (SewingMachineConfig.INSTANCE.CHAT_SHOW_TOWNS.get() && ((playerPermissions = ClaimantPlayer.get( player.getUuid() )) != null) && (playerPermissions.getTown() != null)) {
-            ClaimantTown town = ClaimantTown.get( playerPermissions.getTown() );
-            
+        if (SewingMachineConfig.INSTANCE.CHAT_SHOW_TOWNS.get() && (playerPermissions != null) && ((town = playerPermissions.getTown() ) != null)) {
             // Add the players town
             format.append( "|" )
                 .append( town.getName().formatted(Formatting.DARK_AQUA) )
@@ -82,7 +85,7 @@ public final class PlayerNameUtils {
                 format.append( prepend );
             
             // Add the players title
-            if ( town.getOwner().equals( player.getUuid() ) )
+            if (player.getUuid().equals(town.getOwner()))
                 format.append( CasingUtils.Sentence( town.getOwnerTitle() ) + " " );
             
         } else {
@@ -113,6 +116,9 @@ public final class PlayerNameUtils {
         );
     }
     
+    /*
+     * Message Components
+     */
     public static Text formattedWorld(DimensionType dimension) {
         String world = null;
         
@@ -140,6 +146,13 @@ public final class PlayerNameUtils {
         }
         return text;
     }
+    public static Text formattedChat(ChatRooms chatRoom) {
+        String name = CasingUtils.Sentence( chatRoom.name() );
+        return new LiteralText( name.substring( 0, 1 ) )
+            .formatted( Formatting.DARK_GRAY )
+            .styled((style -> style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( name ).formatted( Formatting.WHITE )))));
+    }
+    
     public static Text fetchPlayerNick(@NotNull UUID uuid) {
         Text out;
         if ((!uuid.equals(CoreMod.spawnID)) && ((out = PlayerNameUtils.getOfflinePlayerNickname( uuid )) != null))
@@ -157,7 +170,7 @@ public final class PlayerNameUtils {
             return playerName;
         
         // Log that a request is being made
-        CoreMod.logMessage( "Looking up username of " + uuid.toString() );
+        CoreMod.logInfo( "Looking up username of " + uuid.toString() );
         
         HttpURLConnection connection = null;
         try {
@@ -191,8 +204,8 @@ public final class PlayerNameUtils {
             if (connection != null)
                 connection.disconnect();
             if ( playerName == null )
-                CoreMod.logMessage( "Player name of " + uuid.toString() + " [LOOKUP FAILED]" );
-            else CoreMod.logMessage( "Player name of " + uuid.toString() + " is " + playerName.getString() );
+                CoreMod.logInfo( "Player name of " + uuid.toString() + " [LOOKUP FAILED]" );
+            else CoreMod.logInfo( "Player name of " + uuid.toString() + " is " + playerName.getString() );
         }
         
         return ( playerName == null ? new LiteralText("Unknown player") : playerName );
@@ -209,9 +222,11 @@ public final class PlayerNameUtils {
     }
     @Nullable
     private static Text getOfflinePlayerNickname(@NotNull UUID uuid) {
-        CompoundTag tag = NbtUtils.readOfflinePlayerData( uuid );
-        if ((tag != null) && tag.containsKey("PlayerNickname", 8))
-            return Text.Serializer.fromJson(tag.getString("PlayerNickname"));
+        try {
+            CompoundTag tag = NbtUtils.readOfflinePlayerData(uuid);
+            if ((tag != null) && tag.containsKey("PlayerNickname", 8))
+                return Text.Serializer.fromJson(tag.getString("PlayerNickname"));
+        } catch (NbtNotFoundException ignored) {}
         return null;
     }
     

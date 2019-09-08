@@ -26,7 +26,6 @@
 package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.ShopSignBuilder;
 import net.minecraft.block.entity.BlockEntity;
@@ -64,7 +63,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     private UUID shopSign_Owner = null;
     private Identifier shopSign_item = null;
     private Integer shopSign_itemCount = null;
-    private Long shopSign_itemPrice = null;
+    private Integer shopSign_itemPrice = null;
     
     /*
      * Mixin Getters
@@ -90,7 +89,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
         return this.shopSign_itemCount;
     }
     @Override @Nullable
-    public Long getShopItemPrice() {
+    public Integer getShopItemPrice() {
         return this.shopSign_itemPrice;
     }
     @Override
@@ -150,8 +149,8 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
             tag.putString("shop_item_mod", this.shopSign_item.getNamespace());
             tag.putString("shop_item_name", this.shopSign_item.getPath());
         }
-        tag.putLong( "shop_item_count", this.shopSign_itemCount );
-        tag.putLong( "shop_price", this.shopSign_itemPrice );
+        tag.putInt( "shop_item_count", this.shopSign_itemCount );
+        tag.putInt( "shop_price", this.shopSign_itemPrice );
         
         callback.setReturnValue( tag );
     }
@@ -164,7 +163,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                 this.shopSign_item = new Identifier( signItem );
                 this.shopSign_Owner = tag.getUuid("shop_owner");
                 this.shopSign_itemCount = tag.getInt("shop_item_count");
-                this.shopSign_itemPrice = tag.getLong("shop_price");
+                this.shopSign_itemPrice = tag.getInt("shop_price");
             } catch (InvalidIdentifierException e) {
                 CoreMod.logError( "Could not find item \"" + signItem + "\" for shop sign." );
                 CoreMod.logError( e );

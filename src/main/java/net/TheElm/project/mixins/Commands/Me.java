@@ -3,6 +3,7 @@ package net.TheElm.project.mixins.Commands;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
@@ -34,7 +35,7 @@ public final class Me {
                     MinecraftServer server = player.getServer();
                     
                     // Create the player display for chat
-                    Text text = PlayerNameUtils.getPlayerChatDisplay( player, "* ", Formatting.WHITE )
+                    Text text = PlayerNameUtils.getPlayerChatDisplay( player, "* ", ((PlayerChat) player).getChatRoom(), Formatting.WHITE )
                         .append(" ")
                         .append( message );
                     

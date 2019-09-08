@@ -37,37 +37,45 @@ import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import net.TheElm.project.interfaces.PlayerMovement;
-import net.TheElm.project.protections.claiming.Claimant;
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.CoreMod;
+import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.commands.ArgumentTypes.EnumArgumentType;
 import net.TheElm.project.config.SewingMachineConfig;
-import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.utilities.*;
-import net.TheElm.project.CoreMod;
-import net.TheElm.project.protections.claiming.ClaimedChunk;
-import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.exceptions.NotEnoughMoneyException;
+import net.TheElm.project.exceptions.TranslationKeyException;
+import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.interfaces.PlayerMovement;
+import net.TheElm.project.protections.claiming.Claimant;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.utilities.*;
 import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.Whitelist;
 import net.minecraft.server.WhitelistEntry;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import net.minecraft.text.Texts;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.dimension.DimensionType;
 
 import java.sql.SQLException;
 import java.text.NumberFormat;
@@ -178,7 +186,7 @@ public final class ClaimCommand {
          */
         LiteralCommandNode<ServerCommandSource> towns = dispatcher.register( CommandManager.literal( "town" )
             .then( CommandManager.literal( "new" )
-                .requires(source -> !sourceIsMayor( source ))
+                .requires(ClaimCommand::sourceNotMayor)
                 .then( CommandManager.argument( "name", StringArgumentType.greedyString() )
                     .executes(ClaimCommand::townFound)
                 )
@@ -200,6 +208,7 @@ public final class ClaimCommand {
         
         // The main command
         LiteralCommandNode<ServerCommandSource> protection = dispatcher.register( CommandManager.literal("protection" )
+            // Claim a chunk
             .then(CommandManager.literal("claim" )
                 .redirect( claim )
             )
@@ -229,6 +238,8 @@ public final class ClaimCommand {
             .then( CommandManager.literal("friends")
                 .redirect( friends )
             )
+            
+            // Chunk settings
             .then( CommandManager.literal("settings")
                 .then( CommandManager.argument( "setting", StringArgumentType.word())
                     .suggests( EnumArgumentType.create( ClaimSettings.class )::listSuggestions )
@@ -236,6 +247,12 @@ public final class ClaimCommand {
                         .executes( ClaimCommand::updateBoolean )
                     )
                 )
+            )
+            
+            // Import from older version
+            .then( CommandManager.literal("legacy-import")
+                .requires((source -> source.hasPermissionLevel( 4 )))
+                .executes( ClaimCommand::convertFromLegacy )
             )
         );
         
@@ -261,28 +278,26 @@ public final class ClaimCommand {
         // Get the players positioning
         BlockPos blockPos = player.getBlockPos();
         
+        List<WorldChunk> chunksToClaim = new ArrayList<>();
         // Check the radius that the player wants to claim
-        final int radius = IntegerArgumentType.getInteger( context, "radius" );
-        ClaimedChunk[] claimedChunks = ClaimedChunk.getOwnedAround( player.getServerWorld(), player.getBlockPos(), radius );
-        for ( ClaimedChunk claimedChunk : claimedChunks ) {
-            if (!player.getUuid().equals( claimedChunk.getOwner() ))
-                throw CHUNK_RADIUS_OWNED.create( player, claimedChunk.getOwnerName( player ));
+        final int radius = IntegerArgumentType.getInteger(context, "radius");
+        IClaimedChunk[] claimedChunks = IClaimedChunk.getOwnedAround(player.getServerWorld(), player.getBlockPos(), radius);
+        for (IClaimedChunk claimedChunk : claimedChunks) {
+            if (!player.getUuid().equals(claimedChunk.getOwner( blockPos )))
+                throw CHUNK_RADIUS_OWNED.create(player, claimedChunk.getOwnerName(player));
         }
         
         int chunkX = blockPos.getX() >> 4;
         int chunkZ = blockPos.getZ() >> 4;
         
-        List<WorldChunk> chunksToClaim = new ArrayList<>();
         // For the X axis
-        for ( int x = chunkX - radius; x <= chunkX + radius; x++ ) {
+        for (int x = chunkX - radius; x <= chunkX + radius; x++) {
             // For the Z axis
-            for ( int z = chunkZ - radius; z <= chunkZ + radius; z++ ) {
+            for (int z = chunkZ - radius; z <= chunkZ + radius; z++) {
                 // Create the chunk position
-                WorldChunk worldChunk = world.getWorldChunk(new BlockPos( x << 4, 0, z << 4 ));
-                // Get the protected chunk
-                ClaimedChunk chunk = ClaimedChunk.convert( worldChunk );
+                WorldChunk worldChunk = world.getWorldChunk(new BlockPos(x << 4, 0, z << 4));
                 // Add if not already claimed
-                if (chunk == null || (!player.getUuid().equals(chunk.getOwner())))
+                if (!player.getUuid().equals(((IClaimedChunk) worldChunk).getOwner( blockPos )))
                     chunksToClaim.add(worldChunk);
             }
         }
@@ -322,54 +337,51 @@ public final class ClaimCommand {
     }
     private static Runnable claimChunkThread(final UUID chunkFor, final PlayerEntity claimant, final WorldChunk... worldChunks) {
         return (() -> {
-            if (!ClaimCommand.tryClaimChunkAt(chunkFor, claimant, worldChunks))
-                claimant.sendMessage(TranslatableServerSide.text(claimant, "claim.chunk.error.claimed"));
-            
-            Claimant claimed;
-            if ((claimed = ClaimantPlayer.get(chunkFor)) != null) {
-                claimed.adjustCount(worldChunks.length);
-                
-                if ((claimed = ClaimantTown.get(((ClaimantPlayer) claimed).getTown())) != null) claimed.adjustCount(worldChunks.length);
+            try {
+                if (!ClaimCommand.tryClaimChunkAt(chunkFor, claimant, worldChunks))
+                    claimant.sendMessage(TranslatableServerSide.text(claimant, "claim.chunk.error.claimed"));
+            } catch (TranslationKeyException e) {
+                claimant.sendMessage(TranslatableServerSide.text(claimant, e.getKey()));
             }
         });
     }
-    public static boolean tryClaimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final WorldChunk... worldChunks) {
-        World world = claimant.getEntityWorld();
+    public static boolean tryClaimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final WorldChunk... worldChunks) throws TranslationKeyException {
+        boolean success = false;
+        int claimed = 0; // Amount of chunks claimed
         
-        int claimed = 0;
-        try ( MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT INTO `chunk_Claimed` ( `chunkX`, `chunkZ`, `chunkOwner`, `chunkWorld` ) VALUES ( ?, ?, ?, ? );", true) ) {
-            for ( WorldChunk pos : worldChunks ) {
-                ChunkPos chunk = pos.getPos();
+        try {
+            for (WorldChunk worldChunk : worldChunks) {
+                IClaimedChunk chunk = (IClaimedChunk) worldChunk;
                 
-                if (stmt
-                    .addPrepared(chunk.x)
-                    .addPrepared(chunk.z)
-                    .addPrepared(chunkFor)
-                    .addPrepared(world.dimension.getType().getRawId())
-                    .executeUpdate() <= 0) continue;
+                // Check if it's available
+                chunk.canPlayerClaim(chunkFor);
+                
+                // Update the chunk owner
+                chunk.updatePlayerOwner(chunkFor);
+                worldChunk.setShouldSave(true);
                 
                 // Log that the chunk was claimed
-                CoreMod.logMessage(claimant.getName().asString() + " has claimed chunk " + chunk.x + ", " + chunk.z);
+                ChunkPos chunkPos = worldChunk.getPos();
+                CoreMod.logInfo(claimant.getName().asString() + " has claimed chunk " + chunkPos.x + ", " + chunkPos.z);
                 
+                // Save the chunk for the player
+                Claimant claim;
+                if ((claim = ClaimantPlayer.get(chunkFor)) != null) {
+                    claim.addToCount(worldChunk);
+                    
+                    if ((claim = ((ClaimantPlayer) claim).getTown()) != null)
+                        claim.addToCount(worldChunk);
+                }
+                
+                // Increase our counter
                 ++claimed;
-                
-                // Update the owners of existing chunks
-                ClaimedChunk claimedChunk;
-                if ((claimedChunk = ClaimedChunk.convertFromCache(pos)) != null) claimedChunk.updatePlayerOwner( chunkFor );
             }
             
-        } catch ( SQLException e ) {
-            // If the chunk is already claimed
-            if ( e.getErrorCode() == 1062 )
-                return false;
-            
-            CoreMod.logError( e );
+            return (success = true);
+        } finally {
+            if (success || (claimed > 0))
+                TranslatableServerSide.send( claimant, "claim.chunk.claimed", claimed );
         }
-        
-        if ( worldChunks.length > 1 )
-            TranslatableServerSide.send( claimant, "claim.chunk.claimed", claimed );
-        
-        return true;
     }
     
     private static int unclaimChunk(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -382,18 +394,19 @@ public final class ClaimCommand {
         if (!ClaimCommand.tryUnclaimChunkAt( player.getUuid(), player, blockPos ))
             throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create( player );
         
+        // Get chunk
+        WorldChunk worldChunk = world.getWorldChunk( blockPos );
+        
         // Update total count
         Claimant claimed;
-        if ((claimed = ClaimantPlayer.get( player )) != null) {
-            claimed.adjustCount( -1 );
+        if ((claimed = ((PlayerData) player).getClaim()) != null) {
+            claimed.removeFromCount( worldChunk );
             
-            if ((claimed = ClaimantTown.get(((ClaimantPlayer) claimed).getTown())) != null) claimed.adjustCount( -1 );
+            if ((claimed = ((ClaimantPlayer) claimed).getTown()) != null) claimed.removeFromCount( worldChunk );
         }
         
         // Update runtime
-        ClaimedChunk chunk = ClaimedChunk.convert(world, blockPos);
-        if (chunk != null)
-            chunk.updatePlayerOwner( null );
+        ((IClaimedChunk) worldChunk).updatePlayerOwner( null );
         
         return Command.SINGLE_SUCCESS;
     }
@@ -406,73 +419,70 @@ public final class ClaimCommand {
         World world = player.getEntityWorld();
         
         // Convert from position
-        ClaimedChunk chunk = ClaimedChunk.convert(world, blockPos);
-        if ( chunk == null )
-            throw ClaimCommand.CHUNK_NOT_OWNED.create( player );
+        WorldChunk worldChunk = world.getWorldChunk( blockPos );
+        final UUID currentOwner = ((IClaimedChunk) worldChunk).getOwner( blockPos );
+        if (currentOwner == null )
+            throw ClaimCommand.CHUNK_NOT_OWNED.create(player);
         
-        final UUID currentOwner = chunk.getOwner();
-        
-        if ((currentOwner == null) || (!ClaimCommand.tryUnclaimChunkAt( currentOwner, player, blockPos )))
+        if (!ClaimCommand.tryUnclaimChunkAt( currentOwner, player, blockPos ))
             throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create( player );
         
         // Update total count
         Claimant claimed;
         if ((claimed = ClaimantPlayer.get( currentOwner )) != null) {
-            claimed.adjustCount( -1 );
+            claimed.removeFromCount( worldChunk );
             
-            if ((claimed = ClaimantTown.get(((ClaimantPlayer) claimed).getTown())) != null) claimed.adjustCount( -1 );
+            if ((claimed = ((ClaimantPlayer) claimed).getTown()) != null) claimed.removeFromCount( worldChunk );
         }
         
         // Update the owner to NONE
-        chunk.updatePlayerOwner( null );
+        ((IClaimedChunk) worldChunk).updatePlayerOwner( null );
         
         return Command.SINGLE_SUCCESS;
     }
     public static boolean tryUnclaimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final BlockPos blockPos) {
         World world = claimant.getEntityWorld();
-        
-        // Try unclaiming the chunk
-        try ( MySQLStatement statement = CoreMod.getSQL().prepare("DELETE FROM `chunk_Claimed` WHERE `chunkX` = ? AND `chunkZ` = ? AND `chunkOwner` = ? AND `chunkWorld` = ?;" ) ) {
-            
-            // Update database
-            int i = statement
-                .addPrepared( blockPos.getX() >> 4 )
-                .addPrepared( blockPos.getZ() >> 4 )
-                .addPrepared( chunkFor )
-                .addPrepared( world.dimension.getType().getRawId() )
-                .executeUpdate();
-            
-            // If the chunk was NOT modified
-            return ( i > 0 );
-            
-        } catch ( SQLException e ) {
-            CoreMod.logError( e );
+        return ClaimCommand.tryUnclaimChunkAt( chunkFor, world.getWorldChunk( blockPos ));
+    }
+    private static boolean tryUnclaimChunkAt(final UUID chunkFor, final WorldChunk chunk) {
+        if ( !chunkFor.equals( ((IClaimedChunk) chunk).getOwner() ) )
             return false;
+        
+        // Update total count
+        Claimant claimed;
+        if ((claimed = ClaimantPlayer.get( chunkFor )) != null) {
+            // Remove the players count
+            claimed.removeFromCount( chunk );
+            
+            // Remove the towns count
+            if ((claimed = ((IClaimedChunk)chunk).getTown()) != null) claimed.removeFromCount( chunk );
         }
+        
+        // Set the chunks owner
+        ((IClaimedChunk) chunk).updatePlayerOwner( null );
+        
+        return true;
     }
     private static int unclaimAll(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        final ServerCommandSource source = context.getSource();
+        final ServerPlayerEntity player = source.getPlayer();
+        final MinecraftServer server = source.getMinecraftServer();
         
-        // Try unclaiming all of the users chunks
-        try ( MySQLStatement stmt = CoreMod.getSQL().prepare( "DELETE FROM `chunk_Claimed` WHERE `chunkOwner` = ?;" ) ) {
+        // Update total count
+        Claimant claimed;
+        if ((claimed = ((PlayerData) player).getClaim()) != null) {
+            // Send the message to the claimant
+            TranslatableServerSide.send( player, "claim.chunk.unclaimed", claimed.getCount() );
             
-            stmt.addPrepared( player.getUuid() ).executeUpdate();
-
-            // Update total count
-            Claimant claimed;
-            if ((claimed = ClaimantPlayer.get( player )) != null) {
-                TranslatableServerSide.send( player, "claim.chunk.unclaimed", claimed.getCount() );
+            // Unclaim EVERY chunk
+            claimed.forEachChunk((set) -> {
+                // Get the dimension
+                DimensionType dimension = DimensionType.byRawId(set[0]);
+                ServerWorld world = server.getWorld(dimension);
                 
-                claimed.resetCount();
-                
-                CoreMod.CHUNK_CACHE.values().stream().filter((chunk) -> player.getUuid().equals(chunk.getOwner())).forEach((chunk) -> {
-                    chunk.updatePlayerOwner( null );
-                });
-                if ((claimed = ClaimantTown.get(((ClaimantPlayer) claimed).getTown())) != null) claimed.resetCount();
-            }
-            
-        } catch ( SQLException e ) {
-            CoreMod.logError( e );
+                // Unclaim the chunk
+                ClaimCommand.tryUnclaimChunkAt(player.getUuid(), (WorldChunk)world.getChunk( set[1], set[2], ChunkStatus.FULL ));
+            });
         }
         
         return Command.SINGLE_SUCCESS;
@@ -483,16 +493,38 @@ public final class ClaimCommand {
      */
     private static boolean sourceIsMayor(final ServerCommandSource source) {
         try {
-            return sourceIsMayor( source.getPlayer() );
+            return ClaimCommand.sourceIsMayor( source.getPlayer() );
         } catch (CommandSyntaxException e) {
             CoreMod.logError( e );
         }
         return false;
     }
     public static boolean sourceIsMayor(final ServerPlayerEntity player) {
-        ClaimantPlayer claimantPlayer = ClaimantPlayer.get( player );
-        return claimantPlayer.getTown() != null;
+        ClaimantPlayer claim = ((PlayerData) player).getClaim();
+        ClaimantTown town;
+        
+        // Check if owner
+        if ((claim != null) && ((town = claim.getTown()) != null))
+            return player.getUuid().equals(town.getOwner());
+        
+        return false;
     }
+    private static boolean sourceNotMayor(final ServerCommandSource source) {
+        return !ClaimCommand.sourceIsMayor( source );
+    }
+    public static boolean sourceInTown(final ServerCommandSource source) {
+        try {
+            return ClaimCommand.sourceInTown( source.getPlayer() );
+        } catch (CommandSyntaxException e) {
+            CoreMod.logError( e );
+        }
+        return false;
+    }
+    private static boolean sourceInTown(final ServerPlayerEntity player) {
+        ClaimantPlayer claim = ((PlayerData) player).getClaim();
+        return ((claim != null) && claim.getTown() != null);
+    }
+    
     private static int townFound(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get player information
         ServerCommandSource source = context.getSource();
@@ -500,52 +532,24 @@ public final class ClaimCommand {
         
         // Charge the player money
         try {
-            if ((SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get() > 0) && (!MoneyCommand.databaseTakePlayerMoney(founder.getUuid(), SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get())))
+            if ((SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get() > 0) && (!MoneyUtils.takePlayerMoney(founder, SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get())))
                 throw NOT_ENOUGH_MONEY.create(founder, SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get());
-        } catch (SQLException e) {
-            CoreMod.logError( e );
-            return -1;
+        } catch (NotEnoughMoneyException e) {
+            throw NOT_ENOUGH_MONEY.create(founder, SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get());
         }
-        
-        // Get town information
-        UUID townUUID = UUID.randomUUID();
-        String townName = StringArgumentType.getString( context, "name" );
-        
-        /*
-         * Create our town
-         */
-        try (MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT INTO `chunk_Towns` (`townId`, `townOwner`, `townName`) VALUES ( ?, ?, ? );")) {
-            
-            stmt.addPrepared( townUUID )
-                .addPrepared( founder.getUuid() )
-                .addPrepared( townName )
-                .executeUpdate();
-            
-        } catch (SQLException e) {
-            CoreMod.logError( e );
-            return -1;
-        }
-        
-        /*
-         * Add player to the town
-         */
         try {
-            ClaimCommand.playerJoinsTown(
-                source.getMinecraftServer().getPlayerManager(),
-                founder,
-                townUUID
+            // Get town information
+            Text townName = new LiteralText(StringArgumentType.getString(context, "name"));
+            ClaimantTown town = ClaimantTown.makeTown(founder, townName);
+            
+            // Tell all players of the founding
+            MessageUtils.sendToAll("town.found",
+                founder.getName().formatted(Formatting.AQUA),
+                town.getName().formatted(Formatting.AQUA)
             );
-        } catch (SQLException e) {
-            CoreMod.logError( e );
-            return -1;
+        } catch (Throwable t) {
+            CoreMod.logError( t );
         }
-        
-        // Tell all players of the founding
-        MessageUtils.sendToAll( source.getMinecraftServer().getPlayerManager(), "town.found",
-            founder.getName().formatted(Formatting.AQUA),
-            new LiteralText( townName ).formatted(Formatting.AQUA)
-        );
-        
         return Command.SINGLE_SUCCESS;
     }
     private static int townDisband(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -553,73 +557,48 @@ public final class ClaimCommand {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity founder = source.getPlayer();
         
-        ClaimantPlayer claimantPlayer = ClaimantPlayer.get( founder );
-        ClaimantTown claimantTown = ClaimantTown.get( claimantPlayer.getTown() );
+        ClaimantPlayer claimantPlayer = ((PlayerData) founder).getClaim();
+        ClaimantTown claimantTown;
         
-        // Get town information
-        UUID townUUID = claimantTown.getId();
-        
-        /*
-         * Delete our town
-         */
-        try (MySQLStatement stmt = CoreMod.getSQL().prepare("DELETE FROM `chunk_Towns` WHERE `townId` = ? AND `townOwner` = ?;")) {
-            
-            stmt.addPrepared( townUUID )
-                .addPrepared( founder.getUuid() )
-                .executeUpdate();
-            
-            // Delete the town
-            CoreMod.TOWNS_CACHE.remove( townUUID );
-            
-        } catch (SQLException e) {
-            CoreMod.logError( e );
+        if ((claimantPlayer == null) || ((claimantTown = claimantPlayer.getTown() ) == null))
             return -1;
-        }
         
-        /*
-         * Remove player from town
-         */
-        try {
-            ClaimCommand.playerPartsTown(
-                source.getMinecraftServer().getPlayerManager(),
-                founder,
-                claimantTown
-            );
-        } catch (SQLException e) {
-            CoreMod.logError( e );
-            return -1;
-        }
+        // Delete the town
+        claimantTown.delete();
         
         // Tell all other players
-        MessageUtils.sendToAll( source.getMinecraftServer().getPlayerManager(), "town.disband",
+        MessageUtils.sendToAll( "town.disband",
             founder.getName().formatted(Formatting.AQUA),
             claimantTown.getName().formatted(Formatting.AQUA)
         );
         
         return Command.SINGLE_SUCCESS;
     }
+    private static int townInvite(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return Command.SINGLE_SUCCESS;
+    }
     private static void playerJoinsTown(final PlayerManager manager, final ServerPlayerEntity player, final UUID townUUID) throws SQLException {
-        ClaimantPlayer claimant = ClaimantPlayer.get( player );
-        MySQLStatement stmt;
+        ClaimantPlayer claimant = ((PlayerData) player).getClaim();
+        //MySQLStatement stmt;
         
         /*
          * Set player as the towns owner
          */
-        stmt = CoreMod.getSQL().prepare("INSERT INTO `player_Towns` ( `townId`, `townPlayer` ) VALUES ( ?, ? );", false );
+        /*stmt = CoreMod.getSQL().prepare("INSERT INTO `player_Towns` ( `townId`, `townPlayer` ) VALUES ( ?, ? );", false );
         stmt.addPrepared( townUUID )
             .addPrepared( player.getUuid() )
-            .executeUpdate();
+            .executeUpdate();*/
         
         /*
          * Convert players chunks to their town
          */
-        stmt = CoreMod.getSQL().prepare("UPDATE `chunk_Claimed` SET `chunkTown` = ? WHERE `chunkOwner` = ? AND `chunkTown` IS NULL;", false );
+        /*stmt = CoreMod.getSQL().prepare("UPDATE `chunk_Claimed` SET `chunkTown` = ? WHERE `chunkOwner` = ? AND `chunkTown` IS NULL;", false );
         stmt.addPrepared( townUUID )
             .addPrepared( player.getUuid() )
-            .executeUpdate();
+            .executeUpdate();*/
         
         // Update players town
-        claimant.updateTown( townUUID );
+        //claimant.updateTown( townUUID );
         
         // Refresh the command tree
         manager.sendCommandTree( player );
@@ -628,7 +607,7 @@ public final class ClaimCommand {
         ClaimCommand.notifyChangedClaimed( player.getUuid() );
     }
     private static void playerPartsTown(final PlayerManager manager, final ServerPlayerEntity player, final ClaimantTown town) throws SQLException {
-        ClaimantPlayer claimaint = ClaimantPlayer.get( player );
+        ClaimantPlayer claimaint = ((PlayerData) player).getClaim();
         MySQLStatement stmt;
         
         boolean playerIsMayor = player.getUuid().equals( town.getOwner() );
@@ -643,7 +622,7 @@ public final class ClaimCommand {
         stmt.executeUpdate();
         
         // Update the players town
-        claimaint.updateTown( null );
+        claimaint.setTown( null );
 
         // Refresh the command tree
         manager.sendCommandTree( player );
@@ -683,7 +662,7 @@ public final class ClaimCommand {
             // player.getServer().getSessionService().fillProfileProperties(new GameProfile( player.getUuid(), "" ), true);
             
             // Update the runtime
-            ClaimantPlayer.get( player )
+            ((PlayerData) player).getClaim()
                 .updatePermission( permissions, rank );
             
             // Notify the player
@@ -720,7 +699,7 @@ public final class ClaimCommand {
                 .executeUpdate();
             
             // Update the runtime
-            ClaimantPlayer.get( player )
+            ((PlayerData) player).getClaim()
                 .updateSetting( setting, enabled );
             
             // Notify other players
@@ -768,7 +747,7 @@ public final class ClaimCommand {
                 .executeUpdate();
             
             // Update our runtime
-            ClaimantPlayer.get( player )
+            ((PlayerData) player).getClaim()
                 .updateFriend( friend.getId(), rank );
             
             // Attempting to update the friend
@@ -824,8 +803,8 @@ public final class ClaimCommand {
                 .executeUpdate();
             
             // Update our runtime
-            ClaimantPlayer.get( player )
-                .removeFriend( player.getUuid() );
+            ((PlayerData) player).getClaim()
+                .updateFriend( player.getUuid(), null );
             
             // Attempting to remove the friend
             player.sendMessage( new LiteralText("Player ").formatted(Formatting.WHITE)
@@ -890,13 +869,31 @@ public final class ClaimCommand {
     }
     
     /*
+     * Convert from legacy database version
+     */
+    private static int convertFromLegacy(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        if (LegacyConverter.exists())
+            return -1;
+        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+            return -1;
+        
+        new Thread(() -> {
+            try (LegacyConverter converter = LegacyConverter.create()) {
+                
+            }
+        }).start();
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    
+    /*
      * Notify players of chunk claim changes
      */
     private static void notifyChangedClaimed(final UUID chunkOwner) {
         CoreMod.PLAYER_LOCATIONS.entrySet().stream().filter((entry) -> chunkOwner.equals(entry.getValue())).forEach((entry) -> {
             ServerPlayerEntity notifyPlayer = entry.getKey();
             PlayerMovement movement = ((PlayerMovement) notifyPlayer.networkHandler);
-            movement.showPlayerNewLocation(notifyPlayer, ClaimedChunk.convert(notifyPlayer.getServerWorld(), notifyPlayer.getBlockPos()));
+            movement.showPlayerNewLocation(notifyPlayer, notifyPlayer.getServerWorld().getWorldChunk(notifyPlayer.getBlockPos()));
         });
     }
 }

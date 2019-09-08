@@ -25,38 +25,10 @@
 
 package net.TheElm.project.utilities;
 
-import net.TheElm.project.CoreMod;
-import net.TheElm.project.MySQL.MySQLStatement;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Pair;
-import org.jetbrains.annotations.NotNull;
-
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.util.UUID;
-
 public final class TownNameUtils {
     
     private TownNameUtils() {}
     
-    public static Pair<Text, UUID> fetchTownInfo(@NotNull UUID uuid) {
-        Text name = null;
-        UUID creator = null;
-        try ( MySQLStatement statement = CoreMod.getSQL().prepare("SELECT `townName`, `townOwner` FROM `chunk_Towns` WHERE `townId` = ?;", false).addPrepared( uuid ) ) {
-            ResultSet rs = statement.executeStatement();
-            
-            while ( rs.next() ) {
-                name = new LiteralText( rs.getString( "townName" ) );
-                creator = UUID.fromString( rs.getString( "townOwner" ) );
-            }
-            
-        } catch (SQLException e) {
-            CoreMod.logError( e );
-        }
-        
-        return new Pair<>( name, creator );
-    }
     public static String getTownName(final int chunkSize, final int residents) {
         // Small claims
         if ( chunkSize <= 250 ) {
