@@ -23,25 +23,30 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Player;
+package net.TheElm.project.mixins.Items;
 
-import net.TheElm.project.config.SewingMachineConfig;
-import net.minecraft.container.AnvilContainer;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.item.ShovelItem;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.Constant;
-import org.spongepowered.asm.mixin.injection.ModifyConstant;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(AnvilContainer.class)
-public class AnvilCost {
+import java.util.Map;
+
+@Mixin(ShovelItem.class)
+public class Shovel {
     
-    @ModifyConstant(method = "updateResult", constant = @Constant(intValue = 40))
-    private int anvilMaxLevelOverride(int oldValue) {
-        int modLimit = SewingMachineConfig.INSTANCE.ANVIL_UPPER_LIMIT.get();
-        if (modLimit == 0)
-            return oldValue;
-        if (modLimit < 0)
-            return Integer.MAX_VALUE;
-        return modLimit;
+    @Shadow @Final
+    protected static Map<Block, BlockState> PATH_BLOCKSTATES;
+    
+    @Inject(at = @At("RETURN"), method = "<init> *")
+    public void shovelConstructor(CallbackInfo callback) {
+        PATH_BLOCKSTATES.put(Blocks.DIRT, Blocks.GRASS_PATH.getDefaultState());
     }
     
 }

@@ -52,13 +52,11 @@ public final class LegacyConverter implements AutoCloseable {
     
     private LegacyConverter() {
         this.startedAt = new Date().getTime();
-        MinecraftServer server = CoreMod.getServer();
-        if (server != null) {
-            this.clearTowns = this.convertTowns( server );
-            this.clearPlayers = this.convertPlayers( server );
-            this.clearClaims = this.convertClaims( server );
-            this.success = true;
-        }
+        
+        this.clearTowns = this.convertTowns(CoreMod.getServer());
+        this.clearPlayers = this.convertPlayers(CoreMod.getServer());
+        this.clearClaims = this.convertClaims(CoreMod.getServer());
+        this.success = true;
     }
     
     public boolean convertTowns(MinecraftServer server) {
@@ -66,9 +64,10 @@ public final class LegacyConverter implements AutoCloseable {
             
         } catch (SQLException e) {
             // If table doesn't exist
-            if (e.getErrorCode() != 1146)
-                CoreMod.logInfo( e );
-            return false;
+            if (e.getErrorCode() != 1146) {
+                CoreMod.logInfo(e);
+                return false;
+            }
         }
         return true;
     }
@@ -77,9 +76,10 @@ public final class LegacyConverter implements AutoCloseable {
             
         } catch (SQLException e) {
             // If table doesn't exist
-            if (e.getErrorCode() != 1146)
-                CoreMod.logInfo( e );
-            return false;
+            if (e.getErrorCode() != 1146) {
+                CoreMod.logInfo(e);
+                return false;
+            }
         }
         return true;
     }
@@ -114,9 +114,10 @@ public final class LegacyConverter implements AutoCloseable {
             server.save( true, false, true );
         } catch (SQLException e) {
             // If table doesn't exist
-            if (e.getErrorCode() != 1146)
-                CoreMod.logInfo( e );
-            return false;
+            if (e.getErrorCode() != 1146) {
+                CoreMod.logInfo(e);
+                return false;
+            }
         }
         return true;
     }
@@ -126,6 +127,17 @@ public final class LegacyConverter implements AutoCloseable {
         long millis = new Date().getTime() - this.startedAt;
         if ( success ) {
             // Remove old databases
+            if ( this.clearClaims ) {
+                
+            }
+            if ( this.clearPlayers ) {
+                
+            }
+            if ( this.clearTowns ) {
+                
+            }
+            
+            // Completed
             CoreMod.logInfo( "Legacy conversion completed. [" + millis + "ms]" );
             return;
         }

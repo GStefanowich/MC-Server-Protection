@@ -128,6 +128,7 @@ public final class ClaimantTown extends Claimant {
         super.readCustomDataFromTag( tag );
     }
     
+    // TODO: Town deleting / erasure
     public final void delete() {
         // Remove all players from the town
         

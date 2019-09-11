@@ -47,6 +47,8 @@ public final class MiscCommands {
     private static String FLIP = "(╯°□°)╯︵ ┻━┻";
     private static String SHRUG = "¯\\_(ツ)_/¯";
     
+    private MiscCommands() {}
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         if (SewingMachineConfig.INSTANCE.COMMAND_SHRUG.get()) {
             dispatcher.register(CommandManager.literal("shrug")

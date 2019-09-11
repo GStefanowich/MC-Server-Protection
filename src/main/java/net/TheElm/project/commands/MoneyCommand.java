@@ -65,6 +65,9 @@ public final class MoneyCommand {
         new LiteralText("Could not find data on that player (Maybe they haven't joined the server?).")
     );
     private static final float DEFAULT_STATE = SewingMachineConfig.INSTANCE.STARTING_MONEY.get();
+    
+    private MoneyCommand() {}
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         if (!SewingMachineConfig.INSTANCE.DO_MONEY.get())
             return;

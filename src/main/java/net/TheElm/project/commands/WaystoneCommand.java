@@ -41,6 +41,8 @@ import net.minecraft.util.math.BlockPos;
 
 public class WaystoneCommand {
     
+    private WaystoneCommand() {}
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register( CommandManager.literal("waystones")
             .requires((source) -> source.hasPermissionLevel( 2 ))

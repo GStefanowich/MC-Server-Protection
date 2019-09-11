@@ -23,29 +23,45 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Entities;
+package net.TheElm.project.mixins.World;
 
+import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.SewingMachineConfig;
+import net.minecraft.entity.EntityCategory;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ai.RangedAttackMob;
-import net.minecraft.entity.boss.WitherEntity;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.minecraft.world.biome.Biome;
+import net.minecraft.world.biome.NetherBiome;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(WitherEntity.class)
-public abstract class WitherBoss extends HostileEntity implements RangedAttackMob {
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
 
-    protected WitherBoss(EntityType<? extends HostileEntity> entityType_1, World world_1) {
-        super(entityType_1, world_1);
+@Mixin(NetherBiome.class)
+public abstract class Nether extends Biome {
+    
+    protected Nether(Settings biome$Settings_1) {
+        super(biome$Settings_1);
     }
     
-    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/world/World.playGlobalEvent(ILnet/minecraft/util/math/BlockPos;I)V", shift = At.Shift.BEFORE), method = "mobTick")
-    public void overrideWorldSound(CallbackInfo callback) {
-        this.world.playLevelEvent( 1023, new BlockPos(this), 0 );
+    @Inject(at = @At("RETURN"), method = "<init>*")
+    public void addSpawn(CallbackInfo callback) {
+        if (SewingMachineConfig.INSTANCE.PREVENT_NETHER_ENDERMEN.get()) {
+            try {
+                // Get the super
+                Field f = this.getClass().getSuperclass().getDeclaredField("spawns");
+                f.setAccessible(true);
+                Map<EntityCategory, List<SpawnEntry>> spawns = (Map<EntityCategory, List<SpawnEntry>>) f.get(this);
+                
+                // If enabled
+                spawns.get(EntityCategory.MONSTER).removeIf(entity -> entity.type.equals(EntityType.ENDERMAN));
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                CoreMod.logError( e );
+            }
+        }
     }
     
 }

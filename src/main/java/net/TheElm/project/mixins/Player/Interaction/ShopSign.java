@@ -124,6 +124,8 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                 if ( !builder.build((ServerPlayerEntity) this.getEditor()) )
                     return;
                 
+                CoreMod.logInfo("Built new shop sign " + this.pos.getX() + ", " + this.pos.getY() + ", " + this.pos.getZ());
+                
                 // Update the parameters here from the builder
                 this.shopSign_Owner = builder.shopOwner();
                 this.shopSign_item = builder.getItem();
