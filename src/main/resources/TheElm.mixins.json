@@ -56,7 +56,8 @@
     "World.WorldSleep",
     "World.Nether",
     
-    "Server"
+    "Server.Save",
+    "Server.MOTD"
   ],
   "injectors": {
     "defaultRequire": 1

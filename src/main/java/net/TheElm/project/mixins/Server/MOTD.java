@@ -23,39 +23,32 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.config;
+package net.TheElm.project.mixins.Server;
 
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import org.jetbrains.annotations.NotNull;
+import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.utilities.FormattingUtils;
+import net.minecraft.server.ServerMetadata;
+import net.minecraft.text.Text;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.function.Function;
+import java.util.List;
 
-public final class ConfigOption<T extends Object> extends ConfigBase {
+@Mixin(ServerMetadata.class)
+public class MOTD {
     
-    private final Function<JsonElement, T> setter;
-    private T value;
-    
-    public ConfigOption(@NotNull String location, Function<JsonElement, T> setter) {
-        this( location, null, setter );
-    }
-    public ConfigOption(@NotNull String location, T defaultValue, Function<JsonElement, T> setter) {
-        super( location );
+    @Inject(at = @At("TAIL"), method = "getDescription", cancellable = true)
+    public void onGetDescription(CallbackInfoReturnable<Text> callback) {
+        // Get MOTDs and if empty, cancel
+        List<String> configMOTD = SewingMachineConfig.INSTANCE.SERVER_MOTD_LIST.get();
+        if (configMOTD.size() <= 0) return;
         
-        this.value = defaultValue;
-        this.setter = setter;
-    }
-    
-    @Override
-    public final void set( JsonElement value ) {
-        this.value = ( value == null ? null : this.setter.apply( value ) );
-    }
-    public final T get() {
-        return this.value;
-    }
-    @Override
-    public final JsonElement getElement() {
-        return new GsonBuilder().create().toJsonTree(this.value);
+        // Get the formatted MOTD
+        Text motd = FormattingUtils.stringToText(SewingMachineConfig.INSTANCE.SERVER_MOTD_LIST.getRandom());
+        if ( motd != null )
+            callback.setReturnValue(motd);
     }
     
 }
