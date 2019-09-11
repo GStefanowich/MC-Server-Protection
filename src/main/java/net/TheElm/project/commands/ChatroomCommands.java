@@ -39,6 +39,8 @@ import net.minecraft.server.network.ServerPlayerEntity;
 
 public final class ChatroomCommands {
     
+    private ChatroomCommands() {}
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         if (!SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
             return;

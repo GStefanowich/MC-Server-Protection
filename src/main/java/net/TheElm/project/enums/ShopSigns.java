@@ -468,7 +468,7 @@ public enum ShopSigns {
         }
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.WARP_MAX_DISTANCE.get() <= 0;
+            return SewingMachineConfig.INSTANCE.WARP_MAX_DISTANCE.get() > 0;
         }
         private boolean generateNewWarp(final ServerPlayerEntity player) {
             // Create a new warp point asynchronously

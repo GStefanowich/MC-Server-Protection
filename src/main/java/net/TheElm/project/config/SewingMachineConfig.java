@@ -28,6 +28,9 @@ package net.TheElm.project.config;
 import com.google.gson.*;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.utilities.LoggingUtils.LoggingIntervals;
+import net.minecraft.item.Item;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.Registry;
 
 import java.io.*;
 import java.util.*;
@@ -86,6 +89,7 @@ public final class SewingMachineConfig {
     
     // Players
     public final ConfigOption<Integer> PLAYER_CLAIMS_LIMIT;
+    public final ConfigOption<Map<Item, Integer>> STARTING_ITEMS;
     
     // Towns
     public final ConfigOption<Integer> TOWN_FOUND_COST;
@@ -109,15 +113,27 @@ public final class SewingMachineConfig {
     
     // Commands
     public final ConfigOption<Integer> COMMAND_SPAWN_OP_LEVEL;
+    public final ConfigOption<Integer> COMMAND_THEEND_OP_LEVEL;
     public final ConfigOption<Integer> COMMAND_MODS_OP_LEVEL;
     public final ConfigOption<Boolean> COMMAND_WARP_TPA;
     public final ConfigOption<Boolean> COMMAND_EQUIPMENT;
     public final ConfigOption<Boolean> COMMAND_SHRUG;
     public final ConfigOption<Boolean> COMMAND_TABLEFLIP;
     
+    // OP Commands
+    public final ConfigOption<Integer> COMMAND_GODMODE_OP_LEVEL;
+    public final ConfigOption<Integer> COMMAND_FLIGHT_OP_LEVEL;
+    public final ConfigOption<Integer> COMMAND_HEAL_OP_LEVEL;
+    
     // Miscellaneous
     public final ConfigOption<Boolean> LIMIT_SKELETON_ARROWS;
     public final ConfigOption<Boolean> EXTINGUISH_CAMPFIRES;
+    public final ConfigOption<Integer> ANVIL_UPPER_LIMIT;
+    public final ConfigOption<Boolean> PREVENT_NETHER_ENDERMEN;
+    
+    public final ConfigOption<Boolean> SILK_TOUCH_SPAWNERS;
+    public final ConfigOption<Integer> SPAWNER_PICKUP_DAMAGE;
+    public final ConfigOption<Boolean> SPAWNER_ABSORB_MOBS;
     
     private SewingMachineConfig() {
         // Initialize all configurations
@@ -126,23 +142,23 @@ public final class SewingMachineConfig {
         /*
          * Database handling
          */
-        this.DB_LITE = this.addConfig( new ConfigOption<>("database.sqlite", true, JsonElement::getAsBoolean ) );
-        this.DB_HOST = this.addConfig( new ConfigOption<>("database.host", "", JsonElement::getAsString ));
-        this.DB_NAME = this.addConfig( new ConfigOption<>("database.name", "", JsonElement::getAsString ));
-        this.DB_USER = this.addConfig( new ConfigOption<>("database.user", "", JsonElement::getAsString ));
-        this.DB_PASS = this.addConfig( new ConfigOption<>("database.pass", "", JsonElement::getAsString ));
-        this.DB_PORT = this.addConfig( new ConfigOption<>("database.port", 3306, JsonElement::getAsInt ));
+        this.DB_LITE = this.addConfig( new ConfigOption<>("database.sqlite", true, JsonElement::getAsBoolean));
+        this.DB_HOST = this.addConfig( new ConfigOption<>("database.host", "", JsonElement::getAsString));
+        this.DB_NAME = this.addConfig( new ConfigOption<>("database.name", "", JsonElement::getAsString));
+        this.DB_USER = this.addConfig( new ConfigOption<>("database.user", "", JsonElement::getAsString));
+        this.DB_PASS = this.addConfig( new ConfigOption<>("database.pass", "", JsonElement::getAsString));
+        this.DB_PORT = this.addConfig( new ConfigOption<>("database.port", 3306, JsonElement::getAsInt));
         
         /*
          * Primary Functions Booleans
          */
-        this.DO_CLAIMS = this.addConfig( new ConfigOption<>("claims.enabled", true, JsonElement::getAsBoolean ));
+        this.DO_CLAIMS = this.addConfig( new ConfigOption<>("claims.enabled", true, JsonElement::getAsBoolean));
         
         /*
          * Chat Booleans
          */
-        this.CHAT_MODIFY = this.addConfig( new ConfigOption<>("chat.modify", true, JsonElement::getAsBoolean ));
-        this.CHAT_SHOW_TOWNS = this.addConfig( new ConfigOption<>("chat.show_towns", true, JsonElement::getAsBoolean ));
+        this.CHAT_MODIFY = this.addConfig( new ConfigOption<>("chat.modify", true, JsonElement::getAsBoolean));
+        this.CHAT_SHOW_TOWNS = this.addConfig( new ConfigOption<>("chat.show_towns", true, JsonElement::getAsBoolean));
         
         /*
          * Sleep
@@ -156,6 +172,11 @@ public final class SewingMachineConfig {
         this.DO_MONEY = this.addConfig( new ConfigOption<>("money.enabled", true, JsonElement::getAsBoolean));
         this.STARTING_MONEY = this.addConfig( new ConfigOption<>("money.starting", 0, JsonElement::getAsInt));
         this.DAILY_ALLOWANCE = this.addConfig( new ConfigOption<>("money.daily_reward", 0, JsonElement::getAsInt));
+        
+        /*
+         * Starting items
+         */
+        this.STARTING_ITEMS = this.addConfig( new ConfigOption<>("player.starting_items", new HashMap<>(), this::getItemArray));
         
         /*
          * Death chests
@@ -199,29 +220,45 @@ public final class SewingMachineConfig {
         /*
          * Warping
          */
-        this.WARP_MAX_DISTANCE = this.addConfig( new ConfigOption<>( "warp.max_distance", 1000000, JsonElement::getAsInt ));
-        this.WARP_WAYSTONE_COST = this.addConfig( new ConfigOption<>( "warp.waystone.cost", 2000, JsonElement::getAsInt ));
+        this.WARP_MAX_DISTANCE = this.addConfig( new ConfigOption<>( "warp.max_distance", 1000000, JsonElement::getAsInt));
+        this.WARP_WAYSTONE_COST = this.addConfig( new ConfigOption<>( "warp.waystone.cost", 2000, JsonElement::getAsInt));
         
         /*
          * Ender Dragon Options
          */
-        this.DRAGON_PLAYERS = this.addConfig( new ConfigOption<>("bosses.dragon.players", 5, JsonElement::getAsInt ));
+        this.DRAGON_PLAYERS = this.addConfig( new ConfigOption<>("bosses.dragon.players", 5, JsonElement::getAsInt));
         
         /*
          * Commands
          */
-        this.COMMAND_SPAWN_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.spawn_tp_level", 2, JsonElement::getAsInt));
-        this.COMMAND_MODS_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.mods_op_level", 0, JsonElement::getAsInt));
+        this.COMMAND_SPAWN_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.op_level.spawn_tp", 2, JsonElement::getAsInt));
+        this.COMMAND_THEEND_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.op_level.theend_tp", 2, JsonElement::getAsInt));
+        
+        this.COMMAND_MODS_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.op_level.mods_list", 0, JsonElement::getAsInt));
         this.COMMAND_WARP_TPA = this.addConfig( new ConfigOption<>("commands.warp_tpa", true, JsonElement::getAsBoolean));
+        
         this.COMMAND_EQUIPMENT = this.addConfig( new ConfigOption<>("commands.misc.equipment", true, JsonElement::getAsBoolean));
         this.COMMAND_SHRUG = this.addConfig( new ConfigOption<>("commands.misc.shrug", true, JsonElement::getAsBoolean));
         this.COMMAND_TABLEFLIP = this.addConfig( new ConfigOption<>("commands.misc.tableflip", true, JsonElement::getAsBoolean));
+        
+        this.COMMAND_GODMODE_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.op_level.godmode", 2, JsonElement::getAsInt));
+        this.COMMAND_FLIGHT_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.op_level.fly", 2, JsonElement::getAsInt));
+        this.COMMAND_HEAL_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.op_level.heal", 2, JsonElement::getAsInt));
+        
+        /*
+         * Mob Spawners
+         */
+        this.SILK_TOUCH_SPAWNERS = this.addConfig( new ConfigOption<>("fun.spawners.silk_touch", false, JsonElement::getAsBoolean));
+        this.SPAWNER_PICKUP_DAMAGE = this.addConfig( new ConfigOption<>("fun.spawners.silk_touch_damage", 390, JsonElement::getAsInt));
+        this.SPAWNER_ABSORB_MOBS = this.addConfig( new ConfigOption<>("fun.spawners.absorb_mob_souls", true, JsonElement::getAsBoolean));
         
         /*
          * Miscellaneous
          */
         this.EXTINGUISH_CAMPFIRES = this.addConfig( new ConfigOption<>("fun.world.extinguish_campfires", true, JsonElement::getAsBoolean));
         this.LIMIT_SKELETON_ARROWS = this.addConfig( new ConfigOption<>("fun.mobs.skeletons.limit_arrows", true, JsonElement::getAsBoolean));
+        this.PREVENT_NETHER_ENDERMEN = this.addConfig( new ConfigOption<>("fun.mobs.enderman.no_nether", false, JsonElement::getAsBoolean));
+        this.ANVIL_UPPER_LIMIT = this.addConfig( new ConfigOption<>("fun.anvil_limit", 40, JsonElement::getAsInt));
         
         CoreMod.logInfo( "Loading configuration file." );
         
@@ -331,24 +368,40 @@ public final class SewingMachineConfig {
                 }
             }
             
-            if ( config.get() instanceof String || ( config.get() == null ) )
-                inner.addProperty( path[p], (String) config.get());
-            else if ( config.get() instanceof Number )
-                inner.addProperty( path[p], (Number) config.get());
-            else if ( config.get() instanceof Boolean )
-                inner.addProperty( path[p], (Boolean) config.get());
-            else if ( config.get() instanceof Enum )
-                inner.addProperty( path[p], ((Enum)config.get()).name() );
+            inner.add( path[p], config.getElement() );
         }
         
         return baseObject;
     }
     
+    /*
+     * Special handlers
+     */
+    private Map<Item, Integer> getItemArray(JsonElement element) {
+        Map<Item, Integer> out = new HashMap<>();
+        
+        // Parse each object in the array
+        JsonObject list = element.getAsJsonObject();
+        for ( Map.Entry<String, JsonElement> row : list.entrySet() ) {
+            String token = row.getKey();
+            int count = row.getValue().getAsInt();
+            
+            if (count > 0) {
+                out.put(
+                    Registry.ITEM.get(new Identifier(token)),
+                    count
+                );
+            }
+        }
+        
+        return out;
+    }
     private LoggingIntervals getAsTimeInterval(JsonElement element) {
         if (!LoggingIntervals.contains(element.getAsString()))
             throw new RuntimeException( "Unacceptable time interval \"" + element.getAsString() + "\"" );
         return LoggingIntervals.valueOf(element.getAsString().toUpperCase());
     }
+    
     private JsonElement sortObject(JsonElement element) {
         // If not an object, no sort
         if (!(element instanceof JsonObject))

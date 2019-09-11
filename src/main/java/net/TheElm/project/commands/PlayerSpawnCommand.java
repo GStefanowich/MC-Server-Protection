@@ -29,7 +29,9 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.block.BedBlock;
 import net.minecraft.command.arguments.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -49,6 +51,9 @@ public final class PlayerSpawnCommand {
     
     private PlayerSpawnCommand() {}
     
+    private static final DynamicCommandExceptionType SPAWN_NOT_AT_BED = new DynamicCommandExceptionType((player) ->
+        TranslatableServerSide.text( (ServerPlayerEntity)player, "spawn.set.missing_bed" )
+    );
     public static final Set<UUID> commandRanUUIDs = Collections.synchronizedSet(new HashSet<>());
     public static String commandName = "setspawn";
     
@@ -69,14 +74,16 @@ public final class PlayerSpawnCommand {
         ServerPlayerEntity player = context.getSource().getPlayer();
         ServerWorld world = context.getSource().getWorld();
         
+        // Check that the position is a bed
         BlockPos bedPos = BlockPosArgumentType.getBlockPos( context, "bed_position" );
-        if (!( world.getBlockState(bedPos).getBlock() instanceof BedBlock)) {
-            player.addChatMessage( new LiteralText( "Spawn position must be set at a bed." ).formatted(Formatting.RED), false );
-            return Command.SINGLE_SUCCESS;
-        }
+        if (!( world.getBlockState(bedPos).getBlock() instanceof BedBlock))
+            throw SPAWN_NOT_AT_BED.create(player);
         
+        // Add a bypass to the setting of player spawn
         PlayerSpawnCommand.commandRanUUIDs.add( player.getUuid() );
         
+        // Log our definition
+        CoreMod.logInfo("Player " + player.getName().asString() + " spawn updated to X " + bedPos.getX() + ", Z " + bedPos.getZ() + ", Y " + bedPos.getY());
         player.addChatMessage( new LiteralText( "Spawn updated." ).formatted(Formatting.YELLOW), false );
         player.setPlayerSpawn( bedPos, false );
         

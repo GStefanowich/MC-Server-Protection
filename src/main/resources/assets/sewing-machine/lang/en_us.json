@@ -23,6 +23,21 @@
   "claim.wilderness.end": "The Void",
   "claim.wilderness.nether": "Barren Wastes",
   
+  "player.none_found": "Could not find any players.",
+  "player.abilities.flying_self.enabled": "Flying was enabled.",
+  "player.abilities.flying_self.disabled": "Flying was disabled.",
+  "player.abilities.flying_other.enabled": "Flying was enabled for %s.",
+  "player.abilities.flying_other.disabled": "Flying was disabled for %s.",
+  
+  "player.abilities.godmode_self.enabled": "God mode was enabled.",
+  "player.abilities.godmode_self.disabled": "God mode was disabled.",
+  "player.abilities.godmode_other.enabled": "God mode was enabled for %s.",
+  "player.abilities.godmode_other.disabled": "God mode was disabled for %s.",
+  
+  "player.abilities.healed_self": "You've been healed.",
+  "player.abilities.healed_other": "%s was healed.",
+  "player.abilities.healed_dead": "%s is dead.",
+  
   "player.money": "Your wallet: $%d",
   "player.death_chest.location": "A new death chest has been spawned at %s.",
   
@@ -50,5 +65,7 @@
   "shop.error.stock_player": "You do not have any %s.",
   "shop.error.stock_chest": "Chest is out of %s.",
   "shop.error.money_player": "You do not have enough money.",
-  "shop.error.money_chest": "Shop owner does not have enough money."
+  "shop.error.money_chest": "Shop owner does not have enough money.",
+  
+  "spawn.set.missing_bed": "Spawn position must be set at a bed."
 }

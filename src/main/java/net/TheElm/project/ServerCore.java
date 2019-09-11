@@ -48,6 +48,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         CommandRegistry REGISTRY = CommandRegistry.INSTANCE;
         
         CoreMod.logInfo( "Registering our commands." );
+        REGISTRY.register(false, AdminCommands::register );
         REGISTRY.register(false, ChatroomCommands::register );
         REGISTRY.register(false, ClaimCommand::register );
         REGISTRY.register(false, GameModesCommand::register );

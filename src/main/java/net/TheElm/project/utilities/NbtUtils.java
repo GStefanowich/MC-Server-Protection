@@ -25,11 +25,13 @@
 
 package net.TheElm.project.utilities;
 
+import com.google.gson.JsonObject;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.protections.claiming.Claimant;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtIo;
+import net.minecraft.entity.EntityType;
+import net.minecraft.nbt.*;
+import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -37,6 +39,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileLock;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class NbtUtils {
@@ -193,5 +196,32 @@ public final class NbtUtils {
         tag.putString("type", type.name());
         tag.putUuid("iden", uuid);
         return tag;
+    }
+    
+    /*
+     * Spawner Lore
+     */
+    public static CompoundTag getSpawnerDisplay(ListTag entityIdTag) {
+        // Create the lore tag
+        ListTag loreTag = new ListTag();
+        for (Tag entityTag : entityIdTag) {
+            // Get the mob entity name
+            String mobTag = entityTag.asString();
+        
+            Optional<EntityType<?>> entityType = EntityType.get( mobTag );
+            EntityType<?> entity;
+            if ((entity = entityType.orElse( null )) != null) {
+                // Create the display of mobs
+                JsonObject lore = new JsonObject();
+                lore.addProperty("translate", entity.getTranslationKey());
+                lore.addProperty("color", (entity.getCategory().isAnimal() ? Formatting.GOLD : Formatting.RED).getName());
+                loreTag.add(new StringTag(lore.toString()));
+            }
+        }
+        
+        // Update the lore tag
+        CompoundTag displayTag = new CompoundTag();
+        displayTag.put("Lore", loreTag);
+        return displayTag;
     }
 }

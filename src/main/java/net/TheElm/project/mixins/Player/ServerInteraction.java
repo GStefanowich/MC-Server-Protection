@@ -37,6 +37,8 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.*;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.Packet;
 import net.minecraft.network.listener.ServerPlayPacketListener;
@@ -62,6 +64,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.text.NumberFormat;
 import java.util.Calendar;
+import java.util.Map;
 import java.util.UUID;
 
 @Mixin(ServerPlayNetworkHandler.class)
@@ -126,6 +129,14 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
             // Give the player the starting amount
             if ( SewingMachineConfig.INSTANCE.DO_MONEY.get() && (startingMoney > 0))
                 MoneyUtils.givePlayerMoney( player, startingMoney );
+            
+            // Give the player the starting items
+            for (Map.Entry<Item, Integer> item : SewingMachineConfig.INSTANCE.STARTING_ITEMS.get().entrySet()) {
+                ItemStack stack = new ItemStack( item.getKey() );
+                stack.setCount( item.getValue() );
+                
+                player.inventory.offerOrDrop( player.world, stack );
+            }
             
             // Set first join for later referencing
             ((PlayerData) player).updateFirstJoin();
