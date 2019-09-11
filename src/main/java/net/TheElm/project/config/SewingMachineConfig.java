@@ -44,7 +44,7 @@ public final class SewingMachineConfig {
         INSTANCE = new SewingMachineConfig();
     }
     
-    private final List<ConfigOption<?>> configOptions = new ArrayList<>();
+    private final List<ConfigBase> configOptions = new ArrayList<>();
     
     // Mod version
     public final ConfigOption<String> CONFIG_VERSION;
@@ -125,6 +125,9 @@ public final class SewingMachineConfig {
     public final ConfigOption<Integer> COMMAND_FLIGHT_OP_LEVEL;
     public final ConfigOption<Integer> COMMAND_HEAL_OP_LEVEL;
     
+    // MOTD
+    public final ConfigArray<String> SERVER_MOTD_LIST;
+    
     // Miscellaneous
     public final ConfigOption<Boolean> LIMIT_SKELETON_ARROWS;
     public final ConfigOption<Boolean> EXTINGUISH_CAMPFIRES;
@@ -176,7 +179,7 @@ public final class SewingMachineConfig {
         /*
          * Starting items
          */
-        this.STARTING_ITEMS = this.addConfig( new ConfigOption<>("player.starting_items", new HashMap<>(), this::getItemArray));
+        this.STARTING_ITEMS = this.addConfig( new ConfigOption<>("player.starting_items", new HashMap<>(), this::getItemMap));
         
         /*
          * Death chests
@@ -253,6 +256,11 @@ public final class SewingMachineConfig {
         this.SPAWNER_ABSORB_MOBS = this.addConfig( new ConfigOption<>("fun.spawners.absorb_mob_souls", true, JsonElement::getAsBoolean));
         
         /*
+         * Server list MOTD
+         */
+        this.SERVER_MOTD_LIST = this.addConfig( new ConfigArray<>("server.motd", JsonElement::getAsString));
+        
+        /*
          * Miscellaneous
          */
         this.EXTINGUISH_CAMPFIRES = this.addConfig( new ConfigOption<>("fun.world.extinguish_campfires", true, JsonElement::getAsBoolean));
@@ -302,13 +310,17 @@ public final class SewingMachineConfig {
         this.configOptions.add( config );
         return config;
     }
+    private <T> ConfigArray<T> addConfig( ConfigArray<T> config ) {
+        this.configOptions.add( config );
+        return config;
+    }
     
     /*
      * File save / load
      */
     private void saveToFile(File configFile, JsonElement json) throws IOException {
         // GSON Parser
-        Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().create();
+        Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().disableHtmlEscaping().create();
         
         try (FileWriter fw = new FileWriter(configFile)) {
             fw.append(gson.toJson(sortObject( json )));
@@ -321,7 +333,7 @@ public final class SewingMachineConfig {
     }
     
     private JsonElement loadFromJSON(JsonObject json) {
-        for ( ConfigOption<?> config : this.configOptions ) {
+        for ( ConfigBase config : this.configOptions ) {
             JsonObject inner = json;
             String[] path = config.getPath().split("\\.");
             
@@ -350,7 +362,7 @@ public final class SewingMachineConfig {
     private JsonObject saveToJSON() {
         final JsonObject baseObject = new JsonObject();
         
-        for ( ConfigOption<?> config : this.configOptions ) {
+        for ( ConfigBase config : this.configOptions ) {
             JsonObject inner = baseObject;
             
             String[] path = config.getPath().split("\\.");
@@ -377,7 +389,7 @@ public final class SewingMachineConfig {
     /*
      * Special handlers
      */
-    private Map<Item, Integer> getItemArray(JsonElement element) {
+    private Map<Item, Integer> getItemMap(JsonElement element) {
         Map<Item, Integer> out = new HashMap<>();
         
         // Parse each object in the array
@@ -396,6 +408,7 @@ public final class SewingMachineConfig {
         
         return out;
     }
+    
     private LoggingIntervals getAsTimeInterval(JsonElement element) {
         if (!LoggingIntervals.contains(element.getAsString()))
             throw new RuntimeException( "Unacceptable time interval \"" + element.getAsString() + "\"" );

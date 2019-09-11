@@ -25,37 +25,32 @@
 
 package net.TheElm.project.config;
 
-import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
-import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Function;
-
-public final class ConfigOption<T extends Object> extends ConfigBase {
+public abstract class ConfigBase {
     
-    private final Function<JsonElement, T> setter;
-    private T value;
+    private final String path;
+    private boolean wasDefined = false;
     
-    public ConfigOption(@NotNull String location, Function<JsonElement, T> setter) {
-        this( location, null, setter );
-    }
-    public ConfigOption(@NotNull String location, T defaultValue, Function<JsonElement, T> setter) {
-        super( location );
+    protected ConfigBase(String location) {
+        if (location.isEmpty()) throw new RuntimeException("Config Option path should not be empty");
         
-        this.value = defaultValue;
-        this.setter = setter;
+        this.path = location;
     }
     
-    @Override
-    public final void set( JsonElement value ) {
-        this.value = ( value == null ? null : this.setter.apply( value ) );
+    public abstract JsonElement getElement();
+    public final String getPath() {
+        return this.path;
     }
-    public final T get() {
-        return this.value;
+    
+    public abstract void set( JsonElement value );
+    public final void set( JsonElement value, boolean wasDefined ) {
+        this.set( value );
+        this.wasDefined = wasDefined;
     }
-    @Override
-    public final JsonElement getElement() {
-        return new GsonBuilder().create().toJsonTree(this.value);
+    
+    public final boolean wasUserDefined() {
+        return this.wasDefined;
     }
     
 }
