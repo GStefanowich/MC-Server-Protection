@@ -26,20 +26,24 @@
 package net.TheElm.project.config;
 
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
-public final class ConfigOption<T extends Object> extends ConfigBase {
+public final class ConfigArray<T extends Object> extends ConfigBase {
     
     private final Function<JsonElement, T> setter;
-    private T value;
+    private final List<T> value;
     
-    public ConfigOption(@NotNull String location, Function<JsonElement, T> setter) {
-        this( location, null, setter );
+    public ConfigArray(@NotNull String location, Function<JsonElement, T> setter) {
+        this( location, new ArrayList<>(), setter );
     }
-    public ConfigOption(@NotNull String location, T defaultValue, Function<JsonElement, T> setter) {
+    public ConfigArray(@NotNull String location, List<T> defaultValue, Function<JsonElement, T> setter) {
         super( location );
         
         this.value = defaultValue;
@@ -47,15 +51,29 @@ public final class ConfigOption<T extends Object> extends ConfigBase {
     }
     
     @Override
-    public final void set( JsonElement value ) {
-        this.value = ( value == null ? null : this.setter.apply( value ) );
+    public JsonElement getElement() {
+        return new GsonBuilder().disableHtmlEscaping().create().toJsonTree(this.value);
     }
-    public final T get() {
+    public List<T> get() {
         return this.value;
     }
+    public T get(int index) {
+        return this.value.get(index);
+    }
+    public T getRandom() {
+        if (this.value.size() == 1)
+            return this.get(0);
+        return this.get(ThreadLocalRandom.current().nextInt(this.value.size()));
+    }
     @Override
-    public final JsonElement getElement() {
-        return new GsonBuilder().create().toJsonTree(this.value);
+    public void set(JsonElement value) {
+        if (value == null) return;
+        if (value instanceof JsonArray) {
+            for (JsonElement element : ((JsonArray) value))
+                this.value.add(this.setter.apply(element));
+            return;
+        }
+        this.value.add(this.setter.apply( value ));
     }
     
 }
