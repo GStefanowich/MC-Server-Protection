@@ -157,9 +157,9 @@ public abstract class Claimant {
         if (this.dirty) this.forceSave();
     }
     public final boolean forceSave() {
-        CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + this.getId() + "." );
+        CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.spawnID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
         boolean success = NbtUtils.writeClaimData( this );
-        if (!success) CoreMod.logInfo( "FAILED TO SAVE " + this.getType().name() + " DATA, " + this.getId() );
+        if (!success) CoreMod.logInfo( "FAILED TO SAVE " + this.getType().name() + " DATA, " + (CoreMod.spawnID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
         return success;
     }
     public void writeCustomDataToTag(@NotNull CompoundTag tag) {

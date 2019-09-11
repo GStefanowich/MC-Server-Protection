@@ -6,6 +6,7 @@
   ],
   "server": [
     "Commands.Me",
+    "Items.Shovel",
     
     "Entities.CorralMobs",
     "Entities.CowMilk",
@@ -15,6 +16,7 @@
     "Entities.PotionDamage",
     "Entities.CreeperDamage",
     "Entities.Damage",
+    "Entities.Death",
     
     "Entities.EndCrystal",
     
@@ -45,11 +47,14 @@
     "Player.WorldInteraction",
     "Player.ServerInteraction",
     
+    "World.CauldronCleaning",
+    "World.MobSpawners",
     "World.Campfires",
     "World.ChunkSaving",
     "World.ClaimedChunk",
     "World.DragonFight",
     "World.WorldSleep",
+    "World.Nether",
     
     "Server"
   ],

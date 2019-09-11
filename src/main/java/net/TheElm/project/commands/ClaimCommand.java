@@ -36,6 +36,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
@@ -56,7 +58,6 @@ import net.TheElm.project.utilities.*;
 import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PlayerManager;
 import net.minecraft.server.Whitelist;
 import net.minecraft.server.WhitelistEntry;
 import net.minecraft.server.command.CommandManager;
@@ -80,6 +81,7 @@ import net.minecraft.world.dimension.DimensionType;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 
 public final class ClaimCommand {
     
@@ -99,6 +101,8 @@ public final class ClaimCommand {
         TranslatableServerSide.text( (ServerPlayerEntity)player, "claim.chunk.error.radius_owned", ownerName )
     );
     private static final SimpleCommandExceptionType WHITELIST_FAILED_EXCEPTION = new SimpleCommandExceptionType(new TranslatableText("commands.whitelist.add.failed", new Object[0]));
+    
+    private ClaimCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
@@ -166,7 +170,7 @@ public final class ClaimCommand {
                     .suggests( EnumArgumentType.create( ClaimRanks.class )::listSuggestions )
                     .then( CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtilities::getAllPlayerNames)
-                        .executes( ClaimCommand::addRank )
+                        .executes(ClaimCommand::addRank)
                     )
                 )
             )
@@ -174,10 +178,10 @@ public final class ClaimCommand {
             .then( CommandManager.literal("remove")
                 .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                     .suggests(CommandUtilities::getAllPlayerNames)
-                    .executes( ClaimCommand::remRank )
+                    .executes(ClaimCommand::remRank)
                 )
             )
-            .executes( ClaimCommand::listFriends )
+            .executes(ClaimCommand::listFriends)
         );
         CoreMod.logDebug( "- Registered Friends command" );
         
@@ -185,19 +189,34 @@ public final class ClaimCommand {
          * Register the town command
          */
         LiteralCommandNode<ServerCommandSource> towns = dispatcher.register( CommandManager.literal( "town" )
-            .then( CommandManager.literal( "new" )
+            .then( CommandManager.literal("new" )
                 .requires(ClaimCommand::sourceNotMayor)
-                .then( CommandManager.argument( "name", StringArgumentType.greedyString() )
+                .then( CommandManager.argument("name", StringArgumentType.greedyString())
                     .executes(ClaimCommand::townFound)
                 )
             )
-            .then( CommandManager.literal( "disband" )
+            .then( CommandManager.literal("disband")
                 .requires(ClaimCommand::sourceIsMayor)
                 .executes(ClaimCommand::townDisband)
             )
-            .then( CommandManager.literal( "claim" )
+            .then( CommandManager.literal("claim")
                 .requires(ClaimCommand::sourceIsMayor)
                 .executes(ClaimCommand::claimChunkTown)
+            )
+            .then( CommandManager.literal("invite")
+                .requires(ClaimCommand::sourceIsMayor)
+                .executes(ClaimCommand::townInvite)
+            )
+            .then( CommandManager.literal("join")
+                .requires(ClaimCommand::sourceNotInTown)
+                .then( CommandManager.argument("town", StringArgumentType.greedyString())
+                    .suggests(ClaimCommand::listTownInvites)
+                    .executes(ClaimCommand::playerJoinsTown)
+                )
+            )
+            .then( CommandManager.literal("leave")
+                .requires((source -> ClaimCommand.sourceInTown( source ) && ClaimCommand.sourceNotMayor( source )))
+                .executes(ClaimCommand::playerPartsTown)
             )
         );
         CoreMod.logDebug( "- Registered Town command" );
@@ -524,6 +543,9 @@ public final class ClaimCommand {
         ClaimantPlayer claim = ((PlayerData) player).getClaim();
         return ((claim != null) && claim.getTown() != null);
     }
+    public static boolean sourceNotInTown(final ServerCommandSource source) {
+        return !ClaimCommand.sourceInTown( source );
+    }
     
     private static int townFound(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get player information
@@ -574,10 +596,18 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
+    // TODO: Add town inviting
     private static int townInvite(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        ClaimantPlayer claimant = ((PlayerData) player).getClaim();
+        
         return Command.SINGLE_SUCCESS;
     }
-    private static void playerJoinsTown(final PlayerManager manager, final ServerPlayerEntity player, final UUID townUUID) throws SQLException {
+    // TODO: Add player join town
+    private static int playerJoinsTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
         ClaimantPlayer claimant = ((PlayerData) player).getClaim();
         //MySQLStatement stmt;
         
@@ -601,42 +631,52 @@ public final class ClaimCommand {
         //claimant.updateTown( townUUID );
         
         // Refresh the command tree
-        manager.sendCommandTree( player );
+        //manager.sendCommandTree( player );
         
         // Notify the players in claimed chunks
         ClaimCommand.notifyChangedClaimed( player.getUuid() );
+        
+        return Command.SINGLE_SUCCESS;
     }
-    private static void playerPartsTown(final PlayerManager manager, final ServerPlayerEntity player, final ClaimantTown town) throws SQLException {
+    // TODO: Add player part town
+    private static int playerPartsTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        MinecraftServer server = source.getMinecraftServer();
+        ServerPlayerEntity player = source.getPlayer();
+        
         ClaimantPlayer claimaint = ((PlayerData) player).getClaim();
         MySQLStatement stmt;
-        
-        boolean playerIsMayor = player.getUuid().equals( town.getOwner() );
         
         /*
          * Remove town owner
          */
-        stmt = CoreMod.getSQL().prepare("DELETE FROM `player_Towns` WHERE `townId` = ?" + ( playerIsMayor ? "" : " AND `townPlayer` = ?" ) + ";")
+        /*stmt = CoreMod.getSQL().prepare("DELETE FROM `player_Towns` WHERE `townId` = ?" + ( playerIsMayor ? "" : " AND `townPlayer` = ?" ) + ";")
             .addPrepared( town.getId() );
         if (!playerIsMayor) // If player is not mayor, only remove that players chunks
             stmt.addPrepared( player.getUuid() );
-        stmt.executeUpdate();
+        stmt.executeUpdate();*/
         
         // Update the players town
         claimaint.setTown( null );
-
+        
         // Refresh the command tree
-        manager.sendCommandTree( player );
+        server.getPlayerManager().sendCommandTree( player );
         
         /*
          * Convert town chunks to none
          */
-        stmt = CoreMod.getSQL().prepare("UPDATE `chunk_Claimed` SET `chunkTown` = NULL WHERE `chunkTown` = ?" + ( playerIsMayor ? "" : " AND `chunkOwner` = ?" ) + ";")
+        /*stmt = CoreMod.getSQL().prepare("UPDATE `chunk_Claimed` SET `chunkTown` = NULL WHERE `chunkTown` = ?" + ( playerIsMayor ? "" : " AND `chunkOwner` = ?" ) + ";")
             .addPrepared( town.getId() );
         if (!playerIsMayor) // If player is not mayor, only remove that players chunks
             stmt.addPrepared( player.getUuid() );
-        stmt.executeUpdate();
-
+        stmt.executeUpdate();*/
+        
         ClaimCommand.notifyChangedClaimed( player.getUuid() );
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    private static CompletableFuture<Suggestions> listTownInvites(CommandContext<ServerCommandSource> context, SuggestionsBuilder suggestionsBuilder) {
+        return null;
     }
     
     /*

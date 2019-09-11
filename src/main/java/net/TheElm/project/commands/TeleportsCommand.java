@@ -52,6 +52,7 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.dimension.TheEndDimension;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -76,43 +77,64 @@ public final class TeleportsCommand {
     private TeleportsCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register( CommandManager.literal("spawn")
-            .requires((source) -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_SPAWN.get()))
-            .then(CommandManager.argument("player", EntityArgumentType.players())
+        if (SewingMachineConfig.INSTANCE.COMMAND_SPAWN_OP_LEVEL.get() >= 0) {
+            dispatcher.register(CommandManager.literal("spawn")
+                .requires((source) -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_SPAWN.get()))
+                .then(CommandManager.argument("player", EntityArgumentType.players())
+                    .executes((context) -> {
+                        // Get location information
+                        ServerCommandSource source = context.getSource();
+                        Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "player");
+                        ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
+                        
+                        for (ServerPlayerEntity player : players) {
+                            WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
+                        }
+                        
+                        Text spawnText = new LiteralText("Spawn").formatted(Formatting.GOLD);
+                        if (players.size() == 1) {
+                            source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", ((Entity) players.iterator().next()).getDisplayName(), spawnText), true);
+                        } else {
+                            source.sendFeedback(new TranslatableText("commands.teleport.success.entity.multiple", players.size(), spawnText), true);
+                        }
+                        
+                        return Command.SINGLE_SUCCESS;
+                    })
+                )
                 .executes((context) -> {
                     // Get location information
                     ServerCommandSource source = context.getSource();
-                    Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers( context, "player" );
+                    ServerPlayerEntity player = source.getPlayer();
                     ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
                     
-                    for ( ServerPlayerEntity player : players ) {
-                        WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
-                    }
+                    WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
                     
-                    Text spawnText = new LiteralText("Spawn").formatted(Formatting.GOLD);
-                    if (players.size() == 1) {
-                        source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", ((Entity)players.iterator().next()).getDisplayName(), spawnText), true);
-                    } else {
-                        source.sendFeedback(new TranslatableText("commands.teleport.success.entity.multiple", players.size(), spawnText), true);
-                    }
+                    source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", player.getDisplayName(), new LiteralText("Spawn").formatted(Formatting.GOLD)), true);
                     
                     return Command.SINGLE_SUCCESS;
                 })
-            )
-            .executes((context) -> {
-                // Get location information
-                ServerCommandSource source = context.getSource();
-                ServerPlayerEntity player = source.getPlayer();
-                ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
-                
-                WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn( world ));
-                
-                source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", player.getDisplayName(), new LiteralText("Spawn").formatted(Formatting.GOLD)), true);
-                
-                return Command.SINGLE_SUCCESS;
-            })
-        );
-        CoreMod.logDebug( "- Registered Spawn command" );
+            );
+            CoreMod.logDebug("- Registered Spawn command");
+        }
+        
+        if (SewingMachineConfig.INSTANCE.COMMAND_THEEND_OP_LEVEL.get() >= 0) {
+            dispatcher.register(CommandManager.literal("theend")
+                .requires((source -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.COMMAND_THEEND_OP_LEVEL.get())))
+                .executes(context -> {
+                    // Get location information
+                    ServerCommandSource source = context.getSource();
+                    ServerPlayerEntity player = source.getPlayer();
+                    ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.THE_END);
+                    
+                    WarpUtils.teleportPlayer(
+                        world,
+                        player,
+                        TheEndDimension.SPAWN_POINT
+                    );
+                    return Command.SINGLE_SUCCESS;
+                })
+            );
+        }
         
         if (SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get()) {
             dispatcher.register(CommandManager.literal("tpa")
