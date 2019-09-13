@@ -29,9 +29,9 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -43,9 +43,7 @@ import java.util.stream.Stream;
 
 public final class AdminCommands {
     
-    private static final DynamicCommandExceptionType PLAYERS_NOT_FOUND_EXCEPTION = new DynamicCommandExceptionType((player) -> 
-        TranslatableServerSide.text( (ServerPlayerEntity)player, "player.none_found" )
-    );
+    private static final ExceptionTranslatableServerSide PLAYERS_NOT_FOUND_EXCEPTION = new ExceptionTranslatableServerSide("player.none_found");
     
     private AdminCommands() {}
     

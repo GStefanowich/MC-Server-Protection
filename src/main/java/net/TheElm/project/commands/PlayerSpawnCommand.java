@@ -29,9 +29,8 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.minecraft.block.BedBlock;
 import net.minecraft.command.arguments.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -51,9 +50,7 @@ public final class PlayerSpawnCommand {
     
     private PlayerSpawnCommand() {}
     
-    private static final DynamicCommandExceptionType SPAWN_NOT_AT_BED = new DynamicCommandExceptionType((player) ->
-        TranslatableServerSide.text( (ServerPlayerEntity)player, "spawn.set.missing_bed" )
-    );
+    private static final ExceptionTranslatableServerSide SPAWN_NOT_AT_BED = new ExceptionTranslatableServerSide("spawn.set.missing_bed");
     public static final Set<UUID> commandRanUUIDs = Collections.synchronizedSet(new HashSet<>());
     public static String commandName = "setspawn";
     

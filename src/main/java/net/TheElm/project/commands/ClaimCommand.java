@@ -33,8 +33,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.Dynamic2CommandExceptionType;
-import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
@@ -46,6 +44,7 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.interfaces.IClaimedChunk;
@@ -85,22 +84,12 @@ import java.util.concurrent.CompletableFuture;
 
 public final class ClaimCommand {
     
-    private static final Dynamic2CommandExceptionType NOT_ENOUGH_MONEY = new Dynamic2CommandExceptionType((player, amount) -> 
-        TranslatableServerSide.text( (ServerPlayerEntity) player, "town.found.poor", new LiteralText("$" + NumberFormat.getInstance().format( amount )).formatted(Formatting.AQUA) )
-    );
-    private static final DynamicCommandExceptionType SELF_RANK_CHANGE = new DynamicCommandExceptionType((player) ->
-        TranslatableServerSide.text( (ServerPlayerEntity) player, "friends.rank.self" )
-    );
-    private static final DynamicCommandExceptionType CHUNK_NOT_OWNED_BY_PLAYER = new DynamicCommandExceptionType((player) ->
-        TranslatableServerSide.text( (ServerPlayerEntity) player, "claim.chunk.error.not_players" )
-    );
-    private static final DynamicCommandExceptionType CHUNK_NOT_OWNED = new DynamicCommandExceptionType((player) ->
-        TranslatableServerSide.text( (ServerPlayerEntity) player, "claim.chunk.error.not_claimed" )
-    );
-    private static final Dynamic2CommandExceptionType CHUNK_RADIUS_OWNED = new Dynamic2CommandExceptionType((player, ownerName) ->
-        TranslatableServerSide.text( (ServerPlayerEntity)player, "claim.chunk.error.radius_owned", ownerName )
-    );
-    private static final SimpleCommandExceptionType WHITELIST_FAILED_EXCEPTION = new SimpleCommandExceptionType(new TranslatableText("commands.whitelist.add.failed", new Object[0]));
+    private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = new ExceptionTranslatableServerSide("town.found.poor", 1);
+    private static final ExceptionTranslatableServerSide SELF_RANK_CHANGE = new ExceptionTranslatableServerSide("friends.rank.self");
+    private static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED_BY_PLAYER = new ExceptionTranslatableServerSide("claim.chunk.error.not_players");
+    private static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED = new ExceptionTranslatableServerSide("claim.chunk.error.not_claimed");
+    private static final ExceptionTranslatableServerSide CHUNK_RADIUS_OWNED = new ExceptionTranslatableServerSide("claim.chunk.error.radius_owned", 1 );
+    private static final SimpleCommandExceptionType WHITELIST_FAILED_EXCEPTION = new SimpleCommandExceptionType(new TranslatableText("commands.whitelist.add.failed"));
     
     private ClaimCommand() {}
     
@@ -555,9 +544,9 @@ public final class ClaimCommand {
         // Charge the player money
         try {
             if ((SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get() > 0) && (!MoneyUtils.takePlayerMoney(founder, SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get())))
-                throw NOT_ENOUGH_MONEY.create(founder, SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get());
+                throw NOT_ENOUGH_MONEY.create(founder, "$" + NumberFormat.getInstance().format(SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get()));
         } catch (NotEnoughMoneyException e) {
-            throw NOT_ENOUGH_MONEY.create(founder, SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get());
+            throw NOT_ENOUGH_MONEY.create(founder, "$" + NumberFormat.getInstance().format(SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get()));
         }
         try {
             // Get town information

@@ -30,9 +30,9 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.utilities.*;
 import net.TheElm.project.utilities.WarpUtils.Warp;
 import net.minecraft.command.arguments.EntityArgumentType;
@@ -58,21 +58,11 @@ import java.util.Collection;
 import java.util.UUID;
 
 public final class TeleportsCommand {
-    private static final DynamicCommandExceptionType PLAYER_NOT_IN_SPAWN = new DynamicCommandExceptionType((player) ->
-        TranslatableServerSide.text((ServerPlayerEntity) player, "warp.notice.player.outside_spawn").formatted(Formatting.RED)
-    );
-    private static final DynamicCommandExceptionType TARGET_NOT_IN_SPAWN = new DynamicCommandExceptionType((player) ->
-        TranslatableServerSide.text((ServerPlayerEntity) player, "warp.notice.target.outside_spawn").formatted(Formatting.RED)
-    );
-    private static final DynamicCommandExceptionType TARGET_NOT_REQUESTING = new DynamicCommandExceptionType((player) ->
-        TranslatableServerSide.text((ServerPlayerEntity) player, "warp.notice.no_request").formatted(Formatting.RED)
-    );
-    private static final DynamicCommandExceptionType TARGET_NO_WARP = new DynamicCommandExceptionType((player) ->
-        TranslatableServerSide.text((ServerPlayerEntity) player, "warp.notice.no_warp").formatted(Formatting.RED)
-    );
-    private static final DynamicCommandExceptionType TARGET_NOT_ONLINE = new DynamicCommandExceptionType((player) ->
-        TranslatableServerSide.text((ServerPlayerEntity) player, "warp.notice.offline").formatted(Formatting.RED)
-    );
+    private static final ExceptionTranslatableServerSide PLAYER_NOT_IN_SPAWN = new ExceptionTranslatableServerSide("warp.notice.player.outside_spawn");
+    private static final ExceptionTranslatableServerSide TARGET_NOT_IN_SPAWN = new ExceptionTranslatableServerSide("warp.notice.target.outside_spawn");
+    private static final ExceptionTranslatableServerSide TARGET_NOT_REQUESTING = new ExceptionTranslatableServerSide("warp.notice.no_request");
+    private static final ExceptionTranslatableServerSide TARGET_NO_WARP = new ExceptionTranslatableServerSide("warp.notice.no_warp");
+    private static final ExceptionTranslatableServerSide TARGET_NOT_ONLINE = new ExceptionTranslatableServerSide("warp.notice.offline");
     
     private TeleportsCommand() {}
     
