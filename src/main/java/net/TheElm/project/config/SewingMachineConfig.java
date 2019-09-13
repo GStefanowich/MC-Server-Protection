@@ -78,6 +78,9 @@ public final class SewingMachineConfig {
     public final ConfigOption<Integer> CLAIM_OP_LEVEL_SPAWN;
     public final ConfigOption<Integer> CLAIM_OP_LEVEL_OTHER;
     
+    public final ConfigOption<Integer> MAXIMUM_REGION_WIDTH;
+    public final ConfigOption<Integer> MINIMUM_REGION_WIDTH;
+    
     // Logging
     public final ConfigOption<Boolean> LOG_BLOCKS_BREAKING;
     public final ConfigOption<Boolean> LOG_BLOCKS_PLACING;
@@ -202,6 +205,9 @@ public final class SewingMachineConfig {
         this.CLAIM_OP_LEVEL_SPAWN = this.addConfig( new ConfigOption<>("claims.op_level.spawn", 1, JsonElement::getAsInt));
         this.CLAIM_OP_LEVEL_OTHER = this.addConfig( new ConfigOption<>("claims.op_level.other_player", 1, JsonElement::getAsInt));
         
+        this.MAXIMUM_REGION_WIDTH = this.addConfig( new ConfigOption<>("claims.regions.max_width", 32, JsonElement::getAsInt));
+        this.MINIMUM_REGION_WIDTH = this.addConfig( new ConfigOption<>("claims.regions.min_width", 3, JsonElement::getAsInt));
+        
         /*
          * Logging
          */
@@ -272,7 +278,7 @@ public final class SewingMachineConfig {
         
         // Load from the folder
         final File dir = CoreMod.getConfDir();
-        final File config = new File( dir.getAbsolutePath() + File.separator + "config.json" );
+        final File config = new File( dir, "config.json" );
         
         this.fileExists = config.exists();
         

@@ -54,7 +54,7 @@ public class MySQLite implements MySQLHost {
         
         try {
             final File dir = CoreMod.getConfDir();
-            final File jdbc = new File( dir.getAbsolutePath() + File.separator + "sqlite.db" );
+            final File jdbc = new File( dir.getAbsolutePath(), "sqlite.db" );
             
             System.out.println( "A.1" );
             this.conn = DriverManager.getConnection("jdbc:sqlite:" + jdbc.getAbsolutePath());

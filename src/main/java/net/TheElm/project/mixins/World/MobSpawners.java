@@ -85,7 +85,7 @@ public abstract class MobSpawners extends BlockWithEntity {
                 boolean doDrop = false;
                 
                 int toolDamage = SewingMachineConfig.INSTANCE.SPAWNER_PICKUP_DAMAGE.get();
-                if (doDrop = (EnchantmentHelper.getLevel(Enchantments.SILK_TOUCH, handItem) > 0)) {
+                if (handItem.isDamageable() && (doDrop = (EnchantmentHelper.getLevel(Enchantments.SILK_TOUCH, handItem) > 0))) {
                     if (!world.isClient()) {
                         // Damage the pickaxe
                         if (handItem.damage(toolDamage, world.random, (ServerPlayerEntity) player)) {

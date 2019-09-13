@@ -40,6 +40,7 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.InvalidIdentifierException;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -65,6 +66,9 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     private Integer shopSign_itemCount = null;
     private Integer shopSign_itemPrice = null;
     
+    private BlockPos shopSign_posA = null;
+    private BlockPos shopSign_posB = null;
+    
     /*
      * Mixin Getters
      */
@@ -73,6 +77,11 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     public UUID getShopOwner() {
         return this.shopSign_Owner;
     }
+    @Override
+    public Text getSignLine(int line) {
+        return this.text[line];
+    }
+    
     @Override @Nullable
     public Item getShopItem() {
         Item tradeItem;
@@ -92,9 +101,14 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     public Integer getShopItemPrice() {
         return this.shopSign_itemPrice;
     }
-    @Override
-    public Text getSignLine(int line) {
-        return this.text[line];
+    
+    @Override @Nullable
+    public BlockPos getFirstPos() {
+        return this.shopSign_posA;
+    }
+    @Override @Nullable
+    public BlockPos getSecondPos() {
+        return this.shopSign_posB;
     }
     
     /*
@@ -131,6 +145,8 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                 this.shopSign_item = builder.getItem();
                 this.shopSign_itemCount = builder.itemSize();
                 this.shopSign_itemPrice = builder.shopPrice();
+                this.shopSign_posA = builder.regionPosA();
+                this.shopSign_posB = builder.regionPosB();
             }
         }
     }
@@ -146,30 +162,46 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
         if ( this.shopSign_Owner == null )
             return;
         
-        tag.putUuid( "shop_owner", this.shopSign_Owner );
+        tag.putUuid("shop_owner", this.shopSign_Owner );
         if ( this.shopSign_item != null ) {
             tag.putString("shop_item_mod", this.shopSign_item.getNamespace());
             tag.putString("shop_item_name", this.shopSign_item.getPath());
         }
-        tag.putInt( "shop_item_count", this.shopSign_itemCount );
-        tag.putInt( "shop_price", this.shopSign_itemPrice );
+        if (this.shopSign_itemCount != null) tag.putInt("shop_item_count", this.shopSign_itemCount );
+        if (this.shopSign_itemPrice != null) tag.putInt("shop_price", this.shopSign_itemPrice );
+        
+        if ((this.getFirstPos() != null) && (this.getSecondPos() != null)) {
+            tag.putLong("shop_blockPosA", this.getFirstPos().asLong());
+            tag.putLong("shop_blockPosB", this.getSecondPos().asLong());
+        }
         
         callback.setReturnValue( tag );
     }
     
     @Inject(at = @At("RETURN"), method = "fromTag")
     public void nbtRead(CompoundTag tag, CallbackInfo callback) {
+        // Shop signs
         if ( tag.hasUuid( "shop_owner" ) ) {
-            String signItem = tag.getString("shop_item_mod") + ":" + tag.getString("shop_item_name");
-            try {
-                this.shopSign_item = new Identifier( signItem );
-                this.shopSign_Owner = tag.getUuid("shop_owner");
-                this.shopSign_itemCount = tag.getInt("shop_item_count");
-                this.shopSign_itemPrice = tag.getInt("shop_price");
-            } catch (InvalidIdentifierException e) {
-                CoreMod.logError( "Could not find item \"" + signItem + "\" for shop sign." );
-                CoreMod.logError( e );
+            // Get the ITEM for the shop
+            if (tag.containsKey("shop_item_mod",8) && tag.containsKey("shop_item_name",8)) {
+                String signItem = tag.getString("shop_item_mod") + ":" + tag.getString("shop_item_name");
+                try {
+                    this.shopSign_item = new Identifier(signItem);
+                } catch (InvalidIdentifierException e) {
+                    CoreMod.logError(new Exception("Could not find item \"" + signItem + "\" for shop sign.", e));
+                }
             }
+            
+            // Get the BLOCK POSITIONS for deed
+            if (tag.containsKey("shop_blockPosA",4) && tag.containsKey("shop_blockPosB", 4)) {
+                this.shopSign_posA = BlockPos.fromLong(tag.getLong("shop_blockPosA"));
+                this.shopSign_posB = BlockPos.fromLong(tag.getLong("shop_blockPosB"));
+            }
+            
+            // Save other relevant shop sign data
+            this.shopSign_Owner = tag.getUuid("shop_owner");
+            if (tag.containsKey("shop_item_count",3)) this.shopSign_itemCount = tag.getInt("shop_item_count");
+            if (tag.containsKey("shop_price",3)) this.shopSign_itemPrice = tag.getInt("shop_price");
         }
     }
     

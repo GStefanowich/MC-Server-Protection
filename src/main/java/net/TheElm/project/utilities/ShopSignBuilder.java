@@ -27,6 +27,7 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ShopSigns;
+import net.TheElm.project.exceptions.ShopBuilderException;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
@@ -63,10 +64,14 @@ public final class ShopSignBuilder {
      * Shop information
      */
     private UUID ownerUUID = null;
+    
     private Identifier tradeItemIdentifier = null;
     private Item tradeItem = null;
     private int tradePrice = 0;
     private int stackSize = 0;
+    
+    private BlockPos regionPosA = null;
+    private BlockPos regionPosB = null;
     
     private ShopSignBuilder(@NotNull World world, @NotNull BlockPos blockPos, @NotNull SignBlockEntity sign) {
         this.world = world;
@@ -83,6 +88,7 @@ public final class ShopSignBuilder {
     public SignBlockEntity getSign() {
         return this.sign;
     }
+    
     public Identifier getItem() {
         return this.tradeItemIdentifier;
     }
@@ -95,13 +101,23 @@ public final class ShopSignBuilder {
     public int itemSize() {
         return this.stackSize;
     }
+    public BlockPos regionPosA() {
+        return this.regionPosA;
+    }
+    public BlockPos regionPosB() {
+        return this.regionPosB;
+    }
     
     public World getWorld() {
         return this.world;
     }
-
+    
     public void shopOwner(UUID newOwner) {
         this.ownerUUID = newOwner;
+    }
+    public void regionPositioning(BlockPos first, BlockPos second) {
+        this.regionPosA = first;
+        this.regionPosB = second;
     }
     
     /*
@@ -124,16 +140,24 @@ public final class ShopSignBuilder {
          * [HEAL]
          */
         try {
-            ShopSigns signType = ShopSigns.valueOf( this.lines[0] );
-            if (( signType == null ) || (!signType.isEnabled()))
+            ShopSigns shopSign = ShopSigns.valueOf(this.lines[0]);
+            if ((shopSign == null) || (!shopSign.isEnabled()))
                 return false;
-            if (!signType.formatSign( this, player ))
-                this.breakSign();
+            this.formatOrBreak( shopSign, player );
             return true;
         } finally {
             // Remove from the map
             buildingSigns.remove( createIdentifier( this.world, this.blockPos ) );
         }
+    }
+    private void formatOrBreak(final ShopSigns shopSign, final ServerPlayerEntity creator) {
+        try {
+            if (shopSign.formatSign(this, creator))
+                return;
+        } catch (ShopBuilderException e) {
+            creator.sendMessage(e.getErrorMessage());
+        }
+        this.breakSign();
     }
     
     /*

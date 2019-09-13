@@ -34,18 +34,25 @@ import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.ChunkUtils.ClaimSlice;
+import net.TheElm.project.utilities.ChunkUtils.InnerClaim;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 
-import java.util.*;
+import java.util.Iterator;
+import java.util.UUID;
 
 @Mixin(WorldChunk.class)
 public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
@@ -65,6 +72,26 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
         // If there is no player owner, there is no town
         if (owner == null)
             this.updateTownOwner( null );
+    }
+    
+    public void setSliceOwner(UUID owner, int slicePos) {
+        this.setSliceOwner(owner, slicePos, 0, 256);
+    }
+    public void setSliceOwner(UUID owner, int slicePos, int yFrom, int yTo) {
+        // If heights are invalid
+        if (World.isHeightInvalid( yFrom ) || World.isHeightInvalid( yTo ))
+            return;
+        
+        ClaimSlice slice;
+        if ((slice = this.claimSlices[slicePos]) == null) {
+            slice = (this.claimSlices[slicePos] = new ClaimSlice());
+        }
+        
+        // Get upper and lower positioning
+        int upper = Math.max( yFrom, yTo );
+        int lower = Math.min( yFrom, yTo );
+        
+        slice.set(new InnerClaim(owner, upper, lower));
     }
     
     public void canPlayerClaim(@NotNull UUID owner) throws TranslationKeyException {
@@ -91,11 +118,10 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
             ClaimSlice slice = claimSlices[slicePos];
             
             // Get the players Y position
-            int y = pos.getY();
-            InnerClaim claim = slice.get(y);
+            InnerClaim claim = slice.get( pos );
             
             // Check that the player is within the Y
-            if (claim.yLower <= y && claim.yUpper >= y)
+            if (claim.lower() <= pos.getY() && claim.upper() >= pos.getY())
                 return claim.getOwner();
         }
         return this.getOwner();
@@ -117,7 +143,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
     public Text getOwnerName(@NotNull PlayerEntity zonePlayer) {
         if ( this.chunkPlayer == null )
             return new LiteralText(SewingMachineConfig.INSTANCE.NAME_WILDERNESS.get())
-                    .formatted(Formatting.GREEN);
+                .formatted(Formatting.GREEN);
         
         // Get the owners name
         return this.chunkPlayer.getName( zonePlayer.getUuid() );
@@ -145,43 +171,66 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
         return permission;
     }
     
-    public static final class ClaimSlice {
-        private final NavigableMap<Integer, InnerClaim> innerChunks = Collections.synchronizedNavigableMap(new TreeMap<>());
-        
-        public ClaimSlice() {
-            this.innerChunks.put( -1, new InnerClaim( null ));
+    @Override @NotNull
+    public ListTag serializeSlices() {
+        ListTag serialized = new ListTag();
+        for (int i = 0; i < this.claimSlices.length; i++) {
+            ClaimSlice slice = this.claimSlices[i];
+            
+            // Slice must be defined
+            if (slice == null) continue;
+            
+            // Create a new tag to save the slice
+            CompoundTag sliceTag = new CompoundTag();
+            ListTag claimsTag = new ListTag();
+            
+            // For all slice claims
+            Iterator<InnerClaim> claims = slice.getClaims();
+            while ( claims.hasNext() ) {
+                InnerClaim claim = claims.next();
+                
+                // If bottom of world, or no owner
+                if ((claim.lower() == -1) || (claim.getOwner() == null))
+                    continue;
+                
+                // Save data to the tag
+                CompoundTag claimTag = new CompoundTag();
+                claimTag.putUuid("owner", claim.getOwner());
+                claimTag.putInt("upper", claim.upper());
+                claimTag.putInt("lower", claim.lower());
+                
+                // Add tag to array
+                claimsTag.add(claimTag);
+            }
+            
+            // Save data for slice
+            sliceTag.putInt("i", i);
+            sliceTag.put("claims", claimsTag);
+            
+            // Save the tag
+            serialized.add(sliceTag);
         }
         
-        public InnerClaim get(int y) {
-            return this.innerChunks.floorEntry( y ).getValue();
-        }
+        return serialized;
     }
-    public static final class InnerClaim {
-        
-        private final UUID owner;
-        private final int yUpper;
-        private final int yLower;
-        
-        public InnerClaim(@Nullable UUID owner) {
-            this( owner, -1, -1 );
+    @Override
+    public void deserializeSlices(@NotNull ListTag serialized) {
+        for (Tag tag : serialized) {
+            // Must be compound tags
+            if (!(tag instanceof CompoundTag)) continue;
+            CompoundTag sliceTag = (CompoundTag) tag;
+            
+            ListTag claimsTag = sliceTag.getList("claims", 10);
+            int i = sliceTag.getInt("i");
+            
+            for (Tag claimTag : claimsTag) {
+                UUID owner = ((CompoundTag) claimTag).getUuid("owner");
+                int upper = ((CompoundTag) claimTag).getInt("upper");
+                int lower = ((CompoundTag) claimTag).getInt("lower");
+                
+                this.setSliceOwner( owner, i, lower, upper );
+            }
         }
-        public InnerClaim(@Nullable UUID owner, int upper, int lower) {
-            this.owner = owner;
-            this.yUpper = ( upper > 256 ? 256 : Collections.max(Arrays.asList( upper, lower )));
-            this.yLower = ( lower < -1 ? -1 : lower);
-        }
-        
-        @Nullable
-        public UUID getOwner() {
-            return this.owner;
-        }
-        public int upper() {
-            return this.yUpper;
-        }
-        public int lower() {
-            return this.yLower;
-        }
-        
     }
     
 }

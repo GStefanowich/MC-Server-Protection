@@ -108,7 +108,7 @@ public final class EntityAttack {
                         // The amount the player wants to take
                         int takeStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
 
-                        InventoryUtils.chestToPlayer((ServerPlayerEntity) player, containerInventory, player.inventory, itemStack.getItem(), takeStackSize);
+                        InventoryUtils.chestToPlayer((ServerPlayerEntity) player, containerPos, containerInventory, player.inventory, itemStack.getItem(), takeStackSize);
                         return ActionResult.FAIL;
                     }
                 }

@@ -38,6 +38,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Formatting;
@@ -71,10 +72,13 @@ public final class InventoryUtils {
     /*
      * Transfer items from a player to a chest
      */
-    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Item item, final int count) {
-        return InventoryUtils.playerToChest( player, playerInventory, chestInventory, item, count, false );
+    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Item item, final int count) {
+        return InventoryUtils.playerToChest( player, sourcePos, playerInventory, chestInventory, item, count, false );
     }
-    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Item item, final int count, final boolean required) {
+    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Item item, final int count, final boolean required) {
+        // World
+        ServerWorld world = player.getServerWorld();
+        
         // Check if enough in player inventory
         if ( required && ( playerInventory.countInInv( item ) < count ) )
             return false;
@@ -145,7 +149,7 @@ public final class InventoryUtils {
                                 if (putable <= 0) {
                                     success = ( put > 0 );
                                     if (success)
-                                        player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
+                                        world.playSound( null, sourcePos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
                                     return success;
                                 }
                             }
@@ -157,19 +161,22 @@ public final class InventoryUtils {
         
         success = ( itemStackSize > 0 );
         if (success)
-            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
+            world.playSound( null, sourcePos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
         return success;
     }
     
     /*
      * Transfer items from a chest to the player
      */
-    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Item item, final int count) {
-        return InventoryUtils.chestToPlayer( player, chestInventory, playerInventory, item, count, false);
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Item item, final int count) {
+        return InventoryUtils.chestToPlayer( player, sourcePos, chestInventory, playerInventory, item, count, false);
     }
-    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Item item, final int count, final boolean required) {
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Item item, final int count, final boolean required) {
+        // World
+        ServerWorld world = player.getServerWorld();
+        
         // Check if enough in the chest
-        if (required && (chestInventory != null) && (chestInventory.countInInv( item ) < 0))
+        if (required && (chestInventory != null) && (chestInventory.countInInv( item ) < count))
             return false;
         
         // Get stack size to give to player up to 64
@@ -232,9 +239,9 @@ public final class InventoryUtils {
             }
         }
         
-        boolean success = ( stackSize >= count );
+        boolean success = ( required ? stackSize >= count : stackSize > 0 );
         if ( success )
-            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
+            world.playSound( null, sourcePos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
         return success;
     }
     

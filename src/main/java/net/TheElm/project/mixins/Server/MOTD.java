@@ -25,19 +25,54 @@
 
 package net.TheElm.project.mixins.Server;
 
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.utilities.FormattingUtils;
+import net.TheElm.project.utilities.SleepUtils;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerMetadata;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
+import net.minecraft.world.dimension.DimensionType;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
 
 @Mixin(ServerMetadata.class)
-public class MOTD {
+public abstract class MOTD {
+    
+    @Final
+    private Map<String, Callable<String>> motdVariables = new HashMap<>();
+    
+    @Shadow private ServerMetadata.Players players;
+    @Shadow private ServerMetadata.Version version;
+    
+    @Inject(at = @At("RETURN"), method = "<init> *")
+    public void onConstruct(CallbackInfo callback) {
+        // Version
+        this.motdVariables.put( "version", () -> this.version.getGameVersion());
+        // Time
+        this.motdVariables.put( "time", () -> {
+            MinecraftServer server = CoreMod.getServer();
+            ServerWorld world = server.getWorld(DimensionType.OVERWORLD);
+            if (world == null) return "Unknown";
+            return SleepUtils.timeFromMillis(world.getTimeOfDay());
+        });
+        // Difficulty
+        this.motdVariables.put( "difficulty", () -> {
+           MinecraftServer server = CoreMod.getServer();
+           return server.getDefaultDifficulty().getName();
+        });
+    }
     
     @Inject(at = @At("TAIL"), method = "getDescription", cancellable = true)
     public void onGetDescription(CallbackInfoReturnable<Text> callback) {
@@ -46,9 +81,31 @@ public class MOTD {
         if (configMOTD.size() <= 0) return;
         
         // Get the formatted MOTD
-        Text motd = FormattingUtils.stringToText(SewingMachineConfig.INSTANCE.SERVER_MOTD_LIST.getRandom());
-        if ( motd != null )
-            callback.setReturnValue(motd);
+        String raw = descriptionReplaceVariables(SewingMachineConfig.INSTANCE.SERVER_MOTD_LIST.getRandom());
+        if (raw != null) {
+            Text motd = FormattingUtils.stringToText(raw);
+            if (motd != null)
+                callback.setReturnValue(motd);
+        }
+    }
+    
+    private String descriptionReplaceVariables(String description) {
+        // For all keys
+        for (Map.Entry<String, Callable<String>> row : this.motdVariables.entrySet()) {
+            // If description contains
+            String key = "${" + row.getKey() + "}";
+            if (!description.contains(key))
+                continue;
+            
+            String val;
+            try {
+                val = row.getValue().call();
+                if (val == null) continue;
+            } catch (Exception e) { CoreMod.logError( e ); return null; }
+            // Replace
+            description = description.replace( key, val );
+        }
+        return description;
     }
     
 }

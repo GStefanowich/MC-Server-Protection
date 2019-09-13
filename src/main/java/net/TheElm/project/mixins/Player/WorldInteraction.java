@@ -251,13 +251,16 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         // Copy the players balance
         this.dataTracker.set(MoneyHolder.MONEY, player.getDataTracker().get(MoneyHolder.MONEY));
         
+        // Keep the chat room cross-dimension
+        this.setChatRoom(((PlayerChat) player).getChatRoom());
+        
         // Keep when the player joined across deaths
         this.firstJoinedAt = ((PlayerData) player).getFirstJoinAt();
         this.lastJoinedAt = ((PlayerData) player).getLastJoinAt();
     }
     
     /*
-     * Player names
+     * Player names (Saved and handled cross dimension)
      */
     @Override
     public void setPlayerNickname(@Nullable Text nickname) {
@@ -275,7 +278,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     
     /*
-     * Chat Rooms
+     * Chat Rooms (Handled cross dimension)
      */
     @Override @NotNull
     public ChatRooms getChatRoom() {
@@ -284,5 +287,26 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Override
     public void setChatRoom(@NotNull ChatRooms room) {
         ((PlayerChat)this.networkHandler).setChatRoom( room );
+    }
+    
+    /*
+     * Temporary Ruler information (Never saves)
+     */
+    BlockPos rulerA = null;
+    BlockPos rulerB = null;
+    
+    public void setRulerA(@Nullable BlockPos blockPos) {
+        this.rulerA = blockPos;
+    }
+    public void setRulerB(@Nullable BlockPos blockPos) {
+        this.rulerB = blockPos;
+    }
+    @Nullable
+    public BlockPos getRulerA() {
+        return this.rulerA;
+    }
+    @Nullable
+    public BlockPos getRulerB() {
+        return this.rulerB;
     }
 }

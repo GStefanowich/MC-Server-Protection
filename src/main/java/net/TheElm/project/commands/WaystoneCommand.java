@@ -31,6 +31,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.utilities.MessageUtils;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -74,11 +75,7 @@ public class WaystoneCommand {
         player.sendMessage(new LiteralText("").formatted(Formatting.YELLOW)
             .append(target.getName().formatted(Formatting.AQUA))
             .append("'s waystone is now set to ")
-            .append(new LiteralText(""+blockPos.getX()).formatted(Formatting.AQUA))
-            .append(", ")
-            .append(new LiteralText(""+blockPos.getY()).formatted(Formatting.AQUA))
-            .append(",")
-            .append(new LiteralText(""+blockPos.getZ()).formatted(Formatting.AQUA))
+            .append(MessageUtils.blockPosToTextComponent(blockPos))
             .append(".")
         );
         

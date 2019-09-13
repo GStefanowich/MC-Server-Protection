@@ -41,7 +41,7 @@ import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.UUID;
+import java.util.*;
 
 public final class ChunkUtils {
 
@@ -182,6 +182,60 @@ public final class ChunkUtils {
             
         }
         return TranslatableServerSide.text( player, "claim.wilderness.general" ).formatted( Formatting.GREEN );
+    }
+    
+    /*
+     * Chunk claim classes
+     */
+    public static final class ClaimSlice {
+        private final NavigableMap<Integer, InnerClaim> innerChunks = Collections.synchronizedNavigableMap(new TreeMap<>());
+        
+        public ClaimSlice() {
+            this.innerChunks.put( -1, new InnerClaim( null ));
+        }
+        
+        public void set(InnerClaim claim) {
+            this.innerChunks.put( claim.lower(), claim );
+        }
+        @NotNull
+        public InnerClaim get(int y) {
+            return this.innerChunks.floorEntry( y ).getValue();
+        }
+        @NotNull
+        public InnerClaim get(BlockPos blockPos) {
+            return this.get(blockPos.getY());
+        }
+        
+        public Iterator<InnerClaim> getClaims() {
+            return this.innerChunks.values().iterator();
+        }
+    }
+    public static final class InnerClaim {
+        
+        private final UUID owner;
+        private final int yUpper;
+        private final int yLower;
+        
+        public InnerClaim(@Nullable UUID owner) {
+            this( owner, -1, -1 );
+        }
+        public InnerClaim(@Nullable UUID owner, int upper, int lower) {
+            this.owner = owner;
+            this.yUpper = ( upper > 256 ? 256 : Collections.max(Arrays.asList( upper, lower )));
+            this.yLower = ( lower < -1 ? -1 : lower);
+        }
+        
+        @Nullable
+        public UUID getOwner() {
+            return this.owner;
+        }
+        public int upper() {
+            return this.yUpper;
+        }
+        public int lower() {
+            return this.yLower;
+        }
+        
     }
     
 }

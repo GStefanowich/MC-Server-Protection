@@ -30,6 +30,7 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.utilities.NbtUtils;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
@@ -104,6 +105,9 @@ public abstract class Claimant {
         return this.id;
     }
     public abstract Text getName();
+    public final Text getName(PlayerEntity player) {
+        return this.getName(player.getUuid());
+    }
     public final Text getName(@NotNull UUID player) {
         ClaimRanks playerRank = this.getFriendRank( player );
         return this.getName().formatted( playerRank.getColor() );
@@ -157,7 +161,7 @@ public abstract class Claimant {
         if (this.dirty) this.forceSave();
     }
     public final boolean forceSave() {
-        CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.spawnID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
+        if (CoreMod.isDebugging()) CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.spawnID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
         boolean success = NbtUtils.writeClaimData( this );
         if (!success) CoreMod.logInfo( "FAILED TO SAVE " + this.getType().name() + " DATA, " + (CoreMod.spawnID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
         return success;

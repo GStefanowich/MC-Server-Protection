@@ -29,8 +29,8 @@ import com.google.gson.*;
 import net.TheElm.project.CoreMod;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -136,7 +136,7 @@ public final class GuideUtils {
     private static JsonObject readBooksFile() throws JsonSyntaxException {
         // Get file locations
         File confDir = CoreMod.getConfDir();
-        File bookDat = new File( confDir.getAbsolutePath() + File.separator + "books.json" );
+        File bookDat = new File( confDir, "books.json" );
         
         // If the directory doesn't exist, return empty
         if (bookDat.exists()) {

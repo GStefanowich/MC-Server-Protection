@@ -56,6 +56,7 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -244,9 +245,11 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         }
     }
     
-    public void showPlayerNewLocation(@NotNull final PlayerEntity player, final WorldChunk local) {
+    public void showPlayerNewLocation(@NotNull final PlayerEntity player, @Nullable final WorldChunk local) {
         BlockPos playerPos = player.getBlockPos();
-        if ( ( local == null ) || ( ((IClaimedChunk) local).getOwner( playerPos ) == null ) ) {
+        UUID locationOwner;
+        
+        if ( ( local == null ) || ((locationOwner = ((IClaimedChunk) local).getOwner( playerPos )) == null ) ) {
             Text popupText = ChunkUtils.getPlayerWorldWilderness( player )
                 .append(
                     new LiteralText( " [" ).formatted(Formatting.RED)
@@ -259,19 +262,22 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
             TitleUtils.showPlayerAlert(player, Formatting.GREEN, popupText );
             
         } else {
-            CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, ((IClaimedChunk) local).getOwner( playerPos ));
+            CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, locationOwner);
             (new Thread(() -> {
                 IClaimedChunk claimedChunk = (IClaimedChunk) local;
                 Text popupText = null;
                 popupText = new LiteralText("Entering ")
                     .formatted(Formatting.WHITE);
                 
+                ClaimantPlayer owner; // Get the owner (Shouldn't be null unless error occurs, ignore)
+                if ((owner = ClaimantPlayer.get( locationOwner )) == null)
+                    return;
+                
                 try {
-                    
                     // If player is in spawn protection
-                    if (claimedChunk.getOwner().equals(CoreMod.spawnID)) {
+                    if (locationOwner.equals(CoreMod.spawnID)) {
                         popupText.append(
-                            claimedChunk.getOwnerName( player )
+                            owner.getName( player )
                         );
                         return;
                     }
@@ -284,20 +290,20 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
                     
                     if (town == null) {
                         // If player is in their own land (No Town)
-                        if ((claimedChunk.getOwner().equals(player.getUuid()))) {
+                        if ((locationOwner.equals(claimedChunk.getOwner())) && (locationOwner.equals(player.getUuid()))) {
                             popupText.append(new LiteralText("your " + landName).formatted(Formatting.DARK_GREEN));
                             return;
                         }
                         
                         // If player is in another players area (No Town)
-                        popupText.append(claimedChunk.getOwnerName( player ))
+                        popupText.append(owner.getName( player ))
                             .append(new LiteralText("'s " + landName));
                         return;
                     }
                     
                     // If player is in another players town
                     popupText.append(town.getName(player.getUuid())); // Town name
-                    if (!claimedChunk.getOwner().equals(town.getOwner())) // Append the chunk owner (If not the towns)
+                    if (!locationOwner.equals(town.getOwner())) // Append the chunk owner (If not the towns)
                         popupText.append(" - ").append(claimedChunk.getOwnerName( player ));
                     popupText.append( // Town type
                         new LiteralText(" (")

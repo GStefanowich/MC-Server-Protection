@@ -100,7 +100,7 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
                     // The amount the player wants to take
                     int putStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
                     
-                    InventoryUtils.playerToChest((ServerPlayerEntity) player, player.inventory, chestInventory, itemStack.getItem(), putStackSize);
+                    InventoryUtils.playerToChest((ServerPlayerEntity) player, itemFrame.getBlockPos(), player.inventory, chestInventory, itemStack.getItem(), putStackSize);
                     callback.setReturnValue(false);
                 }
             }
