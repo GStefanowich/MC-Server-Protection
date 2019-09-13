@@ -1,0 +1,147 @@
+/*
+ * This software is licensed under the MIT License
+ * https://github.com/GStefanowich/MC-Server-Protection
+ *
+ * Copyright (c) 2019 Gregory Stefanowich
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package net.TheElm.project.commands;
+
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.TheElm.project.CoreMod;
+import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
+import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.protections.BlockDistance;
+import net.TheElm.project.utilities.MessageUtils;
+import net.minecraft.block.Blocks;
+import net.minecraft.command.arguments.BlockPosArgumentType;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.RayTraceContext;
+
+public final class RulerCommand {
+    
+    private static final int MAX_BLOCK_DISTANCE = 8;
+    private static final ExceptionTranslatableServerSide BLOCK_NOT_HIT = new ExceptionTranslatableServerSide("ruler.no_block");
+    
+    private RulerCommand() {}
+    
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        
+        dispatcher.register( CommandManager.literal( "ruler" )
+            .then(CommandManager.argument("test", BlockPosArgumentType.blockPos()))
+            .executes(RulerCommand::ruler)
+        );
+        CoreMod.logDebug("- Registered Ruler command");
+        
+    }
+    
+    private static int ruler(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get the command information
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        ServerWorld world = source.getWorld();
+        
+        // Get the direction the player is facing
+        Vec3d posVec = player.getCameraPosVec(1.0F); // Get camera pos
+        Vec3d lookVec = player.getRotationVec(1.0F); // Get looking dir
+        
+        // Trace up to MAX_BLOCK_DISTANCE away
+        Vec3d traceVec = posVec.add(
+            lookVec.x * MAX_BLOCK_DISTANCE,
+            lookVec.y * MAX_BLOCK_DISTANCE,
+            lookVec.z * MAX_BLOCK_DISTANCE
+        );
+        
+        // Get the block that the player is facing
+        BlockHitResult search = world.rayTrace(new RayTraceContext( posVec, traceVec, RayTraceContext.ShapeType.OUTLINE, RayTraceContext.FluidHandling.ANY, player));
+        if (search.getType() == HitResult.Type.MISS)
+            throw BLOCK_NOT_HIT.create( player );
+        
+        BlockPos newPos = search.getBlockPos().offset(search.getSide());
+        world.setBlockState( newPos, Blocks.GLASS.getDefaultState() );
+        
+        PlayerData playerData = (PlayerData) player;
+        
+        // Start a new RULER calculation
+        if ((playerData.getRulerB() != null) || (playerData.getRulerA() == null)) {
+            // Update ruler position
+            playerData.setRulerA( newPos );
+            playerData.setRulerB( null );
+            
+            player.sendMessage(new LiteralText("First position set to ").formatted(Formatting.YELLOW)
+                .append(MessageUtils.blockPosToTextComponent( newPos ))
+                .append(", run command again at a second position."));
+            
+        } else {
+            // Update ruler position
+            playerData.setRulerB( newPos );
+            
+            BlockPos firstPos = playerData.getRulerA();
+            
+            /*
+             * Output RULER calculation
+             */
+            BlockDistance region = new BlockDistance( firstPos, newPos );
+            
+            Text distance = new LiteralText("Distance: ").formatted(Formatting.YELLOW)
+                .append(region.displayDimensions());
+            
+            // East-West
+            if (region.getEastWest() != 0) {
+                distance.append("\n- ")
+                    .append(new LiteralText(region.getEastWest() + " ").formatted(Formatting.AQUA))
+                    .append(region.isEastOrWest().getName().toLowerCase());
+            }
+            // North-South
+            if (region.getNorthSouth() != 0) {
+                distance.append("\n- ")
+                    .append(new LiteralText(region.getNorthSouth() + " ").formatted(Formatting.AQUA))
+                    .append(region.isNorthOrSouth().getName().toLowerCase());
+            }
+            // Up-Down
+            if (region.getUpDown() != 0) {
+                distance.append("\n- ")
+                    .append(new LiteralText(region.getUpDown() + " ").formatted(Formatting.AQUA))
+                    .append(region.isUpOrDown().getName().toLowerCase());
+            }
+            if (region.hasDistinctVolume())
+                distance.append("\n").append(region.formattedVolume().formatted(Formatting.AQUA)).append(" block volume");
+            
+            player.sendMessage( distance );
+        }
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    
+}

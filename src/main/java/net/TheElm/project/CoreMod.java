@@ -144,6 +144,9 @@ public abstract class CoreMod {
     public static ModContainer getMod() {
         return CoreMod.getFabric().getModContainer(CoreMod.MOD_ID).orElseThrow(RuntimeException::new);
     }
+    public static boolean isDebugging() {
+        return CoreMod.getFabric().isDevelopmentEnvironment();
+    }
     
     /*
      * Configurations
@@ -250,7 +253,7 @@ public abstract class CoreMod {
     public static File getConfDir() throws RuntimeException {
         // Get the directory
         final File config = CoreMod.getFabric().getConfigDirectory();
-        final File dir = new File(config.getAbsolutePath() + File.separator + CoreMod.MOD_ID);
+        final File dir = new File(config, CoreMod.MOD_ID);
         // Make sure the directory exists
         if (!(dir.exists() || dir.mkdirs()))
             throw new RuntimeException("Error accessing the config");
@@ -285,7 +288,10 @@ public abstract class CoreMod {
     }
     
     public static void logDebug( String message ) {
-        logger.debug( logPrefix + message );
+        if (CoreMod.isDebugging())
+            CoreMod.logInfo( message );
+        else
+            logger.debug( logPrefix + message );
     }
     public static void logDebug( @Nullable Text message ) {
         logDebug( message == null ? "NULL" : message.getString() );

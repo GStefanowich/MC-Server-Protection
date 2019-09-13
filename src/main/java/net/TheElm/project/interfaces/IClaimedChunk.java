@@ -30,6 +30,7 @@ import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -86,5 +87,9 @@ public interface IClaimedChunk extends Chunk {
         
         return claimedChunks.toArray(new IClaimedChunk[0]);
     }
+    
+    @NotNull
+    ListTag serializeSlices();
+    void deserializeSlices(@NotNull ListTag serialized);
     
 }

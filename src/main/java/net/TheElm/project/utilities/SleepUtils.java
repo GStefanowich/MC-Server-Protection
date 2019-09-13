@@ -100,4 +100,20 @@ public final class SleepUtils {
         return percentage;
     }
     
+    public static String timeFromMillis(long millis) {
+        if (millis >= 23000)
+            return "sunrise";
+        if (millis >= 18000)
+            return "midnight";
+        if (millis >= 13000)
+            return "night";
+        if (millis >= 12000)
+            return "sunset";
+        if (millis >= 6000)
+            return "noon";
+        if (millis >= 1000)
+            return "day";
+        return "morning";
+    }
+    
 }

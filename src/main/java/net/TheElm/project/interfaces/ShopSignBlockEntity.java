@@ -27,12 +27,13 @@ package net.TheElm.project.interfaces;
 
 import net.minecraft.item.Item;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
 public interface ShopSignBlockEntity {
-
+    
     Text getSignLine(int line);
     
     @Nullable
@@ -45,5 +46,10 @@ public interface ShopSignBlockEntity {
     Integer getShopItemCount();
     @Nullable
     Integer getShopItemPrice();
+    
+    @Nullable
+    BlockPos getFirstPos();
+    @Nullable
+    BlockPos getSecondPos();
     
 }

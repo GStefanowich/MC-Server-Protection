@@ -44,6 +44,7 @@ public class ChunkSaving {
     
     private static final String sewingMachineSerializationPlayer = "sewingMachineOwnerUUID";
     private static final String sewingMachineSerializationTown = "sewingMachineTownUUID";
+    private static final String sewingMachineSerializationSlices = "sewingMachineOwnerSlices";
     
     @Inject(at = @At("TAIL"), method = "serialize")
     private static void saveSewingOwner(ServerWorld world, Chunk chunk, CallbackInfoReturnable<CompoundTag> callback) {
@@ -56,8 +57,12 @@ public class ChunkSaving {
             UUID player, town;
             
             // Save the chunks owned-player
-            if ((player = ((IClaimedChunk) chunk).getOwner()) != null)
+            if ((player = ((IClaimedChunk) chunk).getOwner()) != null) {
                 levelTag.putUuid(sewingMachineSerializationPlayer, player);
+                
+                // Save the inner claims
+                levelTag.put(sewingMachineSerializationSlices, ((IClaimedChunk) chunk).serializeSlices());
+            }
             
             // Save the chunks town
             if ((town = ((IClaimedChunk) chunk).getTownId()) != null)
@@ -68,8 +73,14 @@ public class ChunkSaving {
     @Inject(at = @At("RETURN"), method = "writeEntities")
     private static void loadSewingOwner(CompoundTag levelTag, WorldChunk chunk, CallbackInfo callback) {
         // Update the chunks player-owner
-        if ( levelTag.hasUuid(sewingMachineSerializationPlayer) )
+        if ( levelTag.hasUuid(sewingMachineSerializationPlayer) ) {
             ((IClaimedChunk) chunk).updatePlayerOwner(levelTag.getUuid(sewingMachineSerializationPlayer));
+            
+            // Load the inner claims
+            if (levelTag.containsKey(sewingMachineSerializationSlices, 9))
+                ((IClaimedChunk) chunk).deserializeSlices(levelTag.getList(sewingMachineSerializationSlices, 10));
+        }
+        
         // Update the chunks town
         if ( levelTag.hasUuid(sewingMachineSerializationTown) )
             ((IClaimedChunk) chunk).updateTownOwner(levelTag.getUuid(sewingMachineSerializationTown));

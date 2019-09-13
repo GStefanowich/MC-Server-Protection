@@ -39,6 +39,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.channels.FileLock;
+import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -48,9 +49,8 @@ public final class NbtUtils {
     
     @NotNull
     public static File worldFolder() {
-        return new File(CoreMod.getFabric().getGameDirectory().getAbsolutePath()
-            + File.separator
-            + CoreMod.getServer().getLevelName());
+        return new File(CoreMod.getFabric().getGameDirectory(),
+            CoreMod.getServer().getLevelName());
     }
     
     /*
@@ -60,11 +60,11 @@ public final class NbtUtils {
         return NbtUtils.readOfflinePlayerData(uuid, false);
     }
     public static CompoundTag readOfflinePlayerData(UUID uuid, boolean locking) throws NbtNotFoundException {
-        File file = new File(String.join( File.separator, new String[] {
+        File file = Paths.get(
             worldFolder().getAbsolutePath(),
             "playerdata",
             uuid.toString() + ".dat"
-        }));
+        ).toFile();
         
         if (!file.exists()) {
             CoreMod.logError( "Cannot read offline player data \"" + uuid.toString() + "\"; Path does not exist. Never joined the server?" );
@@ -91,11 +91,11 @@ public final class NbtUtils {
         return NbtUtils.writeOfflinePlayerData( uuid, tag, true );
     }
     public static boolean writeOfflinePlayerData(UUID uuid, CompoundTag tag, boolean locking) {
-        File file = new File(String.join( File.separator, new String[] {
+        File file = Paths.get(
             worldFolder().getAbsolutePath(),
             "playerdata",
             uuid.toString() + ".dat"
-        }));
+        ).toFile();
         
         if (!file.exists()) {
             CoreMod.logError( "Cannot read offline player data \"" + uuid.toString() + "\"; Path does not exist. Never joined the server?" );
@@ -125,11 +125,11 @@ public final class NbtUtils {
      */
     @NotNull
     public static CompoundTag readClaimData(Claimant.ClaimantType type, UUID uuid) {
-        File file = new File(String.join( File.separator, new String[] {
+        File file = Paths.get(
             worldFolder().getAbsolutePath(),
             "sewing-machine",
             type.name().toLowerCase() + "_" + uuid.toString() + ".dat"
-        }));
+        ).toFile();
         
         if (!file.exists())
             return emptyTag( type, uuid );
@@ -146,18 +146,18 @@ public final class NbtUtils {
         return emptyTag( type, uuid );
     }
     public static boolean writeClaimData(@NotNull Claimant claimant) {
-        File folder = new File(String.join( File.separator, new String[] {
-            worldFolder().getAbsolutePath(),
+        File folder = new File(
+            worldFolder(),
             "sewing-machine"
-        }));
+        );
         
         // If the directories don't exist
         if ((!folder.exists()) && (!folder.mkdirs()))
             return false;
         
         File file = new File(
-            folder.getAbsolutePath() + File.separator
-            + claimant.getType().name().toLowerCase() + "_" + claimant.getId().toString() + ".dat"
+            folder,
+            claimant.getType().name().toLowerCase() + "_" + claimant.getId().toString() + ".dat"
         );
         
         try (FileOutputStream stream = new FileOutputStream(file)) {
@@ -183,11 +183,11 @@ public final class NbtUtils {
     }
     
     public static boolean exists(Claimant.ClaimantType type, UUID uuid) {
-        File file = new File(String.join( File.separator, new String[] {
+        File file = Paths.get(
             worldFolder().getAbsolutePath(),
             "sewing-machine",
             type.name().toLowerCase() + "_" + uuid.toString() + ".dat"
-        }));
+        ).toFile();
         
         return file.exists();
     }

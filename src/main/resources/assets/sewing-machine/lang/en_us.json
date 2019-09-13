@@ -67,5 +67,7 @@
   "shop.error.money_player": "You do not have enough money.",
   "shop.error.money_chest": "Shop owner does not have enough money.",
   
-  "spawn.set.missing_bed": "Spawn position must be set at a bed."
+  "spawn.set.missing_bed": "Spawn position must be set at a bed.",
+  
+  "ruler.no_block": "A block position could not be found."
 }

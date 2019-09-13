@@ -37,9 +37,9 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -119,12 +119,12 @@ public final class TranslatableServerSide {
         return new JsonParser().parse( new InputStreamReader( resource )).getAsJsonObject();
     }
     private static String getResourcePath(String language) {
-        return String.join( File.separator, new String[]{
+        return Paths.get(
             "assets",
             CoreMod.MOD_ID,
             "lang",
             language.toLowerCase() + ".json"
-        });
+        ).toString();
     }
     
     private static boolean matchAny(@NotNull String needle, String... haystack ) {

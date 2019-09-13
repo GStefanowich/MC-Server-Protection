@@ -59,6 +59,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         REGISTRY.register(false, MoneyCommand::register );
         REGISTRY.register(false, NickNameCommand::register );
         REGISTRY.register(false, PlayerSpawnCommand::register );
+        REGISTRY.register(false, RulerCommand::register );
         REGISTRY.register(false, TeleportsCommand::register );
         REGISTRY.register(false, WaystoneCommand::register );
         
