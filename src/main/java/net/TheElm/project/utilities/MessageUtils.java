@@ -32,8 +32,10 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.stream.Stream;
 
@@ -116,6 +118,22 @@ public final class MessageUtils {
     }
     private static void sendChat(final Stream<ServerPlayerEntity> players, final Text text) {
         players.forEach((player) -> player.sendChatMessage( text, MessageType.CHAT ));
+    }
+    
+    // Convert a Block Position to a Text component
+    public static Text blockPosToTextComponent(final BlockPos pos) {
+        return MessageUtils.blockPosToTextComponent( pos, ", " );
+    }
+    public static Text blockPosToTextComponent(final BlockPos pos, final String separator) {
+        return MessageUtils.dimensionToTextComponent( separator, pos.getX(), pos.getY(), pos.getZ() );
+    }
+    public static Text dimensionToTextComponent(final String separator, final int x, final int y, final int z) {
+        return new LiteralText("")
+            .append(new LiteralText("" + x).formatted(Formatting.AQUA))
+            .append(separator)
+            .append(new LiteralText("" + y).formatted(Formatting.AQUA))
+            .append(separator)
+            .append(new LiteralText("" + z).formatted(Formatting.AQUA));
     }
     
 }

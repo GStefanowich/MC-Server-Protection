@@ -23,44 +23,21 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.interfaces;
+package net.TheElm.project.exceptions;
 
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
-public interface PlayerData {
+public final class ShopBuilderException extends Exception {
     
-    /*
-     * Saved warp data
-     */
-    World getWarpWorld();
-    Integer getWarpDimensionId();
-    BlockPos getWarpPos();
-    void setWarpPos(@Nullable BlockPos blockPos);
-    void setWarpDimension(World world);
+    private final Text message;
     
-    /*
-     * Player claim information
-     */
-    ClaimantPlayer getClaim();
+    public ShopBuilderException(Text message) {
+        this.message = (message.formatted(Formatting.RED));
+    }
     
-    /*
-     * Player join information
-     */
-    @Nullable
-    Long getFirstJoinAt();
-    void updateFirstJoin();
-    @Nullable
-    Long getLastJoinAt();
-    void updateLastJoin();
+    public Text getErrorMessage() {
+        return this.message;
+    }
     
-    /*
-     * Player block ruler information
-     */
-    void setRulerA(@Nullable BlockPos blockPos);
-    void setRulerB(@Nullable BlockPos blockPos);
-    @Nullable BlockPos getRulerA();
-    @Nullable BlockPos getRulerB();
 }

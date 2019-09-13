@@ -59,7 +59,7 @@ public final class AdminCommands {
                 )
                 .executes(AdminCommands::selfFlying)
             );
-            CoreMod.logDebug("- Registered fly command");
+            CoreMod.logDebug("- Registered Fly command");
         }
         
         // Register the GOD command
@@ -71,7 +71,7 @@ public final class AdminCommands {
                 )
                 .executes(AdminCommands::selfGod)
             );
-            CoreMod.logDebug("- Registered god mode command");
+            CoreMod.logDebug("- Registered God Mode command");
         }
         
         // Register the HEAL command
@@ -83,7 +83,7 @@ public final class AdminCommands {
                 )
                 .executes(AdminCommands::selfHeal)
             );
-            CoreMod.logDebug("- Registered heal command");
+            CoreMod.logDebug("- Registered Heal command");
         }
     }
     
