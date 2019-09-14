@@ -25,10 +25,13 @@
 
 package net.TheElm.project.mixins.Server;
 
+import com.mojang.bridge.game.GameVersion;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.SleepUtils;
+import net.minecraft.SharedConstants;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerMetadata;
 import net.minecraft.server.world.ServerWorld;
@@ -46,6 +49,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Mixin(ServerMetadata.class)
 public abstract class MOTD {
@@ -60,15 +65,16 @@ public abstract class MOTD {
     public void onConstruct(CallbackInfo callback) {
         // Version
         this.motdVariables.put( "version", () -> {
-            if (this.version == null)
-                return "??.??.??";
-            return this.version.getGameVersion();
+            GameVersion version = SharedConstants.getGameVersion();
+            if (version == null)
+                return "1.??.??";
+            return version.getId();
         });
         // Time
         this.motdVariables.put( "time", () -> {
             MinecraftServer server = CoreMod.getServer();
             ServerWorld world = server.getWorld(DimensionType.OVERWORLD);
-            if (world == null) return "Unknown";
+            if (world == null) return "time";
             return SleepUtils.timeFromMillis(world.getTimeOfDay());
         });
         // Difficulty
@@ -98,17 +104,28 @@ public abstract class MOTD {
             // For all keys
             for (Map.Entry<String, Callable<String>> row : this.motdVariables.entrySet()) {
                 // If description contains
-                String key = "${" + row.getKey() + "}";
-                if (!description.contains(key))
-                    continue;
+                Pattern pattern = Pattern.compile("\\$\\{(" + row.getKey() + "[\\^_]{0,2})}");
+                Matcher matcher = pattern.matcher(description);
                 
-                String val;
-                try {
-                    val = row.getValue().call();
-                    if (val == null) continue;
-                } catch (Exception e) { CoreMod.logError(new Exception("Error in MOTD variable \"" + row.getKey() + "\"", e)); return null; }
-                // Replace
-                description = description.replace(key, val);
+                while (matcher.find()) {
+                    String key = matcher.group(1);
+                    String val;
+                    try {
+                        val = row.getValue().call();
+                        if (val == null) continue;
+                        
+                        // Change val casing
+                        if (key.endsWith("__"))
+                            val = CasingUtils.Lower(val);
+                        else if (key.endsWith("^^"))
+                            val = CasingUtils.Upper(val);
+                        else if (key.endsWith("^"))
+                            val = CasingUtils.Words(val);
+                        
+                    } catch (Exception e) { CoreMod.logError(new Exception("Error in MOTD variable \"" + row.getKey() + "\"", e)); return null; }
+                    // Replace
+                    description = description.replace("${" + key + "}", val);
+                }
             }
         }
         return description;
