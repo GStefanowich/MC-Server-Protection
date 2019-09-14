@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MeCommand.class)
 public final class Me {
     
-    @Inject(at = @At("HEAD"), method = "", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "register", cancellable = true)
     private static void register(CommandDispatcher<ServerCommandSource> dispatcher, CallbackInfo callback){
         dispatcher.register(CommandManager.literal( "me" )
             .then( CommandManager.argument( "action", StringArgumentType.greedyString())

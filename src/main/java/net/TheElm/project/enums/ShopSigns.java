@@ -54,9 +54,11 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
@@ -76,7 +78,7 @@ public enum ShopSigns {
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign( signBuilder, creator);
             
-            if (!signBuilder.textMatchItem(signBuilder.getLines()[1]) || !signBuilder.textMatchPrice(signBuilder.getLines()[2]))
+            if ((!signBuilder.textMatchItem(creator, signBuilder.getLines()[1])) || (!signBuilder.textMatchPrice(signBuilder.getLines()[2])))
                 throw new ShopBuilderException(new LiteralText("Sign not formatted correctly.").formatted(Formatting.RED));
             
             LootableContainerBlockEntity container = null;
@@ -89,10 +91,7 @@ public enum ShopSigns {
             // Second row Count - Item Name
             signBuilder.getSign().setTextOnRow(1,
                 new LiteralText(signBuilder.itemSize() + " ").formatted(Formatting.BLACK)
-                    .append(new LiteralText(
-                            CasingUtils.Words(signBuilder.getItem().getPath().replace("_", " "))
-                        ).formatted(Formatting.DARK_AQUA)
-                    )
+                    .append(new TranslatableText(Registry.ITEM.get(signBuilder.getItem()).getTranslationKey()).formatted(Formatting.DARK_AQUA))
             );
             // Third Row - Price
             signBuilder.getSign().setTextOnRow(2,
@@ -187,7 +186,7 @@ public enum ShopSigns {
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign( signBuilder, creator);
             
-            if (!signBuilder.textMatchItem(signBuilder.getLines()[1]) || !signBuilder.textMatchPrice(signBuilder.getLines()[2]))
+            if ((!signBuilder.textMatchItem(creator, signBuilder.getLines()[1])) || (!signBuilder.textMatchPrice(signBuilder.getLines()[2])))
                 throw new ShopBuilderException(new LiteralText("Sign not formatted correctly."));
             
             LootableContainerBlockEntity container = null;
@@ -207,10 +206,7 @@ public enum ShopSigns {
             // Second row Count - Item Name
             sign.setTextOnRow(1,
                 new LiteralText(signBuilder.itemSize() + " ").formatted(Formatting.BLACK)
-                    .append(new LiteralText(
-                            CasingUtils.Words(signBuilder.getItem().getPath().replace("_", " "))
-                        ).formatted(Formatting.DARK_AQUA)
-                    )
+                    .append(new TranslatableText(Registry.ITEM.get(signBuilder.getItem()).getTranslationKey()).formatted(Formatting.DARK_AQUA))
             );
             // Third Row - Price
             sign.setTextOnRow(2,
@@ -303,7 +299,7 @@ public enum ShopSigns {
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign( signBuilder, creator);
             
-            if (!signBuilder.textMatchItem(signBuilder.getLines()[1]))
+            if (!signBuilder.textMatchItem(creator, signBuilder.getLines()[1]))
                 throw new ShopBuilderException(new LiteralText("Sign not formatted correctly."));
             
             LootableContainerBlockEntity container = null;
@@ -316,10 +312,7 @@ public enum ShopSigns {
             // Second row Count - Item Name
             signBuilder.getSign().setTextOnRow(1,
                 new LiteralText(signBuilder.itemSize() + " ").formatted(Formatting.BLACK)
-                    .append(new LiteralText(
-                            CasingUtils.Words(signBuilder.getItem().getPath().replace("_", " "))
-                        ).formatted(Formatting.DARK_AQUA)
-                    )
+                    .append(new TranslatableText(Registry.ITEM.get(signBuilder.getItem()).getTranslationKey()).formatted(Formatting.DARK_AQUA))
             );
             // Third Row - Price
             signBuilder.getSign().setTextOnRow(2,

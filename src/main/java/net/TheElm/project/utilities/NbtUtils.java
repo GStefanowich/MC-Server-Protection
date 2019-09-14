@@ -38,7 +38,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.channels.FileLock;
 import java.nio.file.Paths;
 import java.util.Optional;
 import java.util.UUID;
@@ -73,18 +72,13 @@ public final class NbtUtils {
         
         try (FileInputStream stream = new FileInputStream(file)) {
             // Lock the file
-            FileLock lock = ( locking ? stream.getChannel().tryLock() : null );
-            try {
-                // Read from the file
-                return NbtIo.readCompressed(stream);
-            } finally {
-                // If locking is enabled, release the lock
-                if (locking) lock.release();
-            }
+            if (locking) stream.getChannel().tryLock();
+            // Read from the file
+            return NbtIo.readCompressed(stream);
         } catch (IOException e) {
             CoreMod.logError( e );
         }
-
+        
         throw new NbtNotFoundException( uuid );
     }
     public static boolean writeOfflinePlayerData(UUID uuid, CompoundTag tag) {
@@ -97,21 +91,18 @@ public final class NbtUtils {
             uuid.toString() + ".dat"
         ).toFile();
         
-        if (!file.exists()) {
-            CoreMod.logError( "Cannot read offline player data \"" + uuid.toString() + "\"; Path does not exist. Never joined the server?" );
-            return false;
-        }
-        
-        try (FileOutputStream stream = new FileOutputStream(file)) {
-            // Lock the file
-            FileLock lock = ( locking ? stream.getChannel().tryLock() : null );
-            try {
+        try {
+            if ((!file.exists()) && (!file.createNewFile())) {
+                CoreMod.logError( "Cannot write player data \"" + uuid.toString() + "\"; Failed to create new player file. Check write permissions?" );
+                return false;
+            }
+            
+            try (FileOutputStream stream = new FileOutputStream(file)) {
+                // Lock the file
+                if (locking) stream.getChannel().lock();
                 // Write to the file
                 NbtIo.writeCompressed(tag, stream);
                 return true;
-            } finally {
-                // If locking is enabled, release the lock
-                if (locking) lock.release();
             }
         } catch (IOException e) {
             CoreMod.logError( e );

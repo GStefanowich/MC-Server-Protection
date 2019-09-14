@@ -30,6 +30,7 @@ import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.exceptions.ShopBuilderException;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
@@ -38,7 +39,6 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.InvalidIdentifierException;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.DefaultedRegistry;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
@@ -163,29 +163,34 @@ public final class ShopSignBuilder {
     /*
      * Build individual sign types
      */
-    public boolean textMatchItem(Text text) {
+    public boolean textMatchItem(ServerPlayerEntity player, Text text) {
         String str = text.getString();
         Pattern p = Pattern.compile( "^(\\d+) (.*)$" );
         
         // Check matches
         Matcher m = p.matcher( str );
-        if ( m.find() ) {
-            this.stackSize = Integer.parseUnsignedInt( m.group( 1 ) );
-            String itemName = m.group( 2 ).replace( " ", "_" ).toLowerCase();
+        if ( !m.find() )
+            return false;
+        
+        this.stackSize = Integer.parseUnsignedInt( m.group( 1 ) );
+        String itemName = m.group( 2 ).replace( " ", "_" ).toLowerCase();
+        
+        if ( "hand".equals(itemName)) {
+            ItemStack handStack = player.getOffHandStack();
+            this.tradeItemIdentifier = Registry.ITEM.getId(handStack.getItem());
+            return (this.tradeItem = handStack.getItem()) != Items.AIR;
             
+        } else {
             try {
                 if (!itemName.contains(":"))
                     this.tradeItemIdentifier = new Identifier("minecraft:" + itemName);
                 else this.tradeItemIdentifier = new Identifier(itemName);
-            } catch ( InvalidIdentifierException e) {
+            } catch (InvalidIdentifierException e) {
                 return false;
             }
             
-            DefaultedRegistry<Item> itemRegistry = Registry.ITEM;
-            if (( this.tradeItem = itemRegistry.get( this.tradeItemIdentifier ) ) != Items.AIR )
-                return true;
+            return (this.tradeItem = Registry.ITEM.get(this.tradeItemIdentifier)) != Items.AIR;
         }
-        return false;
     }
     public boolean textMatchPrice(Text text) {
         String str = text.getString();

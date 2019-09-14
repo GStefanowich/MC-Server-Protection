@@ -29,14 +29,15 @@ import net.TheElm.project.MySQL.MySQLConnection;
 import net.TheElm.project.MySQL.MySQLHost;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.MySQL.MySQLite;
-import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.utilities.LegacyConverter;
 import net.TheElm.project.utilities.LoggingUtils;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
+import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -144,6 +145,12 @@ public abstract class CoreMod {
     public static ModContainer getMod() {
         return CoreMod.getFabric().getModContainer(CoreMod.MOD_ID).orElseThrow(RuntimeException::new);
     }
+    public static ModMetadata getModMetaData() {
+        return CoreMod.getMod().getMetadata();
+    }
+    public static String getModVersion() {
+        return CoreMod.getModMetaData().getVersion().getFriendlyString();
+    }
     public static boolean isDebugging() {
         return CoreMod.getFabric().isDevelopmentEnvironment();
     }
@@ -214,26 +221,8 @@ public abstract class CoreMod {
         return !tables.isEmpty();
     }
     protected static void checkLegacyDatabase() {
-        ConfigOption<String> version = SewingMachineConfig.INSTANCE.CONFIG_VERSION;
-        boolean isLegacy = (SewingMachineConfig.INSTANCE.preExisting() && (!version.wasUserDefined()));
-        
-        // Check if our version is considered legacy
-        if (!isLegacy) {
-            String versionString = version.get();
-            switch (versionString) {
-                case "${version}":
-                case "1.0.0":
-                case "1.0.1":
-                case "1.0.2":
-                case "1.0.3":
-                case "1.0.4": {
-                    isLegacy = true;
-                    break;
-                }
-                default:
-                    return;
-            }
-        }
+        if (!LegacyConverter.isLegacy())
+            return;
         
         // Convert our database
         String[] notice = new String[]{
@@ -242,7 +231,13 @@ public abstract class CoreMod {
             "|  YOU HAVE UPGRADED FROM A LEGACY VERSION",
             "|  PLEASE CONVERT YOUR CHUNK CLAIMS, IF ENABLED",
             "|  USING THE FOLLOWING COMMAND:",
+            "|",
             "|      /protection legacy-import",
+            "|",
+            "| IF YOU DO NOT CONVERT TO THE NEW FORMAT, ALL",
+            "| EXISTING CLAIM INFORMATION WILL BE LOST",
+            "|",
+            "| PLAYERS CANNOT JOIN DURING THE CONVERSION",
             "====================================================="
         };
         CoreMod.logInfo(

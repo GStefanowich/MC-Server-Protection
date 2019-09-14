@@ -82,7 +82,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
     @Shadow public native void sendPacket(Packet<?> packet);
     @Shadow public native void disconnect(Text text);
     @Shadow private native void executeCommand(String string);
-
+    
     /*
      * Claims
      */
@@ -117,6 +117,13 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
     
     @Inject(at = @At("RETURN"), method = "<init>")
     public void onPlayerConnect(MinecraftServer server, ClientConnection client, ServerPlayerEntity player, CallbackInfo callback) {
+        // Check if the LegacyConverter is running
+        if (LegacyConverter.running()) {
+            this.disconnect(new LiteralText("The server is currently updating!"));
+            return;
+        }
+        
+        // Set the players position as in the wilderness
         CoreMod.PLAYER_LOCATIONS.put( player, null );
         
         // Initialize user claims from database

@@ -59,7 +59,11 @@ public abstract class MOTD {
     @Inject(at = @At("RETURN"), method = "<init> *")
     public void onConstruct(CallbackInfo callback) {
         // Version
-        this.motdVariables.put( "version", () -> this.version.getGameVersion());
+        this.motdVariables.put( "version", () -> {
+            if (this.version == null)
+                return "??.??.??";
+            return this.version.getGameVersion();
+        });
         // Time
         this.motdVariables.put( "time", () -> {
             MinecraftServer server = CoreMod.getServer();
@@ -69,8 +73,8 @@ public abstract class MOTD {
         });
         // Difficulty
         this.motdVariables.put( "difficulty", () -> {
-           MinecraftServer server = CoreMod.getServer();
-           return server.getDefaultDifficulty().getName();
+            MinecraftServer server = CoreMod.getServer();
+            return server.getDefaultDifficulty().getName();
         });
     }
     
@@ -90,20 +94,22 @@ public abstract class MOTD {
     }
     
     private String descriptionReplaceVariables(String description) {
-        // For all keys
-        for (Map.Entry<String, Callable<String>> row : this.motdVariables.entrySet()) {
-            // If description contains
-            String key = "${" + row.getKey() + "}";
-            if (!description.contains(key))
-                continue;
-            
-            String val;
-            try {
-                val = row.getValue().call();
-                if (val == null) continue;
-            } catch (Exception e) { CoreMod.logError( e ); return null; }
-            // Replace
-            description = description.replace( key, val );
+        if (description != null) {
+            // For all keys
+            for (Map.Entry<String, Callable<String>> row : this.motdVariables.entrySet()) {
+                // If description contains
+                String key = "${" + row.getKey() + "}";
+                if (!description.contains(key))
+                    continue;
+                
+                String val;
+                try {
+                    val = row.getValue().call();
+                    if (val == null) continue;
+                } catch (Exception e) { CoreMod.logError(new Exception("Error in MOTD variable \"" + row.getKey() + "\"", e)); return null; }
+                // Replace
+                description = description.replace(key, val);
+            }
         }
         return description;
     }
