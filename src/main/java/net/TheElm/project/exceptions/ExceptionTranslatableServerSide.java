@@ -29,6 +29,7 @@ import com.mojang.brigadier.ImmutableStringReader;
 import com.mojang.brigadier.exceptions.CommandExceptionType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.utilities.TranslatableServerSide;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 
 public class ExceptionTranslatableServerSide implements CommandExceptionType {
@@ -44,6 +45,9 @@ public class ExceptionTranslatableServerSide implements CommandExceptionType {
         this.expectedArguments = expected;
     }
     
+    public CommandSyntaxException create(final ServerCommandSource source, final Object... objects) {
+        return new CommandSyntaxException(this, TranslatableServerSide.text( source, this.translationKey, objects ));
+    }
     public CommandSyntaxException create(final ServerPlayerEntity player, final Object... objects) {
         return new CommandSyntaxException(this, TranslatableServerSide.text( player, this.translationKey, objects ));
     }

@@ -32,6 +32,7 @@ import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.passive.*;
 import net.minecraft.entity.vehicle.*;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
@@ -177,5 +178,21 @@ public final class EntityUtils {
         
         // If the player is online
         return server.getPlayerManager().getPlayer( playerId );
+    }
+    
+    /*
+     * Disconnect Players
+     */
+    public static void kickAllPlayers() {
+        EntityUtils.kickAllPlayers( null );
+    }
+    public static void kickAllPlayers(@Nullable Text reason) {
+        MinecraftServer server = CoreMod.getServer();
+        PlayerManager manager = server.getPlayerManager();
+        if (reason == null)
+            manager.disconnectAllPlayers();
+        else for (ServerPlayerEntity player : manager.getPlayerList()) {
+            player.networkHandler.disconnect( reason );
+        }
     }
 }

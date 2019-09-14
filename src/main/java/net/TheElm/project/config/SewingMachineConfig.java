@@ -143,7 +143,7 @@ public final class SewingMachineConfig {
     
     private SewingMachineConfig() {
         // Initialize all configurations
-        this.CONFIG_VERSION = this.addConfig( new ConfigOption<>(this.version_key, CoreMod.getMod().getMetadata().getVersion().getFriendlyString(), JsonElement::getAsString));
+        this.CONFIG_VERSION = this.addConfig( new ConfigOption<>(this.version_key, CoreMod.getModVersion(), JsonElement::getAsString));
         
         /*
          * Database handling

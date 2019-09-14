@@ -159,7 +159,7 @@ public final class MoneyCommand {
         GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Get the running player
-        ServerPlayerEntity op = context.getSource().getPlayer();
+        ServerCommandSource op = context.getSource();
         
         // Get the amount to give
         int amount = IntegerArgumentType.getInteger( context, "amount" );
@@ -168,11 +168,12 @@ public final class MoneyCommand {
             // Give the player the money
             if ( MoneyUtils.givePlayerMoney( target.getId(), amount ) ) {
                 // Notify the command sender
-                op.sendMessage(new LiteralText("Gave ").formatted(Formatting.YELLOW)
+                op.sendFeedback(new LiteralText("Gave ").formatted(Formatting.YELLOW)
                     .append(new LiteralText("$" + NumberFormat.getInstance().format(amount)).formatted(Formatting.GREEN))
                     .append(" to ")
                     .append(new LiteralText(target.getName()).formatted(Formatting.DARK_PURPLE))
-                    .append(".")
+                    .append("."),
+                    true
                 );
                 
                 // Notify the player
@@ -192,7 +193,7 @@ public final class MoneyCommand {
         GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Get the running player
-        ServerPlayerEntity op = context.getSource().getPlayer();
+        ServerCommandSource op = context.getSource();
         
         // Get the amount to take
         int amount = IntegerArgumentType.getInteger( context, "amount" );
@@ -201,11 +202,12 @@ public final class MoneyCommand {
             // Take the players money
             if ( MoneyUtils.takePlayerMoney( target.getId(), amount ) ) {
                 // Notify the command sender
-                op.sendMessage( new LiteralText( "Took " ).formatted(Formatting.YELLOW)
+                op.sendFeedback( new LiteralText( "Took " ).formatted(Formatting.YELLOW)
                     .append( new LiteralText( "$" + NumberFormat.getInstance().format( amount ) ).formatted(Formatting.RED) )
                     .append( " from " )
                     .append( new LiteralText( target.getName() ).formatted(Formatting.DARK_PURPLE) )
-                    .append( "." )
+                    .append( "." ),
+                    true
                 );
                 
                 // Notify the player
@@ -228,7 +230,7 @@ public final class MoneyCommand {
         GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Get the running player
-        ServerPlayerEntity op = context.getSource().getPlayer();
+        ServerCommandSource op = context.getSource();
         
         try {
             // Get the amount to set
@@ -238,11 +240,12 @@ public final class MoneyCommand {
             // Set the players money
             if ( MoneyUtils.setPlayerMoney( target.getId(), amount ) ) {
                 // Notify the command sender
-                op.sendMessage(new LiteralText("Set money for ").formatted(Formatting.YELLOW)
+                op.sendFeedback(new LiteralText("Set money for ").formatted(Formatting.YELLOW)
                     .append(new LiteralText(target.getName()).formatted(Formatting.DARK_PURPLE))
                     .append(" to ")
                     .append(new LiteralText("$" + NumberFormat.getInstance().format(amount)).formatted(amount >= 0 ? Formatting.GREEN : Formatting.RED))
-                    .append(".")
+                    .append("."),
+                    true
                 );
                 
                 // Notify the player
@@ -261,15 +264,16 @@ public final class MoneyCommand {
         GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Get the running player
-        ServerPlayerEntity op = context.getSource().getPlayer();
+        ServerCommandSource op = context.getSource();
         
         try {
             MoneyUtils.setPlayerMoney( target.getId(), SewingMachineConfig.INSTANCE.STARTING_MONEY.get() );
-            op.sendMessage( new LiteralText( "Set money for " ).formatted(Formatting.YELLOW)
+            op.sendFeedback( new LiteralText( "Set money for " ).formatted(Formatting.YELLOW)
                 .append( new LiteralText( target.getName() ).formatted(Formatting.DARK_PURPLE) )
                 .append( " to " )
                 .append( new LiteralText( "$" + NumberFormat.getInstance().format( DEFAULT_STATE ) ).formatted( DEFAULT_STATE >= 0 ? Formatting.GREEN : Formatting.RED ) )
-                .append( "." )
+                .append( "." ),
+                true
             );
         } catch (NbtNotFoundException e) {
             throw PLAYER_NOT_FOUND.create( op );

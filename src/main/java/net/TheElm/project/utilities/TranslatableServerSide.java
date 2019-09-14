@@ -31,6 +31,7 @@ import com.google.gson.JsonParser;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.interfaces.PlayerServerLanguage;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
@@ -50,6 +51,12 @@ public final class TranslatableServerSide {
     public static void send(@NotNull PlayerEntity player, String key, Object... objects) {
         player.sendMessage(TranslatableServerSide.text(player, key, objects));
     }
+    public static Text text(ServerCommandSource source, String key, Object... objects) {
+        if (source.getEntity() instanceof ServerPlayerEntity)
+            return TranslatableServerSide.text( (ServerPlayerEntity)source.getEntity(), key, objects );
+        Locale locale = Locale.getDefault();
+        return TranslatableServerSide.text( locale.getLanguage() + "_" + locale.getCountry(), key, objects );
+    }
     public static Text text(PlayerEntity player, String key, Object... objects) {
         if (!(player instanceof ServerPlayerEntity))
             return null;
@@ -60,44 +67,51 @@ public final class TranslatableServerSide {
     }
     private static Text text(String language, String key, Object... objects) {
         String text = TranslatableServerSide.getTranslation( language, key );
-        final Object[] args = objects;
         
         for (int i = 0; i < objects.length; ++i) {
             Object obj = objects[i];
             if (obj instanceof Text) {
-                args[i] = ((Text) obj).deepCopy();
+                objects[i] = ((Text) obj).deepCopy();
             } else if (obj == null) {
-                args[i] = "null";
+                objects[i] = "null";
             }
         }
         
-        return TranslatableServerSide.replace( language, text, args );
+        return TranslatableServerSide.replace( language, text, objects);
     }
     private static Text replace(String language, String text, Object... objects) {
         if ( objects.length <= 0 )
             return new LiteralText( text );
         String[] separated = text.split( "((?<=%[a-z])|(?=%[a-z]))" );
         
+        // Get the formatter for numbers
         NumberFormat formatter = NumberFormat.getInstance(new Locale(language));
         int O = 0;
         
-        Text out = new LiteralText( "" );
+        Text out = null;
         for ( String seg : separated ) {
+            // If is a variable
             if ( matchAny( seg, "%s", "%d", "%f" ) ) {
                 // Get the objects that were provided
                 Object obj = objects[ O++ ];
                 if ( ("%s".equalsIgnoreCase( seg )) && ( obj instanceof Text ) ) {
-                    out.append( (Text)obj );
+                    if (out == null) out = (Text)obj;
+                    else out.append( (Text)obj );
                 } else if ( ("%d".equalsIgnoreCase( seg )) && ( obj instanceof Number ) ) {
+                    if (out == null) out = new LiteralText("");
                     out.append(new LiteralText( formatter.format( ((Number) obj).longValue() ) ).formatted(Formatting.AQUA));
                 } else {
-                    out.append( obj.toString() );
+                    if (out == null) out = new LiteralText( obj.toString() );
+                    else out.append( obj.toString() );
                 }
             } else {
-                out.append( seg );
+                // If not a variable
+                if (out == null) out = new LiteralText( seg );
+                else out.append( seg );
             }
         }
-        return out;
+        
+        return (out == null ? new LiteralText( "" ) : out);
     }
     
     private static String getTranslation(String language, String key) {
