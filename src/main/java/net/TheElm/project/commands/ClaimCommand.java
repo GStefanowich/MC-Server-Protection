@@ -259,7 +259,7 @@ public final class ClaimCommand {
             
             // Import from older version
             .then( CommandManager.literal("legacy-import")
-                .requires((source -> source.hasPermissionLevel( 4 )))
+                .requires((source -> source.hasPermissionLevel( 4 ) && LegacyConverter.isLegacy()))
                 .executes( ClaimCommand::convertFromLegacy )
             )
         );

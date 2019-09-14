@@ -6,6 +6,7 @@
   ],
   "server": [
     "Commands.Me",
+    "Commands.Stop",
     "Items.Shovel",
     
     "Entities.CorralMobs",

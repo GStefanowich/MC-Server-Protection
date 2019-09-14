@@ -30,6 +30,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -65,7 +66,8 @@ public final class CommandUtilities {
             return false;
         
         ServerPlayerEntity player = (ServerPlayerEntity) source;
-        return ((PlayerData)player).getClaim().getTown() != null;
+        ClaimantPlayer claim;
+        return (((claim = ((PlayerData)player).getClaim()) != null) && (claim.getTown() != null));
     }
     
 }
