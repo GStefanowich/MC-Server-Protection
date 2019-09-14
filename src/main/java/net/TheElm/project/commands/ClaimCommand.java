@@ -906,11 +906,13 @@ public final class ClaimCommand {
         if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
             return -1;
         
-        new Thread(() -> {
+        Thread threadConverter = new Thread(() -> {
             try (LegacyConverter converter = LegacyConverter.create()) {
                 
             }
-        }).start();
+        });
+        threadConverter.setName("Sewing Converter");
+        threadConverter.start();
         
         return Command.SINGLE_SUCCESS;
     }
