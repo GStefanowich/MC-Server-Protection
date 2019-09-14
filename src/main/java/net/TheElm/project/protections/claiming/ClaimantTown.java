@@ -158,14 +158,16 @@ public final class ClaimantTown extends Claimant {
         do {
             townUUID = UUID.randomUUID();
         } while (NbtUtils.exists( ClaimantType.TOWN, townUUID ));
-        
+        return ClaimantTown.makeTown( townUUID, founder.getUuid(), townName );
+    }
+    public static ClaimantTown makeTown(@NotNull UUID townUUID, @NotNull UUID founder, @NotNull Text townName) {
         // Create our town
         ClaimantTown town = new ClaimantTown( townUUID, townName );
-        
+    
         // Save the town
-        town.setOwner( founder.getUuid() );
+        town.setOwner( founder );
         town.save();
-        
+    
         // Return the town
         return town;
     }

@@ -256,8 +256,6 @@ public abstract class Claimant {
                 );
             }
         }
-        
-        System.out.println(tag.toString());
     }
     
     public enum ClaimantType {

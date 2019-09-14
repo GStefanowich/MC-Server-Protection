@@ -29,13 +29,23 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.ClaimPermissions;
+import net.TheElm.project.enums.ClaimRanks;
+import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.interfaces.MoneyHolder;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
-import net.minecraft.world.World;
+import net.minecraft.text.Text;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
@@ -53,11 +63,13 @@ public final class LegacyConverter implements AutoCloseable {
     private boolean clearPlayers = false;
     private boolean clearClaims = false;
     
+    private final Map<UUID, ClaimantTown> modTownData = new HashMap<>();
+    private final Map<UUID, ClaimantPlayer> modPlayerData = new HashMap<>();
+    
     private LegacyConverter() {
         LegacyConverter.RUNNING = true;
+        this.startedAt = new Date().getTime();
         try {
-            this.startedAt = new Date().getTime();
-            
             // Disconnect players during conversion
             EntityUtils.kickAllPlayers(new LiteralText("Server is now performing an update."));
             
@@ -65,79 +77,190 @@ public final class LegacyConverter implements AutoCloseable {
             this.clearPlayers = this.convertPlayers(CoreMod.getServer());
             this.clearClaims = this.convertClaims(CoreMod.getServer());
             this.success = true;
+        } catch (NullPointerException e) {
+            CoreMod.logError(new Exception("Failed to complete conversion from legacy version.", e));
         } finally {
             LegacyConverter.RUNNING = false;
         }
     }
     
     public boolean convertTowns(MinecraftServer server) {
-        if (true) return false;
         try {
-            // TODO: Import towns from the database
-            try (MySQLStatement stmt = CoreMod.getSQL().prepare("")) {
-                
-            }
-            try (MySQLStatement stmt = CoreMod.getSQL().prepare("")) {
-                
-            }
-        } catch (SQLException e) {
-            // If table doesn't exist
-            if (e.getErrorCode() != 1146) {
-                CoreMod.logInfo(e);
-                return false;
-            }
-        }
-        return true;
-    }
-    public boolean convertPlayers(MinecraftServer server) {
-        try {
-            // TODO: Import player settings from the database
-            try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `d`.`dataOwner`, `d`.`dataMoney`, `t`.`townId` FROM `player_Data` AS `d` LEFT JOIN `player_Towns` AS `t` ON `d`.`dataOwner` = `t`.`townPlayer`")) {
+            /*
+             * Import towns from the database
+             */
+            try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `townId`, `townOwner`, `townName` FROM `chunk_Towns`;")) {
                 try (ResultSet rs = stmt.executeStatement()) {
                     while (rs.next()) {
-                        UUID playerUUID = UUID.fromString(rs.getString("dataOwner"));
-                        UUID townID = (rs.getString("dataOwner") == null ? null : UUID.fromString(rs.getString("dataOwner")));
-                        int money = rs.getInt("dataMoney");
-    
+                        Text townName = new LiteralText(rs.getString("townName"));
+                        UUID townUUID = UUID.fromString(rs.getString("townId"));
+                        UUID ownerUUID = UUID.fromString(rs.getString("townOwner"));
                         
+                        // Make a NEW town
+                        ClaimantTown town = ClaimantTown.makeTown( townUUID, ownerUUID, townName );
+                        
+                        // Store the town for later user
+                        this.modTownData.put(townUUID, town);
+                    }
+                }
+            }
+            /*
+             * Get the towns members
+             */
+            try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `townId`, `townPlayer` FROM `player_Towns`;")) {
+                try (ResultSet rs = stmt.executeStatement()) {
+                    while (rs.next()) {
+                        ClaimantTown town = this.getTownDat(UUID.fromString(rs.getString("townId")));
+                        if (town == null) continue;
+                        
+                        UUID playerUUID = UUID.fromString(rs.getString("townPlayer"));
+                        if (playerUUID.equals(town.getOwner())) continue;
+                        
+                        town.updateFriend( playerUUID, ClaimRanks.ALLY );
+                        town.markDirty();
                     }
                 }
             }
         } catch (SQLException e) {
-            // If table doesn't exist
-            if (e.getErrorCode() != 1146) {
-                CoreMod.logInfo(e);
-                return false;
+            if (this.shouldFail( e )) return false;
+        }
+        return true;
+    }
+    public boolean convertPlayers(MinecraftServer server) {
+        /*
+         * Get the players MONEY and TOWN
+         */
+        try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `d`.`dataOwner`, `d`.`dataMoney`, `t`.`townId` FROM `player_Data` AS `d` LEFT JOIN `player_Towns` AS `t` ON `d`.`dataOwner` = `t`.`townPlayer`")) {
+            try (ResultSet rs = stmt.executeStatement()) {
+                while (rs.next()) {
+                    UUID playerUUID = UUID.fromString(rs.getString("dataOwner"));
+                    ClaimantTown town = (rs.getString("townId") == null ? null : this.getTownDat(UUID.fromString(rs.getString("townId"))));
+                    int money = rs.getInt("dataMoney");
+                    
+                    // Get the players NBT data
+                    CompoundTag playerDat;
+                    try {
+                        playerDat = NbtUtils.readOfflinePlayerData( playerUUID );
+                        
+                        // Store the NBT data to the tag
+                        playerDat.putInt(MoneyHolder.SAVE_KEY, money);
+                        
+                        // Save
+                        NbtUtils.writeOfflinePlayerData( playerUUID, playerDat );
+                    } catch (NbtNotFoundException ignored) {}
+                    
+                    // Get the claimant NBT
+                    ClaimantPlayer modDat = this.getPlayerDat(playerUUID);
+                    
+                    // Update the players town
+                    if (town != null) modDat.setTown( town );
+                }
             }
+        } catch (SQLException e) {
+            if (this.shouldFail( e )) return false;
+        }
+        /*
+         * Get the players FRIENDS
+         */
+        try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `chunkOwner`, `chunkFriend`, `chunkRank` FROM `chunk_Friends`;")) {
+            try (ResultSet rs = stmt.executeStatement()) {
+                while (rs.next()) {
+                    UUID playerUUID = UUID.fromString(rs.getString("chunkOwner"));
+                    UUID friendUUID = UUID.fromString(rs.getString("chunkFriend"));
+                    ClaimRanks rank = ClaimRanks.valueOf(rs.getString("chunkRank"));
+                    
+                    ClaimantPlayer player = this.getPlayerDat(playerUUID);
+                    player.updateFriend( friendUUID, rank );
+                }
+            }
+        } catch (SQLException e) {
+            if (this.shouldFail( e )) return false;
+        }
+        /*
+         * Get the players PERMISSIONS
+         */
+        try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `settingOwner`, `settingOption`, `settingRank` FROM `chunk_Settings`;")) {
+            try (ResultSet rs = stmt.executeStatement()) {
+                while (rs.next()) {
+                    UUID playerUUID = UUID.fromString(rs.getString("settingOwner"));
+                    ClaimPermissions permission = ClaimPermissions.valueOf(rs.getString("settingOption"));
+                    ClaimRanks rank = ClaimRanks.valueOf(rs.getString("settingRank"));
+                    
+                    ClaimantPlayer player = this.getPlayerDat(playerUUID);
+                    player.updatePermission( permission, rank );
+                }
+            }
+        } catch (SQLException e) {
+            if (this.shouldFail( e )) return false;
+        }
+        /*
+         * Get the players OPTIONS
+         */
+        try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `optionOwner`, `optionName`, `optionValue` FROM `chunk_Options`;")) {
+            try (ResultSet rs = stmt.executeStatement()) {
+                while (rs.next()) {
+                    UUID playerUUID = UUID.fromString(rs.getString("optionOwner"));
+                    ClaimSettings setting = ClaimSettings.valueOf(rs.getString("optionName"));
+                    boolean enabled = Boolean.valueOf(rs.getString("optionValue"));
+                    
+                    ClaimantPlayer player = this.getPlayerDat(playerUUID);
+                    player.updateSetting(setting, enabled);
+                }
+            }
+        } catch (SQLException e) {
+            if (this.shouldFail( e )) return false;
         }
         return true;
     }
     public boolean convertClaims(MinecraftServer server) {
-        if (true) return false;
+        long check = System.currentTimeMillis() / 1000;
         try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `chunkX`, `chunkZ`, `chunkOwner`, `chunkTown`, `chunkWorld` FROM `chunk_Claimed` ORDER BY `chunkWorld` ASC, `chunkX` ASC, `chunkZ` ASC;" )) {
             // Iterate chunk results
             try (ResultSet rs = stmt.executeStatement()){
                 while (rs.next()) {
+                    // Get the dimension
+                    int dimId = rs.getInt("chunkWorld");
+                    DimensionType dimension = DimensionType.byRawId(dimId);
+                    if (dimension == null) {
+                        CoreMod.logError("Failed to import chunks from world " + dimId + ". World type no longer exists?");
+                        continue;
+                    }
+                    
                     // Get the world based on ID
-                    World world = server.getWorld(DimensionType.byRawId(rs.getInt("chunkWorld")));
-    
+                    ServerWorld world = server.getWorld(dimension);
+                    
+                    // Wait for 2 seconds, every second
+                    if (check < ((System.currentTimeMillis() / 1000) - 1)) {
+                        Thread.sleep( 2000 );
+                        check = System.currentTimeMillis() / 1000;
+                    }
+                    
                     // If our world exists
                     if (world != null) {
                         int x = rs.getInt("chunkX");
                         int z = rs.getInt("chunkZ");
-    
-                        // Obtain the chunk
-                        CoreMod.logInfo(String.format("Converting chunk %d, %d", x, z));
+                        
                         WorldChunk chunk = (WorldChunk) world.getChunk(x, z, ChunkStatus.FULL);
                         IClaimedChunk claim = (IClaimedChunk) chunk;
-    
+                        
                         // Get the UUIDs from the database
-                        String ownerUUID = rs.getString("chunkOwner");
-                        String townUUID = rs.getString("chunkTown");
-    
+                        String uuid;
+                        UUID ownerUUID = UUID.fromString(rs.getString("chunkOwner"));
+                        UUID townUUID = ((uuid = rs.getString("chunkTown")) == null ? null : UUID.fromString( uuid ));
+                        
+                        // Save chunk to player NBT
+                        ClaimantPlayer player = this.getPlayerDat( ownerUUID );
+                        player.addToCount( chunk );
+                        
                         // Update the chunk
-                        claim.updatePlayerOwner(ownerUUID == null ? null : UUID.fromString(ownerUUID));
-                        claim.updateTownOwner(townUUID == null ? null : UUID.fromString(townUUID));
+                        claim.updatePlayerOwner( ownerUUID );
+                        claim.updateTownOwner( townUUID );
+                        
+                        // ENSURE THE CHUNK GETS SAVED
+                        chunk.markDirty();
+                        
+                        // Obtain the chunk
+                        CoreMod.logInfo(String.format("Converting chunk %d, %d to \"%s\" in %s", x, z, (ownerUUID.equals(CoreMod.spawnID) ? "Spawn" : ownerUUID.toString()), dimension.getSuffix()));
                     }
                 }
             }
@@ -145,56 +268,95 @@ public final class LegacyConverter implements AutoCloseable {
             // Save the world after completion
             server.save(true, false, true);
         } catch (SQLException e) {
-            // If table doesn't exist
-            if (e.getErrorCode() != 1146) {
-                CoreMod.logInfo(e);
-                return false;
-            }
+            if (this.shouldFail( e )) return false;
+        } catch (InterruptedException e) {
+            CoreMod.logError( e );
+            return false;
         }
         return true;
     }
     
     @Override
     public void close() {
-        long millis = new Date().getTime() - this.startedAt;
-        if ( this.success ) {
-            String message = "";
-            Set<String> tables = new HashSet<>();
-            
-            // Remove old databases
-            if ( this.clearClaims ) {
-                message += ( message.isEmpty() ? "" : System.lineSeparator()) + "- Importing Claimed Chunks completed.";
-                tables.add("chunk_Claimed");
+        try {
+            long millis = new Date().getTime() - this.startedAt;
+            if (this.success) {
+                String message = "";
+                Set<String> tables = new HashSet<>();
+                
+                // Remove old databases
+                if (this.clearClaims) {
+                    message += (message.isEmpty() ? "" : System.lineSeparator()) + "- Importing Claimed Chunks completed.";
+                    tables.add("`chunk_Claimed`");
+                }
+                if (this.clearPlayers) {
+                    message += (message.isEmpty() ? "" : System.lineSeparator()) + "- Importing Player Settings completed.";
+                    tables.addAll(Arrays.asList(
+                        "`player_Data`",
+                        "`chunk_Friends`",
+                        "`chunk_Options`",
+                        "`chunk_Settings`"
+                    ));
+                }
+                if (this.clearTowns) {
+                    message += (message.isEmpty() ? "" : System.lineSeparator()) + "- Importing Town Settings completed.";
+                    tables.add("`chunk_Towns`");
+                }
+                if (this.clearPlayers && this.clearTowns)
+                    tables.add("`player_Towns`");
+                
+                if ((!message.isEmpty()) && (!tables.isEmpty())) {
+                    message += System.lineSeparator()
+                        + "  Tables may now be manually deleted in MySQL:"
+                        + System.lineSeparator() + System.lineSeparator()
+                        + "   USE `minecraft_vanilla_claims`; DROP TABLE IF EXISTS " + String.join(", ", tables) + ";"
+                        + System.lineSeparator();
+                }
+                
+                // Completed
+                CoreMod.logInfo("Legacy conversion completed. [" + millis + "ms]"
+                    + System.lineSeparator() + message
+                );
+                return;
             }
-            if ( this.clearPlayers ) {
-                message += ( message.isEmpty() ? "" : System.lineSeparator()) + "- Importing Player Settings completed.";
-                tables.addAll(Arrays.asList(
-                    "player_Data",
-                    "chunk_Friends",
-                    "chunk_Options",
-                    "chunk_Settings"
-                ));
-            }
-            if ( this.clearTowns ) {
-                message += ( message.isEmpty() ? "" : System.lineSeparator()) + "- Importing Town Settings completed.";
-                tables.add("chunk_Towns");
-            }
-            if ( this.clearPlayers && this.clearTowns )
-                tables.add( "player_Towns" );
-            
-            if ( (!message.isEmpty()) && (!tables.isEmpty()) ) {
-                message += "  Tables may now be manually deleted in MySQL:"
-                    + System.lineSeparator()
-                    + "   \"USE `minecraft_vanilla_claims`; DROP TABLE IF EXISTS " + String.join(", ", tables) + ";\"";
-            }
-            
-            // Completed
-            CoreMod.logInfo( "Legacy conversion completed. [" + millis + "ms]" );
-            return;
+            CoreMod.logError("Legacy conversion failed. [" + millis + "ms]");
+        } finally {
+            this.modTownData.clear();
+            this.modPlayerData.clear();
         }
-        CoreMod.logError( "Legacy conversion failed. [" + millis + "ms]" );
     }
     
+    /*
+     * Mod NBT Data
+     */
+    @NotNull
+    private ClaimantPlayer getPlayerDat(UUID playerUUID) {
+        if (!this.modPlayerData.containsKey(playerUUID))
+            this.modPlayerData.put(playerUUID, ClaimantPlayer.get(playerUUID));
+        return this.modPlayerData.get(playerUUID);
+    }
+    @Nullable
+    private ClaimantTown getTownDat(UUID townUUID) {
+        if (!this.modTownData.containsKey(townUUID))
+            return null;
+        return this.modTownData.get(townUUID);
+    }
+    
+    /*
+     * Exception handling
+     */
+    private boolean shouldFail(SQLException exception) {
+        // If table doesn't exist
+        if (exception.getErrorCode() != 1146) {
+            CoreMod.logError( exception );
+            return true;
+        }
+        return false;
+    }
+    
+    /*
+     * Static GETTERs
+     */
     @Nullable
     public static LegacyConverter create() {
         if ( LegacyConverter.INSTANCE != null ) return null;
