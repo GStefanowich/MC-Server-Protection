@@ -260,7 +260,7 @@ public final class LegacyConverter implements AutoCloseable {
                         chunk.markDirty();
                         
                         // Obtain the chunk
-                        CoreMod.logInfo(String.format("Converting chunk %d, %d to \"%s\" in %s", x, z, (ownerUUID.equals(CoreMod.spawnID) ? "Spawn" : ownerUUID.toString()), dimension.getSuffix()));
+                        CoreMod.logInfo(String.format("Converting chunk %d, %d to \"%s\" in %s", x, z, (ownerUUID.equals(CoreMod.spawnID) ? "Spawn" : ownerUUID.toString()), dimension.toString()));
                     }
                 }
             }
