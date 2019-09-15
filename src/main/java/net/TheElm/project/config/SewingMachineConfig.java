@@ -31,6 +31,7 @@ import net.TheElm.project.utilities.LoggingUtils.LoggingIntervals;
 import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.*;
 import java.util.*;
@@ -276,22 +277,9 @@ public final class SewingMachineConfig {
         
         CoreMod.logInfo( "Loading configuration file." );
         
-        // Load from the folder
-        final File dir = CoreMod.getConfDir();
-        final File config = new File( dir, "config.json" );
-        
-        this.fileExists = config.exists();
-        
+        File config = null;
         try {
-            if (this.fileExists) {
-            } else if (config.createNewFile()) {
-                /*
-                 * Create a new config
-                 */
-                this.saveToFile(config, this.saveToJSON());
-            } else {
-                throw new RuntimeException("Error accessing the config");
-            }
+            config = this.getConfigFile();
             
             /*
              * Read the existing config
@@ -306,6 +294,8 @@ public final class SewingMachineConfig {
         } catch (IOException e) {
             CoreMod.logError( e );
         }
+        
+        this.fileExists = ((config != null) && config.exists());
     }
     
     public final boolean preExisting() {
@@ -324,6 +314,26 @@ public final class SewingMachineConfig {
     /*
      * File save / load
      */
+    @NotNull
+    private File getConfigFile() throws IOException {
+        // Load from the folder
+        final File dir = CoreMod.getConfDir();
+        final File config = new File( dir, "config.json" );
+        
+        if (!config.exists()) {
+            if (!config.createNewFile())
+                throw new RuntimeException("Error accessing the config");
+            /*
+             * Create a new config
+             */
+            this.saveToFile(config, this.saveToJSON());
+        }
+        return config;
+    }
+    public void save() throws IOException {
+        this.saveToFile( this.getConfigFile(), this.saveToJSON() );
+    }
+    
     private void saveToFile(File configFile, JsonElement json) throws IOException {
         // GSON Parser
         Gson gson = new GsonBuilder().setPrettyPrinting().serializeNulls().disableHtmlEscaping().create();

@@ -382,7 +382,6 @@ public final class LegacyConverter implements AutoCloseable {
         
         String versionString = version.get();
         switch (versionString) {
-            case "${version}":
             case "1.0.0":
             case "1.0.1":
             case "1.0.2":

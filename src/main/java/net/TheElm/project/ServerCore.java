@@ -25,7 +25,9 @@
 
 package net.TheElm.project;
 
+import com.google.gson.GsonBuilder;
 import net.TheElm.project.commands.*;
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.protections.BlockBreak;
 import net.TheElm.project.protections.BlockInteraction;
 import net.TheElm.project.protections.EntityAttack;
@@ -34,6 +36,7 @@ import net.TheElm.project.utilities.LoggingUtils;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.registry.CommandRegistry;
 
+import java.io.IOException;
 import java.sql.SQLException;
 
 public final class ServerCore extends CoreMod implements DedicatedServerModInitializer {
@@ -45,6 +48,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     public void onInitializeServer() {
         CoreMod.logInfo( "Sewing Machine utilities mod is starting." );
         
+        SewingMachineConfig CONFIG = SewingMachineConfig.INSTANCE;
         CommandRegistry REGISTRY = CommandRegistry.INSTANCE;
         
         CoreMod.logInfo( "Registering our commands." );
@@ -87,9 +91,17 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
 
             throw new RuntimeException( "Could not connect to database server.", e );
         }
-
-        // Alert the mod presence
-        CoreMod.logInfo( "Finished loading." );
+        
+        // Update the mod version in config
+        try {
+            CONFIG.CONFIG_VERSION.set(new GsonBuilder().create().toJsonTree(CoreMod.getModVersion()));
+            CONFIG.save();
+            
+            // Alert the mod presence
+            CoreMod.logInfo( "Finished loading." );
+        } catch (IOException e) {
+            CoreMod.logError(new Exception("Error during startup", e));
+        }
     }
     
 }
