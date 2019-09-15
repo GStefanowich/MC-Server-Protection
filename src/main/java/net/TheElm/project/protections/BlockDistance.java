@@ -49,19 +49,21 @@ public final class BlockDistance {
         this.firstPos = firstPos;
         this.secondPos = secondPos;
         
+        int volume = 1;
+        
         int ew = Math.abs( firstPos.getX() - secondPos.getX() ); // East-West
-        if (ew != 0) ++ew;
+        if (ew != 0) volume *= (++ew);
         
         int ns = Math.abs( firstPos.getZ() - secondPos.getZ() ); // North-South
-        if (ns != 0) ++ns;
+        if (ns != 0) volume *= (++ns);
         
         int ud = Math.abs( firstPos.getY() - secondPos.getY() ); // Up-Down
-        if (ud != 0) ++ud;
+        if (ud != 0) volume *= (++ud);
         
         this.distEastWest = ew;
         this.distNorthSouth = ns;
         this.distUpDown = ud;
-        this.volume = (ew * ns * ud);
+        this.volume = volume;
     }
     
     // Get the dimensions
