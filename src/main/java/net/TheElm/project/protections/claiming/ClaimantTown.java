@@ -28,10 +28,13 @@ package net.TheElm.project.protections.claiming;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimRanks;
+import net.TheElm.project.exceptions.NbtNotFoundException;
+import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.TownNameUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
@@ -41,6 +44,7 @@ import java.util.UUID;
 
 public final class ClaimantTown extends Claimant {
     
+    private boolean deleted = false;
     private UUID ownerId;
     
     protected ClaimantTown(@NotNull UUID townId) {
@@ -128,22 +132,39 @@ public final class ClaimantTown extends Claimant {
         super.readCustomDataFromTag( tag );
     }
     
-    // TODO: Town deleting / erasure
     public final void delete() {
-        // Remove all players from the town
+        PlayerManager playerManager = CoreMod.getServer().getPlayerManager();
+        ServerPlayerEntity player;
         
+        this.deleted = true;
+        
+        // Remove all players from the town
+        for (UUID member : this.getFriends()) {
+            if ((player = playerManager.getPlayer(member)) != null)
+                ((PlayerData)player).getClaim().setTown( null );
+        }
         
         // Remove from the cache (So it doesn't save again)
         CoreMod.removeFromCache( this );
+        NbtUtils.delete( this );
+        CoreMod.logInfo("Deleted town " + this.getName().asString() + " (" + this.getId() + ")");
+    }
+    @Override
+    public boolean forceSave() {
+        if (!this.deleted)
+            return super.forceSave();
+        return true;
     }
     
     @Nullable
-    public static ClaimantTown get(UUID townId) {
+    public static ClaimantTown get(UUID townId) throws NbtNotFoundException {
         Claimant town;
         
         // If claims are disabled
         if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || (townId == null))
             return null;
+        
+        NbtUtils.assertExists( ClaimantType.TOWN, townId );
         
         // If contained in the cache
         if ((town = CoreMod.getFromCache( ClaimantType.TOWN, townId )) != null)

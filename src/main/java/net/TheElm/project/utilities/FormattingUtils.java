@@ -94,7 +94,7 @@ public final class FormattingUtils {
         List<Formatting> formatting = new ArrayList<>();
         Matcher matches = regex.matcher(codes);
         while (matches.find()) {
-            formatting.add(codeToFormat(codes.substring(matches.start(), matches.end())));
+            formatting.add(codeToFormat(codes.substring(matches.start(), matches.end()).toLowerCase()));
         }
         return formatting.toArray(new Formatting[0]);
     }
