@@ -160,7 +160,7 @@ public abstract class Claimant {
     public final void save() {
         if (this.dirty) this.forceSave();
     }
-    public final boolean forceSave() {
+    public boolean forceSave() {
         if (CoreMod.isDebugging()) CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.spawnID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
         boolean success = NbtUtils.writeClaimData( this );
         if (!success) CoreMod.logInfo( "FAILED TO SAVE " + this.getType().name() + " DATA, " + (CoreMod.spawnID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );

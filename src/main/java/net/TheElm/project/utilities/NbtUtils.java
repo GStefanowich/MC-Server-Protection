@@ -173,6 +173,10 @@ public final class NbtUtils {
         return false;
     }
     
+    public static void assertExists(Claimant.ClaimantType type, UUID uuid) throws NbtNotFoundException {
+        if (!NbtUtils.exists(type, uuid))
+            throw new NbtNotFoundException( uuid );
+    }
     public static boolean exists(Claimant.ClaimantType type, UUID uuid) {
         File file = Paths.get(
             worldFolder().getAbsolutePath(),
@@ -187,6 +191,21 @@ public final class NbtUtils {
         tag.putString("type", type.name());
         tag.putUuid("iden", uuid);
         return tag;
+    }
+    
+    /*
+     * File Erasure
+     */
+    public static boolean delete(Claimant claimant) {
+        File file = Paths.get(
+            worldFolder().getAbsolutePath(),
+            "sewing-machine",
+            claimant.getType().name().toLowerCase() + "_" + claimant.getId().toString() + ".dat"
+        ).toFile();
+        
+        if (file.exists())
+            return file.delete();
+        return false;
     }
     
     /*
@@ -215,4 +234,5 @@ public final class NbtUtils {
         displayTag.put("Lore", loreTag);
         return displayTag;
     }
+    
 }

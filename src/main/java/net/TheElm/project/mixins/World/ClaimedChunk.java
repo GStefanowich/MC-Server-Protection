@@ -29,6 +29,7 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -50,28 +51,46 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 
+import java.lang.ref.WeakReference;
 import java.util.Iterator;
 import java.util.UUID;
 
 @Mixin(WorldChunk.class)
 public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
     
+    @Shadow public abstract void markDirty();
+    
     private final ClaimSlice[] claimSlices = new ClaimSlice[256];
     
-    private ClaimantTown   chunkTown   = null;
+    private WeakReference<ClaimantTown> chunkTown = null;
     private ClaimantPlayer chunkPlayer = null;
     
-    public void updateTownOwner(@Nullable UUID owner) {
+    public ClaimantTown updateTownOwner(@Nullable UUID owner) {
+        ClaimantTown town = null;
+        if (owner != null) {
+            try {
+                town = ClaimantTown.get( owner );
+            } catch (NbtNotFoundException ignored) {}
+        }
         // Make sure we have the towns permissions cached
-        this.chunkTown = ( owner == null ? null : ClaimantTown.get( owner ));
+        this.chunkTown = (town == null ? null : new WeakReference<>( town ));
+        this.markDirty();
+        return this.getTown();
     }
-    public void updatePlayerOwner(@Nullable UUID owner) {
+    private ClaimantTown updateTownOwner(@NotNull ClaimantTown town) {
+        this.markDirty();
+        return (this.chunkTown = new WeakReference<>(town)).get();
+    }
+    public ClaimantPlayer updatePlayerOwner(@Nullable UUID owner) {
         this.chunkPlayer = ( owner == null ? null : ClaimantPlayer.get( owner ));
+        this.markDirty();
         
         // If there is no player owner, there is no town
         if (owner == null)
-            this.updateTownOwner( null );
+            this.updateTownOwner( (UUID)null );
+        return this.chunkPlayer;
     }
     
     public void setSliceOwner(UUID owner, int slicePos) {
@@ -135,9 +154,14 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
     }
     @Nullable
     public ClaimantTown getTown() {
-        if (( this.chunkPlayer == null ) || ( this.chunkTown == null ))
+        if (( this.chunkPlayer == null ))
             return null;
-        return this.chunkTown;
+        if (this.chunkTown == null) {
+            ClaimantTown playerTown;
+            if ((playerTown = this.chunkPlayer.getTown()) != null)
+                return this.updateTownOwner(playerTown);
+        }
+        return this.chunkTown.get();
     }
     
     public Text getOwnerName(@NotNull PlayerEntity zonePlayer) {

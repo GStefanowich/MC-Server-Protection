@@ -28,6 +28,7 @@ package net.TheElm.project.interfaces;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.TranslationKeyException;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.ListTag;
@@ -45,8 +46,8 @@ import java.util.UUID;
 
 public interface IClaimedChunk extends Chunk {
     
-    void updateTownOwner(@Nullable UUID owner);
-    void updatePlayerOwner(@Nullable UUID owner);
+    ClaimantTown updateTownOwner(@Nullable UUID owner);
+    ClaimantPlayer updatePlayerOwner(@Nullable UUID owner);
     void canPlayerClaim(@NotNull UUID owner) throws TranslationKeyException;
     
     @Nullable

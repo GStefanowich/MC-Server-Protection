@@ -46,6 +46,12 @@
   "town.found": "%s founded the new town of \"%s\".",
   "town.disband": "%s disbanded their town \"%s\".",
   "town.found.poor": "You need %s to start a town.",
+  "town.invite.receive": "You have been invited to join \"%s\" by %s",
+  "town.invite.join": "You joined %s.",
+  "town.invite.sent": "Sent %s an invite to your town.",
+  "town.invite.rank": "You do not have a high enough rank to invite players.",
+  "town.invite.fail": "Cannot invite that player to your town.",
+  "town.invite.missing": "You do not have an invite for that town.",
   
   "warp.random.search": "Hang tight while we find you a sweet vacation spot.",
   "warp.random.build": "Setting up your new home!",
