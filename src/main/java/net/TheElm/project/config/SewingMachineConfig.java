@@ -128,6 +128,7 @@ public final class SewingMachineConfig {
     public final ConfigOption<Integer> COMMAND_GODMODE_OP_LEVEL;
     public final ConfigOption<Integer> COMMAND_FLIGHT_OP_LEVEL;
     public final ConfigOption<Integer> COMMAND_HEAL_OP_LEVEL;
+    public final ConfigOption<Integer> COMMAND_REPAIR_OP_LEVEL;
     
     // MOTD
     public final ConfigArray<String> SERVER_MOTD_LIST;
@@ -254,6 +255,7 @@ public final class SewingMachineConfig {
         this.COMMAND_GODMODE_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.op_level.godmode", 2, JsonElement::getAsInt));
         this.COMMAND_FLIGHT_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.op_level.fly", 2, JsonElement::getAsInt));
         this.COMMAND_HEAL_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.op_level.heal", 2, JsonElement::getAsInt));
+        this.COMMAND_REPAIR_OP_LEVEL = this.addConfig( new ConfigOption<>("commands.op_level.repair", 2, JsonElement::getAsInt));
         
         /*
          * Mob Spawners
