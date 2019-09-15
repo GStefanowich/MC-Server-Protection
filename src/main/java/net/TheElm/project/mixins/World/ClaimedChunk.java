@@ -161,7 +161,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
             if ((playerTown = this.chunkPlayer.getTown()) != null)
                 return this.updateTownOwner(playerTown);
         }
-        return this.chunkTown.get();
+        return (this.chunkTown == null ? null : this.chunkTown.get());
     }
     
     public Text getOwnerName(@NotNull PlayerEntity zonePlayer) {

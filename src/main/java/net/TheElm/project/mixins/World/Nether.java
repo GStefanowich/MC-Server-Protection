@@ -52,7 +52,7 @@ public abstract class Nether extends Biome {
         if (SewingMachineConfig.INSTANCE.PREVENT_NETHER_ENDERMEN.get()) {
             try {
                 // Get the super
-                Field f = this.getClass().getSuperclass().getDeclaredField("spawns");
+                Field f = this.getClass().getSuperclass().getDeclaredField(CoreMod.isDebugging() ? "spawns" : "field_9325");
                 f.setAccessible(true);
                 Map<EntityCategory, List<SpawnEntry>> spawns = (Map<EntityCategory, List<SpawnEntry>>) f.get(this);
                 
