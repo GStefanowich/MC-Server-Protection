@@ -210,6 +210,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         switch (this.getChatRoom()) {
             // Local message
             case LOCAL: {
+                MessageUtils.sendToLocal( this.player.world, this.player.getBlockPos(), chatText );
                 break;
             }
             // Global message

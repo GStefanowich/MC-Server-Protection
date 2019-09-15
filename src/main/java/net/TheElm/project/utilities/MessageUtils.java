@@ -30,18 +30,33 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.network.MessageType;
+import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.world.World;
 
+import java.util.List;
 import java.util.stream.Stream;
 
 public final class MessageUtils {
     
     private MessageUtils() {}
+    
+    // Send a translation blob to a local area
+    public static void sendToLocal(final World world, final BlockPos blockPos, Text text) {
+        BlockPos outerA = new BlockPos(blockPos.getX() + 800, 0, blockPos.getZ() + 800);
+        BlockPos outerB = new BlockPos(blockPos.getX() - 800, 256, blockPos.getZ() - 800);
+        List<ServerPlayerEntity> players = world.getEntities(ServerPlayerEntity.class, new Box(outerA, outerB), EntityPredicates.VALID_ENTITY);
+        MessageUtils.sendChat(
+            players.stream(),
+            text
+        );
+    }
     
     // Send a translation blob to all Players
     public static void sendToAll(final String translationKey, final Object... objects) {
@@ -84,7 +99,7 @@ public final class MessageUtils {
         final MinecraftServer server = CoreMod.getServer();
         // Log to the server
         server.sendMessage(text);
-
+        
         // Send to the players
         MessageUtils.sendChat(
             server.getPlayerManager().getPlayerList().stream().filter((player) -> {
