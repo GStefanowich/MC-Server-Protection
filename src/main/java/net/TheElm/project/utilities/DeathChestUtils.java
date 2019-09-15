@@ -102,23 +102,25 @@ public final class DeathChestUtils {
         }
         return null;
     }
-    public static boolean createDeathChestFor(PlayerEntity player, BlockPos chestPos, PlayerInventory inventory) {
+    public static boolean createDeathChestFor(final PlayerEntity player, BlockPos deathPos, final PlayerInventory inventory) {
         World world = player.world;
         
-        // Print the death chest coordinates
-        if (SewingMachineConfig.INSTANCE.PRINT_DEATH_CHEST_LOC.get()) {
-            player.sendMessage(TranslatableServerSide.text(player, "player.death_chest.location", new LiteralText(chestPos.getX() + ", " + chestPos.getY() + ", " + chestPos.getZ()).formatted(Formatting.AQUA)));
-        }
+        if (deathPos.getY() < 0)
+            deathPos = new BlockPos( deathPos.getX(), 0, deathPos.getZ() );
+        
+        final BlockPos chestPos;
         
         // Check if the ground is a liquid, and move up
-        BlockState groundBlockState = world.getBlockState(chestPos);
+        BlockState groundBlockState = world.getBlockState(deathPos);
         boolean skipGroundBlock = !(groundBlockState.getMaterial().isLiquid() && (!groundBlockState.getBlock().equals(Blocks.WATER)));
         if (!skipGroundBlock) {
             // Shift up by one if block is a fluid (and require a dirt block)
-            chestPos = chestPos.offset(Direction.UP); // If block is air (require a dirt block)
+            chestPos = deathPos.offset(Direction.UP); // If block is air (require a dirt block)
         } else {
-            Block block = groundBlockState.getBlock();
-            skipGroundBlock = !(block.equals(Blocks.AIR) || block.equals(Blocks.CAVE_AIR));
+            chestPos = deathPos;
+            
+            Block groundBlock = groundBlockState.getBlock();
+            skipGroundBlock = !(groundBlock.equals(Blocks.AIR) || groundBlock.equals(Blocks.CAVE_AIR));
         }
         
         /*
@@ -186,10 +188,14 @@ public final class DeathChestUtils {
         // Set the contents of the item stand
         ((PlayerCorpse) stand).setCorpseData( player.getUuid(), itemsTag );
         
-        CoreMod.logInfo( "Death chest for " + playerName + " spawned at " + chestPos.getX() + ", " + chestPos.getY() + ", " + chestPos.getZ() );
+        // Print the death chest coordinates
+        if (SewingMachineConfig.INSTANCE.PRINT_DEATH_CHEST_LOC.get()) {
+            player.sendMessage(TranslatableServerSide.text(player, "player.death_chest.location", new LiteralText(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)));
+        }
+        CoreMod.logInfo( "Death chest for " + playerName + " spawned at " + chestPos.getX() + ", " + (chestPos.getY() + 1) + ", " + chestPos.getZ() );
         
         // Add the entity to the world
-        return ( skipGroundBlock || world.setBlockState( chestPos, Blocks.DIRT.getDefaultState() ) ) && world.spawnEntity( stand );
+        return ( skipGroundBlock || world.setBlockState( deathPos, Blocks.DIRT.getDefaultState() ) ) && world.spawnEntity( stand );
     }
     
 }
