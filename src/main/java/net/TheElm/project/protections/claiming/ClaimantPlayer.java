@@ -30,16 +30,21 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public final class ClaimantPlayer extends Claimant {
     
+    private final Set<ClaimantTown> townInvites = Collections.synchronizedSet(new HashSet<>());
     private ClaimantTown town;
     
     private ClaimantPlayer(@NotNull UUID playerUUID) {
@@ -112,9 +117,35 @@ public final class ClaimantPlayer extends Claimant {
     public final ClaimantTown getTown() {
         return this.town;
     }
+    @Nullable
+    public final UUID getTownId() {
+        ClaimantTown town;
+        if ((town = this.getTown()) == null)
+            return null;
+        return town.getId();
+    }
     public final void setTown(@Nullable ClaimantTown town) {
         this.town = town;
         this.markDirty();
+    }
+    public final boolean inviteTown(@NotNull ClaimantTown town) {
+        if (this.town != null) return false;
+        return this.townInvites.add(town);
+    }
+    @Nullable
+    public final ClaimantTown getTownInvite(@NotNull String townName) {
+        ClaimantTown out = null;
+        for (ClaimantTown town : this.townInvites) {
+            if (townName.equals(town.getName().asString())) {
+                out = town;
+                break;
+            }
+        }
+        if (out != null) this.townInvites.clear();
+        return out;
+    }
+    public final Set<ClaimantTown> getTownInvites() {
+        return this.townInvites;
     }
     
     /* Player Friend Options */
@@ -159,7 +190,15 @@ public final class ClaimantPlayer extends Claimant {
     @Override
     public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
         // Get the players town
-        this.town = ( tag.hasUuid("town") ? ClaimantTown.get( tag.getUuid("town") ) : null );
+        ClaimantTown town = null;
+        if ( tag.hasUuid("town") ) {
+            try {
+                town = ClaimantTown.get( tag.getUuid("town") );
+                // Ensure that the town has the player in the ranks
+                if ((town != null) && town.getFriendRank(this.getId()) == null) town = null;
+            } catch (NbtNotFoundException ignored) {}
+        }
+        this.town = town;
         
         // Read from SUPER
         super.readCustomDataFromTag( tag );
