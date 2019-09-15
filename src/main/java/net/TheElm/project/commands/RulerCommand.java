@@ -34,7 +34,6 @@ import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.BlockDistance;
 import net.TheElm.project.utilities.MessageUtils;
-import net.minecraft.block.Blocks;
 import net.minecraft.command.arguments.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -89,8 +88,6 @@ public final class RulerCommand {
             throw BLOCK_NOT_HIT.create( player );
         
         BlockPos newPos = search.getBlockPos().offset(search.getSide());
-        world.setBlockState( newPos, Blocks.GLASS.getDefaultState() );
-        
         PlayerData playerData = (PlayerData) player;
         
         // Start a new RULER calculation
