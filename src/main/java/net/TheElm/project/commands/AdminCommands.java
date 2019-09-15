@@ -34,6 +34,7 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.EntityArgumentType;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -82,6 +83,15 @@ public final class AdminCommands {
                 .executes(AdminCommands::selfHeal)
             );
             CoreMod.logDebug("- Registered Heal command");
+        }
+        
+        // Register the HEAL command
+        if (SewingMachineConfig.INSTANCE.COMMAND_REPAIR_OP_LEVEL.get() >= 0) {
+            dispatcher.register(CommandManager.literal("repair")
+                .requires(source -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.COMMAND_REPAIR_OP_LEVEL.get()))
+                .executes(AdminCommands::selfRepair)
+            );
+            CoreMod.logDebug("- Registered Repair command");
         }
     }
     
@@ -175,6 +185,19 @@ public final class AdminCommands {
             TranslatableServerSide.send(player, "player.abilities.healed_self");
         }
         return alive;
+    }
+    
+    private static int selfRepair(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        ItemStack stack = player.getMainHandStack();
+        if (stack.isDamageable()) {
+            stack.setDamage(0);
+            
+            return Command.SINGLE_SUCCESS;
+        }
+        return -1;
     }
     
 }

@@ -72,7 +72,7 @@ public abstract class MobSpawners extends BlockWithEntity {
             ItemStack handItem = player.getMainHandStack();
             
             // Spawner Display
-            ListTag itemNbt = new ListTag();
+            ListTag spawnEntities = new ListTag();
             
             if (blockEntity instanceof MobSpawnerBlockEntity) {
                 CompoundTag spawnerTag = blockEntity.toTag(new CompoundTag());
@@ -80,7 +80,7 @@ public abstract class MobSpawners extends BlockWithEntity {
                 
                 // Save to the item (The mob)
                 for (Tag tag : list)
-                    itemNbt.add(new StringTag(((CompoundTag) tag).getCompound("Entity").getString("id")));
+                    spawnEntities.add(new StringTag(((CompoundTag) tag).getCompound("Entity").getString("id")));
                 
                 boolean doDrop = false;
                 
@@ -104,7 +104,8 @@ public abstract class MobSpawners extends BlockWithEntity {
                     // Create the item tag
                     CompoundTag dropTag = new CompoundTag();
                     //dropTag.put("EntityIds", itemNbt);
-                    dropTag.put("display", NbtUtils.getSpawnerDisplay( itemNbt ));
+                    dropTag.put("display", NbtUtils.getSpawnerDisplay( spawnEntities ));
+                    dropTag.put("EntityIds", spawnEntities);
                     
                     // Create the mob spawner drop
                     ItemStack dropStack = new ItemStack(Items.SPAWNER);
@@ -119,7 +120,7 @@ public abstract class MobSpawners extends BlockWithEntity {
                     
                     // Calculate XP to give for every mob in the spawner
                     int xpGive = 0;
-                    for (int i = 0; i < itemNbt.size(); ++i) {
+                    for (int i = 0; i < spawnEntities.size(); ++i) {
                         xpGive += 45 + world.random.nextInt(45) + world.random.nextInt(45);
                     }
                     
