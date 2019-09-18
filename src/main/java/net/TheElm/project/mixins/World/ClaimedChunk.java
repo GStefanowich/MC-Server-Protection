@@ -25,6 +25,7 @@
 
 package net.TheElm.project.mixins.World;
 
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
@@ -116,6 +117,8 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
     public void canPlayerClaim(@NotNull UUID owner) throws TranslationKeyException {
         if (this.chunkPlayer != null)
             throw new TranslationKeyException( "claim.chunk.error.claimed" );
+        if (owner.equals(CoreMod.spawnID))
+            return;
         // Check claims limit
         ClaimantPlayer player = ClaimantPlayer.get( owner );
         if (player != null) { 
@@ -173,10 +176,10 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
         return this.chunkPlayer.getName( zonePlayer.getUuid() );
     }
     
-    public boolean canUserDo(@NotNull UUID player, ClaimPermissions perm) {
-        if (this.chunkPlayer == null || player.equals(this.chunkPlayer.getId()))
+    public boolean canUserDo(UUID player, ClaimPermissions perm) {
+        if (this.chunkPlayer == null || (player != null && player.equals(this.chunkPlayer.getId())))
             return true;
-        if ( ( this.getTown() != null ) && player.equals( this.getTown().getOwner() ) )
+        if ( ( this.getTown() != null ) && (player != null) && player.equals( this.getTown().getOwner() ) )
             return true;
         
         // Get the ranks of the user and the rank required for performing

@@ -202,9 +202,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         String rawString = StringUtils.normalizeSpace(chatMessageC2SPacket.getChatMessage());
         
         // Create a chat message
-        Text chatText = PlayerNameUtils.getPlayerChatDisplay( this.player, this.getChatRoom() )
-            .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
-            .append(new LiteralText( rawString ).formatted(this.getChatRoom().getFormatting()));
+        Text chatText = MessageUtils.formatPlayerMessage( this.player, this.getChatRoom(), rawString );
         
         // Send the new chat message to the currently selected chat room
         switch (this.getChatRoom()) {
@@ -221,8 +219,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
             // Message to the players town
             case TOWN: {
                 ClaimantPlayer claimantPlayer = ((PlayerData) this.player).getClaim();
-                ClaimantTown town = claimantPlayer.getTown();
-                MessageUtils.sendToTown( town, chatText );
+                MessageUtils.sendToTown( claimantPlayer.getTown(), chatText );
                 break;
             }
         }

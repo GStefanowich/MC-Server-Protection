@@ -66,9 +66,7 @@ public abstract class BlockInteraction {
     }
     
     @Inject(at = @At("HEAD"), method = "interactItem", cancellable = true)
-    private void beforeItemInteract(final PlayerEntity playerEntity, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
-        //System.out.println( "Interacted with an item" );
-    }
+    private void beforeItemInteract(final PlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {}
     
     @Inject(at = @At("HEAD"), method = "interactBlock", cancellable = true)
     private void beforeBlockInteract(final PlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, final BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> callback) {
