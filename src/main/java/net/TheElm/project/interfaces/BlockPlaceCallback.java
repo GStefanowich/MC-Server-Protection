@@ -23,17 +23,27 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections;
+package net.TheElm.project.interfaces;
 
-public final class ItemInteraction {
-    
-    private ItemInteraction() {}
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
 
-    /**
-     * Initialize our callback listener for Item Usage
-     */
-    public static void init() {
+public interface BlockPlaceCallback {
+    Event<BlockPlaceCallback> EVENT = EventFactory.createArrayBacked( BlockPlaceCallback.class, (listeners) -> (player, world, blockPos, direction, itemStack) -> {
+        for (BlockPlaceCallback event : listeners) {
+            ActionResult result = event.interact(player, world, blockPos, direction, itemStack);
+            if (result != ActionResult.PASS)
+                return result;
+        }
         
-    }
+        return ActionResult.PASS;
+    });
     
+    ActionResult interact(ServerPlayerEntity player, World world, BlockPos blockPos, Direction direction, ItemStack itemStack);
 }

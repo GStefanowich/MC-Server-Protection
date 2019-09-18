@@ -70,7 +70,8 @@ public abstract class Claimant {
     }
     
     /* Player Friend Options */
-    public ClaimRanks getFriendRank( UUID player ) {
+    public ClaimRanks getFriendRank(@Nullable UUID player) {
+        if (player == null) return ClaimRanks.ENEMY;
         return this.USER_RANKS.getOrDefault( player, ClaimRanks.PASSIVE );
     }
     public boolean updateFriend(@NotNull UUID player, @Nullable ClaimRanks rank ) {

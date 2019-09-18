@@ -33,6 +33,8 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerChat;
+import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.utilities.MessageUtils;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -45,10 +47,17 @@ public final class ChatroomCommands {
         if (!SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
             return;
         
-        final LiteralCommandNode<ServerCommandSource> townChat = dispatcher.register(CommandManager.literal("t")
+        LiteralCommandNode<ServerCommandSource> townChat = dispatcher.register(CommandManager.literal("t")
             .requires(ClaimCommand::sourceInTown)
             .then(CommandManager.argument("text", StringArgumentType.greedyString())
-                .executes((context -> 1))
+                .executes((context) -> {
+                    ServerPlayerEntity player = context.getSource().getPlayer();
+                    MessageUtils.sendToTown(
+                        ((PlayerData) player).getClaim().getTown(),
+                        MessageUtils.formatPlayerMessage(player, ChatRooms.TOWN, StringArgumentType.getString(context, "text"))
+                    );
+                    return Command.SINGLE_SUCCESS;
+                })
             )
             .executes((context -> {
                 ServerPlayerEntity player = context.getSource().getPlayer();
@@ -58,9 +67,15 @@ public final class ChatroomCommands {
         );
         CoreMod.logDebug( "- Registered Town chat command" );
         
-        final LiteralCommandNode<ServerCommandSource> globalChat = dispatcher.register(CommandManager.literal("g")
+        LiteralCommandNode<ServerCommandSource> globalChat = dispatcher.register(CommandManager.literal("g")
             .then(CommandManager.argument("text", StringArgumentType.greedyString())
-                .executes((context -> 1))
+                .executes((context) -> {
+                    ServerPlayerEntity player = context.getSource().getPlayer();
+                    MessageUtils.sendToAll(
+                        MessageUtils.formatPlayerMessage(player, ChatRooms.GLOBAL, StringArgumentType.getString(context, "text"))
+                    );
+                    return Command.SINGLE_SUCCESS;
+                })
             )
             .executes((context -> {
                 ServerPlayerEntity player = context.getSource().getPlayer();
@@ -70,9 +85,17 @@ public final class ChatroomCommands {
         );
         CoreMod.logDebug( "- Registered Global chat command" );
         
-        final LiteralCommandNode<ServerCommandSource> localChat = dispatcher.register(CommandManager.literal("l")
+        LiteralCommandNode<ServerCommandSource> localChat = dispatcher.register(CommandManager.literal("l")
             .then(CommandManager.argument("text", StringArgumentType.greedyString())
-                .executes((context -> 1))
+                .executes((context) -> {
+                    ServerPlayerEntity player = context.getSource().getPlayer();
+                    MessageUtils.sendToLocal(
+                        player.world,
+                        player.getBlockPos(),
+                        MessageUtils.formatPlayerMessage(player, ChatRooms.LOCAL, StringArgumentType.getString(context, "text"))
+                    );
+                    return Command.SINGLE_SUCCESS;
+                })
             )
             .executes((context -> {
                 ServerPlayerEntity player = context.getSource().getPlayer();
@@ -85,13 +108,13 @@ public final class ChatroomCommands {
         dispatcher.register(CommandManager.literal("chat")
             .then(CommandManager.literal("town")
                 .requires(ClaimCommand::sourceInTown)
-                .redirect( townChat )
+                .redirect(townChat)
             )
             .then(CommandManager.literal("global")
-                .redirect( globalChat )
+                .redirect(globalChat)
             )
             .then(CommandManager.literal("local")
-                .redirect( localChat )
+                .redirect(localChat)
             )
         );
         

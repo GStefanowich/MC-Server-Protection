@@ -28,12 +28,14 @@ package net.TheElm.project.mixins.Commands;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.utilities.EntityUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.dedicated.command.StopCommand;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -59,10 +61,7 @@ public class Stop {
                     source.sendFeedback(new TranslatableText("commands.stop.stopping"), true);
                     
                     // Disconnect all players with a reason
-                    EntityUtils.kickAllPlayers(new LiteralText("Closing Server: " + reason));
-                    
-                    // Stop the server
-                    source.getMinecraftServer().stop(false);
+                    Stop.closeServer(new LiteralText("Closing Server: " + reason));
                     
                     return Command.SINGLE_SUCCESS;
                 })
@@ -73,13 +72,23 @@ public class Stop {
                 // Tell the player we're stopping the server
                 source.sendFeedback(new TranslatableText("commands.stop.stopping"), true);
                 
-                // Stop the server
-                source.getMinecraftServer().stop(false);
+                // Disconnect all players with a reason
+                Stop.closeServer(new LiteralText("Closing server"));
                 
                 return Command.SINGLE_SUCCESS;
             }))
         );
         callback.cancel();
+    }
+    
+    private static void closeServer(Text reason) {
+        new Thread(() -> {
+            // Disconnect all players with a reason
+            EntityUtils.kickAllPlayers(reason);
+            
+            // Stop the server
+            CoreMod.getServer().stop(false);
+        }).start();
     }
     
 }

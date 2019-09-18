@@ -80,7 +80,7 @@ public final class ClaimantTown extends Claimant {
     
     /* Player Friend Options */
     @Override
-    public final ClaimRanks getFriendRank( UUID player ) {
+    public final ClaimRanks getFriendRank(@Nullable UUID player) {
         if ( this.getOwner().equals( player ) )
             return ClaimRanks.OWNER;
         return super.getFriendRank( player );
