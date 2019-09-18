@@ -32,10 +32,10 @@ import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.LoggingUtils;
 import net.minecraft.block.*;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.packet.PlayerActionC2SPacket.Action;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
@@ -69,7 +69,7 @@ public final class BlockBreak {
      * @param action The break status of the block
      * @return If the block is allowed to be broken
      */
-    private static ActionResult blockBreak(final PlayerEntity player, final World world, final Hand hand, final BlockPos blockPos, final Direction blockFace, final Action action) {
+    private static ActionResult blockBreak(final ServerPlayerEntity player, final World world, final Hand hand, final BlockPos blockPos, final Direction blockFace, final Action action) {
         ActionResult result;
         if (((result = BlockBreak.canBlockBreak( player, world, hand, blockPos, blockFace, action)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get() && (action == Action.STOP_DESTROY_BLOCK))
             LoggingUtils.logAction( LoggingUtils.BlockAction.BREAK, world.getBlockState(blockPos).getBlock(), blockPos, player );
@@ -86,7 +86,7 @@ public final class BlockBreak {
      * @param action The break status of the block
      * @return If the block is allowed to be broken
      */
-    private static ActionResult canBlockBreak(final PlayerEntity player, final World world, final Hand hand, final BlockPos blockPos, final Direction blockFace, final Action action) {
+    private static ActionResult canBlockBreak(final ServerPlayerEntity player, final World world, final Hand hand, final BlockPos blockPos, final Direction blockFace, final Action action) {
         // If player is in creative
         if (player.isCreative() || (action == Action.ABORT_DESTROY_BLOCK))
             return ActionResult.PASS;

@@ -53,7 +53,7 @@ public final class ChunkUtils {
     }
     public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @Nullable WorldChunk chunk) {
         // If claims are disabled
-        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) return true;
+        if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || player.isCreative()) return true;
         
         // Return false (Chunks should never BE null, but this is our catch)
         if ( chunk == null ) return false;

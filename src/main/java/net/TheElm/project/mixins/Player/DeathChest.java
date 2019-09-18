@@ -26,6 +26,7 @@
 package net.TheElm.project.mixins.Player;
 
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.interfaces.BlockPlaceCallback;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.utilities.DeathChestUtils;
@@ -33,10 +34,13 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -116,6 +120,18 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
     @Override
     public int getPlayerWallet() {
         return this.dataTracker.get( MONEY );
+    }
+    
+    /*
+     * Item placement
+     */
+    @Inject(at = @At("HEAD"), method = "canPlaceOn", cancellable = true)
+    public void checkPlacement(BlockPos blockPos, Direction direction, ItemStack itemStack, CallbackInfoReturnable<Boolean> callback) {
+        if (!this.world.isClient) {
+            ActionResult result = BlockPlaceCallback.EVENT.invoker().interact((ServerPlayerEntity)(LivingEntity)this, world, blockPos, direction, itemStack);
+            if (result != ActionResult.PASS)
+                callback.setReturnValue(result == ActionResult.SUCCESS);
+        }
     }
     
 }

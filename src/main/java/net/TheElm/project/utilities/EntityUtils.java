@@ -41,6 +41,7 @@ import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.UUID;
 
 public final class EntityUtils {
@@ -191,8 +192,6 @@ public final class EntityUtils {
         PlayerManager manager = server.getPlayerManager();
         if (reason == null)
             manager.disconnectAllPlayers();
-        else for (ServerPlayerEntity player : manager.getPlayerList()) {
-            player.networkHandler.disconnect( reason );
-        }
+        else new ArrayList<>(manager.getPlayerList()).forEach((player) -> player.networkHandler.disconnect( reason ));
     }
 }

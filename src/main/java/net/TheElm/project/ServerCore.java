@@ -31,7 +31,7 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.protections.BlockBreak;
 import net.TheElm.project.protections.BlockInteraction;
 import net.TheElm.project.protections.EntityAttack;
-import net.TheElm.project.protections.ItemInteraction;
+import net.TheElm.project.protections.ItemPlace;
 import net.TheElm.project.utilities.LoggingUtils;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.registry.CommandRegistry;
@@ -71,7 +71,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         BlockBreak.init();
         BlockInteraction.init();
         EntityAttack.init();
-        ItemInteraction.init();
+        ItemPlace.init();
         
         CoreMod.logInfo( "Initializing Database." );
         try {

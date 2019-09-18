@@ -26,6 +26,7 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
@@ -149,6 +150,13 @@ public final class MessageUtils {
             .append(new LiteralText("" + y).formatted(Formatting.AQUA))
             .append(separator)
             .append(new LiteralText("" + z).formatted(Formatting.AQUA));
+    }
+    
+    // Format a message to chat from a player
+    public static Text formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, String raw) {
+        return PlayerNameUtils.getPlayerChatDisplay( player, chatRoom )
+            .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
+            .append(new LiteralText( raw ).formatted(chatRoom.getFormatting()));
     }
     
 }

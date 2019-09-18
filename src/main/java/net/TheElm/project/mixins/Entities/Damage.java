@@ -34,6 +34,7 @@ import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.HorseBaseEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.passive.WolfEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -41,7 +42,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = {AnimalEntity.class, HostileEntity.class, HorseBaseEntity.class, WolfEntity.class})
+@Mixin({AnimalEntity.class, HostileEntity.class, HorseBaseEntity.class, WolfEntity.class, ServerPlayerEntity.class})
 public abstract class Damage extends Entity {
     
     protected Damage(EntityType<? extends TameableEntity> entityType_1, World world_1) {

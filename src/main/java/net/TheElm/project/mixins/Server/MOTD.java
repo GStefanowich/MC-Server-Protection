@@ -36,6 +36,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerMetadata;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
+import net.minecraft.world.Difficulty;
 import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,6 +52,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.StreamSupport;
 
 @Mixin(ServerMetadata.class)
 public abstract class MOTD {
@@ -80,7 +82,11 @@ public abstract class MOTD {
         // Difficulty
         this.motdVariables.put( "difficulty", () -> {
             MinecraftServer server = CoreMod.getServer();
-            return server.getDefaultDifficulty().getName();
+            Difficulty difficulty = server.getDefaultDifficulty();
+            ServerWorld world = StreamSupport.stream(server.getWorlds().spliterator(), false).findFirst().orElse(null);
+            if (world != null)
+                difficulty = world.getLevelProperties().getDifficulty();
+            return difficulty.getName();
         });
     }
     
