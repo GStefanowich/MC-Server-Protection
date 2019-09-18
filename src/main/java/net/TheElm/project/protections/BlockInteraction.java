@@ -41,6 +41,7 @@ import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.client.network.packet.GuiSlotUpdateS2CPacket;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.BlockItem;
+import net.minecraft.item.BucketItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -178,7 +179,7 @@ public final class BlockInteraction {
         Material material = block.getMaterial( blockState );
         
         // Adjust the block offset
-        if (player.isSneaking() || (!material.isReplaceable()))
+        if (player.isSneaking() || (!material.isReplaceable()) || (itemStack.getItem() instanceof BucketItem))
             blockPos = blockPos.offset(blockHitResult.getSide());
         
         // Test if allowed
