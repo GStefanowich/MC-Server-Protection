@@ -153,8 +153,6 @@ public final class ClaimantPlayer extends Claimant {
     public final ClaimRanks getFriendRank(@Nullable UUID player) {
         if ( this.getId().equals( player ) )
             return ClaimRanks.OWNER;
-        if (this.town != null)
-            return this.town.getFriendRank( player );
         return super.getFriendRank( player );
     }
     

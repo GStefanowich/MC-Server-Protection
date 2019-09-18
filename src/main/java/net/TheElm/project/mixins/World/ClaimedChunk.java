@@ -179,15 +179,16 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
     public boolean canUserDo(UUID player, ClaimPermissions perm) {
         if (this.chunkPlayer == null || (player != null && player.equals(this.chunkPlayer.getId())))
             return true;
-        if ( ( this.getTown() != null ) && (player != null) && player.equals( this.getTown().getOwner() ) )
+        ClaimantTown town;
+        if ( ((town = this.getTown()) != null ) && (player != null) && player.equals( town.getOwner() ) )
             return true;
         
         // Get the ranks of the user and the rank required for performing
         ClaimRanks userRank = this.chunkPlayer.getFriendRank( player );
         ClaimRanks permReq = this.chunkPlayer.getPermissionRankRequirement( perm );
         
-        // Return the test if the user can perform the action
-        return permReq.canPerform( userRank );
+        // Return the test if the user can perform the action (If friend of chunk owner OR if friend of town and chunk owned by town owner)
+        return permReq.canPerform( userRank ) || ((town != null) && (this.chunkPlayer.getId().equals( town.getOwner() )) && permReq.canPerform(town.getFriendRank( player )));
     }
     public boolean isSetting(@NotNull ClaimSettings setting) {
         boolean permission;
