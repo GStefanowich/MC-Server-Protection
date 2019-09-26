@@ -23,43 +23,26 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Server;
+package net.TheElm.project.mixins.World;
 
-import net.TheElm.project.CoreMod;
-import net.TheElm.project.protections.claiming.Claimant;
+import net.TheElm.project.protections.logging.BlockEvent;
 import net.TheElm.project.protections.logging.EventLogger;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.ServerTask;
-import net.minecraft.server.command.CommandOutput;
-import net.minecraft.util.NonBlockingThreadExecutor;
-import net.minecraft.util.snooper.SnooperListener;
+import net.minecraft.block.Block;
+import net.minecraft.item.ItemConvertible;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+import net.minecraft.world.explosion.Explosion;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(MinecraftServer.class)
-public abstract class Save extends NonBlockingThreadExecutor<ServerTask> implements SnooperListener, CommandOutput, AutoCloseable, Runnable {
+@Mixin(Block.class)
+public abstract class BlockChanges implements ItemConvertible {
     
-    public Save(String string_1) {
-        super(string_1);
-    }
-    
-    @Inject(at = @At("RETURN"), method = "save")
-    public void save(boolean silent, boolean boolean_2, boolean boolean_3, CallbackInfoReturnable<Boolean> callback) {
-        if (callback.getReturnValue()) {
-            if (!silent) CoreMod.logInfo("Saving claimed player data");
-            CoreMod.getCacheStream( Claimant.ClaimantType.PLAYER ).forEach(Claimant::save);
-            
-            if (!silent) CoreMod.logInfo("Saving claimed town data");
-            CoreMod.getCacheStream( Claimant.ClaimantType.TOWN ).forEach(Claimant::save);
-        }
-    }
-    
-    @Inject(at = @At("TAIL"), method = "shutdown")
-    public void shutdown(CallbackInfo callback) {
-        EventLogger.stop();
+    @Inject(at = @At("TAIL"), method = "onDestroyedByExplosion")
+    public void onDestroyedByExplosion(World world, BlockPos blockPos, Explosion explosion, CallbackInfo callback) {
+        EventLogger.log(new BlockEvent(explosion.getCausingEntity(), EventLogger.BlockAction.EXPLODE, (Block)(ItemConvertible)this, blockPos));
     }
     
 }

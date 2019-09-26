@@ -1,0 +1,55 @@
+{
+  "definitions": {
+    "rank": {
+      "type": "object",
+      "required": [
+        "permissions"
+      ],
+      "properties": {
+        "display": {
+          "type": "string"
+        },
+        "permissions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "^([+-][a-z\\.\\*]*)$"
+          }
+        },
+        "inherit": {
+          "type": "string",
+          "default": "*",
+          "pattern": "^([a-z]*|\\*)$"
+        }
+      },
+      "additionalProperties": false
+    },
+    "player": {
+      "type": "array",
+      "title": "Player Ranks"
+    }
+  },
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "title": "The Root Schema",
+  "properties": {
+    "ranks": {
+      "type": "object",
+      "patternProperties": {
+        "^([a-z]*|\\*)$": {
+          "$ref": "#/definitions/rank"
+        }
+      },
+      "additionalProperties": false
+    },
+    "players": {
+      "type": "object",
+      "patternProperties": {
+        "^[0-9a-f]{8}\\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\\b[0-9a-f]{12}$": {
+          "$ref": "#/definitions/player"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -26,6 +26,7 @@
 package net.TheElm.project.protections.claiming;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.exceptions.NbtNotFoundException;
@@ -133,7 +134,7 @@ public final class ClaimantTown extends Claimant {
     }
     
     public final void delete() {
-        PlayerManager playerManager = CoreMod.getServer().getPlayerManager();
+        PlayerManager playerManager = ServerCore.get().getPlayerManager();
         ServerPlayerEntity player;
         
         this.deleted = true;

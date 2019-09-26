@@ -25,41 +25,45 @@
 
 package net.TheElm.project.mixins.Server;
 
-import net.TheElm.project.CoreMod;
-import net.TheElm.project.protections.claiming.Claimant;
-import net.TheElm.project.protections.logging.EventLogger;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.ServerTask;
-import net.minecraft.server.command.CommandOutput;
-import net.minecraft.util.NonBlockingThreadExecutor;
-import net.minecraft.util.snooper.SnooperListener;
+import com.mojang.authlib.GameProfile;
+import net.TheElm.project.protections.ranks.PlayerRank;
+import net.TheElm.project.utilities.RankUtils;
+import net.minecraft.client.network.packet.PlayerListS2CPacket;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(MinecraftServer.class)
-public abstract class Save extends NonBlockingThreadExecutor<ServerTask> implements SnooperListener, CommandOutput, AutoCloseable, Runnable {
+@Mixin(PlayerListS2CPacket.Entry.class)
+public class PlayerList {
     
-    public Save(String string_1) {
-        super(string_1);
-    }
+    @Shadow @Final private GameProfile profile;
+    @Shadow @Final private Text displayName;
     
-    @Inject(at = @At("RETURN"), method = "save")
-    public void save(boolean silent, boolean boolean_2, boolean boolean_3, CallbackInfoReturnable<Boolean> callback) {
-        if (callback.getReturnValue()) {
-            if (!silent) CoreMod.logInfo("Saving claimed player data");
-            CoreMod.getCacheStream( Claimant.ClaimantType.PLAYER ).forEach(Claimant::save);
-            
-            if (!silent) CoreMod.logInfo("Saving claimed town data");
-            CoreMod.getCacheStream( Claimant.ClaimantType.TOWN ).forEach(Claimant::save);
+    @Inject(at = @At("RETURN"), method = "getDisplayName", cancellable = true)
+    public void getDisplayName(CallbackInfoReturnable<Text> callback) {
+        Text displayName = this.displayName;
+        if (displayName == null)
+            displayName = new LiteralText(this.profile.getName()).formatted(Formatting.GOLD);
+        
+        // Create the new display (with rank)
+        Text display = new LiteralText("").formatted(Formatting.WHITE);
+        
+        PlayerRank rank;
+        if (((rank = RankUtils.getHighestRank( this.profile )) != null) && (!"".equals(rank.getName()))) {
+            // Open bracket
+            display.append("[")
+                .append(rank.getDisplay())
+                .append("] ");
         }
-    }
-    
-    @Inject(at = @At("TAIL"), method = "shutdown")
-    public void shutdown(CallbackInfo callback) {
-        EventLogger.stop();
+        
+        // Set the return value
+        callback.setReturnValue(display.append(displayName));
     }
     
 }

@@ -34,6 +34,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
@@ -380,9 +381,8 @@ public final class MoneyCommand {
      * Money adaptation
      */
     public static void tellPlayersTransaction(@Nullable ServerPlayerEntity payer, @NotNull GameProfile recipient, long amount ) {
-        MinecraftServer server = CoreMod.getServer();
-        if ((server == null) || (amount == 0))
-            return;
+        MinecraftServer server = ServerCore.get();
+        if (amount == 0) return;
         
         // Get the recipient and notify them if they are online
         PlayerManager playerManager = server.getPlayerManager();

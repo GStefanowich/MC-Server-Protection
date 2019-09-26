@@ -25,6 +25,7 @@
 
 package net.TheElm.project;
 
+import com.mojang.datafixers.util.Either;
 import net.TheElm.project.MySQL.MySQLConnection;
 import net.TheElm.project.MySQL.MySQLHost;
 import net.TheElm.project.MySQL.MySQLStatement;
@@ -33,11 +34,12 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.LegacyConverter;
-import net.TheElm.project.utilities.LoggingUtils;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
@@ -49,7 +51,13 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.WeakHashMap;
 import java.util.stream.Stream;
 
 public abstract class CoreMod {
@@ -132,12 +140,13 @@ public abstract class CoreMod {
     /*
      * Fabric Elements
      */
-    @NotNull
-    public static MinecraftServer getServer() {
-        Object server;
-        if ((server = getFabric().getGameInstance()) instanceof MinecraftServer)
-            return (MinecraftServer) server;
-        throw new RuntimeException("Called Server object from illegal position.");
+    public static Either<MinecraftServer, MinecraftClient> getGameInstance() {
+        Object instance = getFabric().getGameInstance();
+        if (instance instanceof MinecraftServer)
+            return Either.left((MinecraftServer) instance);
+        if (instance instanceof MinecraftClient)
+            return Either.right((MinecraftClient) instance);
+        throw new RuntimeException("Could not access game instance.");
     }
     public static FabricLoader getFabric() {
         return FabricLoader.getInstance();
@@ -154,6 +163,9 @@ public abstract class CoreMod {
     public static boolean isDebugging() {
         return CoreMod.getFabric().isDevelopmentEnvironment();
     }
+    public static boolean isServer() {
+        return getGameInstance().left().isPresent();
+    }
     
     /*
      * Configurations
@@ -163,32 +175,8 @@ public abstract class CoreMod {
         ArrayList<String> tables = new ArrayList<>();
         ArrayList<String> alters = new ArrayList<>();
         
-        /*if ( CONFIG.DO_MONEY.get() ) {
-            tables.addAll(Collections.singletonList(
-                "CREATE TABLE IF NOT EXISTS `player_Data` (`dataOwner` varchar(36) NOT NULL, `dataMoney` bigint(20) UNSIGNED NOT NULL, UNIQUE KEY `dataOwner` (`dataOwner`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;"
-            ));
-        }*/
-        /*if ( CONFIG.DO_CLAIMS.get() ) {
-            String permissionEnum = getDatabaseReadyEnumerators( ClaimPermissions.class );
-            String ranksEnum = getDatabaseReadyEnumerators( ClaimRanks.class );
-            String settingEnum = getDatabaseReadyEnumerators( ClaimSettings.class );
-            
-            tables.addAll(Arrays.asList(
-                "CREATE TABLE IF NOT EXISTS `chunk_Claimed` (`chunkX` bigint(20) NOT NULL, `chunkZ` bigint(20) NOT NULL,`chunkOwner` varchar(36) NOT NULL,`chunkTown` varchar(36) DEFAULT NULL,`chunkWorld` int(11) NOT NULL, UNIQUE KEY `chunkX` (`chunkX`,`chunkZ`,`chunkWorld`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;",
-                "CREATE TABLE IF NOT EXISTS `chunk_Towns` (`townId` varchar(36) NOT NULL, `townOwner` varchar(36) NOT NULL,`townName` varchar(256) NOT NULL,UNIQUE KEY `townId` (`townId`),UNIQUE KEY `townOwner` (`townOwner`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;",
-                "CREATE TABLE IF NOT EXISTS `chunk_Friends` (`chunkOwner` varchar(36) NOT NULL, `chunkFriend` varchar(36) NOT NULL,`chunkRank` enum(" + ranksEnum + ") NOT NULL, UNIQUE KEY `chunkOwner` (`chunkOwner`,`chunkFriend`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;",
-                "CREATE TABLE IF NOT EXISTS `chunk_Settings` (`settingOwner` varchar(36) NOT NULL, `settingOption` enum(" + permissionEnum + ") NOT NULL, `settingRank` enum('OWNER','ALLY','PASSIVE','ENEMY') NOT NULL, UNIQUE KEY `settingOwner` (`settingOwner`,`settingOption`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;",
-                "CREATE TABLE IF NOT EXISTS `chunk_Options` (`optionOwner` varchar(36) NOT NULL, `optionName` enum(" + settingEnum + ") NOT NULL, `optionValue` enum('TRUE','FALSE') NOT NULL, UNIQUE KEY `optionOwner` (`optionOwner`,`optionName`)) ENGINE=InnoDB DEFAULT CHARSET=latin1;",
-                "CREATE TABLE IF NOT EXISTS `player_Towns` (`townId` varchar(36) NOT NULL, `townPlayer` varchar(36) NOT NULL, UNIQUE KEY `townPlayer` (`townPlayer`), KEY `town_Reference` (`townId`), CONSTRAINT `town_Reference` FOREIGN KEY (`townId`) REFERENCES `chunk_Towns` (`townId`) ON DELETE CASCADE ON UPDATE CASCADE) ENGINE=InnoDB DEFAULT CHARSET=latin1 COMMENT='player_Towns';"
-            ));
-            alters.addAll(Arrays.asList(
-                "ALTER TABLE `chunk_Friends` CHANGE `chunkRank` `chunkRank` ENUM(" + ranksEnum + ") CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;",
-                "ALTER TABLE `chunk_Settings` CHANGE `settingOption` `settingOption` ENUM(" + permissionEnum + ") CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;",
-                "ALTER TABLE `chunk_Options` CHANGE `optionName` `optionName` ENUM(" + settingEnum + ") CHARACTER SET latin1 COLLATE latin1_swedish_ci NOT NULL;"
-            ));
-        }*/
         if (( CONFIG.LOG_CHUNKS_CLAIMED.get() || CONFIG.LOG_CHUNKS_UNCLAIMED.get() ) && ( CONFIG.LOG_BLOCKS_BREAKING.get() || CONFIG.LOG_BLOCKS_PLACING.get() )) {
-            String blockUpdateEnums = getDatabaseReadyEnumerators( LoggingUtils.BlockAction.class );
+            String blockUpdateEnums = getDatabaseReadyEnumerators( EventLogger.BlockAction.class );
             
             tables.add(
                 "CREATE TABLE IF NOT EXISTS `logging_Blocks` (`blockWorld` int(11) NOT NULL, `blockX` bigint(20) NOT NULL, `blockY` bigint(20) NOT NULL, `blockZ` bigint(20) NOT NULL, `block` blob NOT NULL, `updatedBy` varchar(36) NOT NULL, `updatedEvent` enum(" + blockUpdateEnums + ") NOT NULL, `updatedAt` datetime NOT NULL) ENGINE=InnoDB DEFAULT CHARSET=latin1;"
@@ -300,6 +288,9 @@ public abstract class CoreMod {
     }
     public static void logError( Throwable t ) {
         logger.catching( t );
+    }
+    public static void logError( String message, Throwable error ) {
+        logger.error( logPrefix + message, error );
     }
     
 }

@@ -23,23 +23,32 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.enums;
+package net.TheElm.project.protections.events;
 
-import net.minecraft.util.Formatting;
+import net.TheElm.project.interfaces.BlockPlaceCallback;
+import net.TheElm.project.utilities.ChunkUtils;
+import net.minecraft.item.ItemStack;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
 
-public enum ChatRooms {
-    WHISPER( Formatting.LIGHT_PURPLE ),
-    LOCAL( Formatting.BLUE ),
-    GLOBAL( Formatting.WHITE ),
-    TOWN( Formatting.GREEN );
+public final class ItemPlace {
     
-    private Formatting[] formatting;
-    
-    ChatRooms(Formatting... formattings) {
-        this.formatting = formattings;
+    private ItemPlace() {}
+
+    /**
+     * Initialize our callback listener for Item Usage
+     */
+    public static void init() {
+        BlockPlaceCallback.EVENT.register(ItemPlace::blockPlace);
     }
     
-    public Formatting[] getFormatting() {
-        return this.formatting;
+    private static ActionResult blockPlace(final ServerPlayerEntity player, final World world, final BlockPos blockPos, final Direction direction, final ItemStack itemStack) {
+        if (!ChunkUtils.canPlayerBreakInChunk( player, blockPos.offset( direction ) ))
+            return ActionResult.FAIL;
+        return ActionResult.PASS;
     }
+    
 }

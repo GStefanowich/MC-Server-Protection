@@ -23,15 +23,39 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections;
+package net.TheElm.project.protections.events;
 
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.BlockInteractionCallback;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
-import net.TheElm.project.utilities.*;
-import net.minecraft.block.*;
+import net.TheElm.project.protections.logging.BlockEvent;
+import net.TheElm.project.protections.logging.EventLogger;
+import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.EntityUtils;
+import net.TheElm.project.utilities.TitleUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
+import net.minecraft.block.AbstractButtonBlock;
+import net.minecraft.block.AnvilBlock;
+import net.minecraft.block.BeaconBlock;
+import net.minecraft.block.BellBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.CartographyTableBlock;
+import net.minecraft.block.CraftingTableBlock;
+import net.minecraft.block.DoorBlock;
+import net.minecraft.block.EnchantingTableBlock;
+import net.minecraft.block.FenceGateBlock;
+import net.minecraft.block.FletchingTableBlock;
+import net.minecraft.block.FlowerPotBlock;
+import net.minecraft.block.GrindstoneBlock;
+import net.minecraft.block.LecternBlock;
+import net.minecraft.block.LoomBlock;
+import net.minecraft.block.Material;
+import net.minecraft.block.SmithingTableBlock;
+import net.minecraft.block.StonecutterBlock;
+import net.minecraft.block.TrapdoorBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.EnderChestBlockEntity;
 import net.minecraft.block.entity.LockableContainerBlockEntity;
@@ -104,7 +128,7 @@ public final class BlockInteraction {
         if ( block instanceof AbstractButtonBlock || block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock) {
             WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk( blockPos );
             
-            if (player.isCreative() || ChunkUtils.canPlayerToggleDoor( player, claimedChunkInfo )) {
+            if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || ChunkUtils.canPlayerToggleDoor( player, claimedChunkInfo )) {
                 // Toggle double doors
                 if ((!player.isSneaking()) && block instanceof DoorBlock && (blockState.getMaterial() != Material.METAL)) {
                     DoubleBlockHalf doorHalf = blockState.get(DoorBlock.HALF);
@@ -135,7 +159,7 @@ public final class BlockInteraction {
         }
         
         // If player is in creative, allow
-        if (player.isCreative())
+        if (player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get())
             return ActionResult.PASS;
         
         // If the block is something that can be accessed (Like a chest)
@@ -184,9 +208,12 @@ public final class BlockInteraction {
         
         // Test if allowed
         ActionResult result;
-        if (((result = BlockInteraction.canBlockPlace(player, blockPos, blockHitResult)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get())
-            LoggingUtils.logAction( LoggingUtils.BlockAction.PLACE, itemStack.getItem(), blockPos, player );
-        
+        if (((result = BlockInteraction.canBlockPlace(player, blockPos, blockHitResult)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get()) {
+            if (itemStack.getItem() instanceof BlockItem)
+                EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, ((BlockItem)itemStack.getItem()).getBlock(), blockPos));
+            else
+                System.out.println("Player \"placed\" non-block item");
+        }
         return result;
     }
     private static ActionResult canBlockPlace(ServerPlayerEntity player, BlockPos blockPos, BlockHitResult blockHitResult) {

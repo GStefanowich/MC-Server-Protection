@@ -188,7 +188,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                 try {
                     this.shopSign_item = new Identifier(signItem);
                 } catch (InvalidIdentifierException e) {
-                    CoreMod.logError(new Exception("Could not find item \"" + signItem + "\" for shop sign.", e));
+                    CoreMod.logError("Could not find item \"" + signItem + "\" for shop sign.", e);
                 }
             }
             
@@ -200,8 +200,8 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
             
             // Save other relevant shop sign data
             this.shopSign_Owner = tag.getUuid("shop_owner");
-            if (tag.containsKey("shop_item_count",3)) this.shopSign_itemCount = tag.getInt("shop_item_count");
-            if (tag.containsKey("shop_price",3)) this.shopSign_itemPrice = tag.getInt("shop_price");
+            if (tag.containsKey("shop_item_count",3) || tag.containsKey("shop_item_count",4)) this.shopSign_itemCount = tag.getInt("shop_item_count");
+            if (tag.containsKey("shop_price",3) || tag.containsKey("shop_price",4)) this.shopSign_itemPrice = tag.getInt("shop_price");
         }
     }
     

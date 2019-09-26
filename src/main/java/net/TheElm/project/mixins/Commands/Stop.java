@@ -28,7 +28,7 @@ package net.TheElm.project.mixins.Commands;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
-import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.utilities.EntityUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
@@ -87,7 +87,7 @@ public class Stop {
             EntityUtils.kickAllPlayers(reason);
             
             // Stop the server
-            CoreMod.getServer().stop(false);
+            ServerCore.get().stop(false);
         }).start();
     }
     
