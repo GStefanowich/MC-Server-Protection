@@ -26,6 +26,7 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.commands.ClaimCommand;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
@@ -154,9 +155,6 @@ public final class WarpUtils {
         return this.build(player, world, true);
     }
     public boolean build(final ServerPlayerEntity player, final World world, final boolean dropBlocks) {
-        // Spawn position
-        BlockPos spawnPos = WarpUtils.getWorldSpawn( world );
-        
         // Claim the chunk in the name of Spawn
         try {
             if (!ClaimCommand.tryClaimChunkAt(CoreMod.spawnID, player, world.getWorldChunk(this.createWarpAt)))
@@ -282,9 +280,7 @@ public final class WarpUtils {
      */
     @Nullable
     public static Warp getPlayerWarp(final UUID uuid) {
-        MinecraftServer server;
-        if ((server = CoreMod.getServer()) == null)
-            return null;
+        MinecraftServer server = ServerCore.get();
         
         // Read from the player
         ServerPlayerEntity player;

@@ -87,12 +87,10 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
     /* 
      * Override the players display name to their nick
      */
-    @Inject(at = @At("RETURN"), method = "getDisplayName", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "getDisplayName", cancellable = true)
     public void getPlayerNickname(CallbackInfoReturnable<Text> callback) {
-        if (((LivingEntity)this) instanceof ServerPlayerEntity) {
-            if (((Nicknamable)this).getPlayerNickname() != null)
-                callback.setReturnValue(((Nicknamable)this).getPlayerNickname());
-        }
+        if ((((LivingEntity)this) instanceof ServerPlayerEntity) && (((Nicknamable)this).getPlayerNickname() != null))
+            callback.setReturnValue(((Nicknamable) this).getPlayerNickname());
     }
     
     /*

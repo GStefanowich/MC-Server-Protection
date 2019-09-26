@@ -35,7 +35,13 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.PlayerMovement;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.CasingUtils;
+import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.LegacyConverter;
+import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.MoneyUtils;
+import net.TheElm.project.utilities.TitleUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -169,7 +175,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
                     MoneyUtils.givePlayerMoney(player, allowance);
                     
                     // Tell them they were awarded money
-                    player.sendMessage(new LiteralText("You were given ").formatted(Formatting.YELLOW).append(new LiteralText(NumberFormat.getInstance().format(allowance)).formatted(Formatting.AQUA, Formatting.BOLD)).append(" for logging in today!"));
+                    player.sendMessage(new LiteralText("You were given $").formatted(Formatting.YELLOW).append(new LiteralText(NumberFormat.getInstance().format(allowance)).formatted(Formatting.AQUA, Formatting.BOLD)).append(" for logging in today!"));
                 }
             }
         }

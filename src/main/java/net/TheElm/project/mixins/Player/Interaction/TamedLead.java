@@ -25,6 +25,7 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -70,14 +71,14 @@ public abstract class TamedLead extends LivingEntity {
     }
     
     @Inject(at = @At("HEAD"), method = "attachLeash", cancellable = true)
-    private void attachLease(final Entity entity, final boolean bool, final CallbackInfo callback) {
+    private void attachLeash(final Entity entity, final boolean bool, final CallbackInfo callback) {
         if (!( entity instanceof ServerPlayerEntity ))
             return;
         
         ServerPlayerEntity player = (ServerPlayerEntity) entity;
         
         // If player is in creative mode, bypass permissions
-        if (player.isCreative() || player.isSpectator())
+        if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || player.isSpectator())
             return;
         
         // If player is the owner of the entity
@@ -114,7 +115,7 @@ public abstract class TamedLead extends LivingEntity {
         ));
         
         // Make sure the client knows that they are not leashing
-        ((ServerPlayerEntity) player).networkHandler.sendPacket(
+        player.networkHandler.sendPacket(
             new EntityAttachS2CPacket(this, (Entity)null)
         );
         

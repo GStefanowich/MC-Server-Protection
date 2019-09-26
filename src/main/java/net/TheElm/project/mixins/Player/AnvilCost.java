@@ -41,6 +41,7 @@ public class AnvilCost {
             return oldValue;
         if (modLimit < 0)
             return Integer.MAX_VALUE;
+        
         return modLimit;
     }
     

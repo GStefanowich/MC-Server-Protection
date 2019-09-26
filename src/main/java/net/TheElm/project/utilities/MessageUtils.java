@@ -25,7 +25,7 @@
 
 package net.TheElm.project.utilities;
 
-import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -61,32 +61,28 @@ public final class MessageUtils {
     
     // Send a translation blob to all Players
     public static void sendToAll(final String translationKey, final Object... objects) {
-        final MinecraftServer server = CoreMod.getServer();
-        if (server != null) {
-            MessageUtils.sendSystem(
-                server.getPlayerManager().getPlayerList().stream(),
-                translationKey,
-                objects
-            );
-        }
+        final MinecraftServer server = ServerCore.get();
+        MessageUtils.sendSystem(
+            server.getPlayerManager().getPlayerList().stream(),
+            translationKey,
+            objects
+        );
     }
     public static void sendToAll(final Text text) {
-        final MinecraftServer server = CoreMod.getServer();
-        if (server != null) {
-            // Log to the server
-            server.sendMessage(text);
-            
-            // Send to the players
-            MessageUtils.sendChat(
-                server.getPlayerManager().getPlayerList().stream(),
-                text
-            );
-        }
+        final MinecraftServer server = ServerCore.get();
+        // Log to the server
+        server.sendMessage(text);
+        
+        // Send to the players
+        MessageUtils.sendChat(
+            server.getPlayerManager().getPlayerList().stream(),
+            text
+        );
     }
     
     // Send a translation blob to a Town
     public static void sendToTown(final ClaimantTown town, final String translationKey, final Object... objects) {
-        final MinecraftServer server = CoreMod.getServer();
+        final MinecraftServer server = ServerCore.get();
         MessageUtils.sendSystem(
             server.getPlayerManager().getPlayerList().stream().filter((player) -> {
                 ClaimantPlayer claimant = ((PlayerData) player).getClaim();
@@ -97,7 +93,7 @@ public final class MessageUtils {
         );
     }
     public static void sendToTown(final ClaimantTown town, final Text text) {
-        final MinecraftServer server = CoreMod.getServer();
+        final MinecraftServer server = ServerCore.get();
         // Log to the server
         server.sendMessage(text);
         
@@ -116,14 +112,12 @@ public final class MessageUtils {
         MessageUtils.sendToOps( 1, translationKey, objects );
     }
     public static void sendToOps(final int opLevel, final String translationKey, final Object... objects) {
-        final MinecraftServer server = CoreMod.getServer();
-        if (server != null) {
-            MessageUtils.sendSystem(
-                server.getPlayerManager().getPlayerList().stream().filter((player) -> player.allowsPermissionLevel( opLevel )),
-                translationKey,
-                objects
-            );
-        }
+        final MinecraftServer server = ServerCore.get();
+        MessageUtils.sendSystem(
+            server.getPlayerManager().getPlayerList().stream().filter((player) -> player.allowsPermissionLevel( opLevel )),
+            translationKey,
+            objects
+        );
     }
     
     // Send a translation blob to a stream of players

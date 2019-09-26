@@ -25,16 +25,29 @@
 
 package net.TheElm.project.config;
 
-import com.google.gson.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.utilities.LoggingUtils.LoggingIntervals;
+import net.TheElm.project.protections.logging.EventLogger.LoggingIntervals;
 import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.*;
-import java.util.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public final class SewingMachineConfig {
     public static final SewingMachineConfig INSTANCE;
@@ -73,12 +86,14 @@ public final class SewingMachineConfig {
     
     // Claiming
     public final ConfigOption<Boolean> DO_CLAIMS;
+    public final ConfigOption<Boolean> CLAIM_CREATIVE_BYPASS;
     public final ConfigOption<String> NAME_SPAWN;
     public final ConfigOption<String> NAME_WILDERNESS;
     
     public final ConfigOption<Integer> CLAIM_OP_LEVEL_SPAWN;
     public final ConfigOption<Integer> CLAIM_OP_LEVEL_OTHER;
     
+    // Claim Regions
     public final ConfigOption<Integer> MAXIMUM_REGION_WIDTH;
     public final ConfigOption<Integer> MINIMUM_REGION_WIDTH;
     
@@ -92,8 +107,11 @@ public final class SewingMachineConfig {
     public final ConfigOption<Integer> LOG_VIEW_OP_LEVEL;
     
     // Players
-    public final ConfigOption<Integer> PLAYER_CLAIMS_LIMIT;
     public final ConfigOption<Map<Item, Integer>> STARTING_ITEMS;
+    public final ConfigOption<Integer> PLAYER_CLAIMS_LIMIT;
+    public final ConfigOption<Boolean> PLAYER_LIMIT_INCREASE;
+    public final ConfigOption<Integer> PLAYER_CLAIM_BUY_LIMIT;
+    public final ConfigOption<Integer> PLAYER_CLAIM_BUY_COST;
     
     // Towns
     public final ConfigOption<Integer> TOWN_FOUND_COST;
@@ -132,6 +150,7 @@ public final class SewingMachineConfig {
     
     // MOTD
     public final ConfigArray<String> SERVER_MOTD_LIST;
+    public final ConfigArray<String> SERVER_ICON_LIST;
     
     // Miscellaneous
     public final ConfigOption<Boolean> LIMIT_SKELETON_ARROWS;
@@ -161,6 +180,7 @@ public final class SewingMachineConfig {
          * Primary Functions Booleans
          */
         this.DO_CLAIMS = this.addConfig( new ConfigOption<>("claims.enabled", true, JsonElement::getAsBoolean));
+        this.CLAIM_CREATIVE_BYPASS = this.addConfig( new ConfigOption<>("claims.creative_bypass", true, JsonElement::getAsBoolean));
         
         /*
          * Chat Booleans
@@ -228,6 +248,10 @@ public final class SewingMachineConfig {
         this.TOWN_FOUND_COST = this.addConfig( new ConfigOption<>( "claims.towns.cost", 500, JsonElement::getAsInt));
         this.TOWN_CLAIMS_LIMIT = this.addConfig( new ConfigOption<>( "claims.towns.limit", 200, JsonElement::getAsInt));
         
+        this.PLAYER_LIMIT_INCREASE = this.addConfig( new ConfigOption<>("claims.players.limit_increase.enabled", false, JsonElement::getAsBoolean));
+        this.PLAYER_CLAIM_BUY_LIMIT = this.addConfig( new ConfigOption<>("claims.players.limit_increase.maximum", -1, JsonElement::getAsInt));
+        this.PLAYER_CLAIM_BUY_COST = this.addConfig( new ConfigOption<>("claims.players.limit_increase.cost", 200, JsonElement::getAsInt));
+        
         /*
          * Warping
          */
@@ -268,6 +292,7 @@ public final class SewingMachineConfig {
          * Server list MOTD
          */
         this.SERVER_MOTD_LIST = this.addConfig( new ConfigArray<>("server.motd", JsonElement::getAsString));
+        this.SERVER_ICON_LIST = this.addConfig( new ConfigArray<>("server.icons", JsonElement::getAsString));
         
         /*
          * Miscellaneous

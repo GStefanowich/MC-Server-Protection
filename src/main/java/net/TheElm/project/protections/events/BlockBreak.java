@@ -23,15 +23,25 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections;
+package net.TheElm.project.protections.events;
 
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.BlockBreakCallback;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.protections.logging.BlockEvent;
+import net.TheElm.project.protections.logging.EventLogger;
+import net.TheElm.project.protections.logging.EventLogger.BlockAction;
 import net.TheElm.project.utilities.ChunkUtils;
-import net.TheElm.project.utilities.LoggingUtils;
-import net.minecraft.block.*;
+import net.minecraft.block.BeetrootsBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.CarrotsBlock;
+import net.minecraft.block.CropBlock;
+import net.minecraft.block.MelonBlock;
+import net.minecraft.block.PotatoesBlock;
+import net.minecraft.block.PumpkinBlock;
+import net.minecraft.block.SugarCaneBlock;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -72,7 +82,7 @@ public final class BlockBreak {
     private static ActionResult blockBreak(final ServerPlayerEntity player, final World world, final Hand hand, final BlockPos blockPos, final Direction blockFace, final Action action) {
         ActionResult result;
         if (((result = BlockBreak.canBlockBreak( player, world, hand, blockPos, blockFace, action)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get() && (action == Action.STOP_DESTROY_BLOCK))
-            LoggingUtils.logAction( LoggingUtils.BlockAction.BREAK, world.getBlockState(blockPos).getBlock(), blockPos, player );
+            EventLogger.log(new BlockEvent(player, BlockAction.BREAK, world.getBlockState(blockPos).getBlock(), blockPos));
         return result;
     }
 
@@ -88,7 +98,7 @@ public final class BlockBreak {
      */
     private static ActionResult canBlockBreak(final ServerPlayerEntity player, final World world, final Hand hand, final BlockPos blockPos, final Direction blockFace, final Action action) {
         // If player is in creative
-        if (player.isCreative() || (action == Action.ABORT_DESTROY_BLOCK))
+        if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || (action == Action.ABORT_DESTROY_BLOCK))
             return ActionResult.PASS;
         
         BlockState blockState = world.getBlockState(blockPos);

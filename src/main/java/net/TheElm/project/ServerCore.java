@@ -26,18 +26,37 @@
 package net.TheElm.project;
 
 import com.google.gson.GsonBuilder;
-import net.TheElm.project.commands.*;
+import net.TheElm.project.commands.AdminCommands;
+import net.TheElm.project.commands.ChatroomCommands;
+import net.TheElm.project.commands.ClaimCommand;
+import net.TheElm.project.commands.GameModesCommand;
+import net.TheElm.project.commands.HoldingCommand;
+import net.TheElm.project.commands.LoggingCommand;
+import net.TheElm.project.commands.MiscCommands;
+import net.TheElm.project.commands.ModsCommand;
+import net.TheElm.project.commands.MoneyCommand;
+import net.TheElm.project.commands.NickNameCommand;
+import net.TheElm.project.commands.PlayerSpawnCommand;
+import net.TheElm.project.commands.RulerCommand;
+import net.TheElm.project.commands.SpawnerCommand;
+import net.TheElm.project.commands.TeleportsCommand;
+import net.TheElm.project.commands.WaystoneCommand;
 import net.TheElm.project.config.SewingMachineConfig;
-import net.TheElm.project.protections.BlockBreak;
-import net.TheElm.project.protections.BlockInteraction;
-import net.TheElm.project.protections.EntityAttack;
-import net.TheElm.project.protections.ItemPlace;
-import net.TheElm.project.utilities.LoggingUtils;
+import net.TheElm.project.protections.events.BlockBreak;
+import net.TheElm.project.protections.events.BlockInteraction;
+import net.TheElm.project.protections.events.EntityAttack;
+import net.TheElm.project.protections.events.ItemPlace;
+import net.TheElm.project.protections.logging.EventLogger;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.registry.CommandRegistry;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.UUID;
 
 public final class ServerCore extends CoreMod implements DedicatedServerModInitializer {
     
@@ -64,6 +83,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         REGISTRY.register(false, NickNameCommand::register );
         REGISTRY.register(false, PlayerSpawnCommand::register );
         REGISTRY.register(false, RulerCommand::register );
+        REGISTRY.register(false, SpawnerCommand::register );
         REGISTRY.register(false, TeleportsCommand::register );
         REGISTRY.register(false, WaystoneCommand::register );
         
@@ -82,7 +102,10 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
                 CoreMod.logInfo("Database initialization finished");
                 
                 // Clear out old logs
-                LoggingUtils.doCleanup();
+                EventLogger.doCleanup();
+                
+                // Start the logger
+                EventLogger.start();
             } else {
                 CoreMod.logInfo( "Skipping Database Initialization (Unused)" );
             }
@@ -100,8 +123,18 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             // Alert the mod presence
             CoreMod.logInfo( "Finished loading." );
         } catch (IOException e) {
-            CoreMod.logError(new Exception("Error during startup", e));
+            CoreMod.logError("Error during startup", e);
         }
+    }
+    
+    @NotNull
+    public static MinecraftServer get() {
+        return CoreMod.getGameInstance().left().orElseThrow(() -> new RuntimeException("Called Client object from illegal position."));
+    }
+    
+    @Nullable
+    public static ServerPlayerEntity getPlayer(UUID playerUUID) {
+        return ServerCore.get().getPlayerManager().getPlayer( playerUUID );
     }
     
 }

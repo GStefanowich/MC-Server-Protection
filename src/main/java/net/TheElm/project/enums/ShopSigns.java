@@ -38,11 +38,22 @@ import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.protections.BlockDistance;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.CasingUtils;
+import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.GuideUtils;
+import net.TheElm.project.utilities.InventoryUtils;
+import net.TheElm.project.utilities.MoneyUtils;
+import net.TheElm.project.utilities.ShopSignBuilder;
+import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.WallSignBlock;
-import net.minecraft.block.entity.*;
+import net.minecraft.block.entity.BarrelBlockEntity;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.ChestBlockEntity;
+import net.minecraft.block.entity.LootableContainerBlockEntity;
+import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -661,6 +672,10 @@ public enum ShopSigns {
             return (SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.DO_CLAIMS.get());
         }
     },
+    /*
+     * Allow players to buy chunk claims
+     */
+    
     /*
      * Player guide books
      */

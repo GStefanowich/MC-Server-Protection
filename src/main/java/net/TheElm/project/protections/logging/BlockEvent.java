@@ -23,32 +23,40 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections;
+package net.TheElm.project.protections.logging;
 
-import net.TheElm.project.interfaces.BlockPlaceCallback;
-import net.TheElm.project.utilities.ChunkUtils;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
+import net.TheElm.project.protections.logging.EventLogger.BlockAction;
+import net.minecraft.block.Block;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public final class ItemPlace {
+public final class BlockEvent extends LoggableEvent {
     
-    private ItemPlace() {}
-
-    /**
-     * Initialize our callback listener for Item Usage
-     */
-    public static void init() {
-        BlockPlaceCallback.EVENT.register(ItemPlace::blockPlace);
+    private final BlockAction action;
+    private final Block blockType;
+    private final BlockPos blockPos;
+    
+    public BlockEvent(@Nullable LivingEntity actionSource, @NotNull BlockAction action, @NotNull Block blockType, @NotNull BlockPos blockPos) {
+        super(actionSource);
+        this.action = action;
+        this.blockType = blockType;
+        this.blockPos = blockPos;
     }
     
-    private static ActionResult blockPlace(final ServerPlayerEntity player, final World world, final BlockPos blockPos, final Direction direction, final ItemStack itemStack) {
-        if (!ChunkUtils.canPlayerBreakInChunk( player, blockPos.offset( direction ) ))
-            return ActionResult.FAIL;
-        return ActionResult.PASS;
+    @NotNull
+    public BlockAction getAction() {
+        return this.action;
     }
     
+    @NotNull
+    public Block getBlock() {
+        return this.blockType;
+    }
+    
+    @NotNull
+    public BlockPos getPosition() {
+        return this.blockPos;
+    }
 }

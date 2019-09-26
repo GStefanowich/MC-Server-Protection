@@ -39,6 +39,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.commands.ArgumentTypes.EnumArgumentType;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
@@ -53,7 +54,12 @@ import net.TheElm.project.interfaces.PlayerMovement;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.CasingUtils;
+import net.TheElm.project.utilities.CommandUtilities;
+import net.TheElm.project.utilities.LegacyConverter;
+import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.MoneyUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -81,7 +87,13 @@ import net.minecraft.world.dimension.DimensionType;
 
 import java.sql.SQLException;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public final class ClaimCommand {
@@ -737,33 +749,17 @@ public final class ClaimCommand {
         // Get the player
         ServerPlayerEntity player = context.getSource().getPlayer();
         
-        try ( MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT INTO `chunk_Settings` ( `settingOwner`, `settingOption`, `settingRank` )  VALUES ( ?, ?, ? ) ON DUPLICATE KEY UPDATE `settingRank` = VALUES( `settingRank` );") ) {
-            
-            // Update the database
-            stmt.addPrepared( player.getUuid() )
-                .addPrepared( permissions )
-                .addPrepared( rank )
-                .executeUpdate();
-            
-            // ???
-            // player.getServer().getSessionService().fillProfileProperties(new GameProfile( player.getUuid(), "" ), true);
-            
-            // Update the runtime
-            ((PlayerData) player).getClaim()
-                .updatePermission( permissions, rank );
-            
-            // Notify the player
-            player.sendMessage(new LiteralText("Interacting with ").formatted(Formatting.WHITE)
-                .append(new LiteralText(CasingUtils.Sentence(permissions.name())).formatted(Formatting.AQUA))
-                .append(new LiteralText(" is now limited to ").formatted(Formatting.WHITE))
-                .append(new LiteralText(CasingUtils.Sentence(rank.name())).formatted(Formatting.AQUA))
-                .append(new LiteralText(".").formatted(Formatting.WHITE))
-            );
-            
-        } catch ( SQLException e ) {
-            CoreMod.logError( e );
-            
-        }
+        // Update the runtime
+        ((PlayerData) player).getClaim()
+            .updatePermission( permissions, rank );
+        
+        // Notify the player
+        player.sendMessage(new LiteralText("Interacting with ").formatted(Formatting.WHITE)
+            .append(new LiteralText(CasingUtils.Sentence(permissions.name())).formatted(Formatting.AQUA))
+            .append(new LiteralText(" is now limited to ").formatted(Formatting.WHITE))
+            .append(new LiteralText(CasingUtils.Sentence(rank.name())).formatted(Formatting.AQUA))
+            .append(new LiteralText(".").formatted(Formatting.WHITE))
+        );
         
         // Return command success
         return Command.SINGLE_SUCCESS;
@@ -776,34 +772,21 @@ public final class ClaimCommand {
         // Get the player
         ServerPlayerEntity player = context.getSource().getPlayer();
         
-        try ( MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT INTO `chunk_Options` ( `optionOwner`, `optionName`, `optionValue` ) VALUES ( ?, ?, ? ) ON DUPLICATE KEY UPDATE `optionValue` = VALUES( `optionValue` );") ) {
-            
-            // Update the database
-            stmt
-                .addPrepared( player.getUuid() )
-                .addPrepared( setting.name() )
-                .addPrepared( enabled ? "TRUE" : "FALSE" )
-                .executeUpdate();
-            
-            // Update the runtime
-            ((PlayerData) player).getClaim()
-                .updateSetting( setting, enabled );
-            
-            // Notify other players
-            if (ClaimSettings.PLAYER_COMBAT.equals(setting)) {
-                ClaimCommand.notifyChangedClaimed( player.getUuid() );
-            }
-            
-            // Notify the player
-            player.sendMessage(new LiteralText(CasingUtils.Words(setting.name().replace("_", " "))).formatted(Formatting.AQUA)
-                .append(new LiteralText(" is now ").formatted(Formatting.WHITE))
-                .append(new LiteralText( enabled ? "Enabled" : "Disabled" ).formatted(setting.getAttributeColor( enabled )))
-                .append(new LiteralText(" in your claimed area.").formatted(Formatting.WHITE))
-            );
-            
-        } catch ( SQLException e ) {
-            CoreMod.logError( e );
+        // Update the runtime
+        ((PlayerData) player).getClaim()
+            .updateSetting( setting, enabled );
+        
+        // Notify other players
+        if (ClaimSettings.PLAYER_COMBAT.equals(setting)) {
+            ClaimCommand.notifyChangedClaimed( player.getUuid() );
         }
+        
+        // Notify the player
+        player.sendMessage(new LiteralText(CasingUtils.Words(setting.name().replace("_", " "))).formatted(Formatting.AQUA)
+            .append(new LiteralText(" is now ").formatted(Formatting.WHITE))
+            .append(new LiteralText( enabled ? "Enabled" : "Disabled" ).formatted(setting.getAttributeColor( enabled )))
+            .append(new LiteralText(" in your claimed area.").formatted(Formatting.WHITE))
+        );
         
         return Command.SINGLE_SUCCESS;
     }
@@ -815,8 +798,10 @@ public final class ClaimCommand {
         // Get the targeted rank
         ClaimRanks rank = EnumArgumentType.getEnum( ClaimRanks.class, StringArgumentType.getString( context,"rank" ) );
         
+        ServerCommandSource source = context.getSource();
+        
         // Get the player
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        ServerPlayerEntity player = source.getPlayer();
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument( context, "friend" );
         GameProfile friend = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
@@ -824,48 +809,33 @@ public final class ClaimCommand {
         if ( player.getUuid().equals( friend.getId() ) )
             throw SELF_RANK_CHANGE.create( player );
         
-        try ( MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT INTO `chunk_Friends` ( `chunkOwner`, `chunkFriend`, `chunkRank` ) VAlUES ( ?, ?, ? ) ON DUPLICATE KEY UPDATE `chunkRank` = VALUES( `chunkRank` );") ) {
-            
-            // Update database
-            stmt
-                .addPrepared( player.getUuid() )
-                .addPrepared( friend.getId() )
-                .addPrepared( rank )
-                .executeUpdate();
-            
-            // Update our runtime
-            ((PlayerData) player).getClaim()
-                .updateFriend( friend.getId(), rank );
-            
-            // Attempting to update the friend
-            player.sendMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
-                .append( new LiteralText( friend.getName() ).formatted(Formatting.DARK_PURPLE) )
-                .append( new LiteralText(" is now an ") )
-                .append( new LiteralText( CasingUtils.Sentence(rank.name()) ).formatted(Formatting.AQUA) )
-                .append( new LiteralText("." ).formatted(Formatting.WHITE) )
+        // Update our runtime
+        ((PlayerData) player).getClaim()
+            .updateFriend( friend.getId(), rank );
+        
+        // Attempting to update the friend
+        player.sendMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
+            .append( new LiteralText( friend.getName() ).formatted(Formatting.DARK_PURPLE) )
+            .append( new LiteralText(" is now an ") )
+            .append( new LiteralText( CasingUtils.Sentence(rank.name()) ).formatted(Formatting.AQUA) )
+            .append( new LiteralText("." ).formatted(Formatting.WHITE) )
+        );
+        
+        // Play a sound to the player
+        player.playSound(SoundEvents.ENTITY_VILLAGER_TRADE, SoundCategory.MASTER, 0.5f, 1f );
+        
+        // Find the entity of the friend
+        ServerPlayerEntity friendEntity = ServerCore.getPlayer( friend.getId() );
+        if ( friendEntity != null ) {
+            // Notify the friend
+            friendEntity.addChatMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
+                .append(player.getName().formatted(Formatting.DARK_PURPLE))
+                .append(new LiteralText(" has added you as an ").formatted(Formatting.WHITE))
+                .append(new LiteralText(rank.name()).formatted(Formatting.AQUA))
+                .append(new LiteralText(".").formatted(Formatting.WHITE)), false
             );
             
-            // Play a sound to the player
-            player.playSound(SoundEvents.ENTITY_VILLAGER_TRADE, SoundCategory.MASTER, 0.5f, 1f );
-            
-            // Find the entity of the friend
-            ServerPlayerEntity friendEntity = context.getSource().getMinecraftServer().getPlayerManager().getPlayer( friend.getId() );
-            
-            if ( friendEntity != null ) {
-                // Notify the friend
-                friendEntity.addChatMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
-                    .append(player.getName().formatted(Formatting.DARK_PURPLE))
-                    .append(new LiteralText(" has added you as an ").formatted(Formatting.WHITE))
-                    .append(new LiteralText(rank.name()).formatted(Formatting.AQUA))
-                    .append(new LiteralText(".").formatted(Formatting.WHITE)), false
-                );
-                
-                friendEntity.playSound(SoundEvents.ENTITY_VILLAGER_TRADE, SoundCategory.MASTER, 0.5f, 1f);
-            }
-            
-        } catch ( SQLException e ) {
-            CoreMod.logError( e );
-            
+            friendEntity.playSound(SoundEvents.ENTITY_VILLAGER_TRADE, SoundCategory.MASTER, 0.5f, 1f);
         }
         
         // Return command success
@@ -943,7 +913,7 @@ public final class ClaimCommand {
             if (!whitelist.isAllowed( profile )) {
                 // Add profile to the whitelist
                 whitelist.add( new WhitelistEntry( profile ) );
-                context.getSource().sendFeedback(new TranslatableText("commands.whitelist.add.success", new Object[]{Texts.toText(profile)}), true);
+                context.getSource().sendFeedback(new TranslatableText("commands.whitelist.add.success", Texts.toText( profile )), true);
                 ++count;
             }
         }
@@ -978,7 +948,7 @@ public final class ClaimCommand {
     /*
      * Notify players of chunk claim changes
      */
-    private static void notifyChangedClaimed(final UUID chunkOwner) {
+    public static void notifyChangedClaimed(final UUID chunkOwner) {
         CoreMod.PLAYER_LOCATIONS.entrySet().stream().filter((entry) -> chunkOwner.equals(entry.getValue())).forEach((entry) -> {
             ServerPlayerEntity notifyPlayer = entry.getKey();
             PlayerMovement movement = ((PlayerMovement) notifyPlayer.networkHandler);

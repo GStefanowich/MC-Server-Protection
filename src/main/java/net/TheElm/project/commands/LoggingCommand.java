@@ -33,14 +33,20 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.config.SewingMachineConfig;
-import net.TheElm.project.utilities.LoggingUtils.BlockAction;
+import net.TheElm.project.protections.logging.EventLogger.BlockAction;
+import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.command.arguments.BlockPosArgumentType;
+import net.minecraft.command.arguments.IdentifierArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.*;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.text.HoverEvent.Action;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 
@@ -60,11 +66,18 @@ public final class LoggingCommand {
         if (( CONFIG.LOG_CHUNKS_CLAIMED.get() || CONFIG.LOG_CHUNKS_UNCLAIMED.get() ) && ( CONFIG.LOG_BLOCKS_BREAKING.get() || CONFIG.LOG_BLOCKS_PLACING.get() )) {
             dispatcher.register(CommandManager.literal("blocklog")
                 .requires((source -> source.hasPermissionLevel(CONFIG.LOG_VIEW_OP_LEVEL.get())))
-                .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
-                    .then(CommandManager.argument("count", IntegerArgumentType.integer(1))
-                        .executes(LoggingCommand::getBlockHistoryCount)
+                .then(CommandManager.literal("pos")
+                    .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
+                        .then(CommandManager.argument("count", IntegerArgumentType.integer(1))
+                            .executes(LoggingCommand::getBlockHistoryCount)
+                        )
+                        .executes(LoggingCommand::getBlockHistory)
                     )
-                    .executes(LoggingCommand::getBlockHistory)
+                )
+                .then(CommandManager.literal("block")
+                    .then(CommandManager.argument("block", IdentifierArgumentType.identifier())
+                        
+                    )
                 )
             );
             
@@ -91,11 +104,7 @@ public final class LoggingCommand {
         // Create the main text object
         Text text = new LiteralText("Block History for ")
             .formatted(Formatting.YELLOW)
-            .append(new LiteralText(""+blockPos.getX()).formatted(Formatting.AQUA))
-            .append(", ")
-            .append(new LiteralText(""+blockPos.getY()).formatted(Formatting.AQUA))
-            .append(", ")
-            .append(new LiteralText(""+blockPos.getZ()).formatted(Formatting.AQUA));
+            .append(MessageUtils.blockPosToTextComponent( blockPos ));
         
         try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `block`, `updatedEvent`, `updatedBy`, `updatedAt` FROM `logging_Blocks` WHERE `blockWorld` = ? AND `blockX` = ? AND `blockY` = ? AND `blockZ` = ? ORDER BY `updatedAt` DESC" + ( limit > 0 ? " LIMIT ?" : "" ) + ";")
             .addPrepared(player.dimension.getRawId())

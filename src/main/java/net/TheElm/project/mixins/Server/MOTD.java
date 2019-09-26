@@ -26,7 +26,11 @@
 package net.TheElm.project.mixins.Server;
 
 import com.mojang.bridge.game.GameVersion;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufOutputStream;
+import io.netty.buffer.Unpooled;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.FormattingUtils;
@@ -38,7 +42,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.dimension.DimensionType;
-import org.spongepowered.asm.mixin.Final;
+import org.apache.commons.lang3.Validate;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -46,10 +50,19 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
@@ -57,14 +70,18 @@ import java.util.stream.StreamSupport;
 @Mixin(ServerMetadata.class)
 public abstract class MOTD {
     
-    @Final
-    private Map<String, Callable<String>> motdVariables = new HashMap<>();
+    private final Map<String, Callable<String>> motdVariables = new HashMap<>();
+    private final List<CharBuffer> base64 = new ArrayList<>();
     
     @Shadow private ServerMetadata.Players players;
     @Shadow private ServerMetadata.Version version;
     
     @Inject(at = @At("RETURN"), method = "<init> *")
     public void onConstruct(CallbackInfo callback) {
+        /*
+         * Save our Variables to parse
+         */
+        
         // Version
         this.motdVariables.put( "version", () -> {
             GameVersion version = SharedConstants.getGameVersion();
@@ -74,20 +91,43 @@ public abstract class MOTD {
         });
         // Time
         this.motdVariables.put( "time", () -> {
-            MinecraftServer server = CoreMod.getServer();
+            MinecraftServer server = ServerCore.get();
             ServerWorld world = server.getWorld(DimensionType.OVERWORLD);
             if (world == null) return "time";
             return SleepUtils.timeFromMillis(world.getTimeOfDay());
         });
         // Difficulty
         this.motdVariables.put( "difficulty", () -> {
-            MinecraftServer server = CoreMod.getServer();
+            MinecraftServer server = ServerCore.get();
             Difficulty difficulty = server.getDefaultDifficulty();
             ServerWorld world = StreamSupport.stream(server.getWorlds().spliterator(), false).findFirst().orElse(null);
             if (world != null)
                 difficulty = world.getLevelProperties().getDifficulty();
             return difficulty.getName();
         });
+        
+        /*
+         * Process the randomized server icons
+         */
+        for(String iconName : SewingMachineConfig.INSTANCE.SERVER_ICON_LIST.get()) {
+            File iconFile = new File(".", iconName + ".png");
+            if (iconFile.isFile()) {
+                ByteBuf byteBuf_1 = Unpooled.buffer();
+        
+                try {
+                    BufferedImage bufferedImage_1 = ImageIO.read(iconFile);
+                    Validate.validState(bufferedImage_1.getWidth() == 64, "Must be 64 pixels wide");
+                    Validate.validState(bufferedImage_1.getHeight() == 64, "Must be 64 pixels high");
+                    ImageIO.write(bufferedImage_1, "PNG", new ByteBufOutputStream(byteBuf_1));
+                    ByteBuffer byteBuffer_1 = Base64.getEncoder().encode(byteBuf_1.nioBuffer());
+                    this.base64.add(StandardCharsets.UTF_8.decode(byteBuffer_1));
+                } catch (Exception e) {
+                    CoreMod.logError("Couldn't load server icon", e);
+                } finally {
+                    byteBuf_1.release();
+                }
+            }
+        }
     }
     
     @Inject(at = @At("TAIL"), method = "getDescription", cancellable = true)
@@ -103,6 +143,14 @@ public abstract class MOTD {
             if (motd != null)
                 callback.setReturnValue(motd);
         }
+    }
+    
+    @Inject(at = @At("HEAD"), method = "getFavicon", cancellable = true)
+    public void getFavicon(CallbackInfoReturnable<String> callback) {
+        if (this.base64.isEmpty())
+            return;
+        CharBuffer random = this.base64.get(ThreadLocalRandom.current().nextInt(this.base64.size()));
+        callback.setReturnValue("data:image/png;base64," + random);
     }
     
     private String descriptionReplaceVariables(String description) {
