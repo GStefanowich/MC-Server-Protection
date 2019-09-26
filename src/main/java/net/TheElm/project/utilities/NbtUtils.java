@@ -27,10 +27,15 @@ package net.TheElm.project.utilities;
 
 import com.google.gson.JsonObject;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.minecraft.entity.EntityType;
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
@@ -49,7 +54,7 @@ public final class NbtUtils {
     @NotNull
     public static File worldFolder() {
         return new File(CoreMod.getFabric().getGameDirectory(),
-            CoreMod.getServer().getLevelName());
+            ServerCore.get().getLevelName());
     }
     
     /*

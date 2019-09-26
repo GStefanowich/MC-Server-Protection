@@ -33,6 +33,8 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -53,8 +55,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(LivingEntity.class)
 public abstract class Death extends Entity {
     
-    @Shadow
-    protected boolean dead;
+    @Shadow protected boolean dead;
+    @Shadow public abstract boolean addPotionEffect(StatusEffectInstance statusEffectInstance);
     
     public Death(EntityType<?> entityType_1, World world_1) {
         super(entityType_1, world_1);
@@ -79,7 +81,7 @@ public abstract class Death extends Entity {
         // Get the attacker
         ServerPlayerEntity player = (ServerPlayerEntity) damageSource.getAttacker();
         ItemStack itemStack = player.getStackInHand(Hand.OFF_HAND);
-        if ((!(itemStack.getItem() == Items.SPAWNER)) || ((spawnerTag = itemStack.getTag()) == null) || ((spawnerTag = spawnerTag.method_10553()) == null) || (!spawnerTag.containsKey("EntityIds", 9)))
+        if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getTag()) == null) || ((spawnerTag = spawnerTag.method_10553()) == null) || (!spawnerTag.containsKey("EntityIds", 9)))
             return;
         
         // Get the identifier of the mob we killed
@@ -89,8 +91,9 @@ public abstract class Death extends Entity {
         ListTag entityIds = spawnerTag.getList("EntityIds", 8);
         int rolls = 1 + EnchantmentHelper.getLevel(Enchantments.LOOTING, player.getMainHandStack());
         for (int roll = 0; roll < rolls; ++roll) {
+            Integer random = null;
             // Test the odds
-            if ((!entityIds.contains(mobId)) && (player.world.getRandom().nextInt(800) == 0)) {
+            if ((!entityIds.contains(mobId)) && ((random = player.world.getRandom().nextInt(800)) == 0)) {
                 // Add mob to the list
                 entityIds.add(mobId);
                 
@@ -99,7 +102,8 @@ public abstract class Death extends Entity {
                 spawnerTag.put("display", NbtUtils.getSpawnerDisplay(entityIds));
                 
                 // Play sound
-                player.playSound(SoundEvents.ENTITY_PLAYER_LEVELUP, SoundCategory.MASTER, 1.0f, 1.0f);
+                player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.MASTER, 1.0f, 1.0f);
+                this.addPotionEffect(new StatusEffectInstance(StatusEffects.GLOWING, 60, 1, false, true));
                 
                 // Should drop a new spawner
                 boolean dropNew = false;
@@ -119,6 +123,7 @@ public abstract class Death extends Entity {
                     player.inventory.offerOrDrop(player.world, itemStack);
                 break;
             }
+            if (random != null) System.out.println( random );
         }
     }
     

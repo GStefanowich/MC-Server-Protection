@@ -26,8 +26,14 @@
 package net.TheElm.project.MySQL;
 
 import net.TheElm.project.CoreMod;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.UUID;
 
 public class MySQLStatement implements AutoCloseable {
@@ -52,10 +58,10 @@ public class MySQLStatement implements AutoCloseable {
         this.batched = batchMode;
     }
     
-    private MySQLStatement addPrepared( Object object ) {
+    private MySQLStatement addPrepared( @Nullable Object object ) {
         return this.addPrepared( ++this.slider, object );
     }
-    private MySQLStatement addPrepared( int pos, Object object ) {
+    private MySQLStatement addPrepared( int pos, @Nullable Object object ) {
         if ( this.stmt != null ) {
             try {
                 stmt.setObject( pos, object );
@@ -65,16 +71,16 @@ public class MySQLStatement implements AutoCloseable {
         }
         return this;
     }
-    public MySQLStatement addPrepared( UUID uuid ) {
-        return this.addPrepared( (Object) uuid.toString() );
+    public MySQLStatement addPrepared( @Nullable UUID uuid ) {
+        return this.addPrepared((Object)( uuid == null ? null : uuid.toString() ));
     }
-    public MySQLStatement addPrepared( String string ) {
+    public MySQLStatement addPrepared( @Nullable String string ) {
         return this.addPrepared( (Object) string );
     }
-    public MySQLStatement addPrepared( Number i ) {
+    public MySQLStatement addPrepared( @Nullable Number i ) {
         return this.addPrepared( (Object) i );
     }
-    public MySQLStatement addPrepared( Enum e ) {
+    public MySQLStatement addPrepared( @NotNull Enum e ) {
         return this.addPrepared( e.name() );
     }
     

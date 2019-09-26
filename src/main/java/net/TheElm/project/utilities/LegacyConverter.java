@@ -27,6 +27,7 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
@@ -50,7 +51,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public final class LegacyConverter implements AutoCloseable {
     
@@ -73,12 +80,12 @@ public final class LegacyConverter implements AutoCloseable {
             // Disconnect players during conversion
             EntityUtils.kickAllPlayers(new LiteralText("Server is now performing an update."));
             
-            this.clearTowns = this.convertTowns(CoreMod.getServer());
-            this.clearPlayers = this.convertPlayers(CoreMod.getServer());
-            this.clearClaims = this.convertClaims(CoreMod.getServer());
+            this.clearTowns = this.convertTowns(ServerCore.get());
+            this.clearPlayers = this.convertPlayers(ServerCore.get());
+            this.clearClaims = this.convertClaims(ServerCore.get());
             this.success = true;
         } catch (NullPointerException e) {
-            CoreMod.logError(new Exception("Failed to complete conversion from legacy version.", e));
+            CoreMod.logError("Failed to complete conversion from legacy version.", e);
         } finally {
             LegacyConverter.RUNNING = false;
         }

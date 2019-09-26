@@ -44,66 +44,12 @@ import java.util.UUID;
 
 public final class ClaimantPlayer extends Claimant {
     
+    private int additionalClaims = 0;
     private final Set<ClaimantTown> townInvites = Collections.synchronizedSet(new HashSet<>());
     private ClaimantTown town;
     
     private ClaimantPlayer(@NotNull UUID playerUUID) {
         super( ClaimantType.PLAYER, playerUUID );
-        
-        /*
-         * Get Rank Permissions
-         */
-        /*try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `settingOption`, `settingRank` FROM `chunk_Settings` WHERE `settingOwner` = ?;")) {
-            stmt.addPrepared(this.getId());
-            try (ResultSet ranks = stmt.executeStatement()) {
-                while (ranks.next()) {
-                    // Get rank options
-                    ClaimPermissions perm = ClaimPermissions.valueOf(ranks.getString("settingOption"));
-                    ClaimRanks rank = ClaimRanks.valueOf(ranks.getString("settingRank"));
-                    
-                    // Save rank option
-                    this.updatePermission(perm, rank);
-                }
-            }
-        } catch (SQLException e) {
-            CoreMod.logError( e );
-        }*/
-        
-        /*
-         * Get additional options
-         */
-        /*try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `optionName`, `optionValue` FROM `chunk_Options` WHERE `optionOwner` = ?;")) {
-            stmt.addPrepared(this.getId());
-            try (ResultSet settings = stmt.executeStatement()) {
-                while (settings.next()) {
-                    // Get rank options
-                    ClaimSettings setting = ClaimSettings.valueOf(settings.getString("optionName"));
-                    Boolean enabled = Boolean.parseBoolean(settings.getString("optionValue"));
-                    // Save options
-                    this.updateSetting(setting, enabled);
-                }
-            }
-        } catch (SQLException e) {
-            CoreMod.logError( e );
-        }*/
-        
-        /*
-         * Get Friend Ranks
-         */
-        /*try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `chunkFriend`, `chunkRank` FROM `chunk_Friends` WHERE `chunkOwner` = ?;")) {
-            stmt.addPrepared(this.getId());
-            try (ResultSet friends = stmt.executeStatement()) {
-                while (friends.next()) {
-                    // Get friend information
-                    UUID friend = UUID.fromString(friends.getString("chunkFriend"));
-                    ClaimRanks rank = ClaimRanks.valueOf(friends.getString("chunkRank"));
-                    // Save friend
-                    this.updateFriend(friend, rank);
-                }
-            }
-        } catch (SQLException e) {
-            CoreMod.logError( e );
-        }*/
     }
     
     public final ClaimRanks getPermissionRankRequirement( ClaimPermissions permission ) {
@@ -160,8 +106,11 @@ public final class ClaimantPlayer extends Claimant {
     @Override
     public final Text getName() {
         if (this.name == null)
-            return (this.name = PlayerNameUtils.fetchPlayerNick( this.getId() ));
+            return (this.name = this.updateName());
         return this.name;
+    }
+    public final Text updateName() {
+        return PlayerNameUtils.fetchPlayerNick( this.getId() );
     }
     
     /* Claimed chunk options */
@@ -173,7 +122,7 @@ public final class ClaimantPlayer extends Claimant {
         return setting.getPlayerDefault();
     }
     public final int getMaxChunkLimit() {
-        return SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get();
+        return this.additionalClaims + SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get();
     }
     
     /* Nbt saving */
@@ -182,6 +131,7 @@ public final class ClaimantPlayer extends Claimant {
         // Write the town ID
         if (this.town != null)
             tag.putUuid("town", this.town.getId());
+        tag.putInt("claimLimit", this.additionalClaims);
         
         super.writeCustomDataToTag( tag );
     }
@@ -197,6 +147,10 @@ public final class ClaimantPlayer extends Claimant {
             } catch (NbtNotFoundException ignored) {}
         }
         this.town = town;
+        
+        // Additional claim limit
+        if (tag.containsKey("claimLimit", 3))
+            this.additionalClaims = tag.getInt("claimLimit");
         
         // Read from SUPER
         super.readCustomDataFromTag( tag );

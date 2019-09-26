@@ -23,23 +23,28 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.enums;
+package net.TheElm.project.protections.logging;
 
-import net.minecraft.util.Formatting;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 
-public enum ChatRooms {
-    WHISPER( Formatting.LIGHT_PURPLE ),
-    LOCAL( Formatting.BLUE ),
-    GLOBAL( Formatting.WHITE ),
-    TOWN( Formatting.GREEN );
+public abstract class LoggableEvent {
     
-    private Formatting[] formatting;
+    private final LivingEntity source;
+    private final World world;
     
-    ChatRooms(Formatting... formattings) {
-        this.formatting = formattings;
+    public LoggableEvent(@Nullable LivingEntity actionSource) {
+        // Set the source of the change
+        this.source = actionSource;
+        this.world = (actionSource == null ? null : actionSource.world);
     }
     
-    public Formatting[] getFormatting() {
-        return this.formatting;
+    public final LivingEntity getSource() {
+        return this.source;
     }
+    public final World getWorld() {
+        return this.world;
+    }
+    
 }

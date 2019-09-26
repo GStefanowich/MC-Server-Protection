@@ -25,6 +25,7 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerCorpse;
 import net.TheElm.project.utilities.ChunkUtils;
@@ -92,7 +93,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
         }
         
         // Player is in creative
-        if (player.isCreative() || player.isSpectator())
+        if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || player.isSpectator())
             return;
         
         // If player can loot armor stand

@@ -48,6 +48,7 @@
     "Player.WorldInteraction",
     "Player.ServerInteraction",
     
+    "World.BlockChanges",
     "World.CauldronCleaning",
     "World.MobSpawners",
     "World.Campfires",
@@ -58,8 +59,9 @@
     "World.FluidFlow",
     "World.Nether",
     
-    "Server.Save",
-    "Server.MOTD"
+    "Server.MOTD",
+    "Server.PlayerList",
+    "Server.Save"
   ],
   "injectors": {
     "defaultRequire": 1

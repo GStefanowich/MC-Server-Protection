@@ -32,8 +32,11 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.Nicknamable;
+import net.TheElm.project.interfaces.PlayerData;
+import net.minecraft.client.network.packet.PlayerListS2CPacket;
 import net.minecraft.command.arguments.ColorArgumentType;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -88,7 +91,18 @@ public final class NickNameCommand {
     }
     
     private static int setNickForPlayer(@NotNull ServerPlayerEntity player, @Nullable String nickname, Formatting... formatting) {
+        // Update the players display name
         ((Nicknamable)player).setPlayerNickname( nickname == null ? null : new LiteralText( nickname ).formatted( formatting ) );
+        
+        // Update the name in the claim cache
+        ((PlayerData)player).getClaim().updateName();
+        ClaimCommand.notifyChangedClaimed( player.getUuid() );
+        
+        // Send update to the player list
+        ServerCore.get().getPlayerManager().sendToAll(
+            (new PlayerListS2CPacket(PlayerListS2CPacket.Action.UPDATE_DISPLAY_NAME, player))
+        );
+        
         return Command.SINGLE_SUCCESS;
     }
     

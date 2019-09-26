@@ -28,7 +28,9 @@ package net.TheElm.project.utilities;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.mojang.authlib.GameProfile;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.exceptions.NbtNotFoundException;
@@ -45,6 +47,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.dimension.DimensionType;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -99,7 +102,6 @@ public final class PlayerNameUtils {
         return format.append( playerDisplay );
     }
     private static Text getPlayerDisplayName(@NotNull ServerPlayerEntity player) {
-        final String name = player.getGameProfile().getName();
         if (((Nicknamable)player).getPlayerNickname() == null)
             return PlayerNameUtils.applyPlayerNameStyle( player.getName().formatted(Formatting.GOLD), player );
         
@@ -169,6 +171,9 @@ public final class PlayerNameUtils {
         if ((playerName = getOnlinePlayerName(uuid)) != null)
             return playerName;
         
+        String cachedName;
+        if (((cachedName = getCachedPlayerName(uuid)) != null) && (!StringUtils.isBlank(cachedName)))
+        
         // Log that a request is being made
         CoreMod.logInfo( "Looking up username of " + uuid.toString() );
         
@@ -195,6 +200,12 @@ public final class PlayerNameUtils {
                 JsonObject nameLatest = nameHistory.get( nameHistory.size() - 1 ).getAsJsonObject();
                 
                 playerName = new LiteralText( nameLatest.get( "name" ).getAsString() );
+                
+                // Save the player name to the cache
+                ServerCore.get().getUserCache().add(new GameProfile(
+                    uuid,
+                    playerName.getString()
+                ));
             }
             
         } catch (IOException e) {
@@ -212,13 +223,19 @@ public final class PlayerNameUtils {
     }
     @Nullable
     private static Text getOnlinePlayerName(@NotNull UUID uuid) {
-        MinecraftServer server;
-        if ((server = CoreMod.getServer()) == null)
-            return null;
+        MinecraftServer server = ServerCore.get();
         ServerPlayerEntity player;
         if ((player = server.getPlayerManager().getPlayer( uuid )) == null)
             return null;
         return player.getName();
+    }
+    private static String getCachedPlayerName(@NotNull UUID uuid) {
+        String name = null;
+        MinecraftServer server = ServerCore.get();
+        GameProfile profile = server.getUserCache().getByUuid( uuid );
+        if (profile != null)
+            name = profile.getName();
+        return name;
     }
     @Nullable
     private static Text getOfflinePlayerNickname(@NotNull UUID uuid) {

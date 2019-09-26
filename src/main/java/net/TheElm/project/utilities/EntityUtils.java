@@ -25,12 +25,57 @@
 
 package net.TheElm.project.utilities;
 
-import net.TheElm.project.CoreMod;
-import net.minecraft.block.*;
+import net.TheElm.project.ServerCore;
+import net.minecraft.block.AnvilBlock;
+import net.minecraft.block.BarrelBlock;
+import net.minecraft.block.BeaconBlock;
+import net.minecraft.block.BlastFurnaceBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.CartographyTableBlock;
+import net.minecraft.block.CraftingTableBlock;
+import net.minecraft.block.DropperBlock;
+import net.minecraft.block.EnchantingTableBlock;
+import net.minecraft.block.FletchingTableBlock;
+import net.minecraft.block.FurnaceBlock;
+import net.minecraft.block.GrindstoneBlock;
+import net.minecraft.block.HopperBlock;
+import net.minecraft.block.LoomBlock;
+import net.minecraft.block.ShulkerBoxBlock;
+import net.minecraft.block.SmokerBlock;
+import net.minecraft.block.StonecutterBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
-import net.minecraft.entity.passive.*;
-import net.minecraft.entity.vehicle.*;
+import net.minecraft.entity.passive.CatEntity;
+import net.minecraft.entity.passive.ChickenEntity;
+import net.minecraft.entity.passive.CodEntity;
+import net.minecraft.entity.passive.CowEntity;
+import net.minecraft.entity.passive.DolphinEntity;
+import net.minecraft.entity.passive.DonkeyEntity;
+import net.minecraft.entity.passive.FoxEntity;
+import net.minecraft.entity.passive.HorseEntity;
+import net.minecraft.entity.passive.IronGolemEntity;
+import net.minecraft.entity.passive.LlamaEntity;
+import net.minecraft.entity.passive.MuleEntity;
+import net.minecraft.entity.passive.OcelotEntity;
+import net.minecraft.entity.passive.PandaEntity;
+import net.minecraft.entity.passive.ParrotEntity;
+import net.minecraft.entity.passive.PigEntity;
+import net.minecraft.entity.passive.PolarBearEntity;
+import net.minecraft.entity.passive.PufferfishEntity;
+import net.minecraft.entity.passive.RabbitEntity;
+import net.minecraft.entity.passive.SalmonEntity;
+import net.minecraft.entity.passive.SheepEntity;
+import net.minecraft.entity.passive.SnowGolemEntity;
+import net.minecraft.entity.passive.SquidEntity;
+import net.minecraft.entity.passive.TropicalFishEntity;
+import net.minecraft.entity.passive.TurtleEntity;
+import net.minecraft.entity.passive.VillagerEntity;
+import net.minecraft.entity.passive.WolfEntity;
+import net.minecraft.entity.vehicle.ChestMinecartEntity;
+import net.minecraft.entity.vehicle.FurnaceMinecartEntity;
+import net.minecraft.entity.vehicle.HopperMinecartEntity;
+import net.minecraft.entity.vehicle.MinecartEntity;
+import net.minecraft.entity.vehicle.TntMinecartEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -163,9 +208,7 @@ public final class EntityUtils {
     @Nullable
     public static ServerPlayerEntity getPlayer(String username) {
         // Get the server
-        MinecraftServer server = CoreMod.getServer();
-        if (server == null)
-            return null;
+        MinecraftServer server = ServerCore.get();
         
         // If the player is online
         return server.getPlayerManager().getPlayer( username );
@@ -173,9 +216,7 @@ public final class EntityUtils {
     @Nullable
     public static ServerPlayerEntity getPlayer(UUID playerId) {
         // Get the server
-        MinecraftServer server = CoreMod.getServer();
-        if (server == null)
-            return null;
+        MinecraftServer server = ServerCore.get();
         
         // If the player is online
         return server.getPlayerManager().getPlayer( playerId );
@@ -188,7 +229,7 @@ public final class EntityUtils {
         EntityUtils.kickAllPlayers( null );
     }
     public static void kickAllPlayers(@Nullable Text reason) {
-        MinecraftServer server = CoreMod.getServer();
+        MinecraftServer server = ServerCore.get();
         PlayerManager manager = server.getPlayerManager();
         if (reason == null)
             manager.disconnectAllPlayers();

@@ -23,8 +23,9 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections;
+package net.TheElm.project.protections.events;
 
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.DamageEntityCallback;
 import net.TheElm.project.interfaces.IClaimedChunk;
@@ -121,7 +122,7 @@ public final class EntityAttack {
             }
             
             // If the player is in creative, allow
-            if (player.isCreative())
+            if (player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get())
                 return ActionResult.PASS;
             
             // Get chunk protection
