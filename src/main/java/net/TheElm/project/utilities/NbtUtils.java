@@ -37,7 +37,9 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -196,6 +198,27 @@ public final class NbtUtils {
         tag.putString("type", type.name());
         tag.putUuid("iden", uuid);
         return tag;
+    }
+    
+    /*
+     * Simplifications
+     */
+    public static CompoundTag blockPosToTag(@NotNull BlockPos blockPos) {
+        CompoundTag compound = new CompoundTag();
+        compound.putInt("x", blockPos.getX());
+        compound.putInt("y", blockPos.getY());
+        compound.putInt("z", blockPos.getZ());
+        return compound;
+    }
+    @Nullable
+    public static BlockPos tagToBlockPos(@Nullable CompoundTag compound) {
+        if (compound != null) {
+            if (compound.containsKey("x", 6) && compound.containsKey("y", 6) && compound.containsKey("z", 6))
+                return new BlockPos(compound.getDouble("x"), compound.getDouble("y"), compound.getDouble("z"));
+            if (compound.containsKey("x", 3) && compound.containsKey("y", 3) && compound.containsKey("z", 3))
+                return new BlockPos(compound.getInt("x"), compound.getInt("y"), compound.getInt("z"));
+        }
+        return null;
     }
     
     /*

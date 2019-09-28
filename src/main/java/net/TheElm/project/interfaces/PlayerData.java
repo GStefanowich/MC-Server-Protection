@@ -65,4 +65,12 @@ public interface PlayerData {
     void setRulerB(@Nullable BlockPos blockPos);
     @Nullable BlockPos getRulerA();
     @Nullable BlockPos getRulerB();
+    
+    /*
+     * Portal save locations
+     */
+    void setNetherPortal(@Nullable BlockPos blockPos);
+    void setOverworldPortal(@Nullable BlockPos blockPos);
+    @Nullable BlockPos getNetherPortal();
+    @Nullable BlockPos getOverworldPortal();
 }
