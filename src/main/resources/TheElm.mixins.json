@@ -57,6 +57,7 @@
     "World.DragonFight",
     "World.WorldSleep",
     "World.FluidFlow",
+    "World.Portals",
     "World.Nether",
     
     "Server.MOTD",

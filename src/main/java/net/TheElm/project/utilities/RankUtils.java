@@ -125,10 +125,11 @@ public final class RankUtils {
         return allowed;
     }
     
-    private static void init() {
+    public static void init() {
         // Check if enabled in the config
         if (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get())
             return;
+        RankUtils.RANKS.clear();
         
         // Read from the `ranks.json` file
         try {
