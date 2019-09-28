@@ -1,0 +1,29 @@
+{
+  "ranks": {
+    "admin": {
+      "permissions": [
+        "+*"
+      ],
+      "display": "&4Admin",
+      "inherit": "mod"
+    },
+    "mod": {
+      "permissions": [
+        "+minecraft.kick",
+        "+minecraft.ban",
+        "+minecraft.unban",
+        "+minecraft.whitelist.*"
+      ],
+      "display": "&cMod",
+      "inherit": "*"
+    },
+    "*": {
+      "permissions": []
+    }
+  },
+  "players": {
+    "ba15a49d-1322-4c83-b378-ddf7a1976fde": [
+      "admin"
+    ]
+  }
+}
