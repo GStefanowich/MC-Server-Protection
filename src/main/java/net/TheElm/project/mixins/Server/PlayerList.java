@@ -47,23 +47,24 @@ public class PlayerList {
     
     @Inject(at = @At("RETURN"), method = "getDisplayName", cancellable = true)
     public void getDisplayName(CallbackInfoReturnable<Text> callback) {
-        Text displayName = this.displayName;
-        if (displayName == null)
-            displayName = new LiteralText(this.profile.getName()).formatted(Formatting.GOLD);
+        Text displayName = (this.displayName == null ?
+            new LiteralText(this.profile.getName()).formatted(Formatting.YELLOW)
+            : this.displayName.deepCopy()
+        );
         
-        // Create the new display (with rank)
-        Text display = new LiteralText("").formatted(Formatting.WHITE);
-        
-        PlayerRank rank;
-        if (((rank = RankUtils.getHighestRank( this.profile )) != null) && (!"".equals(rank.getName()))) {
-            // Open bracket
-            display.append("[")
-                .append(rank.getDisplay())
-                .append("] ");
+        for (PlayerRank rank : RankUtils.getPlayerRanks(this.profile)) {
+            Text display;
+            if ((display = rank.getDisplay()) != null) {
+                // Open bracket
+                displayName.append(new LiteralText(" [").formatted(Formatting.WHITE)
+                    .append(display)
+                    .append("]"));
+                break; // Only append one
+            }
         }
         
         // Set the return value
-        callback.setReturnValue(display.append(displayName));
+        callback.setReturnValue(displayName);
     }
     
 }

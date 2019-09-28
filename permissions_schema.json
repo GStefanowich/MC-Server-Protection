@@ -13,7 +13,7 @@
           "type": "array",
           "items": {
             "type": "string",
-            "pattern": "^([+-][a-z\\.\\*]*)$"
+            "pattern": "^([+-][a-z\\.\\*]+)$"
           }
         },
         "inherit": {
@@ -45,7 +45,7 @@
     "players": {
       "type": "object",
       "patternProperties": {
-        "^[0-9a-f]{8}\\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\\b[0-9a-f]{12}$": {
+        "^([0-9a-f]{8}\\b-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-\\b[0-9a-f]{12}|\\*)$": {
           "$ref": "#/definitions/player"
         }
       },

@@ -29,20 +29,21 @@ import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 
-public final class PlayerRank {
+public final class PlayerRank implements Comparable<PlayerRank> {
     
     private final HashSet<String> nodes = new HashSet<>();
     private String parent;
     
     private final String iden;
-    private final Text name;
+    private final Text display;
     
-    public PlayerRank(@NotNull String iden, @NotNull String name) {
+    public PlayerRank(@NotNull String iden, @Nullable String display) {
         this.iden = iden;
-        this.name = FormattingUtils.stringToText( name );
+        this.display = (display == null ? null : FormattingUtils.stringToText( display ));
         this.parent = ( "*".equals(iden) ? null : "*" );
     }
     
@@ -50,11 +51,12 @@ public final class PlayerRank {
      * Display
      */
     @NotNull
-    public String getName() {
-        return this.getDisplay().asString();
+    public String getIdentifier() {
+        return this.iden;
     }
+    @Nullable
     public Text getDisplay() {
-        return this.name.deepCopy();
+        return this.display == null ? null : this.display.deepCopy();
     }
     
     /*
@@ -69,6 +71,9 @@ public final class PlayerRank {
     /*
      * Permissions
      */
+    public boolean addNode(String node) {
+        return this.nodes.add(node);
+    }
     private boolean hasNode(String node) {
         boolean contains = this.nodes.contains(node);
         PlayerRank parent;
@@ -81,5 +86,19 @@ public final class PlayerRank {
     }
     public boolean isSubtractive(String node) {
         return this.hasNode("-*") || this.hasNode("-" + node);
+    }
+    
+    /*
+     * Overrides
+     */
+    @Override
+    public String toString() {
+        return this.getIdentifier();
+    }
+    @Override
+    public int compareTo(@NotNull PlayerRank other) {
+        if ("*".equals(this.getIdentifier())) return 1;
+        if (("*".equals(other.getIdentifier())) || (this.parent.equals(other.getIdentifier()))) return -1;
+        return 0;
     }
 }

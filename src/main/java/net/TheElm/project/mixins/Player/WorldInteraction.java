@@ -31,8 +31,13 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.commands.PlayerSpawnCommand;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ChatRooms;
-import net.TheElm.project.interfaces.*;
+import net.TheElm.project.interfaces.MoneyHolder;
+import net.TheElm.project.interfaces.Nicknamable;
+import net.TheElm.project.interfaces.PlayerChat;
+import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.interfaces.PlayerServerLanguage;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.SleepUtils;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -82,6 +87,14 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Override
     public ClaimantPlayer getClaim() {
         return ((PlayerData)this.networkHandler).getClaim();
+    }
+    
+    /*
+     * Ranks
+     */
+    @Override
+    public PlayerRank[] getRanks() {
+        return ((PlayerData)this.networkHandler).getRanks();
     }
     
     /*
