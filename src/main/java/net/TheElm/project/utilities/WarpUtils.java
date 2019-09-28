@@ -345,6 +345,7 @@ public final class WarpUtils {
         // Move the player
         if (world == player.world) {
             player.networkHandler.requestTeleport(tpPos.getX() + 0.5D, tpPos.getY(), tpPos.getZ() + 0.5D, player.yaw, player.pitch);
+            player.networkHandler.syncWithPlayerPosition();
         } else if (world instanceof ServerWorld) {
             player.teleport((ServerWorld) world, tpPos.getX() + 0.5D, tpPos.getY(), tpPos.getZ() + 0.5D, player.yaw, player.pitch);
         }

@@ -156,6 +156,7 @@ public final class SewingMachineConfig {
     public final ConfigOption<Boolean> HANDLE_PERMISSIONS;
     
     // Miscellaneous
+    public final ConfigOption<Boolean> RETURN_PORTALS;
     public final ConfigOption<Boolean> LIMIT_SKELETON_ARROWS;
     public final ConfigOption<Boolean> EXTINGUISH_CAMPFIRES;
     public final ConfigOption<Integer> ANVIL_UPPER_LIMIT;
@@ -305,6 +306,7 @@ public final class SewingMachineConfig {
         /*
          * Miscellaneous
          */
+        this.RETURN_PORTALS = this.addConfig( new ConfigOption<>("fun.world.nether.portal_fix", true, JsonElement::getAsBoolean));
         this.EXTINGUISH_CAMPFIRES = this.addConfig( new ConfigOption<>("fun.world.extinguish_campfires", true, JsonElement::getAsBoolean));
         this.LIMIT_SKELETON_ARROWS = this.addConfig( new ConfigOption<>("fun.mobs.skeletons.limit_arrows", true, JsonElement::getAsBoolean));
         this.PREVENT_NETHER_ENDERMEN = this.addConfig( new ConfigOption<>("fun.mobs.enderman.no_nether", false, JsonElement::getAsBoolean));

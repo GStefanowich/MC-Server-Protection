@@ -38,7 +38,9 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.PlayerServerLanguage;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.ranks.PlayerRank;
+import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.SleepUtils;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
@@ -73,9 +75,16 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     private Long firstJoinedAt = null;
     private Long lastJoinedAt = null;
     
+    // Warps
     private Integer warpDimension = null;
     private BlockPos warpPos = null;
+    
+    // Nickname
     private Text playerNickname = null;
+    
+    // Portal locations
+    private BlockPos overworldPortal = null;
+    private BlockPos theNetherPortal = null;
     
     public WorldInteraction(World world_1, GameProfile gameProfile_1) {
         super(world_1, gameProfile_1);
@@ -84,6 +93,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Claims
      */
+    
     @Override
     public ClaimantPlayer getClaim() {
         return ((PlayerData)this.networkHandler).getClaim();
@@ -92,6 +102,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Ranks
      */
+    
     @Override
     public PlayerRank[] getRanks() {
         return ((PlayerData)this.networkHandler).getRanks();
@@ -145,6 +156,32 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Override
     public void setWarpDimension(World world) {
         this.warpDimension = world.dimension.getType().getRawId();
+    }
+    
+    /*
+     * Portal locations
+     */
+    public void setNetherPortal(@Nullable BlockPos portalPos) {
+        this.theNetherPortal = portalPos;
+    }
+    public void setOverworldPortal(@Nullable BlockPos portalPos) {
+        this.overworldPortal = portalPos;
+    }
+    @Nullable
+    public BlockPos getNetherPortal() {
+        return this.theNetherPortal;
+    }
+    @Nullable
+    public BlockPos getOverworldPortal() {
+        return this.overworldPortal;
+    }
+    
+    @Inject(at = @At("HEAD"), method = "changeDimension")
+    public void onChangeDimension(DimensionType dimensionType, CallbackInfoReturnable<Entity> callback) {
+        if (SewingMachineConfig.INSTANCE.RETURN_PORTALS.get()) {
+            if (dimensionType == DimensionType.OVERWORLD) this.setNetherPortal(this.getBlockPos());
+            else if (dimensionType == DimensionType.THE_NETHER) this.setOverworldPortal(this.getBlockPos());
+        }
     }
     
     /*
@@ -226,12 +263,25 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             tag.putInt("playerWarpZ", this.warpPos.getZ());
             tag.putInt("playerWarpD", this.getWarpDimensionId());
         }
+        // Store the players nickname
         if ( this.playerNickname != null )
             tag.putString("PlayerNickname", Text.Serializer.toJson(this.playerNickname));
+        
+        // Store the first joined-at time
         if ( this.firstJoinedAt != null )
             tag.putLong("FirstJoinedAtTime", this.firstJoinedAt);
+        
+        // Store the last joined-at time
         if ( this.lastJoinedAt != null )
             tag.putLong("LastJoinedAtTime", this.lastJoinedAt);
+        
+        // Store where the player entered the nether at
+        if ( this.overworldPortal != null )
+            tag.put("LastPortalOverworld", NbtUtils.blockPosToTag(this.overworldPortal));
+        
+        // Store where the player exited the nether at
+        if ( this.theNetherPortal != null )
+            tag.put("LastPortalNether", NbtUtils.blockPosToTag(this.theNetherPortal));
     }
     @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
@@ -245,12 +295,26 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             if ( tag.containsKey( "playerWarpD" ) )
                 this.warpDimension = tag.getInt("playerWarpD");
         }
+        
+        // Get the nickname
         if (tag.containsKey("PlayerNickname",8))
             this.playerNickname = Text.Serializer.fromJson(tag.getString("PlayerNickname"));
+        
+        // Get when first joined
         if (tag.containsKey("FirstJoinedAtTime",4))
             this.firstJoinedAt = tag.getLong("FirstJoinedAtTime");
+        
+        // Get when last joined
         if (tag.containsKey("LastJoinedAtTime",4))
             this.lastJoinedAt = tag.getLong("LastJoinedAtTime");
+        
+        // Get the entered overworld portal
+        if (tag.containsKey("LastPortalOverworld", 10))
+            this.overworldPortal = NbtUtils.tagToBlockPos(tag.getCompound("LastPortalOverworld"));
+        
+        // Get the entered nether portal
+        if (tag.containsKey("LastPortalNether", 10))
+            this.theNetherPortal = NbtUtils.tagToBlockPos(tag.getCompound("LastPortalNether"));
     }
     @Inject(at = @At("TAIL"), method = "copyFrom")
     public void onCopyData(ServerPlayerEntity player, boolean alive, CallbackInfo callback) {
@@ -266,6 +330,10 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         
         // Keep the chat room cross-dimension
         this.setChatRoom(((PlayerChat) player).getChatRoom());
+        
+        // Keep the portal location cross-dimension (Necessary!)
+        this.setOverworldPortal(((PlayerData) player).getOverworldPortal());
+        this.setNetherPortal(((PlayerData) player).getNetherPortal());
         
         // Keep when the player joined across deaths
         this.firstJoinedAt = ((PlayerData) player).getFirstJoinAt();
