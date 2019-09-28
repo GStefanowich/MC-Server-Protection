@@ -69,7 +69,7 @@ public final class ConfigArray<T extends Object> extends ConfigBase {
     public void set(JsonElement value) {
         if (value == null) return;
         if (value instanceof JsonArray) {
-            for (JsonElement element : ((JsonArray) value))
+            for (JsonElement element : value.getAsJsonArray())
                 this.value.add(this.setter.apply(element));
             return;
         }

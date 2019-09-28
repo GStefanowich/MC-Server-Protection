@@ -23,46 +23,26 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.interfaces;
+package net.TheElm.project.mixins.Server;
 
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.TheElm.project.protections.ranks.PlayerRank;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.TheElm.project.interfaces.CommandSource;
+import net.TheElm.project.utilities.RankUtils;
+import net.minecraft.entity.Entity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 
-public interface PlayerData {
+@Mixin(net.minecraft.server.command.ServerCommandSource.class)
+public abstract class ServerCommandSource implements CommandSource, net.minecraft.server.command.CommandSource {
     
-    /*
-     * Saved warp data
-     */
-    World getWarpWorld();
-    Integer getWarpDimensionId();
-    BlockPos getWarpPos();
-    void setWarpPos(@Nullable BlockPos blockPos);
-    void setWarpDimension(World world);
+    @Nullable @Shadow
+    public native Entity getEntity();
     
-    /*
-     * Player claim information
-     */
-    ClaimantPlayer getClaim();
-    PlayerRank[] getRanks();
+    @Override
+    public boolean hasPermission(String node) {
+        Entity entity = this.getEntity();
+        return ((entity instanceof ServerPlayerEntity) && RankUtils.hasPermission(((ServerPlayerEntity) entity), node));
+    }
     
-    /*
-     * Player join information
-     */
-    @Nullable
-    Long getFirstJoinAt();
-    void updateFirstJoin();
-    @Nullable
-    Long getLastJoinAt();
-    void updateLastJoin();
-    
-    /*
-     * Player block ruler information
-     */
-    void setRulerA(@Nullable BlockPos blockPos);
-    void setRulerB(@Nullable BlockPos blockPos);
-    @Nullable BlockPos getRulerA();
-    @Nullable BlockPos getRulerB();
 }

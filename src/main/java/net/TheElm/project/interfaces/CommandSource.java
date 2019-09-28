@@ -25,44 +25,8 @@
 
 package net.TheElm.project.interfaces;
 
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.TheElm.project.protections.ranks.PlayerRank;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
-
-public interface PlayerData {
+public interface CommandSource {
     
-    /*
-     * Saved warp data
-     */
-    World getWarpWorld();
-    Integer getWarpDimensionId();
-    BlockPos getWarpPos();
-    void setWarpPos(@Nullable BlockPos blockPos);
-    void setWarpDimension(World world);
+    boolean hasPermission(String node);
     
-    /*
-     * Player claim information
-     */
-    ClaimantPlayer getClaim();
-    PlayerRank[] getRanks();
-    
-    /*
-     * Player join information
-     */
-    @Nullable
-    Long getFirstJoinAt();
-    void updateFirstJoin();
-    @Nullable
-    Long getLastJoinAt();
-    void updateLastJoin();
-    
-    /*
-     * Player block ruler information
-     */
-    void setRulerA(@Nullable BlockPos blockPos);
-    void setRulerB(@Nullable BlockPos blockPos);
-    @Nullable BlockPos getRulerA();
-    @Nullable BlockPos getRulerB();
 }
