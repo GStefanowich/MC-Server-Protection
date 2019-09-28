@@ -152,6 +152,9 @@ public final class SewingMachineConfig {
     public final ConfigArray<String> SERVER_MOTD_LIST;
     public final ConfigArray<String> SERVER_ICON_LIST;
     
+    // Permissions
+    public final ConfigOption<Boolean> HANDLE_PERMISSIONS;
+    
     // Miscellaneous
     public final ConfigOption<Boolean> LIMIT_SKELETON_ARROWS;
     public final ConfigOption<Boolean> EXTINGUISH_CAMPFIRES;
@@ -293,6 +296,11 @@ public final class SewingMachineConfig {
          */
         this.SERVER_MOTD_LIST = this.addConfig( new ConfigArray<>("server.motd", JsonElement::getAsString));
         this.SERVER_ICON_LIST = this.addConfig( new ConfigArray<>("server.icons", JsonElement::getAsString));
+        
+        /*
+         * Permission options
+         */
+        this.HANDLE_PERMISSIONS = this.addConfig( new ConfigOption<>("server.permissions.enabled", true, JsonElement::getAsBoolean));
         
         /*
          * Miscellaneous

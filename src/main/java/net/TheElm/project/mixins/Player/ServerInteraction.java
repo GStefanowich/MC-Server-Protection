@@ -35,11 +35,13 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.PlayerMovement;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.LegacyConverter;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.MoneyUtils;
+import net.TheElm.project.utilities.RankUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.entity.player.PlayerEntity;
@@ -63,6 +65,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -80,8 +83,8 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
     /*
      * Shadow Methods
      */
-    @Shadow public ClientConnection client;
-    @Shadow private MinecraftServer server;
+    @Shadow @Final public ClientConnection client;
+    @Shadow @Final private MinecraftServer server;
     @Shadow private ServerPlayerEntity player;
     @Shadow private int messageCooldown;
     
@@ -97,6 +100,18 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
     @Override
     public ClaimantPlayer getClaim() {
         return this.playerClaimData;
+    }
+    
+    /*
+     * Ranks
+     */
+    private PlayerRank[] ranks = null;
+    
+    @NotNull
+    public PlayerRank[] getRanks() {
+        if (this.ranks == null)
+            this.ranks = RankUtils.loadPlayerRanks(this.player.getGameProfile());
+        return this.ranks;
     }
     
     /*

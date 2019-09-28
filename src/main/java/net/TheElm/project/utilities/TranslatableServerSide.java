@@ -95,8 +95,8 @@ public final class TranslatableServerSide {
                 // Get the objects that were provided
                 Object obj = objects[ O++ ];
                 if ( ("%s".equalsIgnoreCase( seg )) && ( obj instanceof Text ) ) {
-                    if (out == null) out = (Text)obj;
-                    else out.append( (Text)obj );
+                    if (out == null) out = new LiteralText("");
+                    out.append( (Text)obj );
                 } else if ( ("%d".equalsIgnoreCase( seg )) && ( obj instanceof Number ) ) {
                     if (out == null) out = new LiteralText("");
                     out.append(new LiteralText( formatter.format( ((Number) obj).longValue() ) ).formatted(Formatting.AQUA));
