@@ -25,6 +25,7 @@
 
 package net.TheElm.project.protections.events;
 
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.BlockInteractionCallback;
@@ -212,7 +213,7 @@ public final class BlockInteraction {
             if (itemStack.getItem() instanceof BlockItem)
                 EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, ((BlockItem)itemStack.getItem()).getBlock(), blockPos));
             else
-                System.out.println("Player \"placed\" non-block item");
+                CoreMod.logDebug("Player \"placed\" non-block item");
         }
         return result;
     }

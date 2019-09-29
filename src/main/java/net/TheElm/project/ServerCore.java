@@ -65,7 +65,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
      */
     @Override
     public void onInitializeServer() {
-        CoreMod.logInfo( "Sewing Machine utilities mod is starting." );
+        super.initialize();
         
         SewingMachineConfig CONFIG = SewingMachineConfig.INSTANCE;
         CommandRegistry REGISTRY = CommandRegistry.INSTANCE;

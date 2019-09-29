@@ -100,10 +100,7 @@ public final class RankUtils {
             // Sort the ranks in ascending order
             ranks.sort(PlayerRank::compareTo);
             
-            for (PlayerRank tmp : ranks) {
-                System.out.println( tmp.getIdentifier() );
-            }
-            
+            // Return as a primitive array
             return ranks.toArray(new PlayerRank[0]);
         } catch (FileNotFoundException e) {
             return new PlayerRank[0];

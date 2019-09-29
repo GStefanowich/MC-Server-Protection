@@ -123,7 +123,6 @@ public abstract class Death extends Entity {
                     player.inventory.offerOrDrop(player.world, itemStack);
                 break;
             }
-            if (random != null) System.out.println( random );
         }
     }
     

@@ -137,6 +137,10 @@ public abstract class CoreMod {
         return out.stream();
     }
     
+    public void initialize() {
+        CoreMod.logInfo( "Sewing Machine utilities mod is starting." );
+    }
+    
     /*
      * Fabric Elements
      */
