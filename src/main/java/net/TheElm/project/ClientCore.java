@@ -36,7 +36,7 @@ public final class ClientCore extends CoreMod implements ClientModInitializer {
      */
     @Override
     public void onInitializeClient() {
-        
+        super.initialize();
     }
     
     @NotNull
