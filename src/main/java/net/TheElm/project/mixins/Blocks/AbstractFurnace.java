@@ -75,6 +75,12 @@ public abstract class AbstractFurnace extends LockableContainerBlockEntity imple
     @Shadow @Final
     protected RecipeType<? extends AbstractCookingRecipe> recipeType;
     
+    /**
+     * Cached the furnace recipe
+     * 
+     * @author TheElm
+     * @reason Speeds up TPS
+     */
     @Overwrite
     public void tick() {
         boolean wasBurning = this.isBurning(), // If WAS burning (before tick iteration)
