@@ -28,6 +28,7 @@ package net.TheElm.project.mixins.Player.Interaction;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.ShopSignBuilder;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.SignBlockEntity;
@@ -183,7 +184,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
         // Shop signs
         if ( tag.hasUuid( "shop_owner" ) ) {
             // Get the ITEM for the shop
-            if (tag.containsKey("shop_item_mod",8) && tag.containsKey("shop_item_name",8)) {
+            if (tag.containsKey("shop_item_mod", NbtType.STRING) && tag.containsKey("shop_item_name", NbtType.STRING)) {
                 String signItem = tag.getString("shop_item_mod") + ":" + tag.getString("shop_item_name");
                 try {
                     this.shopSign_item = new Identifier(signItem);
@@ -193,15 +194,15 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
             }
             
             // Get the BLOCK POSITIONS for deed
-            if (tag.containsKey("shop_blockPosA",4) && tag.containsKey("shop_blockPosB", 4)) {
+            if (tag.containsKey("shop_blockPosA", NbtType.LONG) && tag.containsKey("shop_blockPosB", NbtType.LONG)) {
                 this.shopSign_posA = BlockPos.fromLong(tag.getLong("shop_blockPosA"));
                 this.shopSign_posB = BlockPos.fromLong(tag.getLong("shop_blockPosB"));
             }
             
             // Save other relevant shop sign data
             this.shopSign_Owner = tag.getUuid("shop_owner");
-            if (tag.containsKey("shop_item_count",3) || tag.containsKey("shop_item_count",4)) this.shopSign_itemCount = tag.getInt("shop_item_count");
-            if (tag.containsKey("shop_price",3) || tag.containsKey("shop_price",4)) this.shopSign_itemPrice = tag.getInt("shop_price");
+            if (tag.containsKey("shop_item_count", NbtType.NUMBER)) this.shopSign_itemCount = tag.getInt("shop_item_count");
+            if (tag.containsKey("shop_price", NbtType.NUMBER)) this.shopSign_itemPrice = tag.getInt("shop_price");
         }
     }
     

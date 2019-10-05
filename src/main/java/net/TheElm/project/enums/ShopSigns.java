@@ -75,6 +75,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Overwrite;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -125,7 +126,8 @@ public enum ShopSigns {
             if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
                 return Either.right( true );
             
-            if ((sign.getShopItem() == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null))
+            // These should NOT be null
+            if ((sign.getShopItem() == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null) || (sign.getShopItemDisplay() == null))
                 return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
             
             // Check if the attached chest exists
@@ -167,7 +169,7 @@ public enum ShopSigns {
                     // Give player money for item
                     MoneyUtils.givePlayerMoney(player, sign.getShopItemPrice());
                     
-                    ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
+                    ClaimantPlayer permissions = ClaimantPlayer.get( sign.getShopOwner() );
                     
                     // Log the event
                     CoreMod.logInfo( player.getName().asString() + " sold " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay().asString() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " to " + permissions.getName().asString() );
@@ -237,13 +239,17 @@ public enum ShopSigns {
             Inventory chestInventory = null;
             
             // If shops disabled
-            if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
+            if ( !this.isEnabled() )
                 return Either.right( true );
             
             // Check if the attached chest exists
             if (CoreMod.spawnID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
                 if (player.getUuid().equals(sign.getShopOwner()))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.self_buy"));
+                
+                // These should NOT be null
+                if ((sign.getShopItem() == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null) || (sign.getShopItemDisplay() == null))
+                    return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
                 
                 /*
                  * Check if chest is valid
@@ -340,6 +346,7 @@ public enum ShopSigns {
         }
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
+            
             LootableContainerBlockEntity chest = null;
             Inventory chestInventory = null;
             
@@ -351,6 +358,10 @@ public enum ShopSigns {
             if (CoreMod.spawnID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
                 if (player.getUuid().equals(sign.getShopOwner()))
                     return Either.left(new LiteralText("Cannot buy items from yourself."));
+    
+                // These should NOT be null
+                if ((sign.getShopItem() == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemDisplay() == null))
+                    return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
                 
                 /*
                  * Check if chest is valid
@@ -371,7 +382,7 @@ public enum ShopSigns {
                 if (!InventoryUtils.chestToPlayer( player, signPos, chestInventory, player.inventory, sign.getShopItem(), sign.getShopItemCount(), true ))
                     return Either.left(new LiteralText("Chest is out of " + sign.getShopItemDisplay() + "."));
                 
-                ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
+                ClaimantPlayer permissions = ClaimantPlayer.get( sign.getShopOwner() );
                 
                 // Log the event
                 CoreMod.logInfo( player.getName().asString() + " got " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay() + " from " + permissions.getName().asString() );
@@ -525,11 +536,13 @@ public enum ShopSigns {
             super.formatSign(signBuilder, creator);
             
             SignBlockEntity sign = signBuilder.getSign();
-            BlockPos blockPos = sign.getPos();
+            
+            // Get sign position
+            /*BlockPos blockPos = sign.getPos();
             int x = blockPos.getX();
             int z = blockPos.getZ();
             if ((x % 16 == 0) || ((x + 1) % 16 == 0) || (z % 16 == 0) || ((z + 1) % 16 == 0))
-                throw new ShopBuilderException(new LiteralText("Can't place waystones on the border of a chunk."));
+                throw new ShopBuilderException(new LiteralText("Can't place waystones on the border of a chunk."));*/
             
             // Set the signs price
             Text priceText = new LiteralText("$" + SewingMachineConfig.INSTANCE.WARP_WAYSTONE_COST.get()).formatted(Formatting.DARK_BLUE);
@@ -587,6 +600,10 @@ public enum ShopSigns {
             // Get the cost for the DEED
             if (!signBuilder.textMatchPrice(signBuilder.getLines()[2]))
                 throw new ShopBuilderException(new LiteralText("Sign is missing a cost"));
+            
+            // These should NOT be null
+            if (sign.getWorld() == null)
+                throw new ShopBuilderException(TranslatableServerSide.text(creator, "shop.error.database"));
             
             WorldChunk chunk = sign.getWorld().getWorldChunk( sign.getPos() );
             ClaimantTown town = null;
@@ -675,7 +692,77 @@ public enum ShopSigns {
     /*
      * Allow players to buy chunk claims
      */
-    
+    PLOTS( Formatting.GREEN ) {
+        @Overwrite
+        public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
+            super.formatSign(signBuilder, creator);
+            
+            // Break if not in creative mode
+            if (!creator.isCreative())
+                return false;
+            
+            // Parse the String from the sign
+            if ((!signBuilder.textMatchCount(signBuilder.getLines()[1])) || (!signBuilder.textMatchPrice(signBuilder.getLines()[2])))
+                return false;
+            
+            NumberFormat formatter = NumberFormat.getInstance();
+            
+            SignBlockEntity sign = signBuilder.getSign();
+            sign.setTextOnRow( 1, new LiteralText(formatter.format(signBuilder.itemSize()) + " chunks"));
+            sign.setTextOnRow( 2,
+                new LiteralText("for ").formatted(Formatting.BLACK)
+                    .append(new LiteralText("$" + signBuilder.shopPrice()).formatted(Formatting.DARK_BLUE))
+            );
+            sign.setTextOnRow( 3, new LiteralText(""));
+            
+            // Set the sign owner to SPAWN
+            signBuilder.shopOwner( CoreMod.spawnID );
+            
+            return true;
+        }
+        @Override
+        public Either<Text, Boolean> onInteract(ServerPlayerEntity player, BlockPos signPos, ShopSignBlockEntity sign) {
+            // These should NOT be null
+            if ((sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null))
+                return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
+            
+            // If shops disabled
+            if ( !this.isEnabled() )
+                return Either.right( true );
+            
+            ClaimantPlayer claim = ((PlayerData) player).getClaim();
+            
+            try {
+                // Take the players money
+                if (!MoneyUtils.takePlayerMoney(player, sign.getShopItemPrice()))
+                    return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
+                
+                if ((SewingMachineConfig.INSTANCE.PLAYER_CLAIM_BUY_LIMIT.get() > 0) && ((claim.getMaxChunkLimit() + sign.getShopItemCount()) > SewingMachineConfig.INSTANCE.PLAYER_CLAIM_BUY_LIMIT.get()))
+                    return Either.left(new TranslatableText("Can't buy any more of that."));
+                
+                // Increase the players chunk count
+                ((PlayerData) player).getClaim().increaseMaxChunkLimit( sign.getShopItemCount() );
+                
+                // Log the transaction
+                CoreMod.logInfo( player.getName().asString() + " bought " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " chunks for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) );
+                
+            } catch (NotEnoughMoneyException e) {
+                return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
+            }
+            
+            player.sendMessage(new LiteralText("Chunks claimed ").formatted(Formatting.YELLOW)
+                .append(new LiteralText(NumberFormat.getInstance().format( claim.getCount() )).formatted(Formatting.AQUA))
+                .append(" / ")
+                .append(new LiteralText(NumberFormat.getInstance().format( claim.getMaxChunkLimit() )).formatted(Formatting.AQUA))
+            );
+            
+            return Either.right( true );
+        }
+        @Overwrite
+        public boolean isEnabled() {
+            return (SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.DO_CLAIMS.get() && (SewingMachineConfig.INSTANCE.PLAYER_CLAIM_BUY_LIMIT.get() != 0));
+        }
+    },
     /*
      * Player guide books
      */

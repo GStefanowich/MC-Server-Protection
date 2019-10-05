@@ -40,6 +40,7 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.SleepUtils;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -178,10 +179,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     
     @Inject(at = @At("HEAD"), method = "changeDimension")
     public void onChangeDimension(DimensionType dimensionType, CallbackInfoReturnable<Entity> callback) {
-        if (SewingMachineConfig.INSTANCE.RETURN_PORTALS.get()) {
-            if (dimensionType == DimensionType.OVERWORLD) this.setNetherPortal(this.getBlockPos());
-            else if (dimensionType == DimensionType.THE_NETHER) this.setOverworldPortal(this.getBlockPos());
-        }
+        if (SewingMachineConfig.INSTANCE.OVERWORLD_PORTAL_LOC.get() && dimensionType == DimensionType.OVERWORLD) this.setNetherPortal(this.getBlockPos());
+        else if (SewingMachineConfig.INSTANCE.NETHER_PORTAL_LOC.get() && dimensionType == DimensionType.THE_NETHER) this.setOverworldPortal(this.getBlockPos());
     }
     
     /*
@@ -297,23 +296,23 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         }
         
         // Get the nickname
-        if (tag.containsKey("PlayerNickname",8))
+        if (tag.containsKey("PlayerNickname", NbtType.STRING))
             this.playerNickname = Text.Serializer.fromJson(tag.getString("PlayerNickname"));
         
         // Get when first joined
-        if (tag.containsKey("FirstJoinedAtTime",4))
+        if (tag.containsKey("FirstJoinedAtTime", NbtType.LONG))
             this.firstJoinedAt = tag.getLong("FirstJoinedAtTime");
         
         // Get when last joined
-        if (tag.containsKey("LastJoinedAtTime",4))
+        if (tag.containsKey("LastJoinedAtTime", NbtType.LONG))
             this.lastJoinedAt = tag.getLong("LastJoinedAtTime");
         
         // Get the entered overworld portal
-        if (tag.containsKey("LastPortalOverworld", 10))
+        if (tag.containsKey("LastPortalOverworld", NbtType.COMPOUND))
             this.overworldPortal = NbtUtils.tagToBlockPos(tag.getCompound("LastPortalOverworld"));
         
         // Get the entered nether portal
-        if (tag.containsKey("LastPortalNether", 10))
+        if (tag.containsKey("LastPortalNether", NbtType.COMPOUND))
             this.theNetherPortal = NbtUtils.tagToBlockPos(tag.getCompound("LastPortalNether"));
     }
     @Inject(at = @At("TAIL"), method = "copyFrom")

@@ -30,6 +30,7 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.utilities.NbtUtils;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
@@ -41,7 +42,12 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public abstract class Claimant {
@@ -219,15 +225,15 @@ public abstract class Claimant {
             throw new RuntimeException("Invalid NBT data match");
         
         // Get the claim size
-        if (tag.containsKey("landChunks", 9)) {
-            for (Tag it : tag.getList("landChunks",11)) {
+        if (tag.containsKey("landChunks", NbtType.LIST)) {
+            for (Tag it : tag.getList("landChunks",NbtType.INT_ARRAY)) {
                 this.CLAIMED_CHUNKS.add(((IntArrayTag) it).getIntArray());
             }
         }
         
         // Read friends
-        if (tag.containsKey(( this instanceof ClaimantTown ? "members" : "friends"),9)) {
-            for (Tag it : tag.getList(( this instanceof ClaimantTown ? "members" : "friends"), 10)) {
+        if (tag.containsKey(( this instanceof ClaimantTown ? "members" : "friends"), NbtType.LIST)) {
+            for (Tag it : tag.getList(( this instanceof ClaimantTown ? "members" : "friends"), NbtType.COMPOUND)) {
                 CompoundTag friend = (CompoundTag) it;
                 this.USER_RANKS.put(
                     friend.getUuid("i"),
@@ -237,8 +243,8 @@ public abstract class Claimant {
         }
         
         // Read permissions
-        if (tag.containsKey("permissions",9)) {
-            for (Tag it : tag.getList("permissions", 10)) {
+        if (tag.containsKey("permissions", NbtType.LIST)) {
+            for (Tag it : tag.getList("permissions", NbtType.COMPOUND)) {
                 CompoundTag permission = (CompoundTag) it;
                 this.RANK_PERMISSIONS.put(
                     ClaimPermissions.valueOf(permission.getString("k")),
@@ -248,8 +254,8 @@ public abstract class Claimant {
         }
         
         // Read settings
-        if (tag.containsKey("settings",9)) {
-            for (Tag it : tag.getList("settings", 10)) {
+        if (tag.containsKey("settings", NbtType.LIST)) {
+            for (Tag it : tag.getList("settings", NbtType.COMPOUND)) {
                 CompoundTag setting = (CompoundTag) it;
                 this.CHUNK_CLAIM_OPTIONS.put(
                     ClaimSettings.valueOf(setting.getString("k")),

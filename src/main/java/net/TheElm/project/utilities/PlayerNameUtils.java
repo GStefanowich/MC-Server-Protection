@@ -38,6 +38,7 @@ import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -241,7 +242,7 @@ public final class PlayerNameUtils {
     private static Text getOfflinePlayerNickname(@NotNull UUID uuid) {
         try {
             CompoundTag tag = NbtUtils.readOfflinePlayerData(uuid);
-            if ((tag != null) && tag.containsKey("PlayerNickname", 8))
+            if ((tag != null) && tag.containsKey("PlayerNickname", NbtType.STRING))
                 return Text.Serializer.fromJson(tag.getString("PlayerNickname"));
         } catch (NbtNotFoundException ignored) {}
         return null;

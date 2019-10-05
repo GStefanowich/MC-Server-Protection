@@ -47,7 +47,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LeadKnotEntity.class)
 public abstract class LeadProtection extends AbstractDecorationEntity {
-
+    
     protected LeadProtection(EntityType<? extends AbstractDecorationEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
     }

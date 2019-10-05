@@ -27,6 +27,7 @@ package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.utilities.NbtUtils;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.SpawnerBlock;
@@ -76,7 +77,7 @@ public abstract class MobSpawners extends BlockWithEntity {
             
             if (blockEntity instanceof MobSpawnerBlockEntity) {
                 CompoundTag spawnerTag = blockEntity.toTag(new CompoundTag());
-                ListTag list = spawnerTag.getList("SpawnPotentials", 10);
+                ListTag list = spawnerTag.getList("SpawnPotentials", NbtType.COMPOUND);
                 
                 // Save to the item (The mob)
                 for (Tag tag : list)
@@ -134,8 +135,8 @@ public abstract class MobSpawners extends BlockWithEntity {
     @Override
     public void onPlaced(World world, BlockPos blockPos, BlockState blockState, LivingEntity livingEntity, ItemStack itemStack) {
         CompoundTag tag = itemStack.getOrCreateTag();
-        if (tag.containsKey("EntityIds", 9)) {
-            ListTag mob = tag.getList("EntityIds", 8);
+        if (tag.containsKey("EntityIds", NbtType.LIST)) {
+            ListTag mob = tag.getList("EntityIds", NbtType.STRING);
             
             // Get the mob spawner entity
             BlockEntity blockEntity = world.getBlockEntity(blockPos);

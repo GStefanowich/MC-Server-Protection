@@ -26,6 +26,7 @@
 package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.ChunkSerializer;
@@ -57,12 +58,11 @@ public class ChunkSaving {
             UUID player, town;
             
             // Save the chunks owned-player
-            if ((player = ((IClaimedChunk) chunk).getOwner()) != null) {
+            if ((player = ((IClaimedChunk) chunk).getOwner()) != null)
                 levelTag.putUuid(sewingMachineSerializationPlayer, player);
-                
-                // Save the inner claims
-                levelTag.put(sewingMachineSerializationSlices, ((IClaimedChunk) chunk).serializeSlices());
-            }
+            
+            // Save the inner claims
+            levelTag.put(sewingMachineSerializationSlices, ((IClaimedChunk) chunk).serializeSlices());
             
             // Save the chunks town
             if ((town = ((IClaimedChunk) chunk).getTownId()) != null)
@@ -73,13 +73,12 @@ public class ChunkSaving {
     @Inject(at = @At("RETURN"), method = "writeEntities")
     private static void loadSewingOwner(CompoundTag levelTag, WorldChunk chunk, CallbackInfo callback) {
         // Update the chunks player-owner
-        if ( levelTag.hasUuid(sewingMachineSerializationPlayer) ) {
+        if ( levelTag.hasUuid(sewingMachineSerializationPlayer) )
             ((IClaimedChunk) chunk).updatePlayerOwner(levelTag.getUuid(sewingMachineSerializationPlayer));
-            
-            // Load the inner claims
-            if (levelTag.containsKey(sewingMachineSerializationSlices, 9))
-                ((IClaimedChunk) chunk).deserializeSlices(levelTag.getList(sewingMachineSerializationSlices, 10));
-        }
+        
+        // Load the inner claims
+        if (levelTag.containsKey(sewingMachineSerializationSlices, NbtType.LIST))
+            ((IClaimedChunk) chunk).deserializeSlices(levelTag.getList(sewingMachineSerializationSlices, NbtType.COMPOUND));
         
         // Update the chunks town
         if ( levelTag.hasUuid(sewingMachineSerializationTown) )

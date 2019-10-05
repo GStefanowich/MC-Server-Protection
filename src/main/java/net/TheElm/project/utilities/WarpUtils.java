@@ -27,10 +27,8 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.commands.ClaimCommand;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
-import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerData;
 import net.minecraft.block.BlockState;
@@ -48,6 +46,7 @@ import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
@@ -69,10 +68,19 @@ public final class WarpUtils {
     private static final Set<UUID> warpPlayers = Collections.synchronizedSet(new HashSet<>());
     
     private BlockPos createWarpAt;
+    private Pair<BlockPos, BlockPos> region;
     
     public WarpUtils(final ServerPlayerEntity player, final BlockPos pos) {
         warpPlayers.add( player.getUuid() );
-        this.createWarpAt = pos;
+        this.updateWarpPos( pos );
+    }
+    
+    private void updateWarpPos(BlockPos warpPos) {
+        this.createWarpAt = warpPos;
+        this.region = new Pair<>(
+            new BlockPos( this.createWarpAt.getX() - 4, this.createWarpAt.getY() - 4, this.createWarpAt.getZ() - 3 ),
+            new BlockPos( this.createWarpAt.getX() + 4, this.createWarpAt.getY() + 4, this.createWarpAt.getZ() + 6 )
+        );
     }
     
     public BlockPos getWarpPositionIn(final World world) {
@@ -80,7 +88,7 @@ public final class WarpUtils {
         int z = this.createWarpAt.getZ();
         do {
             CoreMod.logInfo( "Finding a new warp position!" );
-            this.createWarpAt = new BlockPos( getRandom( x ), 256, getRandom( z ) );
+            this.updateWarpPos( new BlockPos( getRandom( x ), 256, getRandom( z ) ) );
         } while ((this.createWarpAt = this.isValid( world, this.createWarpAt,50,true ) ) == null);
         
         return this.createWarpAt;
@@ -137,7 +145,7 @@ public final class WarpUtils {
             
             pos = pos.down();
             blockState = world.getBlockState( pos );
-        } while ( blockState.isAir() || ( mustBeUnowned && ( blockState.getMaterial() == Material.SNOW || blockState.getMaterial() == Material.PLANT )));
+        } while ( blockState.isAir() || blockState.getMaterial().isReplaceable() || ( mustBeUnowned && ( blockState.getMaterial() == Material.SNOW || blockState.getMaterial() == Material.PLANT )));
         
         Material material = blockState.getMaterial();
         
@@ -155,14 +163,14 @@ public final class WarpUtils {
         return this.build(player, world, true);
     }
     public boolean build(final ServerPlayerEntity player, final World world, final boolean dropBlocks) {
-        // Claim the chunk in the name of Spawn
-        try {
-            if (!ClaimCommand.tryClaimChunkAt(CoreMod.spawnID, player, world.getWorldChunk(this.createWarpAt)))
-                return false; // Return false (Try again!)
-        } catch (TranslationKeyException ignored) {
+        // Get the area of blocks to claim
+        if (!ChunkUtils.canPlayerClaimSlices( player.getServerWorld(), this.region.getLeft(), this.region.getRight() ))
             return false;
-        }
         
+        // Claim the defined slices in the name of Spawn
+        ChunkUtils.claimSlices( player.getServerWorld(), CoreMod.spawnID, this.region.getLeft(), this.region.getRight() );
+        
+        // Create the structure
         StructureBuilderUtils structure = new StructureBuilderUtils( world, "waystone" );
         
         final BlockState air = Blocks.AIR.getDefaultState();

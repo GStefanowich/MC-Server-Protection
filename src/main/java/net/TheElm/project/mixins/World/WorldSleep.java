@@ -46,6 +46,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.text.NumberFormat;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -81,8 +82,8 @@ public abstract class WorldSleep extends World implements SleepingWorld {
         this.allPlayersSleeping = false;
         
         if (this.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
-            long long_1 = this.properties.getTimeOfDay() + 24000L;
-            this.setTimeOfDay(long_1 - long_1 % 24000L);
+            long time = this.getTimeOfDay() + 24000L;
+            this.setTimeOfDay(time - time % 24000L);
         }
         
         this.players.stream().filter(LivingEntity::isSleeping).forEach((serverPlayerEntity_1) -> {
@@ -92,8 +93,11 @@ public abstract class WorldSleep extends World implements SleepingWorld {
             this.resetWeather();
         }
         
+        long worldDay = this.getTimeOfDay() / 24000L % 2147483647L;
+        
+        NumberFormat formatter = NumberFormat.getInstance();
         TitleUtils.showPlayerAlert((ServerWorld)(World) this,
-            new LiteralText( "Rise and shine! A new day has begun." )
+            new LiteralText( "Rise and shine! Day " + formatter.format( worldDay ) + " has begun." )
         );
     }
     
