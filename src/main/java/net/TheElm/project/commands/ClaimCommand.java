@@ -101,6 +101,7 @@ public final class ClaimCommand {
     private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = new ExceptionTranslatableServerSide("town.found.poor", 1);
     private static final ExceptionTranslatableServerSide SELF_RANK_CHANGE = new ExceptionTranslatableServerSide("friends.rank.self");
     private static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED_BY_PLAYER = new ExceptionTranslatableServerSide("claim.chunk.error.not_players");
+    private static final ExceptionTranslatableServerSide CHUNK_ALREADY_OWNED = new ExceptionTranslatableServerSide("claim.chunk.error.claimed");
     private static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED = new ExceptionTranslatableServerSide("claim.chunk.error.not_claimed");
     private static final ExceptionTranslatableServerSide CHUNK_RADIUS_OWNED = new ExceptionTranslatableServerSide("claim.chunk.error.radius_owned", 1 );
     private static final SimpleCommandExceptionType WHITELIST_FAILED_EXCEPTION = new SimpleCommandExceptionType(new TranslatableText("commands.whitelist.add.failed"));
@@ -206,7 +207,11 @@ public final class ClaimCommand {
                 .executes(ClaimCommand::townDisband)
             )
             .then( CommandManager.literal("claim")
-                .requires(ClaimCommand::sourceInTown)
+                .requires(ClaimCommand::sourceIsMayor)
+                .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
+                    .suggests(CommandUtilities::getAllPlayerNames)
+                    .executes(ClaimCommand::townGiveChunk)
+                )
                 .executes(ClaimCommand::claimChunkTown)
             )
             .then( CommandManager.literal("unclaim")
@@ -350,7 +355,7 @@ public final class ClaimCommand {
         ClaimantTown town = ((PlayerData) player).getClaim().getTown();
         if (town != null) {
             if ((((IClaimedChunk) chunk).getTownId() != null))
-                throw CHUNK_NOT_OWNED_BY_PLAYER.create( player );
+                throw CHUNK_ALREADY_OWNED.create( player );
             ((IClaimedChunk) chunk).updateTownOwner(town.getId());
         }
         
@@ -361,7 +366,8 @@ public final class ClaimCommand {
     }
     private static int claimChunkOther(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the player running the command
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
         
         // Get the target player
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument( context, "target" );
@@ -377,26 +383,29 @@ public final class ClaimCommand {
         // Claim the chunk for spawn
         return ClaimCommand.claimChunk( CoreMod.spawnID, player );
     }
-    private static int claimChunk(final UUID chunkFor, final PlayerEntity claimant) throws CommandSyntaxException {
+    private static int claimChunk(final UUID chunkFor, final ServerPlayerEntity claimant) throws CommandSyntaxException {
         // Get run from positioning
         BlockPos blockPos = claimant.getBlockPos();
         return ClaimCommand.claimChunkAt( chunkFor, claimant, claimant.world.getWorldChunk(blockPos) );
     }
-    public static int claimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final WorldChunk... worldChunks) {
+    public static int claimChunkAt(final UUID chunkFor, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
         new Thread(ClaimCommand.claimChunkThread( chunkFor, claimant, worldChunks)).start();
         return Command.SINGLE_SUCCESS;
     }
-    private static Runnable claimChunkThread(final UUID chunkFor, final PlayerEntity claimant, final WorldChunk... worldChunks) {
+    private static Runnable claimChunkThread(final UUID chunkFor, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
+        // Handle the claim in a new thread (Because it could have to load chunks)
         return (() -> {
             try {
                 if (!ClaimCommand.tryClaimChunkAt(chunkFor, claimant, worldChunks))
-                    claimant.sendMessage(TranslatableServerSide.text(claimant, "claim.chunk.error.claimed"));
+                    throw CHUNK_ALREADY_OWNED.create( claimant );
             } catch (TranslationKeyException e) {
                 claimant.sendMessage(TranslatableServerSide.text(claimant, e.getKey()));
+            } catch (CommandSyntaxException e) {
+                claimant.sendMessage(new LiteralText( e.getMessage() ).formatted(Formatting.RED));
             }
         });
     }
-    public static boolean tryClaimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final WorldChunk... worldChunks) throws TranslationKeyException {
+    public static boolean tryClaimChunkAt(final UUID chunkFor, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) throws TranslationKeyException {
         boolean success = false;
         int claimed = 0; // Amount of chunks claimed
         
@@ -416,13 +425,11 @@ public final class ClaimCommand {
                 CoreMod.logInfo(claimant.getName().asString() + " has claimed chunk " + chunkPos.x + ", " + chunkPos.z);
                 
                 // Save the chunk for the player
-                Claimant claim;
-                if ((claim = ClaimantPlayer.get(chunkFor)) != null) {
+                Claimant claim = ClaimantPlayer.get( chunkFor );
+                claim.addToCount(worldChunk);
+                
+                if ((claim = ((ClaimantPlayer) claim).getTown()) != null)
                     claim.addToCount(worldChunk);
-                    
-                    if ((claim = ((ClaimantPlayer) claim).getTown()) != null)
-                        claim.addToCount(worldChunk);
-                }
                 
                 // Increase our counter
                 ++claimed;
@@ -504,12 +511,10 @@ public final class ClaimCommand {
             throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create( player );
         
         // Update total count
-        Claimant claimed;
-        if ((claimed = ClaimantPlayer.get( currentOwner )) != null) {
-            claimed.removeFromCount( worldChunk );
-            
-            if ((claimed = ((ClaimantPlayer) claimed).getTown()) != null) claimed.removeFromCount( worldChunk );
-        }
+        Claimant claimed = ClaimantPlayer.get( currentOwner );
+        claimed.removeFromCount( worldChunk );
+        
+        if ((claimed = ((ClaimantPlayer) claimed).getTown()) != null) claimed.removeFromCount( worldChunk );
         
         // Update the owner to NONE
         ((IClaimedChunk) worldChunk).updatePlayerOwner( null );
@@ -525,14 +530,13 @@ public final class ClaimCommand {
             return false;
         
         // Update total count
-        Claimant claimed;
-        if ((claimed = ClaimantPlayer.get( chunkFor )) != null) {
-            // Remove the players count
-            claimed.removeFromCount( chunk );
-            
-            // Remove the towns count
-            if ((claimed = ((IClaimedChunk)chunk).getTown()) != null) claimed.removeFromCount( chunk );
-        }
+        Claimant claimed = ClaimantPlayer.get( chunkFor );
+        
+        // Remove the players count
+        claimed.removeFromCount( chunk );
+        
+        // Remove the towns count
+        if ((claimed = ((IClaimedChunk)chunk).getTown()) != null) claimed.removeFromCount( chunk );
         
         // Set the chunks owner
         ((IClaimedChunk) chunk).updatePlayerOwner( null );
@@ -683,6 +687,25 @@ public final class ClaimCommand {
         
         // Send the notice to the invitee
         TranslatableServerSide.send( target, "town.invite.receive", town.getName(), player.getDisplayName());
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int townGiveChunk(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        // Get the target player
+        Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument( context, "target" );
+        GameProfile targetPlayer = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        
+        ServerWorld world = player.getServerWorld();
+        IClaimedChunk claimedChunk = (IClaimedChunk) world.getChunk( player.getBlockPos() );
+        
+        ClaimantTown town;
+        if ((claimedChunk.getOwner() == null) || ((town = claimedChunk.getTown()) == null) || (!player.getUuid().equals(claimedChunk.getOwner())) || (!player.getUuid().equals( town.getOwner() )))
+            throw CHUNK_NOT_OWNED_BY_PLAYER.create( player );
+        
+        claimedChunk.updatePlayerOwner( targetPlayer.getId() );
         
         return Command.SINGLE_SUCCESS;
     }

@@ -55,6 +55,12 @@ public final class NickNameCommand {
         if (SewingMachineConfig.INSTANCE.DO_PLAYER_NICKS.get()) {
             LiteralCommandNode<ServerCommandSource> pay = dispatcher.register(CommandManager.literal("nick")
                 .then(CommandManager.literal("reset")
+                    .then(CommandManager.argument("target", EntityArgumentType.player())
+                        .executes((context) -> {
+                            ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "target");
+                            return setNickForPlayer(player, null);
+                        })
+                    )
                     .executes((context) -> {
                         ServerPlayerEntity player = context.getSource().getPlayer();
                         return setNickForPlayer(player, null);

@@ -27,6 +27,7 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.utilities.NbtUtils;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
@@ -81,14 +82,14 @@ public abstract class Death extends Entity {
         // Get the attacker
         ServerPlayerEntity player = (ServerPlayerEntity) damageSource.getAttacker();
         ItemStack itemStack = player.getStackInHand(Hand.OFF_HAND);
-        if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getTag()) == null) || ((spawnerTag = spawnerTag.method_10553()) == null) || (!spawnerTag.containsKey("EntityIds", 9)))
+        if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getTag()) == null) || ((spawnerTag = spawnerTag.method_10553()) == null) || (!spawnerTag.containsKey("EntityIds", NbtType.LIST)))
             return;
         
         // Get the identifier of the mob we killed
         StringTag mobId = new StringTag(EntityType.getId(this.getType()).toString());
         
         // Get current entity IDs
-        ListTag entityIds = spawnerTag.getList("EntityIds", 8);
+        ListTag entityIds = spawnerTag.getList("EntityIds", NbtType.STRING);
         int rolls = 1 + EnchantmentHelper.getLevel(Enchantments.LOOTING, player.getMainHandStack());
         for (int roll = 0; roll < rolls; ++roll) {
             Integer random = null;

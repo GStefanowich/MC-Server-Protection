@@ -29,6 +29,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.command.arguments.EntitySummonArgumentType;
 import net.minecraft.command.suggestion.SuggestionProviders;
 import net.minecraft.item.ItemStack;
@@ -66,8 +67,8 @@ public final class SpawnerCommand {
                         // Add mob to the list
                         CompoundTag tag = spawner.getOrCreateTag();
                         ListTag list;
-                        if (tag.containsKey("EntityIds", 9))
-                            list = tag.getList("EntityIds", 8);
+                        if (tag.containsKey("EntityIds", NbtType.LIST))
+                            list = tag.getList("EntityIds", NbtType.STRING);
                         else {
                             list = new ListTag();
                             tag.put("EntityIds", list);

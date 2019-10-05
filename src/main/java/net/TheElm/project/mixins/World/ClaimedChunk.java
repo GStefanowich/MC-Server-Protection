@@ -38,6 +38,7 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.ChunkUtils.ClaimSlice;
 import net.TheElm.project.utilities.ChunkUtils.InnerClaim;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -55,7 +56,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 import java.lang.ref.WeakReference;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
 import java.util.UUID;
 
 @Mixin(WorldChunk.class)
@@ -89,29 +92,55 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
         this.markDirty();
         
         // If there is no player owner, there is no town
-        if (owner == null)
-            this.updateTownOwner( (UUID)null );
+        if (owner == null) {
+            // Reset the inner slices (SHOULD NOT RESET SPAWN)
+            this.resetSlices();
+            this.updateTownOwner((UUID) null);
+        }
         return this.chunkPlayer;
     }
     
-    public void setSliceOwner(UUID owner, int slicePos) {
-        this.setSliceOwner(owner, slicePos, 0, 256);
+    public void resetSlices() {
+        ClaimSlice slice;
+        for (int i = 0; i < this.claimSlices.length; i++) {
+            if ((slice = this.claimSlices[i]) == null)
+                continue;
+            slice.reset();
+        }
     }
-    public void setSliceOwner(UUID owner, int slicePos, int yFrom, int yTo) {
+    public void updateSliceOwner(UUID owner, int slicePos) {
+        this.updateSliceOwner(owner, slicePos, 0, 256);
+    }
+    public void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo) {
         // If heights are invalid
         if (World.isHeightInvalid( yFrom ) || World.isHeightInvalid( yTo ))
             return;
         
         ClaimSlice slice;
-        if ((slice = this.claimSlices[slicePos]) == null) {
+        if ((slice = this.claimSlices[slicePos]) == null)
             slice = (this.claimSlices[slicePos] = new ClaimSlice());
-        }
         
         // Get upper and lower positioning
-        int upper = Math.max( yFrom, yTo );
-        int lower = Math.min( yFrom, yTo );
+        int yMax = Math.max( yFrom, yTo );
+        int yMin = Math.min( yFrom, yTo );
         
-        slice.set(new InnerClaim(owner, upper, lower));
+        slice.set(new InnerClaim(owner, yMax, yMin));
+    }
+    public UUID[] getSliceOwner(int slicePos, int yFrom, int yTo) {
+        ClaimSlice slice;
+        if ((slice = this.claimSlices[slicePos]) == null)
+            return new UUID[0];
+        
+        // Get upper and lower positioning
+        int yMax = Math.max( yFrom, yTo );
+        int yMin = Math.min( yFrom, yTo );
+        
+        // Get all owners
+        Set<UUID> owners = new HashSet<>();
+        for (int y = yMin; y <= yMax; y++)
+            owners.add(slice.get(y).getOwner());
+        
+        return owners.toArray(new UUID[0]);
     }
     
     public void canPlayerClaim(@NotNull UUID owner) throws TranslationKeyException {
@@ -121,10 +150,8 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
             return;
         // Check claims limit
         ClaimantPlayer player = ClaimantPlayer.get( owner );
-        if (player != null) { 
-            if ((SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get() == 0) || (((player.getCount() + 1) > player.getMaxChunkLimit()) && (SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get() > 0)))
-                throw new TranslationKeyException("claim.chunk.error.max");
-        }
+        if ((SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get() == 0) || (((player.getCount() + 1) > player.getMaxChunkLimit()) && (SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get() > 0)))
+            throw new TranslationKeyException("claim.chunk.error.max");
     }
     
     @Nullable
@@ -202,11 +229,11 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
     @Override @NotNull
     public ListTag serializeSlices() {
         ListTag serialized = new ListTag();
+        ClaimSlice slice;
         for (int i = 0; i < this.claimSlices.length; i++) {
-            ClaimSlice slice = this.claimSlices[i];
-            
             // Slice must be defined
-            if (slice == null) continue;
+            if ((slice = this.claimSlices[i]) == null)
+                continue;
             
             // Create a new tag to save the slice
             CompoundTag sliceTag = new CompoundTag();
@@ -248,7 +275,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
             if (!(tag instanceof CompoundTag)) continue;
             CompoundTag sliceTag = (CompoundTag) tag;
             
-            ListTag claimsTag = sliceTag.getList("claims", 10);
+            ListTag claimsTag = sliceTag.getList("claims", NbtType.COMPOUND);
             int i = sliceTag.getInt("i");
             
             for (Tag claimTag : claimsTag) {
@@ -256,7 +283,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
                 int upper = ((CompoundTag) claimTag).getInt("upper");
                 int lower = ((CompoundTag) claimTag).getInt("lower");
                 
-                this.setSliceOwner( owner, i, lower, upper );
+                this.updateSliceOwner( owner, i, lower, upper );
             }
         }
     }

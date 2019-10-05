@@ -192,6 +192,14 @@ public final class ShopSignBuilder {
             return (this.tradeItem = Registry.ITEM.get(this.tradeItemIdentifier)) != Items.AIR;
         }
     }
+    public boolean textMatchCount(Text text) {
+        try {
+            this.stackSize = Integer.parseUnsignedInt(text.asString());
+        } catch (NumberFormatException e) {
+            return false;
+        }
+        return true;
+    }
     public boolean textMatchPrice(Text text) {
         String str = text.getString();
         if ( str.startsWith( "$" ) )

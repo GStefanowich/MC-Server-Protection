@@ -33,6 +33,7 @@ import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
@@ -44,6 +45,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -149,9 +151,11 @@ public final class ChunkUtils {
      * @return If the player is a high enough rank to teleport to the target
      */
     public static boolean canPlayerWarpTo(PlayerEntity player, UUID target) {
+        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+            return SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get();
+        
         // Check our chunk permissions
         ClaimantPlayer permissions = ClaimantPlayer.get( target );
-        if ( permissions == null ) return false; // Permissions should not be NULL unless something is wrong
         
         // Get the ranks of the user and the rank required for performing
         ClaimRanks userRank = permissions.getFriendRank( player.getUuid() );
@@ -159,6 +163,59 @@ public final class ChunkUtils {
         
         // Return the test if the user can perform the action
         return permReq.canPerform( userRank );
+    }
+    
+    /*
+     * Claim slices between two areas
+     */
+    public static void claimSlices(ServerWorld world, UUID player, BlockPos firstPos, BlockPos secondPos) {
+        // Get range of values
+        BlockPos min = getMinimumPosition(firstPos, secondPos);
+        BlockPos max = getMaximumPosition(firstPos, secondPos);
+        
+        // Iterate through the blocks
+        for (int x = min.getX(); x <= max.getX(); x++) {
+            for (int z = min.getZ(); z <= max.getZ(); z++) {
+                BlockPos sliceLoc = new BlockPos( x, 0, z );
+                int slicePos = getPositionWithinChunk( sliceLoc );
+                
+                WorldChunk chunk = world.getWorldChunk( sliceLoc );
+                ((IClaimedChunk) chunk).updateSliceOwner( player, slicePos, min.getY(), max.getY() );
+            }
+        }
+    }
+    public static boolean canPlayerClaimSlices(ServerWorld world, BlockPos firstPos, BlockPos secondPos) {
+        // Get range of values
+        BlockPos min = getMinimumPosition(firstPos, secondPos);
+        BlockPos max = getMaximumPosition(firstPos, secondPos);
+        
+        // Iterate through the blocks
+        for (int x = min.getX(); x <= max.getX(); x++) {
+            for (int z = min.getZ(); z <= max.getZ(); z++) {
+                BlockPos sliceLoc = new BlockPos( x, 0, z );
+                int slicePos = getPositionWithinChunk( sliceLoc );
+                
+                WorldChunk chunk = world.getWorldChunk( sliceLoc );
+                if (((IClaimedChunk) chunk).getSliceOwner(slicePos, min.getY(), max.getY()).length > 0)
+                    return false;
+            }
+        }
+        
+        return true;
+    }
+    public static BlockPos getMinimumPosition(BlockPos a, BlockPos b) {
+        return new BlockPos(
+            Math.min(a.getX(), b.getX()),
+            Math.min(a.getY(), b.getY()),
+            Math.min(a.getZ(), b.getZ())
+        );
+    }
+    public static BlockPos getMaximumPosition(BlockPos a, BlockPos b) {
+        return new BlockPos(
+            Math.max(a.getX(), b.getX()),
+            Math.max(a.getY(), b.getY()),
+            Math.max(a.getZ(), b.getZ())
+        );
     }
     
     /*
@@ -179,14 +236,11 @@ public final class ChunkUtils {
     }
     
     public static Text getPlayerWorldWilderness(@NotNull final PlayerEntity player) {
-        if (player.getEntityWorld().dimension.getType() == DimensionType.THE_END) {
-            return TranslatableServerSide.text( player, "claim.wilderness.end" ).formatted( Formatting.BLACK );
-            
-        } else if (player.getEntityWorld().dimension.getType() == DimensionType.THE_NETHER) {
-            return TranslatableServerSide.text( player, "claim.wilderness.nether" ).formatted( Formatting.RED );
-            
-        }
-        return TranslatableServerSide.text( player, "claim.wilderness.general" ).formatted( Formatting.GREEN );
+        if (player.getEntityWorld().dimension.getType() == DimensionType.THE_END)
+            return TranslatableServerSide.text(player, "claim.wilderness.end").formatted(Formatting.BLACK);
+        if (player.getEntityWorld().dimension.getType() == DimensionType.THE_NETHER)
+            return TranslatableServerSide.text(player, "claim.wilderness.nether").formatted(Formatting.LIGHT_PURPLE);
+        return TranslatableServerSide.text( player, "claim.wilderness.general" ).formatted(Formatting.GREEN);
     }
     
     /*
@@ -209,6 +263,17 @@ public final class ChunkUtils {
         @NotNull
         public InnerClaim get(BlockPos blockPos) {
             return this.get(blockPos.getY());
+        }
+        public void reset() {
+            Iterator<Map.Entry<Integer, InnerClaim>> it = this.innerChunks.entrySet().iterator();
+            while ( it.hasNext() ) {
+                Map.Entry<Integer, InnerClaim> entry = it.next();
+                InnerClaim claim = entry.getValue();
+                
+                // Remove all that are not SPAWN
+                if (!CoreMod.spawnID.equals( claim.getOwner() ))
+                    it.remove();
+            }
         }
         
         public Iterator<InnerClaim> getClaims() {

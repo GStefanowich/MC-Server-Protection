@@ -26,6 +26,7 @@
 package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.utilities.NbtUtils;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.CauldronBlock;
@@ -109,7 +110,7 @@ public abstract class CauldronCleaning extends Block {
         // Get the entity IDs on the spawner
         CompoundTag spawnerTag = spawnerStack.getOrCreateTag();
         ListTag entityIds;
-        if ((!spawnerTag.containsKey("EntityIds", 9)) || ((entityIds = spawnerTag.getList("EntityIds", 8)).size() < 2))
+        if ((!spawnerTag.containsKey("EntityIds", NbtType.LIST)) || ((entityIds = spawnerTag.getList("EntityIds", NbtType.STRING)).size() < 2))
             return;
         
         // Remove the first spawn type

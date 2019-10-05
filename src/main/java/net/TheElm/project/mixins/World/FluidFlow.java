@@ -25,6 +25,7 @@
 
 package net.TheElm.project.mixins.World;
 
+import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.minecraft.block.BlockState;
@@ -37,13 +38,19 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.ViewableWorld;
 import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BaseFluid.class)
-public class FluidFlow {
+public abstract class FluidFlow extends Fluid {
+    
+    @Shadow
+    protected abstract boolean isInfinite();
     
     @Inject(at = @At("HEAD"), method = {"method_15746", "method_15738"}, cancellable = true)
     protected void gettingFluidDirections(BlockView world, Fluid fluid, BlockPos sourcePos, BlockState sourceState, Direction flowDirection, BlockPos flowPos, BlockState flowState, FluidState fluidState, CallbackInfoReturnable<Boolean> callback) {
@@ -61,6 +68,13 @@ public class FluidFlow {
             if (!((IClaimedChunk) nextChunk).canUserDo( ((IClaimedChunk) startingChunk).getOwner(), ClaimPermissions.BLOCKS ))
                 callback.setReturnValue(false);
         }
+    }
+    
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/fluid/BaseFluid.isInfinite()Z"), method = "getUpdatedState")
+    protected boolean onUpdate(BaseFluid fluid, ViewableWorld viewableWorld, BlockPos blockPos, BlockState blockState) {
+        if (SewingMachineConfig.INSTANCE.NETHER_INFINITE_LAVA.get() && viewableWorld.getDimension().getType() == DimensionType.THE_NETHER)
+            return true;
+        return this.isInfinite();
     }
     
 }

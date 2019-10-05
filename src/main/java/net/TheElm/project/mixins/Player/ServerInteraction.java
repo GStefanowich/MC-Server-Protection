@@ -148,7 +148,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         CoreMod.PLAYER_LOCATIONS.put( player, null );
         
         // Initialize user claims from database
-        this.playerClaimData = ClaimantPlayer.get( player.getUuid() );
+        this.playerClaimData = ( SewingMachineConfig.INSTANCE.DO_CLAIMS.get() ? ClaimantPlayer.get( player.getUuid() ) : null );
         
         // Check if server has been joined before
         if (((PlayerData) player).getFirstJoinAt() == null) {
@@ -295,9 +295,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
                 popupText = new LiteralText("Entering ")
                     .formatted(Formatting.WHITE);
                 
-                ClaimantPlayer owner; // Get the owner (Shouldn't be null unless error occurs, ignore)
-                if ((owner = ClaimantPlayer.get( locationOwner )) == null)
-                    return;
+                ClaimantPlayer owner  = ClaimantPlayer.get( locationOwner );
                 
                 try {
                     // If player is in spawn protection

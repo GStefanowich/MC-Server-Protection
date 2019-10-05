@@ -60,7 +60,7 @@ public abstract class Portals implements Nameable, CommandOutput {
     public void onDimensionUpdate(Entity entity, float fl, CallbackInfoReturnable<Boolean> callback) {
         Vec3d vec3d = entity.getLastPortalDirectionVector();
         Direction dir = entity.getLastPortalDirection();
-        if ((entity instanceof ServerPlayerEntity) && SewingMachineConfig.INSTANCE.RETURN_PORTALS.get()) {
+        if (entity instanceof ServerPlayerEntity) {
             ServerPlayerEntity player = (ServerPlayerEntity) entity;
             ServerWorld world = player.getServerWorld();
             
@@ -68,8 +68,8 @@ public abstract class Portals implements Nameable, CommandOutput {
             
             // Search for a saved portal location (In the opposite world) to go to
             BlockPos lastPos = null;
-            if (dimType == DimensionType.OVERWORLD) lastPos = ((PlayerData) player).getNetherPortal();
-            else if (dimType == DimensionType.THE_NETHER) lastPos = ((PlayerData) player).getOverworldPortal();
+            if (SewingMachineConfig.INSTANCE.OVERWORLD_PORTAL_LOC.get() && dimType == DimensionType.OVERWORLD) lastPos = ((PlayerData) player).getNetherPortal();
+            else if (SewingMachineConfig.INSTANCE.NETHER_PORTAL_LOC.get() && dimType == DimensionType.THE_NETHER) lastPos = ((PlayerData) player).getOverworldPortal();
             
             // If not set, let Vanilla take over
             if (lastPos == null) return;
@@ -89,7 +89,7 @@ public abstract class Portals implements Nameable, CommandOutput {
             player.yaw = fl + (float)teleportTarget.yaw;
             
             // Send the teleport
-            player.networkHandler.requestTeleport(lastPos.getX(), lastPos.getY(), lastPos.getZ(), player.yaw, player.pitch);
+            player.networkHandler.requestTeleport(lastPos.getX() + 0.5D, lastPos.getY(), lastPos.getZ() + 0.5D, player.yaw, player.pitch);
             player.networkHandler.syncWithPlayerPosition();
             callback.setReturnValue( true );
         }

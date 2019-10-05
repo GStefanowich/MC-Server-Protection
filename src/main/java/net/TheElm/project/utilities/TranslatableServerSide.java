@@ -48,9 +48,13 @@ public final class TranslatableServerSide {
     
     private TranslatableServerSide() {}
     
+    public static void send(@NotNull ServerCommandSource source, String key, Object... objects) {
+        source.sendFeedback(TranslatableServerSide.text(source, key, objects), true);
+    }
     public static void send(@NotNull PlayerEntity player, String key, Object... objects) {
         player.sendMessage(TranslatableServerSide.text(player, key, objects));
     }
+    
     public static Text text(ServerCommandSource source, String key, Object... objects) {
         if (source.getEntity() instanceof ServerPlayerEntity)
             return TranslatableServerSide.text( (ServerPlayerEntity)source.getEntity(), key, objects );

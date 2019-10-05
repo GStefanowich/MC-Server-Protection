@@ -84,7 +84,7 @@ public abstract class TamedLead extends LivingEntity {
         // If player is the owner of the entity
         if ((this.getOwnerUuid() != null) && (player.getUuid().equals(this.getOwnerUuid())))
             return;
-
+        
         WorldChunk chunk = this.getEntityWorld().getWorldChunk( this.getBlockPos() );
         
         // If player can interact with tameable

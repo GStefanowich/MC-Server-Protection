@@ -33,6 +33,7 @@ import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.TownNameUtils;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.PlayerManager;
@@ -90,8 +91,7 @@ public final class ClaimantTown extends Claimant {
     public final boolean updateFriend(@NotNull final UUID player, @Nullable final ClaimRanks rank) {
         if ( super.updateFriend( player, rank ) ) {
             ClaimantPlayer claim = ClaimantPlayer.get( player );
-            if (claim != null)
-                claim.setTown(rank == null ? null : this);
+            claim.setTown(rank == null ? null : this);
             return true;
         }
         return false;
@@ -113,8 +113,8 @@ public final class ClaimantTown extends Claimant {
     @Override
     public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
         // Read the towns ranks
-        if (tag.containsKey("members", 9)) {
-            for (Tag member : tag.getList("members", 10)) {
+        if (tag.containsKey("members", NbtType.LIST)) {
+            for (Tag member : tag.getList("members", NbtType.COMPOUND)) {
                 super.USER_RANKS.put(
                     ((CompoundTag) member).getUuid("i"),
                     ClaimRanks.valueOf(((CompoundTag) member).getString("r"))
@@ -126,7 +126,7 @@ public final class ClaimantTown extends Claimant {
         this.ownerId = (tag.hasUuid("owner") ? tag.getUuid("owner") : null);
         
         // Get the town name
-        if (tag.containsKey("name",8))
+        if (tag.containsKey("name", NbtType.STRING))
             this.name = Text.Serializer.fromJson(tag.getString("name"));
         
         // Read from tag
