@@ -102,14 +102,12 @@ public final class AdminCommands {
     }
     private static int targetFlying(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
-        
         Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
         if (players.size() <= 0)
-            throw PLAYERS_NOT_FOUND_EXCEPTION.create(player);
-        return AdminCommands.toggleFlying(player, players.stream());
+            throw PLAYERS_NOT_FOUND_EXCEPTION.create( source );
+        return AdminCommands.toggleFlying(source, players.stream());
     }
-    private static int toggleFlying(ServerPlayerEntity source, Stream<ServerPlayerEntity> players) {
+    private static int toggleFlying(ServerCommandSource source, Stream<ServerPlayerEntity> players) {
         players.forEach(player -> TranslatableServerSide.send(source, "player.abilities.flying_other." + (AdminCommands.toggleFlying(player) ? "enabled" : "disabled"), player.getDisplayName()));
         return Command.SINGLE_SUCCESS;
     }
@@ -136,14 +134,13 @@ public final class AdminCommands {
     }
     private static int targetGod(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
         
         Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
         if (players.size() <= 0 )
-            throw PLAYERS_NOT_FOUND_EXCEPTION.create( player );
-        return AdminCommands.toggleGod(player, players.stream());
+            throw PLAYERS_NOT_FOUND_EXCEPTION.create( source );
+        return AdminCommands.toggleGod(source, players.stream());
     }
-    private static int toggleGod(ServerPlayerEntity source, Stream<ServerPlayerEntity> players) {
+    private static int toggleGod(ServerCommandSource source, Stream<ServerPlayerEntity> players) {
         players.forEach(player -> TranslatableServerSide.send(source, "player.abilities.godmode_other." + (AdminCommands.toggleGod(player) ? "enabled" : "disabled"), player.getDisplayName()));
         return Command.SINGLE_SUCCESS;
     }
@@ -164,14 +161,13 @@ public final class AdminCommands {
     }
     private static int targetHeal(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
         
         Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
         if (players.size() <= 0 )
-            throw PLAYERS_NOT_FOUND_EXCEPTION.create( player );
-        return AdminCommands.healPlayer(player, players.stream());
+            throw PLAYERS_NOT_FOUND_EXCEPTION.create( source );
+        return AdminCommands.healPlayer(source, players.stream());
     }
-    private static int healPlayer(ServerPlayerEntity source, Stream<ServerPlayerEntity> players) {
+    private static int healPlayer(ServerCommandSource source, Stream<ServerPlayerEntity> players) {
         players.forEach(player -> TranslatableServerSide.send(source, (AdminCommands.healPlayer(player)? "player.abilities.healed_other" : "player.abilities.healed_dead"), player.getDisplayName()));
         return Command.SINGLE_SUCCESS;
     }

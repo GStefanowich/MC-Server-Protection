@@ -30,6 +30,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.protections.claiming.Claimant;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.EntityType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -213,10 +214,8 @@ public final class NbtUtils {
     @Nullable
     public static BlockPos tagToBlockPos(@Nullable CompoundTag compound) {
         if (compound != null) {
-            if (compound.containsKey("x", 6) && compound.containsKey("y", 6) && compound.containsKey("z", 6))
+            if (compound.containsKey("x", NbtType.NUMBER) && compound.containsKey("y", NbtType.NUMBER) && compound.containsKey("z", NbtType.NUMBER))
                 return new BlockPos(compound.getDouble("x"), compound.getDouble("y"), compound.getDouble("z"));
-            if (compound.containsKey("x", 3) && compound.containsKey("y", 3) && compound.containsKey("z", 3))
-                return new BlockPos(compound.getInt("x"), compound.getInt("y"), compound.getInt("z"));
         }
         return null;
     }

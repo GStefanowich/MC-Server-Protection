@@ -64,6 +64,20 @@ public interface IClaimedChunk extends Chunk {
     boolean canUserDo(UUID player, ClaimPermissions perm);
     boolean isSetting(@NotNull ClaimSettings setting);
     
+    /*
+     * Claim Slices
+     */
+    @NotNull
+    ListTag serializeSlices();
+    void deserializeSlices(@NotNull ListTag serialized);
+    
+    void updateSliceOwner(UUID owner, int slicePos);
+    void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo);
+    UUID[] getSliceOwner(int slicePos, int yFrom, int yTo);
+    
+    /*
+     * Statics
+     */
     static boolean isOwnedAround(World world, BlockPos blockPos, int leniency ) {
         return IClaimedChunk.getOwnedAround( world, blockPos, leniency).length > 0;
     }
@@ -88,9 +102,5 @@ public interface IClaimedChunk extends Chunk {
         
         return claimedChunks.toArray(new IClaimedChunk[0]);
     }
-    
-    @NotNull
-    ListTag serializeSlices();
-    void deserializeSlices(@NotNull ListTag serialized);
     
 }

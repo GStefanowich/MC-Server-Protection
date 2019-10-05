@@ -32,6 +32,7 @@ import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.utilities.PlayerNameUtils;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
@@ -44,7 +45,7 @@ import java.util.UUID;
 
 public final class ClaimantPlayer extends Claimant {
     
-    private int additionalClaims = 0;
+    private int additionalClaims;
     private final Set<ClaimantTown> townInvites = Collections.synchronizedSet(new HashSet<>());
     private ClaimantTown town;
     
@@ -124,6 +125,10 @@ public final class ClaimantPlayer extends Claimant {
     public final int getMaxChunkLimit() {
         return this.additionalClaims + SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get();
     }
+    public final int increaseMaxChunkLimit(int by) {
+        this.markDirty();
+        return (this.additionalClaims += by) + SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get();
+    }
     
     /* Nbt saving */
     @Override
@@ -131,6 +136,8 @@ public final class ClaimantPlayer extends Claimant {
         // Write the town ID
         if (this.town != null)
             tag.putUuid("town", this.town.getId());
+        
+        // Write the additional claim limitation
         tag.putInt("claimLimit", this.additionalClaims);
         
         super.writeCustomDataToTag( tag );
@@ -149,21 +156,16 @@ public final class ClaimantPlayer extends Claimant {
         this.town = town;
         
         // Additional claim limit
-        if (tag.containsKey("claimLimit", 3))
-            this.additionalClaims = tag.getInt("claimLimit");
+        this.additionalClaims = ( tag.containsKey("claimLimit", NbtType.INT) ? tag.getInt("claimLimit") : 0 );
         
         // Read from SUPER
         super.readCustomDataFromTag( tag );
     }
     
     /* Get the PlayerPermissions object from the cache */
-    @Nullable
+    @NotNull
     public static ClaimantPlayer get(@NotNull UUID playerUUID) {
         Claimant player;
-        
-        // If claims are disabled
-        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
-            return null;
         
         // If contained in the cache
         if ((player = CoreMod.getFromCache( ClaimantType.PLAYER, playerUUID )) != null)

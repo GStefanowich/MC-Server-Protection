@@ -156,11 +156,13 @@ public final class SewingMachineConfig {
     public final ConfigOption<Boolean> HANDLE_PERMISSIONS;
     
     // Miscellaneous
-    public final ConfigOption<Boolean> RETURN_PORTALS;
+    public final ConfigOption<Boolean> OVERWORLD_PORTAL_LOC;
+    public final ConfigOption<Boolean> NETHER_PORTAL_LOC;
     public final ConfigOption<Boolean> LIMIT_SKELETON_ARROWS;
     public final ConfigOption<Boolean> EXTINGUISH_CAMPFIRES;
     public final ConfigOption<Integer> ANVIL_UPPER_LIMIT;
     public final ConfigOption<Boolean> PREVENT_NETHER_ENDERMEN;
+    public final ConfigOption<Boolean> NETHER_INFINITE_LAVA;
     
     public final ConfigOption<Boolean> SILK_TOUCH_SPAWNERS;
     public final ConfigOption<Integer> SPAWNER_PICKUP_DAMAGE;
@@ -306,7 +308,11 @@ public final class SewingMachineConfig {
         /*
          * Miscellaneous
          */
-        this.RETURN_PORTALS = this.addConfig( new ConfigOption<>("fun.world.nether.portal_fix", true, JsonElement::getAsBoolean));
+        this.OVERWORLD_PORTAL_LOC = this.addConfig( new ConfigOption<>("fun.world.portal_fix.overworld", false, JsonElement::getAsBoolean));
+        this.NETHER_PORTAL_LOC = this.addConfig( new ConfigOption<>("fun.world.portal_fix.nether", true, JsonElement::getAsBoolean));
+        
+        this.NETHER_INFINITE_LAVA = this.addConfig( new ConfigOption<>("fun.world.nether.infinite_lava", false, JsonElement::getAsBoolean));
+        
         this.EXTINGUISH_CAMPFIRES = this.addConfig( new ConfigOption<>("fun.world.extinguish_campfires", true, JsonElement::getAsBoolean));
         this.LIMIT_SKELETON_ARROWS = this.addConfig( new ConfigOption<>("fun.mobs.skeletons.limit_arrows", true, JsonElement::getAsBoolean));
         this.PREVENT_NETHER_ENDERMEN = this.addConfig( new ConfigOption<>("fun.mobs.enderman.no_nether", false, JsonElement::getAsBoolean));

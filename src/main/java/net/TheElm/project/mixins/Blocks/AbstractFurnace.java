@@ -196,8 +196,6 @@ public abstract class AbstractFurnace extends LockableContainerBlockEntity imple
             
             // Ignore if ingredient is nothing
             if (ingredient != Items.AIR) {
-                System.out.println("Finding recipe for abstract furnace..");
-                
                 // Find the cached recipe
                 this.cachedRecipe = this.world.getRecipeManager()
                     .getFirstMatch(this.recipeType, this, this.world).orElse(null);
