@@ -26,23 +26,38 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.ServerCore;
+import net.TheElm.project.enums.ClaimPermissions;
+import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.minecraft.block.AnvilBlock;
 import net.minecraft.block.BarrelBlock;
 import net.minecraft.block.BeaconBlock;
+import net.minecraft.block.BellBlock;
 import net.minecraft.block.BlastFurnaceBlock;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.CartographyTableBlock;
+import net.minecraft.block.ChestBlock;
 import net.minecraft.block.CraftingTableBlock;
 import net.minecraft.block.DropperBlock;
 import net.minecraft.block.EnchantingTableBlock;
 import net.minecraft.block.FletchingTableBlock;
+import net.minecraft.block.FlowerPotBlock;
 import net.minecraft.block.FurnaceBlock;
 import net.minecraft.block.GrindstoneBlock;
 import net.minecraft.block.HopperBlock;
+import net.minecraft.block.LecternBlock;
 import net.minecraft.block.LoomBlock;
 import net.minecraft.block.ShulkerBoxBlock;
+import net.minecraft.block.SmithingTableBlock;
 import net.minecraft.block.SmokerBlock;
 import net.minecraft.block.StonecutterBlock;
+import net.minecraft.block.entity.BarrelBlockEntity;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.ChestBlockEntity;
+import net.minecraft.block.entity.JukeboxBlockEntity;
+import net.minecraft.block.entity.LockableContainerBlockEntity;
+import net.minecraft.block.entity.SignBlockEntity;
+import net.minecraft.block.enums.ChestType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.passive.CatEntity;
@@ -84,9 +99,17 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public final class EntityUtils {
@@ -187,6 +210,107 @@ public final class EntityUtils {
             return SoundEvents.ENTITY_SQUID_SQUIRT;
         if (entity instanceof DolphinEntity)
             return SoundEvents.ENTITY_DOLPHIN_AMBIENT;
+        return null;
+    }
+    
+    /*
+     * Get Lock Permissions
+     */
+    @Nullable
+    public static ClaimPermissions getLockPermission(BlockEntity block) {
+        if (block instanceof JukeboxBlockEntity)
+            return ClaimPermissions.STORAGE;
+        if ( block instanceof LockableContainerBlockEntity )
+            return ClaimPermissions.STORAGE;
+        return null;
+    }
+    @Nullable
+    public static ClaimPermissions getLockPermission(@NotNull Block block) {
+        // Crafting Blocks
+        if ( block instanceof FletchingTableBlock )
+            return ClaimPermissions.CRAFTING;
+        if ( block instanceof SmithingTableBlock)
+            return ClaimPermissions.CRAFTING;
+        if ( block instanceof CraftingTableBlock )
+            return ClaimPermissions.CRAFTING;
+        if ( block instanceof EnchantingTableBlock )
+            return ClaimPermissions.CRAFTING;
+        if ( block instanceof GrindstoneBlock )
+            return ClaimPermissions.CRAFTING;
+        if ( block instanceof LoomBlock )
+            return ClaimPermissions.CRAFTING;
+        if ( block instanceof StonecutterBlock )
+            return ClaimPermissions.CRAFTING;
+        if ( block instanceof CartographyTableBlock )
+            return ClaimPermissions.CRAFTING;
+        // Storage Blocks
+        if ( block instanceof BeaconBlock )
+            return ClaimPermissions.STORAGE;
+        if ( block instanceof AnvilBlock )
+            return ClaimPermissions.STORAGE;
+        if ( block instanceof BellBlock )
+            return ClaimPermissions.STORAGE;
+        if ( block instanceof LecternBlock )
+            return ClaimPermissions.STORAGE;
+        if ( block instanceof FlowerPotBlock )
+            return ClaimPermissions.STORAGE;
+        return null;
+    }
+    
+    /*
+     * Get Shop Permissions
+     */
+    public static boolean isValidShopContainer(BlockEntity block) {
+        return (block instanceof ChestBlockEntity || block instanceof BarrelBlockEntity);
+    }
+    @Nullable
+    public static ShopSignBlockEntity getAttachedShopSign(World world, BlockPos storagePos) {
+        Set<BlockPos> searchForSigns = new HashSet<>(Collections.singletonList(
+            storagePos.up()
+        ));
+        
+        BlockState storageState = world.getBlockState( storagePos );
+        BlockEntity storageEntity = world.getBlockEntity( storagePos );
+        
+        // If is storage block
+        if (isValidShopContainer( storageEntity )) {
+            // Chest if chest is a double block
+            if ((storageEntity instanceof ChestBlockEntity) && (storageState.get(ChestBlock.CHEST_TYPE) != ChestType.SINGLE)) {
+                Direction facing = storageState.get(ChestBlock.FACING);
+                Direction othersDirection = storageState.get(ChestBlock.CHEST_TYPE) == ChestType.LEFT ? facing.rotateYClockwise() : facing.rotateYCounterclockwise();
+                BlockPos otherPos = storagePos.offset(othersDirection);
+                
+                // All sides of the double chest
+                searchForSigns.addAll(Arrays.asList(
+                    otherPos.up(),
+                    storagePos.offset(facing),
+                    otherPos.offset(facing),
+                    storagePos.offset(facing.getOpposite()),
+                    otherPos.offset(facing.getOpposite()),
+                    storagePos.offset(othersDirection.getOpposite()),
+                    otherPos.offset(othersDirection)
+                ));
+                
+            } else {
+                searchForSigns.addAll(Arrays.asList(
+                    storagePos.offset(Direction.NORTH),
+                    storagePos.offset(Direction.EAST),
+                    storagePos.offset(Direction.SOUTH),
+                    storagePos.offset(Direction.WEST)
+                ));
+            }
+            
+            // For all search positions
+            for (BlockPos searchPos : searchForSigns) {
+                BlockEntity blockEntity = world.getBlockEntity(searchPos);
+                if (!(blockEntity instanceof SignBlockEntity))
+                    continue;
+                ShopSignBlockEntity shopSign = (ShopSignBlockEntity) blockEntity;
+                if (shopSign.getShopType() != null)
+                    return shopSign;
+            }
+        }
+        
         return null;
     }
     

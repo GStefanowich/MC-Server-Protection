@@ -23,29 +23,20 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.enums;
+package net.TheElm.project.commands;
 
-public enum ClaimPermissions {
+import com.mojang.brigadier.CommandDispatcher;
+import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.SewingMachineConfig;
+import net.minecraft.server.command.ServerCommandSource;
+
+public final class PermissionCommand {
     
-    CREATURES( ClaimRanks.PASSIVE ), // Harm passive mods
-    HARVEST( ClaimRanks.ALLY ), // Harvest plants
-    BLOCKS( ClaimRanks.ALLY ), // Break or Place blocks
-    STORAGE( ClaimRanks.ALLY ), // Access storage containers
-    DOORS( ClaimRanks.PASSIVE ), // Open doors and gates
-    PICKUP( ClaimRanks.ALLY ), // Pickup entities
-    RIDING( ClaimRanks.ALLY ), // Ride carts and animals
-    WARP( ClaimRanks.OWNER ), // Warp to the players warp location
-    TRADING( ClaimRanks.PASSIVE ), // Trade with villagers
-    CRAFTING( ClaimRanks.PASSIVE ) // Open crafting benches
-    ;
-    
-    private final ClaimRanks defaultRank;
-    
-    ClaimPermissions(ClaimRanks defaultRank) {
-        this.defaultRank = defaultRank;
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        if (SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get()) {
+            
+            CoreMod.logDebug("- Registered Permission command");
+        }
     }
     
-    public ClaimRanks getDefault() {
-        return this.defaultRank;
-    }
 }

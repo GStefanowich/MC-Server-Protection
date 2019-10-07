@@ -37,6 +37,7 @@ import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.Nullable;
@@ -117,7 +118,7 @@ public abstract class ArrowDamage extends Entity {
                      */
                     
                     // If player is allowed to harm creatures
-                    if (chunkInfo.canUserDo(owner.getUuid(), ClaimPermissions.CREATURES))
+                    if (chunkInfo.canPlayerDo(new BlockPos(entityHitResult.getPos()), owner.getUuid(), ClaimPermissions.CREATURES))
                         return;
                 }
             }

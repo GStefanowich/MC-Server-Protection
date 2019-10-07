@@ -25,6 +25,8 @@
 
 package net.TheElm.project.interfaces;
 
+import net.TheElm.project.enums.ShopSigns;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
@@ -51,5 +53,11 @@ public interface ShopSignBlockEntity {
     BlockPos getFirstPos();
     @Nullable
     BlockPos getSecondPos();
+    
+    @Nullable
+    Inventory getInventory();
+    
+    @Nullable
+    ShopSigns getShopType();
     
 }

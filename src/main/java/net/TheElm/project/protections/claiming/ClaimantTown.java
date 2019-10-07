@@ -96,6 +96,15 @@ public final class ClaimantTown extends Claimant {
         }
         return false;
     }
+    @Override
+    public boolean updateFriend(@NotNull ServerPlayerEntity player, @Nullable ClaimRanks rank) {
+        if ( super.updateFriend( player, rank ) ) {
+            ClaimantPlayer claim = ((PlayerData) player).getClaim();
+            claim.setTown(rank == null ? null : this);
+            return true;
+        }
+        return false;
+    }
     
     /* Nbt saving */
     @Override

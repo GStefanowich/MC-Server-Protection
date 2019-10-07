@@ -27,6 +27,7 @@ package net.TheElm.project.protections.events;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.BlockInteractionCallback;
 import net.TheElm.project.interfaces.IClaimedChunk;
@@ -38,28 +39,13 @@ import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.block.AbstractButtonBlock;
-import net.minecraft.block.AnvilBlock;
-import net.minecraft.block.BeaconBlock;
-import net.minecraft.block.BellBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.CartographyTableBlock;
-import net.minecraft.block.CraftingTableBlock;
 import net.minecraft.block.DoorBlock;
-import net.minecraft.block.EnchantingTableBlock;
 import net.minecraft.block.FenceGateBlock;
-import net.minecraft.block.FletchingTableBlock;
-import net.minecraft.block.FlowerPotBlock;
-import net.minecraft.block.GrindstoneBlock;
-import net.minecraft.block.LecternBlock;
-import net.minecraft.block.LoomBlock;
 import net.minecraft.block.Material;
-import net.minecraft.block.SmithingTableBlock;
-import net.minecraft.block.StonecutterBlock;
 import net.minecraft.block.TrapdoorBlock;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.EnderChestBlockEntity;
-import net.minecraft.block.entity.LockableContainerBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.enums.DoorHinge;
 import net.minecraft.block.enums.DoubleBlockHalf;
@@ -101,11 +87,11 @@ public final class BlockInteraction {
         // Check if the block interacted with is a sign (For shop signs)
         if ( blockEntity instanceof ShopSignBlockEntity && blockEntity instanceof SignBlockEntity) {
             SignBlockEntity sign = (SignBlockEntity) blockEntity;
-            ShopSignBlockEntity shopSign = (ShopSignBlockEntity) blockEntity;
+            ShopSignBlockEntity shopSign = (ShopSignBlockEntity) sign;
             
             ShopSigns shopSignType;
             // Interact with the sign
-            if ((shopSign.getShopOwner() != null) && ((shopSignType = ShopSigns.valueOf( sign.text[0] )) != null)) {
+            if ((shopSign.getShopOwner() != null) && ((shopSignType = shopSign.getShopType()) != null)) {
                 shopSignType.onInteract(player, blockPos, shopSign)
                     // Literal Text (Error)
                     .ifLeft((text) -> {
@@ -117,19 +103,22 @@ public final class BlockInteraction {
                         if (!bool)
                             player.playSound(SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.MASTER, 1.0f, 1.0f);
                     });
-                return ActionResult.PASS;
+                return ActionResult.SUCCESS;
             }
         }
         
+        // Get the permission of the block
+        ClaimPermissions blockPermission;
+        
         // If player is in creative ignore permissions
-        if ( (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || ( blockEntity instanceof EnderChestBlockEntity) )
+        if ( (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || ((blockPermission = EntityUtils.getLockPermission( blockEntity )) == null))
             return ActionResult.PASS;
         
         // If block is a button, door, trapdoor, or gate
         if ( block instanceof AbstractButtonBlock || block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock) {
             WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk( blockPos );
             
-            if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || ChunkUtils.canPlayerToggleDoor( player, claimedChunkInfo )) {
+            if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || ChunkUtils.canPlayerToggleDoor( player, claimedChunkInfo, blockPos )) {
                 // Toggle double doors
                 if ((!player.isSneaking()) && block instanceof DoorBlock && (blockState.getMaterial() != Material.METAL)) {
                     DoubleBlockHalf doorHalf = blockState.get(DoorBlock.HALF);
@@ -152,6 +141,7 @@ public final class BlockInteraction {
                         }
                     }
                 }
+                
                 // Allow the action
                 return ActionResult.PASS;
             }
@@ -164,18 +154,23 @@ public final class BlockInteraction {
             return ActionResult.PASS;
         
         // If the block is something that can be accessed (Like a chest)
-        if ( (!player.isSneaking() || (!(itemStack.getItem() instanceof BlockItem))) && ( isLockable( blockEntity ) || isLockable( block ) ) ) {
+        if ( (!player.isSneaking() || (!(itemStack.getItem() instanceof BlockItem))) && (((blockPermission = EntityUtils.getLockPermission( blockEntity )) != null) || ((blockPermission = EntityUtils.getLockPermission( block )) != null))) {
             if ( player.isSpectator() )
                 return ActionResult.PASS;
             
             WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk( blockPos );
             
-            if (ChunkUtils.canPlayerLootChestsInChunk( player, claimedChunkInfo ))
-                return ActionResult.PASS;
+            // Check if allowed to open storages in this location
+            if (ChunkUtils.canPlayerDoInChunk( blockPermission, player, claimedChunkInfo, blockPos )) {
+                // Check if the chest is NOT part of a shop, Or the player owns that shop
+                ShopSignBlockEntity shopSign;
+                if ((!EntityUtils.isValidShopContainer( blockEntity )) || ((shopSign = EntityUtils.getAttachedShopSign( world, blockPos )) == null) || player.getUuid().equals(shopSign.getShopOwner()))
+                    return ActionResult.PASS;
+            }
             
             // Play a sound to the player
             world.playSound( null, blockPos, EntityUtils.getLockSound( block ), SoundCategory.BLOCKS, 0.5f, 1f );
-
+            
             // Display that this item can't be opened
             TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
                 EntityUtils.getLockedName( block ),
@@ -186,6 +181,7 @@ public final class BlockInteraction {
         }
         
         ActionResult placeResult = BlockInteraction.blockPlace( player, world, hand, itemStack, blockHitResult);
+        
         // Adjust the stack size of the players placed block
         if (placeResult == ActionResult.FAIL) {
             PlayerInventory inventory = player.inventory;
@@ -224,47 +220,5 @@ public final class BlockInteraction {
         
         // If cannot break, prevent the action
         return ActionResult.FAIL;
-    }
-    
-    /**
-     * @param block A block to determine if it should be lockable
-     * @return If the block type provided is a protected container
-     */
-    private static boolean isLockable( Block block ) {
-        if ( block instanceof FletchingTableBlock )
-            return true;
-        if ( block instanceof SmithingTableBlock )
-            return true;
-        if ( block instanceof CraftingTableBlock )
-            return true;
-        if ( block instanceof BeaconBlock )
-            return true;
-        if ( block instanceof EnchantingTableBlock )
-            return true;
-        if ( block instanceof GrindstoneBlock )
-            return true;
-        if ( block instanceof LoomBlock )
-            return true;
-        if ( block instanceof StonecutterBlock )
-            return true;
-        if ( block instanceof AnvilBlock )
-            return true;
-        if ( block instanceof CartographyTableBlock )
-            return true;
-        if ( block instanceof BellBlock )
-            return true;
-        if ( block instanceof LecternBlock )
-            return true;
-        if ( block instanceof FlowerPotBlock )
-            return true;
-        return false;
-    }
-    
-    /**
-     * @param block A block entity to determine if it should be lockable
-     * @return If the block type provided is a protected container
-     */
-    private static boolean isLockable( BlockEntity block ) {
-        return ( block instanceof LockableContainerBlockEntity);
     }
 }
