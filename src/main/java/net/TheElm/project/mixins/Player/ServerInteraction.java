@@ -136,6 +136,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
      * Modified methods
      */
     
+    // On connect
     @Inject(at = @At("RETURN"), method = "<init>")
     public void onPlayerConnect(MinecraftServer server, ClientConnection client, ServerPlayerEntity player, CallbackInfo callback) {
         // Check if the LegacyConverter is running
@@ -199,21 +200,25 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         ((PlayerData) player).updateLastJoin();
     }
     
+    // On player move
     @Inject(at = @At("TAIL"), method = "onPlayerMove")
     public void onPlayerMove(final PlayerMoveC2SPacket movement, final CallbackInfo callback) {
         this.movedPlayer( this.player );
     }
     
+    // On vehicle move
     @Inject(at = @At("TAIL"), method = "onVehicleMove")
     public void onVehicleMove(final VehicleMoveC2SPacket movement, final CallbackInfo callback) {
         this.movedPlayer( this.player );
     }
     
+    // When player leaves
     @Inject(at = @At("RETURN"), method = "onDisconnected")
     public void onPlayerDisconnect(final CallbackInfo callback) {
         CoreMod.PLAYER_LOCATIONS.remove( this.player );
     }
     
+    // Change the chat format
     @Inject(at = @At(value = "INVOKE", target = "net/minecraft/server/PlayerManager.broadcastChatMessage(Lnet/minecraft/text/Text;Z)V"), method = "onChatMessage", cancellable = true)
     public void onChatMessage(ChatMessageC2SPacket chatMessageC2SPacket, CallbackInfo callback) {
         if (!SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
