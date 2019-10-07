@@ -67,6 +67,7 @@
     "World.Portals",
     "World.Nether",
     
+    "Server.Books",
     "Server.ServerCommandSource",
     "Server.MOTD",
     "Server.PlayerList",
