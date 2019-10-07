@@ -27,6 +27,8 @@ package net.TheElm.project.mixins.Server;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.protections.claiming.Claimant;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerTask;
@@ -50,10 +52,10 @@ public abstract class Save extends NonBlockingThreadExecutor<ServerTask> impleme
     public void save(boolean silent, boolean boolean_2, boolean boolean_3, CallbackInfoReturnable<Boolean> callback) {
         if (callback.getReturnValue()) {
             if (!silent) CoreMod.logInfo("Saving claimed player data");
-            CoreMod.getCacheStream( Claimant.ClaimantType.PLAYER ).forEach(Claimant::save);
+            CoreMod.getCacheStream(ClaimantPlayer.class).forEach(Claimant::save);
             
             if (!silent) CoreMod.logInfo("Saving claimed town data");
-            CoreMod.getCacheStream( Claimant.ClaimantType.TOWN ).forEach(Claimant::save);
+            CoreMod.getCacheStream(ClaimantTown.class).forEach(Claimant::save);
         }
     }
     

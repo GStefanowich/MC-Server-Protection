@@ -112,26 +112,30 @@ public abstract class CoreMod {
         return null;
     }
     @Nullable
-    public static Claimant getFromCache(@NotNull Claimant.ClaimantType type, @NotNull UUID uuid) {
-        return CoreMod.getCacheStream( type ).filter((claimant -> claimant.getId().equals(uuid))).findFirst().orElse( null );
+    public static <T extends Claimant> T getFromCache(@NotNull Class<T> type, @NotNull UUID uuid) {
+        return CoreMod.getCacheStream( type ).filter((claimant) -> claimant.getId().equals(uuid)).findFirst().orElse( null );
+    }
+    @Nullable
+    public static <T extends Claimant> T getFromCache(@NotNull Class<T> type, @NotNull String name) {
+        return CoreMod.getCacheStream( type ).filter((claimant) -> name.equals(claimant.getName().asString())).findFirst().orElse( null );
     }
     public static Stream<Claimant> getCacheStream() {
         return CoreMod.getCacheStream( null );
     }
-    public static Stream<Claimant> getCacheStream(@Nullable Claimant.ClaimantType type) {
-        List<Claimant> out = new ArrayList<>();
-        if ((type == null) || type.equals(Claimant.ClaimantType.PLAYER)) {
+    public static <T extends Claimant> Stream<T> getCacheStream(@Nullable Class<T> type) {
+        List<T> out = new ArrayList<>();
+        if ((type == null) || type.equals(ClaimantPlayer.class)) {
             ClaimantPlayer player;
             for (WeakReference<ClaimantPlayer> reference : PLAYER_CLAIM_CACHE.values()) {
                 if ((player = reference.get()) != null)
-                    out.add(player);
+                    out.add((T) player);
             }
         }
-        if ((type == null) || type.equals(Claimant.ClaimantType.TOWN)) {
+        if ((type == null) || type.equals(ClaimantTown.class)) {
             ClaimantTown town;
             for ( WeakReference<ClaimantTown> reference : TOWN_CLAIM_CACHE.values() ) {
                 if ((town = reference.get()) != null)
-                    out.add( town );
+                    out.add((T) town);
             }
         }
         return out.stream();

@@ -168,7 +168,7 @@ public final class ClaimantTown extends Claimant {
     
     @Nullable
     public static ClaimantTown get(UUID townId) throws NbtNotFoundException {
-        Claimant town;
+        ClaimantTown town;
         
         // If claims are disabled
         if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || (townId == null))
@@ -177,8 +177,8 @@ public final class ClaimantTown extends Claimant {
         NbtUtils.assertExists( ClaimantType.TOWN, townId );
         
         // If contained in the cache
-        if ((town = CoreMod.getFromCache( ClaimantType.TOWN, townId )) != null)
-            return (ClaimantTown) town;
+        if ((town = CoreMod.getFromCache( ClaimantTown.class, townId )) != null)
+            return town;
         
         // Return the town object
         return new ClaimantTown( townId );

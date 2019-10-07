@@ -25,6 +25,7 @@
 
 package net.TheElm.project.protections.claiming;
 
+import com.mojang.authlib.GameProfile;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
@@ -165,14 +166,18 @@ public final class ClaimantPlayer extends Claimant {
     /* Get the PlayerPermissions object from the cache */
     @NotNull
     public static ClaimantPlayer get(@NotNull UUID playerUUID) {
-        Claimant player;
+        ClaimantPlayer player;
         
         // If contained in the cache
-        if ((player = CoreMod.getFromCache( ClaimantType.PLAYER, playerUUID )) != null)
-            return (ClaimantPlayer) player;
+        if ((player = CoreMod.getFromCache( ClaimantPlayer.class, playerUUID )) != null)
+            return player;
         
         // Create new object
         return new ClaimantPlayer( playerUUID );
+    }
+    @NotNull
+    public static ClaimantPlayer get(@NotNull GameProfile profile) {
+        return ClaimantPlayer.get(profile.getId());
     }
     
 }
