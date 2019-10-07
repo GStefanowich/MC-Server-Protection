@@ -23,29 +23,18 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.enums;
+package net.TheElm.project.interfaces;
 
-public enum ClaimPermissions {
+import net.TheElm.project.enums.ClaimPermissions;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
+
+public interface Claim {
     
-    CREATURES( ClaimRanks.PASSIVE ), // Harm passive mods
-    HARVEST( ClaimRanks.ALLY ), // Harvest plants
-    BLOCKS( ClaimRanks.ALLY ), // Break or Place blocks
-    STORAGE( ClaimRanks.ALLY ), // Access storage containers
-    DOORS( ClaimRanks.PASSIVE ), // Open doors and gates
-    PICKUP( ClaimRanks.ALLY ), // Pickup entities
-    RIDING( ClaimRanks.ALLY ), // Ride carts and animals
-    WARP( ClaimRanks.OWNER ), // Warp to the players warp location
-    TRADING( ClaimRanks.PASSIVE ), // Trade with villagers
-    CRAFTING( ClaimRanks.PASSIVE ) // Open crafting benches
-    ;
+    @Nullable
+    UUID getOwner();
+    boolean canPlayerDo(@Nullable UUID player, @NotNull ClaimPermissions perm);
     
-    private final ClaimRanks defaultRank;
-    
-    ClaimPermissions(ClaimRanks defaultRank) {
-        this.defaultRank = defaultRank;
-    }
-    
-    public ClaimRanks getDefault() {
-        return this.defaultRank;
-    }
 }

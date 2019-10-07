@@ -26,6 +26,7 @@
 package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.ShopSignBuilder;
 import net.fabricmc.fabric.api.util.NbtType;
@@ -62,11 +63,18 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     /*
      * Mixin variables
      */
+    // Shop Owner (Necessary to be a shop sign)
     private UUID shopSign_Owner = null;
+    private ShopSigns shopSign_Type = null;
+    
+    // Item being traded
     private Identifier shopSign_item = null;
+    
+    // Price / Count of item transactioning
     private Integer shopSign_itemCount = null;
     private Integer shopSign_itemPrice = null;
     
+    // Region Sign Information
     private BlockPos shopSign_posA = null;
     private BlockPos shopSign_posB = null;
     
@@ -112,6 +120,11 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
         return this.shopSign_posB;
     }
     
+    @Override @Nullable
+    public ShopSigns getShopType() {
+        return this.shopSign_Type;
+    }
+    
     /*
      * Constructor
      */
@@ -139,15 +152,22 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                 if ( !builder.build((ServerPlayerEntity) this.getEditor()) )
                     return;
                 
-                CoreMod.logInfo("Built new shop sign " + this.pos.getX() + ", " + this.pos.getY() + ", " + this.pos.getZ());
+                this.shopSign_Type = builder.getType();
+                assert this.shopSign_Type != null;
+                
+                CoreMod.logInfo("Built new shop sign " + this.shopSign_Type.name() + " at " + this.pos.getX() + ", " + this.pos.getY() + ", " + this.pos.getZ());
                 
                 // Update the parameters here from the builder
                 this.shopSign_Owner = builder.shopOwner();
                 this.shopSign_item = builder.getItem();
+                
                 this.shopSign_itemCount = builder.itemSize();
                 this.shopSign_itemPrice = builder.shopPrice();
-                this.shopSign_posA = builder.regionPosA();
-                this.shopSign_posB = builder.regionPosB();
+                
+                if (this.shopSign_Type == ShopSigns.DEED) {
+                    this.shopSign_posA = builder.regionPosA();
+                    this.shopSign_posB = builder.regionPosB();
+                }
             }
         }
     }
@@ -182,7 +202,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     @Inject(at = @At("RETURN"), method = "fromTag")
     public void nbtRead(CompoundTag tag, CallbackInfo callback) {
         // Shop signs
-        if ( tag.hasUuid( "shop_owner" ) ) {
+        if ( tag.hasUuid( "shop_owner" ) && (this.shopSign_Type = ShopSigns.valueOf(this.text[0])) != null) {
             // Get the ITEM for the shop
             if (tag.containsKey("shop_item_mod", NbtType.STRING) && tag.containsKey("shop_item_name", NbtType.STRING)) {
                 String signItem = tag.getString("shop_item_mod") + ":" + tag.getString("shop_item_name");

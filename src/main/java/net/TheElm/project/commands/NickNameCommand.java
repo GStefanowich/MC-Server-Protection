@@ -34,8 +34,11 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.exceptions.NotEnoughMoneyException;
+import net.TheElm.project.interfaces.CommandSource;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.utilities.MoneyUtils;
 import net.minecraft.client.network.packet.PlayerListS2CPacket;
 import net.minecraft.command.arguments.ColorArgumentType;
 import net.minecraft.command.arguments.EntityArgumentType;
@@ -56,6 +59,7 @@ public final class NickNameCommand {
             LiteralCommandNode<ServerCommandSource> pay = dispatcher.register(CommandManager.literal("nick")
                 .then(CommandManager.literal("reset")
                     .then(CommandManager.argument("target", EntityArgumentType.player())
+                        .requires((source) -> source.hasPermissionLevel(4))
                         .executes((context) -> {
                             ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "target");
                             return setNickForPlayer(player, null);
@@ -67,6 +71,7 @@ public final class NickNameCommand {
                     })
                 )
                 .then(CommandManager.argument("nick", StringArgumentType.string())
+                    .requires((source) -> (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get()) || ((CommandSource)source).hasPermission("player.nick"))
                     .then(CommandManager.argument("color", ColorArgumentType.color())
                         .executes(NickNameCommand::commandNickSetColored)
                     )
@@ -79,6 +84,16 @@ public final class NickNameCommand {
     
     private static int commandNickSet(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
+        
+        if (SewingMachineConfig.INSTANCE.NICKNAME_COST.get() > 0) {
+            try {
+                if (!MoneyUtils.takePlayerMoney(player, SewingMachineConfig.INSTANCE.NICKNAME_COST.get()))
+                    return Command.SINGLE_SUCCESS;
+            } catch (NotEnoughMoneyException e) {
+                return Command.SINGLE_SUCCESS;
+            }
+        }
+        
         String nickname = StringArgumentType.getString( context, "nick" );
         return NickNameCommand.setNickForPlayer( player, nickname, Formatting.WHITE );
     }

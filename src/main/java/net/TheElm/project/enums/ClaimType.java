@@ -25,27 +25,10 @@
 
 package net.TheElm.project.enums;
 
-public enum ClaimPermissions {
-    
-    CREATURES( ClaimRanks.PASSIVE ), // Harm passive mods
-    HARVEST( ClaimRanks.ALLY ), // Harvest plants
-    BLOCKS( ClaimRanks.ALLY ), // Break or Place blocks
-    STORAGE( ClaimRanks.ALLY ), // Access storage containers
-    DOORS( ClaimRanks.PASSIVE ), // Open doors and gates
-    PICKUP( ClaimRanks.ALLY ), // Pickup entities
-    RIDING( ClaimRanks.ALLY ), // Ride carts and animals
-    WARP( ClaimRanks.OWNER ), // Warp to the players warp location
-    TRADING( ClaimRanks.PASSIVE ), // Trade with villagers
-    CRAFTING( ClaimRanks.PASSIVE ) // Open crafting benches
-    ;
-    
-    private final ClaimRanks defaultRank;
-    
-    ClaimPermissions(ClaimRanks defaultRank) {
-        this.defaultRank = defaultRank;
-    }
-    
-    public ClaimRanks getDefault() {
-        return this.defaultRank;
-    }
+/**
+ * ClaimType represents how a Chunks Claim should be handled. If the chunk belongs to a player, or is common grounds for a town
+ */
+public enum ClaimType {
+    PLAYER, // Belongs to a player and is handled by the player
+    TOWN // Belongs to the town and should use the towns permissions
 }

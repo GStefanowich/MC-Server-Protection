@@ -36,6 +36,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.WorldChunk;
@@ -80,7 +81,7 @@ public abstract class Claimant {
         if (player == null) return ClaimRanks.ENEMY;
         return this.USER_RANKS.getOrDefault( player, ClaimRanks.PASSIVE );
     }
-    public boolean updateFriend(@NotNull UUID player, @Nullable ClaimRanks rank ) {
+    public boolean updateFriend(@NotNull UUID player, @Nullable ClaimRanks rank) {
         boolean changed = false;
         if (rank == null) {
             changed = (this.USER_RANKS.remove( player ) != null);
@@ -92,6 +93,9 @@ public abstract class Claimant {
         }
         if (changed) this.markDirty();
         return changed;
+    }
+    public boolean updateFriend(@NotNull ServerPlayerEntity player, @Nullable ClaimRanks rank) {
+        return this.updateFriend(player.getUuid(), rank);
     }
     protected final Set<UUID> getFriends() {
         return this.USER_RANKS.keySet();

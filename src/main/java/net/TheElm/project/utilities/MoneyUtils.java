@@ -154,6 +154,10 @@ public final class MoneyUtils {
     public static boolean takePlayerMoney(@NotNull PlayerEntity player, int amount) throws NotEnoughMoneyException {
         DataTracker playerDataTracker = player.getDataTracker();
         
+        // If no change is made
+        if (amount == 0)
+            return true;
+        
         // Update the amount the player has
         int updateTo = 0, has = player.getDataTracker().get(MoneyHolder.MONEY);
         if ((updateTo = (has - amount)) < 0)

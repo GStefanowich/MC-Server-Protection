@@ -791,6 +791,7 @@ public enum ShopSigns {
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
             // Get the guides title
             String bookRawTitle = sign.getSignLine( 1 ).asString();
+            
             // Get the guidebook
             GuideUtils guide;
             try {

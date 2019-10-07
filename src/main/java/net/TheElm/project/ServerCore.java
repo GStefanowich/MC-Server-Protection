@@ -36,6 +36,7 @@ import net.TheElm.project.commands.MiscCommands;
 import net.TheElm.project.commands.ModsCommand;
 import net.TheElm.project.commands.MoneyCommand;
 import net.TheElm.project.commands.NickNameCommand;
+import net.TheElm.project.commands.PermissionCommand;
 import net.TheElm.project.commands.PlayerSpawnCommand;
 import net.TheElm.project.commands.RulerCommand;
 import net.TheElm.project.commands.SpawnerCommand;
@@ -81,6 +82,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         REGISTRY.register(false, ModsCommand::register );
         REGISTRY.register(false, MoneyCommand::register );
         REGISTRY.register(false, NickNameCommand::register );
+        REGISTRY.register(false, PermissionCommand::register );
         REGISTRY.register(false, PlayerSpawnCommand::register );
         REGISTRY.register(false, RulerCommand::register );
         REGISTRY.register(false, SpawnerCommand::register );

@@ -53,7 +53,7 @@ public final class ClaimantPlayer extends Claimant {
         super( ClaimantType.PLAYER, playerUUID );
     }
     
-    public final ClaimRanks getPermissionRankRequirement( ClaimPermissions permission ) {
+    public final ClaimRanks getPermissionRankRequirement(@NotNull ClaimPermissions permission) {
         if ( this.RANK_PERMISSIONS.containsKey( permission ) )
             return this.RANK_PERMISSIONS.get( permission );
         return permission.getDefault();

@@ -37,7 +37,9 @@ import net.TheElm.project.protections.logging.EventLogger.BlockAction;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.command.arguments.BlockPosArgumentType;
-import net.minecraft.command.arguments.IdentifierArgumentType;
+import net.minecraft.command.arguments.ItemStackArgument;
+import net.minecraft.command.arguments.ItemStackArgumentType;
+import net.minecraft.item.Item;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -74,9 +76,9 @@ public final class LoggingCommand {
                         .executes(LoggingCommand::getBlockHistory)
                     )
                 )
-                .then(CommandManager.literal("block")
-                    .then(CommandManager.argument("block", IdentifierArgumentType.identifier())
-                        
+                .then(CommandManager.literal("search")
+                    .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
+                        .executes(LoggingCommand::searchForUsedItems)
                     )
                 )
             );
@@ -153,5 +155,16 @@ public final class LoggingCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-
+    
+    private static int searchForUsedItems(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        ItemStackArgument itemStack = ItemStackArgumentType.getItemStackArgument(context, "item");
+        Item item = itemStack.getItem();
+        String key = item.getTranslationKey();
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    
 }

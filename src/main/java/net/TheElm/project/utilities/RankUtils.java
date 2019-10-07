@@ -107,19 +107,19 @@ public final class RankUtils {
         }
     }
     public static boolean hasPermission(@NotNull ServerPlayerEntity player, String permission) {
-        boolean allowed = false;
+        boolean result = false;
         
-        PlayerRank[] ranks = RankUtils.getPlayerRanks( player );
+        PlayerRank[] ranks = RankUtils.getPlayerRanks(player);
         for (int i = (ranks.length - 1); i >= 0; --i) {
             PlayerRank rank = ranks[i];
             
-            if (rank.isAdditive( permission ))
-                allowed = true;
-            else if (rank.isSubtractive( permission ))
-                allowed = false;
+            if (rank.isAdditive(permission))
+                result = true;
+            else if (rank.isSubtractive(permission))
+                result = false;
         }
         
-        return allowed;
+        return result;
     }
     
     public static void init() {

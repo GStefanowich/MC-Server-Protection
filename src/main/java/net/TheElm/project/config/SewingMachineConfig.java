@@ -83,6 +83,7 @@ public final class SewingMachineConfig {
     
     // Player nicks
     public final ConfigOption<Boolean> DO_PLAYER_NICKS;
+    public final ConfigOption<Integer> NICKNAME_COST;
     
     // Claiming
     public final ConfigOption<Boolean> DO_CLAIMS;
@@ -224,6 +225,8 @@ public final class SewingMachineConfig {
          * Naming
          */
         this.DO_PLAYER_NICKS = this.addConfig( new ConfigOption<>("player.nicks", true, JsonElement::getAsBoolean));
+        this.NICKNAME_COST = this.addConfig( new ConfigOption<>("player.nick_cost", 0, JsonElement::getAsInt));
+        
         this.NAME_SPAWN = this.addConfig( new ConfigOption<>("claims.name.spawn", "Spawn", JsonElement::getAsString));
         this.NAME_WILDERNESS = this.addConfig( new ConfigOption<>("claims.name.wild", "Wilderness", JsonElement::getAsString));
         

@@ -32,6 +32,7 @@ import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.TranslationKeyException;
+import net.TheElm.project.interfaces.Claim;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
@@ -62,7 +63,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Mixin(WorldChunk.class)
-public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
+public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
     
     @Shadow public abstract void markDirty();
     
@@ -143,6 +144,23 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
         return owners.toArray(new UUID[0]);
     }
     
+    @NotNull
+    public Claim getClaim(BlockPos blockPos) {
+        int slicePos = ChunkUtils.getPositionWithinChunk( blockPos );
+        
+        ClaimSlice slice;
+        if ((slice = this.claimSlices[slicePos]) != null) {
+            // Get inside claim
+            Claim inner = slice.get( blockPos.getY() );
+            
+            // If claim inner is not nobody
+            if (inner.getOwner() != null)
+                return inner;
+        }
+        
+        return this;
+    }
+    
     public void canPlayerClaim(@NotNull UUID owner) throws TranslationKeyException {
         if (this.chunkPlayer != null)
             throw new TranslationKeyException( "claim.chunk.error.claimed" );
@@ -203,7 +221,8 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
         return this.chunkPlayer.getName( zonePlayer.getUuid() );
     }
     
-    public boolean canUserDo(UUID player, ClaimPermissions perm) {
+    @Override
+    public boolean canPlayerDo(@Nullable UUID player, @NotNull ClaimPermissions perm) {
         if (this.chunkPlayer == null || (player != null && player.equals(this.chunkPlayer.getId())))
             return true;
         ClaimantTown town;
@@ -216,6 +235,11 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk {
         
         // Return the test if the user can perform the action (If friend of chunk owner OR if friend of town and chunk owned by town owner)
         return permReq.canPerform( userRank ) || ((town != null) && (this.chunkPlayer.getId().equals( town.getOwner() )) && permReq.canPerform(town.getFriendRank( player )));
+    }
+    @Override
+    public boolean canPlayerDo(@NotNull BlockPos blockPos, @Nullable UUID player, @NotNull ClaimPermissions perm) {
+        return this.getClaim( blockPos )
+            .canPlayerDo( player, perm );
     }
     public boolean isSetting(@NotNull ClaimSettings setting) {
         boolean permission;

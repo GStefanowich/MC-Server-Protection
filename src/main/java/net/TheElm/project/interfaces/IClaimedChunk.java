@@ -61,7 +61,7 @@ public interface IClaimedChunk extends Chunk {
     
     Text getOwnerName(@NotNull PlayerEntity zonePlayer);
     
-    boolean canUserDo(UUID player, ClaimPermissions perm);
+    boolean canPlayerDo(@NotNull BlockPos blockPos, @Nullable UUID player, @NotNull ClaimPermissions perm);
     boolean isSetting(@NotNull ClaimSettings setting);
     
     /*
