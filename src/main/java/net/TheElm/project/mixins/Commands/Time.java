@@ -35,6 +35,13 @@ import org.spongepowered.asm.mixin.Overwrite;
 @Mixin(TimeCommand.class)
 public class Time {
     
+    /**
+     * @author TheElm
+     * @reason Mojang stop overriding my day count!
+     * @param source Command Source
+     * @param time Time of day to set
+     * @return Returns the time remainder
+     */
     @Overwrite
     public static int executeSet(ServerCommandSource source, int time) {
         ServerWorld world = source.getWorld();
