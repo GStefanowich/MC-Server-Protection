@@ -762,7 +762,21 @@ public final class ClaimCommand {
         return Command.SINGLE_SUCCESS;
     }
     private static int adminSetPlayerTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        // TODO: Force players into towns
+        ServerCommandSource source = context.getSource();
+        
+        Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context,"target");
+        GameProfile player = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        
+        // Get the town
+        String townName = StringArgumentType.getString(context, "town");
+        ClaimantTown town = CoreMod.getFromCache( ClaimantTown.class, townName );
+        if (town == null)
+            throw TOWN_INVITE_MISSING.create(source.getPlayer());
+        
+        // Update the rank of the player for the town
+        town.updateFriend( player.getId(), ClaimRanks.ALLY );
+        ClaimantPlayer.get( player ).setTown( town );
+        
         return Command.SINGLE_SUCCESS;
     }
     private static CompletableFuture<Suggestions> listTownInvites(CommandContext<ServerCommandSource> context, SuggestionsBuilder suggestionsBuilder) throws CommandSyntaxException {
