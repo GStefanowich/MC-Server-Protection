@@ -42,6 +42,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -64,6 +65,7 @@ public final class ShopSignBuilder {
      * Shop information
      */
     private UUID ownerUUID = null;
+    private ShopSigns signType = null;
     
     private Identifier tradeItemIdentifier = null;
     private Item tradeItem = null;
@@ -120,6 +122,11 @@ public final class ShopSignBuilder {
         this.regionPosB = second;
     }
     
+    @Nullable
+    public ShopSigns getType() {
+        return this.signType;
+    }
+    
     /*
      * Builder
      */
@@ -132,7 +139,7 @@ public final class ShopSignBuilder {
         
         return true;
     }
-    public boolean build(final ServerPlayerEntity player) {
+    public boolean build(@NotNull final ServerPlayerEntity player) {
         /* Signs:
          * [BUY]
          * [SELL]
@@ -140,19 +147,19 @@ public final class ShopSignBuilder {
          * [HEAL]
          */
         try {
-            ShopSigns shopSign = ShopSigns.valueOf(this.lines[0]);
-            if ((shopSign == null) || (!shopSign.isEnabled()))
+            this.signType = ShopSigns.valueOf(this.lines[0]);
+            if ((this.signType == null) || (!this.signType.isEnabled()))
                 return false;
-            this.formatOrBreak( shopSign, player );
+            this.formatOrBreak( player );
             return true;
         } finally {
             // Remove from the map
             buildingSigns.remove( createIdentifier( this.world, this.blockPos ) );
         }
     }
-    private void formatOrBreak(final ShopSigns shopSign, final ServerPlayerEntity creator) {
+    private void formatOrBreak(@NotNull final ServerPlayerEntity creator) {
         try {
-            if (shopSign.formatSign(this, creator))
+            if (this.signType.formatSign(this, creator))
                 return;
         } catch (ShopBuilderException e) {
             creator.sendMessage(e.getErrorMessage());

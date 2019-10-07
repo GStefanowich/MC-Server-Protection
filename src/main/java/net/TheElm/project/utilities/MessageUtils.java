@@ -34,6 +34,7 @@ import net.minecraft.network.MessageType;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -50,9 +51,15 @@ public final class MessageUtils {
     
     // Send a translation blob to a local area
     public static void sendToLocal(final World world, final BlockPos blockPos, Text text) {
+        // Log to the server
+        ((ServerWorld) world).getServer().sendMessage(text);
+        
+        // Get the players in the area
         BlockPos outerA = new BlockPos(blockPos.getX() + 800, 0, blockPos.getZ() + 800);
-        BlockPos outerB = new BlockPos(blockPos.getX() - 800, 256, blockPos.getZ() - 800);
+        BlockPos outerB = new BlockPos(blockPos.getX() - 800, 800, blockPos.getZ() - 800);
         List<ServerPlayerEntity> players = world.getEntities(ServerPlayerEntity.class, new Box(outerA, outerB), EntityPredicates.VALID_ENTITY);
+        
+        // Send the message to the players
         MessageUtils.sendChat(
             players.stream(),
             text

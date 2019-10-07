@@ -232,8 +232,17 @@ public final class ClaimCommand {
                 )
             )
             .then( CommandManager.literal("leave")
-                .requires((source -> ClaimCommand.sourceInTown( source ) && ClaimCommand.sourceNotMayor( source )))
+                .requires((source) -> ClaimCommand.sourceInTown( source ) && ClaimCommand.sourceNotMayor( source ))
                 .executes(ClaimCommand::playerPartsTown)
+            )
+            .then( CommandManager.literal("set")
+                .requires((source) -> source.hasPermissionLevel(4))
+                .then( CommandManager.argument("target", GameProfileArgumentType.gameProfile())
+                    .suggests(CommandUtilities::getAllPlayerNames)
+                    .then( CommandManager.argument("town", StringArgumentType.greedyString())
+                        .executes(ClaimCommand::adminSetPlayerTown)
+                    )
+                )
             )
         );
         CoreMod.logDebug( "- Registered Town command" );
@@ -245,17 +254,17 @@ public final class ClaimCommand {
         // The main command
         LiteralCommandNode<ServerCommandSource> protection = dispatcher.register( CommandManager.literal("protection" )
             // Claim a chunk
-            .then(CommandManager.literal("claim" )
+            .then( CommandManager.literal("claim" )
                 .redirect( claim )
             )
             
             // Unclaim a chunk
-            .then(CommandManager.literal("unclaim")
+            .then( CommandManager.literal("unclaim")
                 .redirect( unclaim )
             )
             
             // Towns
-            .then(CommandManager.literal("town")
+            .then( CommandManager.literal("town")
                 .redirect( towns )
             )
             
@@ -720,8 +729,11 @@ public final class ClaimCommand {
         if (town == null)
             throw TOWN_INVITE_MISSING.create( player );
         
-        //Update players town
-        claimant.setTown( town );
+        /* 
+         * Update players town
+         */
+        town.updateFriend( player, ClaimRanks.ALLY );
+        //claimant.setTown( town );
         
         // Tell the player
         TranslatableServerSide.send(player, "town.invite.join", town.getName());
@@ -740,11 +752,17 @@ public final class ClaimCommand {
         /*
          * Remove town from player
          */
-        claimaint.setTown( null );
+        ClaimantTown town = claimaint.getTown();
+        if (town != null) town.updateFriend( player.getUuid(), null );
+        //claimaint.setTown( null );
         
         // Refresh the command tree
         server.getPlayerManager().sendCommandTree( player );
         
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int adminSetPlayerTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // TODO: Force players into towns
         return Command.SINGLE_SUCCESS;
     }
     private static CompletableFuture<Suggestions> listTownInvites(CommandContext<ServerCommandSource> context, SuggestionsBuilder suggestionsBuilder) throws CommandSyntaxException {

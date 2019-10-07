@@ -222,11 +222,14 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         // Parse the users message
         String rawString = StringUtils.normalizeSpace(chatMessageC2SPacket.getChatMessage());
         
+        // The chatroom to send the message in
+        ChatRooms chatRoom = this.getChatRoom();
+        
         // Create a chat message
-        Text chatText = MessageUtils.formatPlayerMessage( this.player, this.getChatRoom(), rawString );
+        Text chatText = MessageUtils.formatPlayerMessage( this.player, chatRoom, rawString );
         
         // Send the new chat message to the currently selected chat room
-        switch (this.getChatRoom()) {
+        switch (chatRoom) {
             // Local message
             case LOCAL: {
                 MessageUtils.sendToLocal( this.player.world, this.player.getBlockPos(), chatText );

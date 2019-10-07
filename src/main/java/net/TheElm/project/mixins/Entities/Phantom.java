@@ -23,29 +23,22 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.enums;
+package net.TheElm.project.mixins.Entities;
 
-public enum ClaimPermissions {
+import net.TheElm.project.utilities.ChunkUtils;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.world.gen.PhantomSpawner;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
+
+@Mixin(PhantomSpawner.class)
+public class Phantom {
     
-    CREATURES( ClaimRanks.PASSIVE ), // Harm passive mods
-    HARVEST( ClaimRanks.ALLY ), // Harvest plants
-    BLOCKS( ClaimRanks.ALLY ), // Break or Place blocks
-    STORAGE( ClaimRanks.ALLY ), // Access storage containers
-    DOORS( ClaimRanks.PASSIVE ), // Open doors and gates
-    PICKUP( ClaimRanks.ALLY ), // Pickup entities
-    RIDING( ClaimRanks.ALLY ), // Ride carts and animals
-    WARP( ClaimRanks.OWNER ), // Warp to the players warp location
-    TRADING( ClaimRanks.PASSIVE ), // Trade with villagers
-    CRAFTING( ClaimRanks.PASSIVE ) // Open crafting benches
-    ;
-    
-    private final ClaimRanks defaultRank;
-    
-    ClaimPermissions(ClaimRanks defaultRank) {
-        this.defaultRank = defaultRank;
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/entity/player/PlayerEntity.isSpectator()Z"), method = "spawn")
+    public boolean spawn(PlayerEntity player) {
+        return ChunkUtils.isPlayerWithinSpawn((ServerPlayerEntity) player) || player.isSpectator();
     }
     
-    public ClaimRanks getDefault() {
-        return this.defaultRank;
-    }
 }

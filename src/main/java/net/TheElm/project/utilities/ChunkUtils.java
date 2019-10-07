@@ -29,6 +29,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
+import net.TheElm.project.interfaces.Claim;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.minecraft.entity.player.PlayerEntity;
@@ -56,9 +57,9 @@ public final class ChunkUtils {
      * Check the database if a user can perform an action within the specified chunk
      */
     public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( perm, player, player.getEntityWorld().getWorldChunk( blockPos ));
+        return ChunkUtils.canPlayerDoInChunk( perm, player, player.getEntityWorld().getWorldChunk( blockPos ), blockPos);
     }
-    public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @Nullable WorldChunk chunk) {
+    public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // If claims are disabled
         if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || player.isCreative()) return true;
         
@@ -66,7 +67,7 @@ public final class ChunkUtils {
         if ( chunk == null ) return false;
         
         // Check if player can do action in chunk
-        return ((IClaimedChunk) chunk).canUserDo( player.getUuid(), perm );
+        return ((IClaimedChunk) chunk).canPlayerDo( blockPos, player.getUuid(), perm );
     }
     
     /**
@@ -95,11 +96,11 @@ public final class ChunkUtils {
      * @param blockPos The block position of the interaction
      * @return If the player can loot storages
      */
-    public static boolean canPlayerLootChestsInChunk(PlayerEntity player, BlockPos blockPos) {
+    public static boolean canPlayerLootChestsInChunk(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.STORAGE, player, blockPos );
     }
-    public static boolean canPlayerLootChestsInChunk(PlayerEntity player, WorldChunk chunk) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.STORAGE, player, chunk );
+    public static boolean canPlayerLootChestsInChunk(@NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
+        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.STORAGE, player, chunk, blockPos );
     }
     
     /**
@@ -108,7 +109,7 @@ public final class ChunkUtils {
      * @param blockPos The block position of the interaction
      * @return If player can pick up dropped items
      */
-    public static boolean canPlayerLootDropsInChunk(PlayerEntity player, BlockPos blockPos) {
+    public static boolean canPlayerLootDropsInChunk(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.PICKUP, player, blockPos );
     }
     
@@ -118,11 +119,11 @@ public final class ChunkUtils {
      * @param blockPos The block position of the interaction
      * @return If player can interact with doors
      */
-    public static boolean canPlayerToggleDoor(PlayerEntity player, BlockPos blockPos) {
+    public static boolean canPlayerToggleDoor(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.DOORS, player, blockPos );
     }
-    public static boolean canPlayerToggleDoor(PlayerEntity player, WorldChunk chunk) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.DOORS, player, chunk );
+    public static boolean canPlayerToggleDoor(@NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
+        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.DOORS, player, chunk, blockPos );
     }
     
     /**
@@ -131,8 +132,18 @@ public final class ChunkUtils {
      * @param blockPos The block position of the interaction
      * @return If player can harm or loot friendly entities
      */
-    public static boolean canPlayerInteractFriendlies(PlayerEntity player, BlockPos blockPos) {
+    public static boolean canPlayerInteractFriendlies(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.CREATURES, player, blockPos );
+    }
+    
+    /**
+     * Check the database if a user can trade with villagers within the specified chunk
+     * @param player The player to check
+     * @param blockPos The block position of the interaction
+     * @return If player can trade with villagers
+     */
+    public static boolean canPlayerTradeAt(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
+        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.TRADING, player, blockPos );
     }
     
     /**
@@ -141,7 +152,7 @@ public final class ChunkUtils {
      * @param blockPos The block position of the interaction
      * @return If the player is allowed to harvest crops
      */
-    public static boolean canPlayerHarvestCrop(PlayerEntity player, BlockPos blockPos) {
+    public static boolean canPlayerHarvestCrop(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.HARVEST, player, blockPos );
     }
     
@@ -280,9 +291,10 @@ public final class ChunkUtils {
             return this.innerChunks.values().iterator();
         }
     }
-    public static final class InnerClaim {
+    public static final class InnerClaim implements Claim {
         
-        private final UUID owner;
+        @Nullable
+        private final ClaimantPlayer owner;
         private final int yUpper;
         private final int yLower;
         
@@ -290,14 +302,16 @@ public final class ChunkUtils {
             this( owner, -1, -1 );
         }
         public InnerClaim(@Nullable UUID owner, int upper, int lower) {
-            this.owner = owner;
+            this.owner = (owner == null ? null : ClaimantPlayer.get( owner ));
             this.yUpper = ( upper > 256 ? 256 : Collections.max(Arrays.asList( upper, lower )));
-            this.yLower = ( lower < -1 ? -1 : lower);
+            this.yLower = Math.max( lower, -1 );
         }
         
         @Nullable
         public UUID getOwner() {
-            return this.owner;
+            if (this.owner == null)
+                return null;
+            return this.owner.getId();
         }
         public int upper() {
             return this.yUpper;
@@ -306,6 +320,19 @@ public final class ChunkUtils {
             return this.yLower;
         }
         
+        @Override
+        public boolean canPlayerDo(@Nullable UUID player, @NotNull ClaimPermissions perm) {
+            if (player != null && player.equals(this.getOwner()))
+                return true;
+            assert this.owner != null;
+            
+            // Get the ranks of the user and the rank required for performing
+            ClaimRanks userRank = this.owner.getFriendRank( player );
+            ClaimRanks permReq = this.owner.getPermissionRankRequirement( perm );
+            
+            // Return the test if the user can perform the action (If friend of chunk owner OR if friend of town and chunk owned by town owner)
+            return permReq.canPerform( userRank );
+        }
     }
     
 }

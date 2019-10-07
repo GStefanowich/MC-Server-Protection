@@ -35,10 +35,13 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerChat;
+import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.utilities.MessageUtils;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 
 public final class ChatroomCommands {
     
@@ -87,11 +90,29 @@ public final class ChatroomCommands {
     
     private static int sendToChatRoom(final CommandContext<ServerCommandSource> context, final ChatRooms chatRoom) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
-        MessageUtils.sendToLocal(
-            player.world,
-            player.getBlockPos(),
-            MessageUtils.formatPlayerMessage(player, chatRoom, StringArgumentType.getString(context, "text"))
-        );
+        
+        // Format the text
+        Text chatText = MessageUtils.formatPlayerMessage(player, chatRoom, StringArgumentType.getString(context, "text"));
+        
+        // Send the new chat message to the currently selected chat room
+        switch (chatRoom) {
+            // Local message
+            case LOCAL: {
+                MessageUtils.sendToLocal( player.world, player.getBlockPos(), chatText );
+                break;
+            }
+            // Global message
+            case GLOBAL: {
+                MessageUtils.sendToAll( chatText );
+                break;
+            }
+            // Message to the players town
+            case TOWN: {
+                ClaimantPlayer claimantPlayer = ((PlayerData) player).getClaim();
+                MessageUtils.sendToTown( claimantPlayer.getTown(), chatText );
+                break;
+            }
+        }
         return Command.SINGLE_SUCCESS;
     }
     private static int switchToChatRoom(final CommandContext<ServerCommandSource> context, final ChatRooms chatRoom) throws CommandSyntaxException {
