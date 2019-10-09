@@ -212,7 +212,7 @@ public final class BlockInteraction {
             if (itemStack.getItem() instanceof BlockItem)
                 EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, ((BlockItem)itemStack.getItem()).getBlock(), blockPos));
             else
-                CoreMod.logDebug("Player \"placed\" non-block item");
+                CoreMod.logDebug("Player \"placed\" non-block item \"" + itemStack.getItem().getTranslationKey() + "\"");
         }
         return result;
     }
@@ -224,4 +224,5 @@ public final class BlockInteraction {
         // If cannot break, prevent the action
         return ActionResult.FAIL;
     }
+    
 }
