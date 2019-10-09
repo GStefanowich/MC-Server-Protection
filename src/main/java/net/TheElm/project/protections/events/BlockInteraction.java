@@ -46,6 +46,7 @@ import net.minecraft.block.FenceGateBlock;
 import net.minecraft.block.Material;
 import net.minecraft.block.TrapdoorBlock;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.EnderChestBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.enums.DoorHinge;
 import net.minecraft.block.enums.DoubleBlockHalf;
@@ -111,7 +112,7 @@ public final class BlockInteraction {
         ClaimPermissions blockPermission;
         
         // If player is in creative ignore permissions
-        if ( (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || ((blockPermission = EntityUtils.getLockPermission( blockEntity )) == null))
+        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
             return ActionResult.PASS;
         
         // If block is a button, door, trapdoor, or gate
@@ -154,30 +155,32 @@ public final class BlockInteraction {
             return ActionResult.PASS;
         
         // If the block is something that can be accessed (Like a chest)
-        if ( (!player.isSneaking() || (!(itemStack.getItem() instanceof BlockItem))) && (((blockPermission = EntityUtils.getLockPermission( blockEntity )) != null) || ((blockPermission = EntityUtils.getLockPermission( block )) != null))) {
-            if ( player.isSpectator() )
+        if ( (!player.isSneaking() || (!(itemStack.getItem() instanceof BlockItem || itemStack.getItem() instanceof BucketItem))) ) {
+            if ( player.isSpectator() || (blockEntity instanceof EnderChestBlockEntity))
                 return ActionResult.PASS;
             
-            WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk( blockPos );
-            
-            // Check if allowed to open storages in this location
-            if (ChunkUtils.canPlayerDoInChunk( blockPermission, player, claimedChunkInfo, blockPos )) {
-                // Check if the chest is NOT part of a shop, Or the player owns that shop
-                ShopSignBlockEntity shopSign;
-                if ((!EntityUtils.isValidShopContainer( blockEntity )) || ((shopSign = EntityUtils.getAttachedShopSign( world, blockPos )) == null) || player.getUuid().equals(shopSign.getShopOwner()))
-                    return ActionResult.PASS;
+            if ((((blockPermission = EntityUtils.getLockPermission( blockEntity )) != null) || ((blockPermission = EntityUtils.getLockPermission( block )) != null))) {
+                WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk(blockPos);
+                
+                // Check if allowed to open storages in this location
+                if (ChunkUtils.canPlayerDoInChunk(blockPermission, player, claimedChunkInfo, blockPos)) {
+                    // Check if the chest is NOT part of a shop, Or the player owns that shop
+                    ShopSignBlockEntity shopSign;
+                    if ((!EntityUtils.isValidShopContainer(blockEntity)) || ((shopSign = EntityUtils.getAttachedShopSign(world, blockPos)) == null) || player.getUuid().equals(shopSign.getShopOwner()))
+                        return ActionResult.PASS;
+                }
+                
+                // Play a sound to the player
+                world.playSound(null, blockPos, EntityUtils.getLockSound(block), SoundCategory.BLOCKS, 0.5f, 1f);
+                
+                // Display that this item can't be opened
+                TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
+                    EntityUtils.getLockedName(block),
+                    (claimedChunkInfo == null ? new LiteralText("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) claimedChunkInfo).getOwnerName(player))
+                ));
+                
+                return ActionResult.FAIL;
             }
-            
-            // Play a sound to the player
-            world.playSound( null, blockPos, EntityUtils.getLockSound( block ), SoundCategory.BLOCKS, 0.5f, 1f );
-            
-            // Display that this item can't be opened
-            TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
-                EntityUtils.getLockedName( block ),
-                ( claimedChunkInfo == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) claimedChunkInfo).getOwnerName( player ) )
-            ));
-            
-            return ActionResult.FAIL;
         }
         
         ActionResult placeResult = BlockInteraction.blockPlace( player, world, hand, itemStack, blockHitResult);
