@@ -23,32 +23,26 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections.events;
+package net.TheElm.project.interfaces;
 
-import net.TheElm.project.interfaces.BlockPlaceCallback;
-import net.TheElm.project.utilities.ChunkUtils;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
+import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 
-public final class ItemPlace {
-    
-    private ItemPlace() {}
-    
-    /**
-     * Initialize our callback listener for Item Usage
-     */
-    public static void init() {
-        BlockPlaceCallback.EVENT.register(ItemPlace::blockPlace);
-    }
-    
-    private static ActionResult blockPlace(final ServerPlayerEntity player, final World world, final BlockPos blockPos, final Direction direction, final ItemStack itemStack) {
-        if (!ChunkUtils.canPlayerBreakInChunk( player, blockPos.offset( direction ) ))
-            return ActionResult.FAIL;
+public interface ItemUseCallback {
+    Event<ItemUseCallback> EVENT = EventFactory.createArrayBacked( ItemUseCallback.class, (listeners) -> (player, world, hand, itemStack) -> {
+        for (ItemUseCallback event : listeners) {
+            ActionResult result = event.use(player, world, hand, itemStack);
+            if (result != ActionResult.PASS)
+                return result;
+        }
+        
         return ActionResult.PASS;
-    }
+    });
     
+    ActionResult use(ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack);
 }

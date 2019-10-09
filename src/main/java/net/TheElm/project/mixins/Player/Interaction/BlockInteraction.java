@@ -27,7 +27,13 @@ package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.interfaces.BlockBreakCallback;
 import net.TheElm.project.interfaces.BlockInteractionCallback;
-import net.minecraft.block.*;
+import net.TheElm.project.interfaces.ItemUseCallback;
+import net.minecraft.block.BedBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.DoorBlock;
+import net.minecraft.block.HorizontalFacingBlock;
+import net.minecraft.block.TallPlantBlock;
 import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.client.network.packet.BlockUpdateS2CPacket;
@@ -66,7 +72,14 @@ public abstract class BlockInteraction {
     }
     
     @Inject(at = @At("HEAD"), method = "interactItem", cancellable = true)
-    private void beforeItemInteract(final PlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {}
+    private void beforeItemInteract(final PlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
+        if (!player.world.isClient) {
+            ActionResult result = ItemUseCallback.EVENT.invoker().use((ServerPlayerEntity) player, world, hand, itemStack);
+            if (result != ActionResult.PASS) {
+                callback.setReturnValue(result);
+            }
+        }
+    }
     
     @Inject(at = @At("HEAD"), method = "interactBlock", cancellable = true)
     private void beforeBlockInteract(final PlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, final BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> callback) {

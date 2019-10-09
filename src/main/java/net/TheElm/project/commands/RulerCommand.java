@@ -33,6 +33,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.BlockDistance;
+import net.TheElm.project.utilities.BlockUtils;
 import net.TheElm.project.utilities.MessageUtils;
 import net.minecraft.command.arguments.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -45,12 +46,9 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RayTraceContext;
 
 public final class RulerCommand {
     
-    private static final int MAX_BLOCK_DISTANCE = 8;
     private static final ExceptionTranslatableServerSide BLOCK_NOT_HIT = new ExceptionTranslatableServerSide("ruler.no_block");
     
     private RulerCommand() {}
@@ -71,19 +69,8 @@ public final class RulerCommand {
         ServerPlayerEntity player = source.getPlayer();
         ServerWorld world = source.getWorld();
         
-        // Get the direction the player is facing
-        Vec3d posVec = player.getCameraPosVec(1.0F); // Get camera pos
-        Vec3d lookVec = player.getRotationVec(1.0F); // Get looking dir
-        
-        // Trace up to MAX_BLOCK_DISTANCE away
-        Vec3d traceVec = posVec.add(
-            lookVec.x * MAX_BLOCK_DISTANCE,
-            lookVec.y * MAX_BLOCK_DISTANCE,
-            lookVec.z * MAX_BLOCK_DISTANCE
-        );
-        
         // Get the block that the player is facing
-        BlockHitResult search = world.rayTrace(new RayTraceContext( posVec, traceVec, RayTraceContext.ShapeType.OUTLINE, RayTraceContext.FluidHandling.ANY, player));
+        BlockHitResult search = BlockUtils.getLookingBlock( world, player, 8 );
         if (search.getType() == HitResult.Type.MISS)
             throw BLOCK_NOT_HIT.create( player );
         
