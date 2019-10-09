@@ -35,7 +35,7 @@ import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundEvents;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -52,6 +52,12 @@ public abstract class ArrowDamage extends Entity {
     
     @Shadow @Nullable
     public abstract Entity getOwner();
+    
+    @Shadow
+    public abstract byte getPierceLevel();
+    
+    @Shadow
+    private SoundEvent sound;
     
     protected ArrowDamage(EntityType<? extends ProjectileEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
@@ -123,7 +129,15 @@ public abstract class ArrowDamage extends Entity {
                 }
             }
             
-            hitEntity.playSound( SoundEvents.ENTITY_ARROW_HIT, 0.5f, 1f );
+            // Play a sound
+            hitEntity.playSound( this.sound, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+            
+            // If piercing is 0, delete arrow
+            if (this.getPierceLevel() <= 0) {
+                this.remove();
+            }
+            
+            // Cancel damaging effects
             callback.cancel();
             
         }
