@@ -111,5 +111,16 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
             callback.setReturnValue(false);
     }
     
+    @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
+    public void onDamage(DamageSource damageSource, float damage, CallbackInfoReturnable<Boolean> callback) {
+        Entity attacker = damageSource.getAttacker();
+        if (!(attacker instanceof PlayerEntity))
+            return;
+        PlayerEntity player = (PlayerEntity) attacker;
+        
+        // If player should be able to interact with the item frame
+        if (!ChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos()))
+            callback.setReturnValue(false);
+    }
     
 }
