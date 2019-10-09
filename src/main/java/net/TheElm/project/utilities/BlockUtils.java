@@ -23,32 +23,34 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections.events;
+package net.TheElm.project.utilities;
 
-import net.TheElm.project.interfaces.BlockPlaceCallback;
-import net.TheElm.project.utilities.ChunkUtils;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.minecraft.entity.Entity;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.BlockView;
+import net.minecraft.world.RayTraceContext;
 
-public final class ItemPlace {
+public final class BlockUtils {
     
-    private ItemPlace() {}
+    private BlockUtils() {}
     
-    /**
-     * Initialize our callback listener for Item Usage
-     */
-    public static void init() {
-        BlockPlaceCallback.EVENT.register(ItemPlace::blockPlace);
+    public static BlockHitResult getLookingBlock(BlockView world, Entity entity) {
+        return BlockUtils.getLookingBlock( world, entity, 8 );
     }
-    
-    private static ActionResult blockPlace(final ServerPlayerEntity player, final World world, final BlockPos blockPos, final Direction direction, final ItemStack itemStack) {
-        if (!ChunkUtils.canPlayerBreakInChunk( player, blockPos.offset( direction ) ))
-            return ActionResult.FAIL;
-        return ActionResult.PASS;
+    public static BlockHitResult getLookingBlock(BlockView world, Entity entity, int distance) {
+        // Get the direction the entity is facing
+        Vec3d posVec = entity.getCameraPosVec(1.0F); // Get camera pos
+        Vec3d lookVec = entity.getRotationVec(1.0F); // Get looking dir
+        
+        // Trace up to MAX_BLOCK_DISTANCE away
+        Vec3d traceVec = posVec.add(
+            lookVec.x * distance,
+            lookVec.y * distance,
+            lookVec.z * distance
+        );
+        
+        return world.rayTrace(new RayTraceContext( posVec, traceVec, RayTraceContext.ShapeType.OUTLINE, RayTraceContext.FluidHandling.ANY, entity));
     }
     
 }

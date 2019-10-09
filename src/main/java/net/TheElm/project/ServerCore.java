@@ -47,6 +47,7 @@ import net.TheElm.project.protections.events.BlockBreak;
 import net.TheElm.project.protections.events.BlockInteraction;
 import net.TheElm.project.protections.events.EntityAttack;
 import net.TheElm.project.protections.events.ItemPlace;
+import net.TheElm.project.protections.events.ItemUse;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.registry.CommandRegistry;
@@ -94,6 +95,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         BlockInteraction.init();
         EntityAttack.init();
         ItemPlace.init();
+        ItemUse.init();
         
         CoreMod.logInfo( "Initializing Database." );
         try {
