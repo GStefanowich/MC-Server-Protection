@@ -37,10 +37,12 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -140,6 +142,18 @@ public final class MessageUtils {
     // Convert a Block Position to a Text component
     public static Text blockPosToTextComponent(final BlockPos pos) {
         return MessageUtils.blockPosToTextComponent( pos, ", " );
+    }
+    public static Text blockPosToTextComponent(final BlockPos pos, final int dimensionId) {
+        Text out = blockPosToTextComponent( pos );
+        
+        // Get the dimension
+        DimensionType dimension = DimensionType.byRawId( dimensionId );
+        if (dimension != null) {
+            out.append(" ")
+                .append(new TranslatableText(dimension.toString()));
+        }
+        
+        return out;
     }
     public static Text blockPosToTextComponent(final BlockPos pos, final String separator) {
         return MessageUtils.dimensionToTextComponent( separator, pos.getX(), pos.getY(), pos.getZ() );
