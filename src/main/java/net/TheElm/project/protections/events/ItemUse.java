@@ -25,9 +25,12 @@
 
 package net.TheElm.project.protections.events;
 
+import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.interfaces.ItemUseCallback;
+import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.BlockUtils;
 import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.TitleUtils;
 import net.minecraft.block.BedBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -43,8 +46,10 @@ import net.minecraft.block.enums.StairShape;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.BlockRotation;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
@@ -66,8 +71,15 @@ public final class ItemUse {
     }
     
     private static ActionResult blockInteract(ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack) {
-        // If item is stick and player has build permission
-        if (itemStack.getItem() == Items.STICK) {
+        if (itemStack.getItem() == Items.COMPASS) {
+            CompassDirections newDirection = ((PlayerData) player).cycleCompass();
+            TitleUtils.showPlayerAlert( player, Formatting.YELLOW, new LiteralText("Compass now pointing towards "), newDirection.text() );
+            
+            return ActionResult.SUCCESS;
+        } else if (itemStack.getItem() == Items.STICK) {
+            /*
+             * If item is stick and player has build permission
+             */
             BlockHitResult blockHitResult = BlockUtils.getLookingBlock( world, player );
             BlockPos blockPos = blockHitResult.getBlockPos();
             

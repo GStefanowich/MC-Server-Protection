@@ -31,6 +31,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.commands.PlayerSpawnCommand;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ChatRooms;
+import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.interfaces.PlayerChat;
@@ -41,6 +42,7 @@ import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.SleepUtils;
 import net.fabricmc.fabric.api.util.NbtType;
+import net.minecraft.client.network.packet.PlayerSpawnPositionS2CPacket;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -65,6 +67,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Calendar;
+import java.util.Locale;
 
 @Mixin(ServerPlayerEntity.class)
 public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerServerLanguage, Nicknamable, PlayerChat {
@@ -86,6 +89,10 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     // Portal locations
     private BlockPos overworldPortal = null;
     private BlockPos theNetherPortal = null;
+    
+    // Compass
+    private CompassDirections compassDirections = CompassDirections.SPAWN;
+    
     
     public WorldInteraction(World world_1, GameProfile gameProfile_1) {
         super(world_1, gameProfile_1);
@@ -246,8 +253,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Connected players language
      */
-    public String getClientLanguage() {
-        return this.clientLanguage;
+    public Locale getClientLanguage() {
+        return Locale.forLanguageTag( this.clientLanguage );
     }
     
     /*
@@ -337,6 +344,9 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         // Keep when the player joined across deaths
         this.firstJoinedAt = ((PlayerData) player).getFirstJoinAt();
         this.lastJoinedAt = ((PlayerData) player).getLastJoinAt();
+        
+        // Compass directions
+        this.setCompassDirection(((PlayerData) player).getCompass());
     }
     
     /*
@@ -388,5 +398,32 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Nullable
     public BlockPos getRulerB() {
         return this.rulerB;
+    }
+    
+    /*
+     * Compasses
+     */
+    @Override
+    public CompassDirections cycleCompass() {
+        CompassDirections next = this.compassDirections;
+        BlockPos pos;
+        do {
+            next = next.getNext();
+        } while ((pos = next.getPos( (ServerPlayerEntity)(PlayerEntity)this )) == null);
+        
+        this.setCompassDirection( next, pos );
+        return next;
+    }
+    public CompassDirections getCompass() {
+        return this.compassDirections;
+    }
+    public void setCompassDirection(@NotNull CompassDirections direction) {
+        BlockPos blockPos = direction.getPos( (ServerPlayerEntity)(PlayerEntity) this );
+        if (blockPos == null) this.cycleCompass();
+        else this.setCompassDirection(direction, blockPos);
+    }
+    public void setCompassDirection(@NotNull CompassDirections direction, @NotNull BlockPos blockPos) {
+        this.compassDirections = direction;
+        this.networkHandler.sendPacket(new PlayerSpawnPositionS2CPacket( blockPos ));
     }
 }

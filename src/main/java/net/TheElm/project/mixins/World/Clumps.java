@@ -25,25 +25,55 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.TheElm.project.protections.logging.BlockEvent;
-import net.TheElm.project.protections.logging.EventLogger;
-import net.minecraft.block.Block;
-import net.minecraft.item.ItemConvertible;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.ExperienceOrbEntity;
 import net.minecraft.world.World;
-import net.minecraft.world.explosion.Explosion;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(Block.class)
-public abstract class BlockChanges implements ItemConvertible {
+@Mixin(ExperienceOrbEntity.class)
+public abstract class Clumps extends Entity {
     
-    @Inject(at = @At("TAIL"), method = "onDestroyedByExplosion")
-    public void onDestroyedByExplosion(World world, BlockPos blockPos, Explosion explosion, CallbackInfo callback) {
-        if (explosion.getCausingEntity() != null)
-            EventLogger.log(new BlockEvent(explosion.getCausingEntity(), EventLogger.BlockAction.EXPLODE, (Block)(ItemConvertible)this, blockPos));
+    @Shadow private int amount;
+    @Shadow public int orbAge;
+    
+    @Shadow
+    public abstract int getExperienceAmount();
+    
+    public Clumps(EntityType<?> entityType_1, World world_1) {
+        super(entityType_1, world_1);
+    }
+    
+    @Inject(at = @At("TAIL"), method = "tick")
+    public void onTick(CallbackInfo callback) {
+        if (!this.world.isClient) {
+            // Get orbs of same tile
+            this.world.getEntities(
+                ExperienceOrbEntity.class,
+                this.getBoundingBox(),
+                (orb -> !orb.getUuid().equals(this.getUuid()))
+            ).stream().filter((orb) -> {
+                // Get where found orbs are younger than the current (Let the oldest live)
+                return orb.orbAge < this.orbAge;
+            }).findAny().ifPresent((orb) -> {
+                // Remove the orbs
+                orb.remove();
+                this.remove();
+                
+                // Spawn a new orb
+                world.spawnEntity(new ExperienceOrbEntity(
+                    world,
+                    this.x,
+                    this.y,
+                    this.z,
+                    this.getExperienceAmount() + orb.getExperienceAmount()
+                ));
+            });
+        }
     }
     
 }

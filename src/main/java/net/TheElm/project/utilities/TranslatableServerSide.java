@@ -58,8 +58,7 @@ public final class TranslatableServerSide {
     public static Text text(ServerCommandSource source, String key, Object... objects) {
         if (source.getEntity() instanceof ServerPlayerEntity)
             return TranslatableServerSide.text( (ServerPlayerEntity)source.getEntity(), key, objects );
-        Locale locale = Locale.getDefault();
-        return TranslatableServerSide.text( locale.getLanguage() + "_" + locale.getCountry(), key, objects );
+        return TranslatableServerSide.text( Locale.getDefault(), key, objects );
     }
     public static Text text(PlayerEntity player, String key, Object... objects) {
         if (!(player instanceof ServerPlayerEntity))
@@ -69,7 +68,7 @@ public final class TranslatableServerSide {
     public static Text text(ServerPlayerEntity player, String key, Object... objects) {
         return TranslatableServerSide.text( ((PlayerServerLanguage)player).getClientLanguage(), key, objects );
     }
-    private static Text text(String language, String key, Object... objects) {
+    private static Text text(Locale language, String key, Object... objects) {
         String text = TranslatableServerSide.getTranslation( language, key );
         
         for (int i = 0; i < objects.length; ++i) {
@@ -83,13 +82,13 @@ public final class TranslatableServerSide {
         
         return TranslatableServerSide.replace( language, text, objects);
     }
-    private static Text replace(String language, String text, Object... objects) {
+    private static Text replace(Locale language, String text, Object... objects) {
         if ( objects.length <= 0 )
             return new LiteralText( text );
         String[] separated = text.split( "((?<=%[a-z])|(?=%[a-z]))" );
         
         // Get the formatter for numbers
-        NumberFormat formatter = NumberFormat.getInstance(new Locale(language));
+        NumberFormat formatter = NumberFormat.getInstance( language );
         int O = 0;
         
         Text out = null;
@@ -118,10 +117,10 @@ public final class TranslatableServerSide {
         return (out == null ? new LiteralText( "" ) : out);
     }
     
-    private static String getTranslation(String language, String key) {
+    private static String getTranslation(Locale language, String key) {
         JsonObject object = TranslatableServerSide.readLanguageFile( language );
-        if ( (!language.equalsIgnoreCase("en_us")) && (!object.has( key )) )
-            return TranslatableServerSide.getTranslation( "en_us", key );
+        if ( (language != Locale.US) && (!object.has( key )) )
+            return TranslatableServerSide.getTranslation( Locale.US, key );
         JsonElement element = object.get( key );
         if ( element == null ) {
             CoreMod.logInfo( "Missing translation key \"" + key + "\"!" );
@@ -129,20 +128,22 @@ public final class TranslatableServerSide {
         }
         return element.getAsString();
     }
-    private static JsonObject readLanguageFile(String language) {
+    private static JsonObject readLanguageFile(Locale language) {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        InputStream resource = classLoader.getResourceAsStream( TranslatableServerSide.getResourcePath( language ) );
-        if ((!language.equalsIgnoreCase( "en_us" )) && ( resource == null )) // Fallback to English
-            return TranslatableServerSide.readLanguageFile("en_us");
-        assert resource != null; // Path to en_us.json should NOT be Null
+        String filePath = TranslatableServerSide.getResourcePath( language );
+        InputStream resource = classLoader.getResourceAsStream( filePath );
+        if ((language != Locale.US) && ( resource == null )) // Fallback to English
+            return TranslatableServerSide.readLanguageFile(Locale.US);
+        if (resource == null)
+            throw new NullPointerException("Could not read language file \"" + filePath + "\"");
         return new JsonParser().parse(new InputStreamReader( resource )).getAsJsonObject();
     }
-    private static String getResourcePath(String language) {
+    private static String getResourcePath(Locale locale) {
         return Paths.get(
             "assets",
             CoreMod.MOD_ID,
             "lang",
-            language.toLowerCase() + ".json"
+            locale.getLanguage() + "_" + locale.getCountry() + ".json"
         ).toString();
     }
     
