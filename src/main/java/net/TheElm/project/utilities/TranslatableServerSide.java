@@ -134,7 +134,8 @@ public final class TranslatableServerSide {
         InputStream resource = classLoader.getResourceAsStream( TranslatableServerSide.getResourcePath( language ) );
         if ((!language.equalsIgnoreCase( "en_us" )) && ( resource == null )) // Fallback to English
             return TranslatableServerSide.readLanguageFile("en_us");
-        return new JsonParser().parse( new InputStreamReader( resource )).getAsJsonObject();
+        assert resource != null; // Path to en_us.json should NOT be Null
+        return new JsonParser().parse(new InputStreamReader( resource )).getAsJsonObject();
     }
     private static String getResourcePath(String language) {
         return Paths.get(

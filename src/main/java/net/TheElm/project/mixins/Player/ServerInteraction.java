@@ -127,9 +127,6 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
     public void setChatRoom(@NotNull ChatRooms room) {
         // Set the chat room
         this.chatRoom = room;
-        
-        // Tell the player
-        player.sendMessage(TranslatableServerSide.text(player, "chat.change." + room.name().toLowerCase()));
     }
     
     /*
