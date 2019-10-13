@@ -25,8 +25,10 @@
 
 package net.TheElm.project.interfaces;
 
+import java.util.Locale;
+
 public interface PlayerServerLanguage {
 
-    String getClientLanguage();
+    Locale getClientLanguage();
     
 }

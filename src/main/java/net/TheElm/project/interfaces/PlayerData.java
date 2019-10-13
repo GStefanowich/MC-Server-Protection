@@ -25,6 +25,7 @@
 
 package net.TheElm.project.interfaces;
 
+import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.minecraft.util.math.BlockPos;
@@ -73,4 +74,10 @@ public interface PlayerData {
     void setOverworldPortal(@Nullable BlockPos blockPos);
     @Nullable BlockPos getNetherPortal();
     @Nullable BlockPos getOverworldPortal();
+    
+    /*
+     * Compass handling
+     */
+    CompassDirections cycleCompass();
+    CompassDirections getCompass();
 }

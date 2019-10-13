@@ -55,6 +55,7 @@
     "Player.WorldInteraction",
     "Player.ServerInteraction",
     
+    "World.Clumps",
     "World.BlockChanges",
     "World.CauldronCleaning",
     "World.MobSpawners",
