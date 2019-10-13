@@ -38,6 +38,7 @@ import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -117,7 +118,13 @@ public final class ChatroomCommands {
     }
     private static int switchToChatRoom(final CommandContext<ServerCommandSource> context, final ChatRooms chatRoom) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
+        
+        // Update the chat room
         ((PlayerChat) player).setChatRoom(chatRoom);
+        
+        // Tell the player
+        player.sendMessage(TranslatableServerSide.text(player, "chat.change." + chatRoom.name().toLowerCase()));
+        
         return Command.SINGLE_SUCCESS;
     }
     
