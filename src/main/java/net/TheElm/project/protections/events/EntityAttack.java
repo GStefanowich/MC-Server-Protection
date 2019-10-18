@@ -79,6 +79,10 @@ public final class EntityAttack {
         final Entity attacker = source.getAttacker();
         SoundEvent sound = null;
         
+        // If self harm
+        if (target == attacker)
+            return ActionResult.PASS;
+        
         if (attacker instanceof PlayerEntity) {
             final PlayerEntity player = (PlayerEntity) attacker;
             
@@ -163,15 +167,14 @@ public final class EntityAttack {
             
         } else if (attacker instanceof CreeperEntity) {
             final CreeperEntity creeper = (CreeperEntity) attacker;
-            
+    
             // Protect item frames if creeper damage is off
             if (target instanceof ItemFrameEntity) {
                 ItemFrameEntity itemFrame = (ItemFrameEntity) target;
-                WorldChunk chunk = world.getWorldChunk( itemFrame.getBlockPos() );
+                WorldChunk chunk = world.getWorldChunk(itemFrame.getBlockPos());
                 if ((chunk == null) || ((IClaimedChunk) chunk).isSetting(ClaimSettings.CREEPER_GRIEFING))
                     return ActionResult.PASS;
             }
-            
         } else {
             // Pass for all other entity attackers
             return ActionResult.PASS;

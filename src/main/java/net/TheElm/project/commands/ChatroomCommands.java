@@ -27,7 +27,6 @@ package net.TheElm.project.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
@@ -35,10 +34,9 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerChat;
-import net.TheElm.project.interfaces.PlayerData;
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
+import net.minecraft.command.arguments.MessageArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -54,19 +52,19 @@ public final class ChatroomCommands {
         
         LiteralCommandNode<ServerCommandSource> townChat = dispatcher.register(CommandManager.literal("t")
             .requires(ClaimCommand::sourceInTown)
-            .then(CommandManager.argument("text", StringArgumentType.greedyString()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
+            .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
             .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
         );
         CoreMod.logDebug( "- Registered Town chat command" );
         
         LiteralCommandNode<ServerCommandSource> globalChat = dispatcher.register(CommandManager.literal("g")
-            .then(CommandManager.argument("text", StringArgumentType.greedyString()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
+            .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
             .executes((context -> switchToChatRoom(context, ChatRooms.GLOBAL)))
         );
         CoreMod.logDebug( "- Registered Global chat command" );
         
         LiteralCommandNode<ServerCommandSource> localChat = dispatcher.register(CommandManager.literal("l")
-            .then(CommandManager.argument("text", StringArgumentType.greedyString()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
+            .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
             .executes((context -> switchToChatRoom(context, ChatRooms.LOCAL)))
         );
         CoreMod.logDebug( "- Registered Local chat command" );
@@ -74,15 +72,15 @@ public final class ChatroomCommands {
         dispatcher.register(CommandManager.literal("chat")
             .then(CommandManager.literal("town")
                 .requires(ClaimCommand::sourceInTown)
-                .then(CommandManager.argument("text", StringArgumentType.greedyString()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
+                .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
                 .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
             )
             .then(CommandManager.literal("global")
-                .then(CommandManager.argument("text", StringArgumentType.greedyString()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
+                .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
                 .executes((context -> switchToChatRoom(context, ChatRooms.GLOBAL)))
             )
             .then(CommandManager.literal("local")
-                .then(CommandManager.argument("text", StringArgumentType.greedyString()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
+                .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
                 .executes((context -> switchToChatRoom(context, ChatRooms.LOCAL)))
             )
         );
@@ -93,27 +91,15 @@ public final class ChatroomCommands {
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         // Format the text
-        Text chatText = MessageUtils.formatPlayerMessage(player, chatRoom, StringArgumentType.getString(context, "text"));
+        Text chatText = MessageUtils.formatPlayerMessage(
+            player,
+            chatRoom,
+            MessageArgumentType.getMessage(context, "text")
+        );
         
         // Send the new chat message to the currently selected chat room
-        switch (chatRoom) {
-            // Local message
-            case LOCAL: {
-                MessageUtils.sendToLocal( player.world, player.getBlockPos(), chatText );
-                break;
-            }
-            // Global message
-            case GLOBAL: {
-                MessageUtils.sendToAll( chatText );
-                break;
-            }
-            // Message to the players town
-            case TOWN: {
-                ClaimantPlayer claimantPlayer = ((PlayerData) player).getClaim();
-                MessageUtils.sendToTown( claimantPlayer.getTown(), chatText );
-                break;
-            }
-        }
+        MessageUtils.sendTo(chatRoom, player, chatText);
+        
         return Command.SINGLE_SUCCESS;
     }
     private static int switchToChatRoom(final CommandContext<ServerCommandSource> context, final ChatRooms chatRoom) throws CommandSyntaxException {

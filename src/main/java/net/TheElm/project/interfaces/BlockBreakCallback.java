@@ -27,13 +27,15 @@ package net.TheElm.project.interfaces;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.server.network.packet.PlayerActionC2SPacket.Action;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface BlockBreakCallback {
     Event<BlockBreakCallback> EVENT = EventFactory.createArrayBacked( BlockBreakCallback.class, (listeners) -> (player, world, hand, blockPos, direction, action) -> {
@@ -46,5 +48,5 @@ public interface BlockBreakCallback {
         return ActionResult.PASS;
     });
     
-    ActionResult interact(ServerPlayerEntity player, ServerWorld world, Hand hand, BlockPos blockPos, Direction direction, Action action);
+    ActionResult interact(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos blockPos, @Nullable Direction direction, @Nullable Action action);
 }

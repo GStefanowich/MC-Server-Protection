@@ -4,6 +4,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.TheElm.project.interfaces.PlayerChat;
+import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
@@ -13,15 +14,18 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.Overwrite;
 
 @Mixin(MeCommand.class)
 public final class Me {
     
-    @Inject(at = @At("HEAD"), method = "register", cancellable = true)
-    private static void register(CommandDispatcher<ServerCommandSource> dispatcher, CallbackInfo callback){
+    /**
+     * @author TheElm
+     * @reason Overwrite the "/me" message format
+     * @param dispatcher The command dispatcher
+     */
+    @Overwrite
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal( "me" )
             .then( CommandManager.argument( "action", StringArgumentType.greedyString())
                 .executes((context) -> {
@@ -40,13 +44,16 @@ public final class Me {
                         .append( message );
                     
                     // Send to all players
-                    if (server != null) server.getPlayerManager().sendToAll(text);
+                    MessageUtils.sendTo(
+                        ((PlayerChat) player).getChatRoom(),
+                        player,
+                        text
+                    );
                     
                     return Command.SINGLE_SUCCESS;
                 })
             )
         );
-        callback.cancel();
     }
     
 }

@@ -45,6 +45,9 @@ import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.client.network.packet.PlayerSpawnPositionS2CPacket;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.boss.BossBar;
+import net.minecraft.entity.boss.ServerBossBar;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
@@ -55,6 +58,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Unit;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
@@ -67,13 +71,22 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 @Mixin(ServerPlayerEntity.class)
 public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerServerLanguage, Nicknamable, PlayerChat {
     
     @Shadow public ServerPlayNetworkHandler networkHandler;
     @Shadow private String clientLanguage;
+    @Shadow private boolean notInAnyWorld;
+    
+    // Health bar
+    private int healthTick = 0;
+    @Nullable
+    private ServerBossBar healthBar = null;
     
     // Join times
     private Long firstJoinedAt = null;
@@ -93,9 +106,90 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     // Compass
     private CompassDirections compassDirections = CompassDirections.SPAWN;
     
-    
     public WorldInteraction(World world_1, GameProfile gameProfile_1) {
         super(world_1, gameProfile_1);
+    }
+    
+    /*
+     * Health Bar
+     */
+    @Inject(at = @At("TAIL"), method = "tick")
+    public void onTick(CallbackInfo callback) {
+        if ((this.healthBar != null) && (!this.notInAnyWorld) && ((++this.healthTick) >= 60)) {
+            // Get players from the health bar
+            Set<ServerPlayerEntity> enemies = new HashSet<>(this.healthBar.getPlayers());
+            
+            // Remove players from the healthbar
+            if (!enemies.isEmpty()) {
+                // Get the area around the player
+                Box searchRegion = new Box(
+                    new BlockPos(this.x + 20, this.y + 10, this.z + 20),
+                    new BlockPos(this.x - 20, this.y - 10, this.z - 20)
+                );
+                
+                // Get local players
+                if (!this.isAlive())
+                    this.healthBar.clearPlayers();
+                else {
+                    List<ServerPlayerEntity> players = this.world.getEntities(ServerPlayerEntity.class, searchRegion, (nearby) -> (!nearby.getUuid().equals(this.getUuid())));
+                    
+                    // Remove all locale players
+                    enemies.removeAll(players);
+                    
+                    // Remove if not nearby
+                    if (!enemies.isEmpty()) {
+                        for (ServerPlayerEntity enemy : enemies) this.healthBar.removePlayer(enemy);
+                    }
+                }
+                
+                // Set the health percentage
+                this.updateHealthBar();
+            }
+            
+            // Reset the tick
+            this.healthTick = 0;
+        }
+    }
+    @Inject(at = @At("TAIL"), method = "onDeath")
+    public void onDeath(DamageSource damageSource, CallbackInfo callback) {
+        if (this.healthBar != null)
+            this.healthBar.setPercent(0.0f);
+    }
+    @Inject(at = @At("RETURN"), method = "damage")
+    public void onDamage(DamageSource damageSource, float amount, CallbackInfoReturnable<Boolean> callback) {
+        if ((!this.world.isClient)) {
+            // Create the health bar
+            if (this.healthBar == null) {
+                this.healthBar = new ServerBossBar(
+                    new LiteralText("Player ").append(this.getDisplayName().formatted(Formatting.AQUA)).formatted(Formatting.WHITE),
+                    BossBar.Color.RED,
+                    BossBar.Style.NOTCHED_10
+                );
+            }
+            
+            // Set the health percentage
+            this.updateHealthBar();
+            
+            // Add the attacker to the healthbar
+            if ((damageSource.getAttacker() instanceof PlayerEntity) && (damageSource.getAttacker() != this))
+                this.healthBar.addPlayer((ServerPlayerEntity) damageSource.getAttacker());
+        }
+    }
+    private void updateHealthBar() {
+        if (this.healthBar != null) {
+            // Get the health percentage
+            float percentage = this.getHealth() / this.getHealthMaximum();
+            
+            if (percentage != this.healthBar.getPercent()) {
+                // Update the bar
+                this.healthBar.setPercent(percentage);
+                
+                // Update the color of the bar
+                if (percentage >= 0.6) this.healthBar.setColor(BossBar.Color.GREEN);
+                else if (percentage >= 0.3) this.healthBar.setColor(BossBar.Color.YELLOW);
+                else this.healthBar.setColor(BossBar.Color.RED);
+            }
+        }
     }
     
     /*
@@ -162,7 +256,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         this.warpPos = blockPos;
     }
     @Override
-    public void setWarpDimension(World world) {
+    public void setWarpDimension(@NotNull World world) {
         this.warpDimension = world.dimension.getType().getRawId();
     }
     

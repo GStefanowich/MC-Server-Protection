@@ -63,11 +63,15 @@ public final class ChunkUtils {
         // If claims are disabled
         if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || player.isCreative()) return true;
         
+        // Check if player can do action in chunk
+        return ChunkUtils.canPlayerDoInChunk( perm, player.getUuid(), chunk, blockPos );
+    }
+    public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @Nullable UUID playerId, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // Return false (Chunks should never BE null, but this is our catch)
         if ( chunk == null ) return false;
         
         // Check if player can do action in chunk
-        return ((IClaimedChunk) chunk).canPlayerDo( blockPos, player.getUuid(), perm );
+        return ((IClaimedChunk) chunk).canPlayerDo( blockPos, playerId, perm );
     }
     
     /**
@@ -86,8 +90,11 @@ public final class ChunkUtils {
      * @param blockPos The block position of the interaction
      * @return If the player can break blocks
      */
-    public static boolean canPlayerBreakInChunk(PlayerEntity player, BlockPos blockPos) {
+    public static boolean canPlayerBreakInChunk(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.BLOCKS, player, blockPos );
+    }
+    public static boolean canPlayerBreakInChunk(@NotNull UUID playerId, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
+        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.BLOCKS, playerId, chunk, blockPos );
     }
     
     /**
