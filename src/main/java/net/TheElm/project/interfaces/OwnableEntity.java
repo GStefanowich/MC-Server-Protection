@@ -23,28 +23,15 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections.logging;
+package net.TheElm.project.interfaces;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
-public abstract class LoggableEvent {
+import java.util.UUID;
+
+public interface OwnableEntity {
     
-    private final Entity source;
-    private final World world;
-    
-    public LoggableEvent(@Nullable Entity actionSource) {
-        // Set the source of the change
-        this.source = actionSource;
-        this.world = (actionSource == null ? null : actionSource.world);
-    }
-    
-    public final Entity getSource() {
-        return this.source;
-    }
-    public final World getWorld() {
-        return this.world;
-    }
+    @NotNull
+    UUID getEntityOwner();
     
 }

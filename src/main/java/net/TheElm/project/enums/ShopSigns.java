@@ -44,6 +44,7 @@ import net.TheElm.project.utilities.GuideUtils;
 import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.ShopSignBuilder;
+import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.block.BlockState;
@@ -169,7 +170,19 @@ public enum ShopSigns {
                     // Give player money for item
                     MoneyUtils.givePlayerMoney(player, sign.getShopItemPrice());
                     
+                    // Get shop owner
                     ClaimantPlayer permissions = ClaimantPlayer.get( sign.getShopOwner() );
+                    
+                    // Tell the player
+                    TitleUtils.showPlayerAlert(
+                        player,
+                        Formatting.YELLOW,
+                        new LiteralText("You sold "),
+                        new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
+                        new TranslatableText(sign.getShopItem().getTranslationKey()).formatted(Formatting.AQUA),
+                        new LiteralText(" to "),
+                        permissions.getName().formatted(Formatting.AQUA)
+                    );
                     
                     // Log the event
                     CoreMod.logInfo( player.getName().asString() + " sold " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay().asString() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " to " + permissions.getName().asString() );
@@ -290,7 +303,19 @@ public enum ShopSigns {
                         }
                     }
                     
+                    // Get the shop owner
                     ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
+    
+                    // Tell the player
+                    TitleUtils.showPlayerAlert(
+                        player,
+                        Formatting.YELLOW,
+                        new LiteralText("You bought "),
+                        new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
+                        new TranslatableText(sign.getShopItem().getTranslationKey()).formatted(Formatting.AQUA),
+                        new LiteralText(" from "),
+                        permissions.getName().formatted(Formatting.AQUA)
+                    );
                     
                     // Log the event
                     CoreMod.logInfo( player.getName().asString() + " bought " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay().asString() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " from " + permissions.getName().asString() );

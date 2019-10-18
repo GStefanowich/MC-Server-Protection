@@ -28,7 +28,7 @@ package net.TheElm.project.protections.logging;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.config.SewingMachineConfig;
-import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -86,7 +86,7 @@ public final class EventLogger implements Runnable {
     private boolean saveToDatabase(BlockEvent event) {
         // Get the event information
         World world = event.getWorld();
-        LivingEntity source = event.getSource();
+        Entity source = event.getSource();
         BlockPos blockPos = event.getPosition();
         String translationKey = event.getBlock().getTranslationKey();
         BlockAction action = event.getAction();

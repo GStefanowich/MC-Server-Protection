@@ -35,6 +35,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
@@ -98,13 +99,21 @@ public final class TranslatableServerSide {
                 // Get the objects that were provided
                 Object obj = objects[ O++ ];
                 if ( ("%s".equalsIgnoreCase( seg )) && ( obj instanceof Text ) ) {
+                    // Create if null
                     if (out == null) out = new LiteralText("");
+                    // Color translations
+                    if (obj instanceof TranslatableText) ((Text) obj).formatted(Formatting.DARK_AQUA);
+                    // Append
                     out.append( (Text)obj );
                 } else if ( ("%d".equalsIgnoreCase( seg )) && ( obj instanceof Number ) ) {
+                    // Create if null
                     if (out == null) out = new LiteralText("");
+                    // Append
                     out.append(new LiteralText( formatter.format( ((Number) obj).longValue() ) ).formatted(Formatting.AQUA));
                 } else {
+                    // Create if null
                     if (out == null) out = new LiteralText( obj.toString() );
+                    // Append if not null
                     else out.append( obj.toString() );
                 }
             } else {
@@ -143,7 +152,7 @@ public final class TranslatableServerSide {
             "assets",
             CoreMod.MOD_ID,
             "lang",
-            locale.getLanguage() + "_" + locale.getCountry() + ".json"
+            (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase() + ".json"
         ).toString();
     }
     

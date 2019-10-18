@@ -38,7 +38,6 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChunkUtils;
-import net.TheElm.project.utilities.LegacyConverter;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.RankUtils;
@@ -136,12 +135,6 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
     // On connect
     @Inject(at = @At("RETURN"), method = "<init>")
     public void onPlayerConnect(MinecraftServer server, ClientConnection client, ServerPlayerEntity player, CallbackInfo callback) {
-        // Check if the LegacyConverter is running
-        if (LegacyConverter.running()) {
-            this.disconnect(new LiteralText("The server is currently updating!"));
-            return;
-        }
-        
         // Set the players position as in the wilderness
         CoreMod.PLAYER_LOCATIONS.put( player, null );
         
@@ -231,24 +224,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         Text chatText = MessageUtils.formatPlayerMessage( this.player, chatRoom, rawString );
         
         // Send the new chat message to the currently selected chat room
-        switch (chatRoom) {
-            // Local message
-            case LOCAL: {
-                MessageUtils.sendToLocal( this.player.world, this.player.getBlockPos(), chatText );
-                break;
-            }
-            // Global message
-            case GLOBAL: {
-                MessageUtils.sendToAll( chatText );
-                break;
-            }
-            // Message to the players town
-            case TOWN: {
-                ClaimantPlayer claimantPlayer = ((PlayerData) this.player).getClaim();
-                MessageUtils.sendToTown( claimantPlayer.getTown(), chatText );
-                break;
-            }
-        }
+        MessageUtils.sendTo(chatRoom, this.player, chatText);
         
         // Cancel the original
         callback.cancel();

@@ -55,7 +55,6 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.BucketItem;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.MessageType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -97,7 +96,7 @@ public final class BlockInteraction {
                     // Literal Text (Error)
                     .ifLeft((text) -> {
                         player.playSound(SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.MASTER, 1.0f, 1.0f);
-                        player.sendChatMessage(text.formatted(Formatting.RED), MessageType.GAME_INFO);
+                        TitleUtils.showPlayerAlert( player, Formatting.RED, text );
                     })
                     // Boolean if success/fail
                     .ifRight((bool) -> {

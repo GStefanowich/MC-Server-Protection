@@ -23,28 +23,27 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections.logging;
+package net.TheElm.project.mixins.Server;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
+import com.mojang.authlib.GameProfile;
+import net.TheElm.project.utilities.LegacyConverter;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-public abstract class LoggableEvent {
+import java.net.SocketAddress;
+
+@Mixin(net.minecraft.server.PlayerManager.class)
+public class PlayerManager {
     
-    private final Entity source;
-    private final World world;
-    
-    public LoggableEvent(@Nullable Entity actionSource) {
-        // Set the source of the change
-        this.source = actionSource;
-        this.world = (actionSource == null ? null : actionSource.world);
-    }
-    
-    public final Entity getSource() {
-        return this.source;
-    }
-    public final World getWorld() {
-        return this.world;
+    @Inject(at = @At("HEAD"), method = "checkCanJoin", cancellable = true)
+    public void onConnect(SocketAddress socket, GameProfile gameProfile, CallbackInfoReturnable<Text> callback) {
+        // Check if the LegacyConverter is running
+        if (LegacyConverter.running())
+            callback.setReturnValue(new LiteralText("The server is currently updating!"));
     }
     
 }
