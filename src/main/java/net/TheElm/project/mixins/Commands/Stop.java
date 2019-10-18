@@ -38,15 +38,18 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.Overwrite;
 
 @Mixin(StopCommand.class)
 public class Stop {
     
-    @Inject(at = @At("HEAD"), method = "register", cancellable = true)
-    private static void register(CommandDispatcher<ServerCommandSource> dispatcher, CallbackInfo callback){
+    /**
+     * @author TheElm
+     * @reason Stop command can have a reason
+     * @param dispatcher Command Dispatcher
+     */
+    @Overwrite
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal( "stop" )
             .requires((source -> source.hasPermissionLevel(4)))
             .then( CommandManager.argument( "reason", StringArgumentType.greedyString())
@@ -78,7 +81,6 @@ public class Stop {
                 return Command.SINGLE_SUCCESS;
             }))
         );
-        callback.cancel();
     }
     
     private static void closeServer(Text reason) {

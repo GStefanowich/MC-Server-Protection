@@ -33,6 +33,7 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.network.MessageType;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
@@ -51,7 +52,41 @@ public final class MessageUtils {
     
     private MessageUtils() {}
     
-    // Send a translation blob to a local area
+    // General send
+    public static void sendTo(ChatRooms chatRoom, ServerPlayerEntity player, Text chatText) {
+        switch (chatRoom) {
+            // Local message
+            case LOCAL: {
+                MessageUtils.sendToLocal( player.world, player.getBlockPos(), chatText );
+                break;
+            }
+            // Global message
+            case GLOBAL: {
+                MessageUtils.sendToAll( chatText );
+                break;
+            }
+            // Message to the players town
+            case TOWN: {
+                ClaimantPlayer claimantPlayer = ((PlayerData) player).getClaim();
+                MessageUtils.sendToTown( claimantPlayer.getTown(), chatText );
+                break;
+            }
+        }
+    }
+    
+    // Send a text blob from a target to a player
+    public static void sendAsWhisper(ServerPlayerEntity target, Text text) {
+        // Log the the server
+        ServerCore.get().sendMessage(text);
+        
+        // Send the message to the player
+        MessageUtils.sendChat(
+            Stream.of( target ),
+            text
+        );
+    }
+    
+    // Send a text blob to a local area
     public static void sendToLocal(final World world, final BlockPos blockPos, Text text) {
         // Log to the server
         ((ServerWorld) world).getServer().sendMessage(text);
@@ -169,9 +204,19 @@ public final class MessageUtils {
     
     // Format a message to chat from a player
     public static Text formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, String raw) {
+        return MessageUtils.formatPlayerMessage(player, chatRoom, new LiteralText(raw));
+    }
+    public static Text formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, Text text) {
         return PlayerNameUtils.getPlayerChatDisplay( player, chatRoom )
             .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
-            .append(new LiteralText( raw ).formatted(chatRoom.getFormatting()));
+            .append(text.formatted(chatRoom.getFormatting()));
+    }
+    public static Text formatPlayerMessage(ServerCommandSource source, ChatRooms chatRoom, Text text) {
+        if (source.getEntity() instanceof ServerPlayerEntity)
+            return MessageUtils.formatPlayerMessage((ServerPlayerEntity) source.getEntity(), chatRoom, text);
+        return PlayerNameUtils.getServerChatDisplay( chatRoom )
+            .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
+            .append(text.formatted(chatRoom.getFormatting()));
     }
     
 }

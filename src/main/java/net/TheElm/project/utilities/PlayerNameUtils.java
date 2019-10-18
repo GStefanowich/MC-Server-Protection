@@ -63,6 +63,12 @@ public final class PlayerNameUtils {
     
     private PlayerNameUtils() {}
     
+    public static Text getServerChatDisplay(ChatRooms chatRoom) {
+        return new LiteralText("[").formatted(chatRoom.getFormatting())
+            .append(PlayerNameUtils.formattedWorld( null ))
+            .append("] ")
+            .append(new LiteralText("Server").formatted(Formatting.GRAY));
+    }
     public static Text getPlayerChatDisplay(@NotNull ServerPlayerEntity player, ChatRooms chatRoom) {
         return PlayerNameUtils.getPlayerChatDisplay( player, null, chatRoom );
     }
@@ -74,7 +80,7 @@ public final class PlayerNameUtils {
         
         // Add the players world
         Text format = new LiteralText( "[" ).formatted(chatRoom.getFormatting());
-        if (!chatRoom.equals(ChatRooms.TOWN)) format.append( formattedWorld( player.dimension ) );
+        if (!chatRoom.equals(ChatRooms.TOWN)) format.append( PlayerNameUtils.formattedWorld( player.dimension ) );
         else format.append( formattedChat( chatRoom ) );
         
         ClaimantTown town;
@@ -122,11 +128,16 @@ public final class PlayerNameUtils {
     /*
      * Message Components
      */
-    public static Text formattedWorld(DimensionType dimension) {
+    public static Text formattedWorld(@Nullable DimensionType dimension) {
         String world = null;
+        String ico = null;
         
         Formatting color = Formatting.OBFUSCATED;
-        if (dimension == DimensionType.OVERWORLD) {
+        if (dimension == null) {
+            world = "Server";
+            color = Formatting.WHITE;
+            ico = "-";
+        } else if (dimension == DimensionType.OVERWORLD) {
             world = "Surface";
             color = Formatting.GREEN;
         } else if (dimension == DimensionType.THE_END) {
@@ -137,12 +148,18 @@ public final class PlayerNameUtils {
             color = Formatting.RED;
         }
         
-        final HoverEvent hover = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( world ).formatted(color));
+        if (ico == null)
+            ico = world == null ? "~" : world.substring( 0, 1 );
         
-        Text text = new LiteralText( world == null ? "~" : world.substring( 0, 1 ) )
+        // Create the text
+        Text text = new LiteralText( ico )
             .formatted( color );
         
+        // Set the hover event
         if ( world != null ) {
+            // Create the hover event
+            final HoverEvent hover = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( world ).formatted(color));
+            
             text.styled((style) -> {
                 style.setHoverEvent( hover );
             });

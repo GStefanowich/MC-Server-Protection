@@ -8,6 +8,7 @@
     "Commands.Me",
     "Commands.Stop",
     "Commands.Time",
+    "Commands.Whisper",
     
     "Blocks.AbstractFurnace",
     
@@ -23,6 +24,7 @@
     "Entities.PotionDamage",
     "Entities.CreeperDamage",
     "Entities.Damage",
+    "Entities.Tnt",
     "Entities.Death",
     
     "Entities.EndCrystal",
@@ -69,9 +71,11 @@
     "World.Nether",
     
     "Server.Books",
+    "Server.Explosions",
     "Server.ServerCommandSource",
     "Server.MOTD",
     "Server.PlayerList",
+    "Server.PlayerManager",
     "Server.Save"
   ],
   "injectors": {

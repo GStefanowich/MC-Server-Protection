@@ -29,6 +29,7 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.BlockBreakCallback;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.interfaces.OwnableEntity;
 import net.TheElm.project.protections.logging.BlockEvent;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.protections.logging.EventLogger.BlockAction;
@@ -42,6 +43,9 @@ import net.minecraft.block.MelonBlock;
 import net.minecraft.block.PotatoesBlock;
 import net.minecraft.block.PumpkinBlock;
 import net.minecraft.block.SugarCaneBlock;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.TntEntity;
+import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -55,6 +59,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
@@ -71,7 +77,7 @@ public final class BlockBreak {
     
     /**
      * Check if a block can be broken, and log it if it can
-     * @param player The player that broke the block
+     * @param entity The entity that broke the block
      * @param world The world that the block is in
      * @param hand The hand that the player is using
      * @param blockPos The blocks X, Y, Z position
@@ -79,16 +85,16 @@ public final class BlockBreak {
      * @param action The break status of the block
      * @return If the block is allowed to be broken
      */
-    private static ActionResult blockBreak(final ServerPlayerEntity player, final World world, final Hand hand, final BlockPos blockPos, final Direction blockFace, final Action action) {
+    private static ActionResult blockBreak(@NotNull final Entity entity, @NotNull final World world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         ActionResult result;
-        if (((result = BlockBreak.canBlockBreak( player, world, hand, blockPos, blockFace, action)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get() && (action == Action.STOP_DESTROY_BLOCK))
-            EventLogger.log(new BlockEvent(player, BlockAction.BREAK, world.getBlockState(blockPos).getBlock(), blockPos));
+        if (((result = BlockBreak.canBlockBreak( entity, world, hand, blockPos, blockFace, action)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get() && (action == Action.STOP_DESTROY_BLOCK))
+            EventLogger.log(new BlockEvent(entity, BlockAction.BREAK, world.getBlockState(blockPos).getBlock(), blockPos));
         return result;
     }
 
     /**
      * Check if a block can be broken
-     * @param player The player that broke the block
+     * @param entity The entity that broke the block
      * @param world The world that the block is in
      * @param hand The hand that the player is using
      * @param blockPos The blocks X, Y, Z position
@@ -96,96 +102,108 @@ public final class BlockBreak {
      * @param action The break status of the block
      * @return If the block is allowed to be broken
      */
-    private static ActionResult canBlockBreak(final ServerPlayerEntity player, final World world, final Hand hand, final BlockPos blockPos, final Direction blockFace, final Action action) {
+    private static ActionResult canBlockBreak(@NotNull final Entity entity, @NotNull final World world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         // If player is in creative
-        if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || (action == Action.ABORT_DESTROY_BLOCK))
-            return ActionResult.PASS;
-        
-        BlockState blockState = world.getBlockState(blockPos);
-        Block block = world.getBlockState(blockPos).getBlock();
-        if ( block instanceof PumpkinBlock || block instanceof MelonBlock ) {
+        if (entity instanceof ServerPlayerEntity) {
+            ServerPlayerEntity player = (ServerPlayerEntity) entity;
             
-            /*
-             * If Block is PUMPKIN or MELON and player is allowed to FARM
-             */
-            if (ChunkUtils.canPlayerHarvestCrop(player, blockPos))
+            if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || (action == Action.ABORT_DESTROY_BLOCK))
                 return ActionResult.PASS;
             
-        } else if ( block instanceof SugarCaneBlock ) {
-            
-            /*
-             * If Block is SUGARCANE, is NOT the bottom block, and player is allowed to FARM
-             */
-            BlockState groundState = world.getBlockState(blockPos.down());
-            Block ground = groundState.getBlock();
-            
-            if ( ( ground instanceof SugarCaneBlock ) && ChunkUtils.canPlayerHarvestCrop(player, blockPos) )
-                return ActionResult.PASS;
-            
-        } else if ( block instanceof CropBlock ) {
-            
-            /*
-             * If block is a CROP, and the player is allowed to FARM
-             */
-            
-            // Cast the crop
-            CropBlock cropBlock = (CropBlock) block;
-            
-            // Check growth
-            boolean cropFullyGrown = cropBlock.isMature(blockState);
-            
-            // Check player permissions
-            boolean playerCanHarvest = ChunkUtils.canPlayerHarvestCrop(player, blockPos);
-            boolean playerCanBreak = ChunkUtils.canPlayerBreakInChunk(player, blockPos);
-            
-            // If the crop can be broken
-            if ( playerCanBreak || (cropFullyGrown && playerCanHarvest) ) {
+            BlockState blockState = world.getBlockState(blockPos);
+            Block block = world.getBlockState(blockPos).getBlock();
+            if (block instanceof PumpkinBlock || block instanceof MelonBlock) {
                 
-                if ( cropFullyGrown ) {
-                    // Get the chunk information if we should replant
-                    WorldChunk chunk = world.getWorldChunk( blockPos );
-                    if ((chunk != null) && ((IClaimedChunk) chunk).isSetting(ClaimSettings.CROP_AUTOREPLANT)) {
-                        /*
-                         * Automatically Replant the plant
-                         */
-                        
-                        // Get the crops seed
-                        Item cropSeed = BlockBreak.getCropSeed( cropBlock );
-                        
-                        // Get the crop state with 0 growth
-                        BlockState cropFresh = cropBlock.withAge(0);
-                        
-                        // Get the drops
-                        List<ItemStack> drops = Block.getDroppedStacks( blockState, (ServerWorld) world, blockPos, world.getBlockEntity( blockPos ), player, player.getStackInHand( hand ) );
-                        for ( ItemStack stack : drops ) {
-                            // Check that item matches
-                            if ( !stack.getItem().equals( cropSeed ) )
-                                continue;
+                /*
+                 * If Block is PUMPKIN or MELON and player is allowed to FARM
+                 */
+                if (ChunkUtils.canPlayerHarvestCrop(player, blockPos))
+                    return ActionResult.PASS;
+                
+            } else if (block instanceof SugarCaneBlock) {
+                
+                /*
+                 * If Block is SUGARCANE, is NOT the bottom block, and player is allowed to FARM
+                 */
+                BlockState groundState = world.getBlockState(blockPos.down());
+                Block ground = groundState.getBlock();
+                
+                if ((ground instanceof SugarCaneBlock) && ChunkUtils.canPlayerHarvestCrop(player, blockPos))
+                    return ActionResult.PASS;
+                
+            } else if (block instanceof CropBlock) {
+                
+                /*
+                 * If block is a CROP, and the player is allowed to FARM
+                 */
+                
+                // Cast the crop
+                CropBlock cropBlock = (CropBlock) block;
+                
+                // Check growth
+                boolean cropFullyGrown = cropBlock.isMature(blockState);
+                
+                // Check player permissions
+                boolean playerCanHarvest = ChunkUtils.canPlayerHarvestCrop(player, blockPos);
+                boolean playerCanBreak = ChunkUtils.canPlayerBreakInChunk(player, blockPos);
+                
+                // If the crop can be broken
+                if (playerCanBreak || (cropFullyGrown && playerCanHarvest)) {
+                    
+                    if (cropFullyGrown) {
+                        // Get the chunk information if we should replant
+                        WorldChunk chunk = world.getWorldChunk(blockPos);
+                        if ((chunk != null) && ((IClaimedChunk) chunk).isSetting(ClaimSettings.CROP_AUTOREPLANT)) {
+                            /*
+                             * Automatically Replant the plant
+                             */
                             
-                            // Negate a single seed
-                            if ( stack.getCount() > 0 ) {
-                                stack.setCount(stack.getCount() - 1);
-                                break;
+                            // Get the crops seed
+                            Item cropSeed = BlockBreak.getCropSeed(cropBlock);
+                            
+                            // Get the crop state with 0 growth
+                            BlockState cropFresh = cropBlock.withAge(0);
+                            
+                            // Get the drops
+                            List<ItemStack> drops = Block.getDroppedStacks(blockState, (ServerWorld) world, blockPos, world.getBlockEntity(blockPos), player, player.getStackInHand(hand));
+                            for (ItemStack stack : drops) {
+                                // Check that item matches
+                                if (!stack.getItem().equals(cropSeed))
+                                    continue;
+                                
+                                // Negate a single seed
+                                if (stack.getCount() > 0) {
+                                    stack.setCount(stack.getCount() - 1);
+                                    break;
+                                }
                             }
+                            
+                            // Drop the items
+                            drops.forEach(itemStack -> ItemScatterer.spawn(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), itemStack));
+                            
+                            // Set the crop to the baby plant
+                            world.setBlockState(blockPos, cropFresh);
+                            
+                            // Fail the break
+                            return ActionResult.FAIL;
                         }
-                        
-                        // Drop the items
-                        drops.forEach(itemStack -> ItemScatterer.spawn( world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), itemStack ));
-                        
-                        // Set the crop to the baby plant
-                        world.setBlockState(blockPos, cropFresh);
-                        
-                        // Fail the break
-                        return ActionResult.FAIL;
                     }
+                    
+                    return ActionResult.PASS;
                 }
-                
-                return ActionResult.PASS;
             }
+            
+            // If player has permission to break blocks
+            return (ChunkUtils.canPlayerBreakInChunk(player, blockPos) ? ActionResult.PASS : ActionResult.FAIL);
+        } else if (entity instanceof TntEntity) {
+            OwnableEntity tnt = (OwnableEntity) entity;
+            if (!ChunkUtils.canPlayerBreakInChunk(tnt.getEntityOwner(), world.getWorldChunk(blockPos), blockPos))
+                return ActionResult.FAIL;
+            
+        } else if (entity instanceof CreeperEntity) {
         }
         
-        // If player has permission to break blocks
-        return (ChunkUtils.canPlayerBreakInChunk(player, blockPos) ? ActionResult.PASS : ActionResult.FAIL );
+        return ActionResult.PASS;
     }
     
     public static Item getCropSeed(Block crop) {

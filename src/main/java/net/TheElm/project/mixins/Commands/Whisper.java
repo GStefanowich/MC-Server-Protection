@@ -23,28 +23,37 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections.logging;
+package net.TheElm.project.mixins.Commands;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
+import net.TheElm.project.enums.ChatRooms;
+import net.TheElm.project.utilities.MessageUtils;
+import net.minecraft.server.command.MessageCommand;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
 
-public abstract class LoggableEvent {
+import java.util.Collection;
+
+@Mixin(MessageCommand.class)
+public class Whisper {
     
-    private final Entity source;
-    private final World world;
-    
-    public LoggableEvent(@Nullable Entity actionSource) {
-        // Set the source of the change
-        this.source = actionSource;
-        this.world = (actionSource == null ? null : actionSource.world);
-    }
-    
-    public final Entity getSource() {
-        return this.source;
-    }
-    public final World getWorld() {
-        return this.world;
+    /**
+     * @reason Changes vanilla formatting of whispers
+     * @author TheElm
+     * @param source Command source
+     * @param targets List of target players
+     * @param message Text that the player is sending
+     * @return Count of players sent to
+     */
+    @Overwrite
+    private static int execute(ServerCommandSource source, Collection<ServerPlayerEntity> targets, Text message) {
+        for (ServerPlayerEntity target : targets) {
+            MessageUtils.sendAsWhisper( target, MessageUtils.formatPlayerMessage(source, ChatRooms.WHISPER, message));
+        }
+        
+        return targets.size();
     }
     
 }

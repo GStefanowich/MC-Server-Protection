@@ -33,8 +33,8 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.PlayerChat;
+import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -92,10 +92,7 @@ public final class MiscCommands {
     public static int playerSendsMessageAndData(ServerPlayerEntity player, String message, String main) {
         return MiscCommands.playerSendsMessageAndData(player, message, new LiteralText( main ));
     }
-    public static int playerSendsMessageAndData(ServerPlayerEntity player, String message, Text main ) {
-        // Get Server
-        MinecraftServer server = player.getServer();
-        
+    public static int playerSendsMessageAndData(ServerPlayerEntity player, String message, Text main) {
         // Create the player display for chat
         Text text = PlayerNameUtils.getPlayerChatDisplay( player, ((PlayerChat) player).getChatRoom() )
             .append(new LiteralText( ": " ).formatted(Formatting.GRAY));
@@ -109,7 +106,11 @@ public final class MiscCommands {
         text.append( main );
         
         // Send to all players
-        if (server != null) server.getPlayerManager().sendToAll(text);
+        MessageUtils.sendTo(
+            ((PlayerChat) player).getChatRoom(),
+            player,
+            text
+        );
         
         return Command.SINGLE_SUCCESS;
     }

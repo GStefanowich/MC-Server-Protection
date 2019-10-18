@@ -23,40 +23,38 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections.logging;
+package net.TheElm.project.mixins.Server;
 
-import net.TheElm.project.protections.logging.EventLogger.BlockAction;
-import net.minecraft.block.Block;
+import net.TheElm.project.interfaces.BlockBreakCallback;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.TntEntity;
+import net.minecraft.entity.mob.CreeperEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.BlockView;
+import net.minecraft.world.World;
+import net.minecraft.world.explosion.Explosion;
+import org.spongepowered.asm.mixin.Mixin;
 
-public final class BlockEvent extends LoggableEvent {
+@Mixin({TntEntity.class, CreeperEntity.class})
+public abstract class Explosions extends Entity {
     
-    private final BlockAction action;
-    private final Block blockType;
-    private final BlockPos blockPos;
-    
-    public BlockEvent(@Nullable Entity actionSource, @NotNull BlockAction action, @NotNull Block blockType, @NotNull BlockPos blockPos) {
-        super(actionSource);
-        this.action = action;
-        this.blockType = blockType;
-        this.blockPos = blockPos;
+    public Explosions(EntityType<?> entityType_1, World world_1) {
+        super(entityType_1, world_1);
     }
     
-    @NotNull
-    public BlockAction getAction() {
-        return this.action;
+    @Override
+    public boolean canExplosionDestroyBlock(Explosion explosion, BlockView world, BlockPos blockPos, BlockState blockState, float damage) {
+        if ((!blockState.isAir()) && (world instanceof ServerWorld)) {
+            ActionResult result = BlockBreakCallback.EVENT.invoker().interact((Entity)(Object) this, (ServerWorld)world, Hand.MAIN_HAND, blockPos, null, null);
+            if (result != ActionResult.PASS)
+                return (result == ActionResult.SUCCESS);
+        }
+        return super.canExplosionDestroyBlock(explosion, world, blockPos, blockState, damage);
     }
     
-    @NotNull
-    public Block getBlock() {
-        return this.blockType;
-    }
-    
-    @NotNull
-    public BlockPos getPosition() {
-        return this.blockPos;
-    }
 }

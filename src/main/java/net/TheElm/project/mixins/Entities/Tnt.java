@@ -23,57 +23,50 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.World;
+package net.TheElm.project.mixins.Entities;
 
+import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.interfaces.OwnableEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ExperienceOrbEntity;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.TntEntity;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ExperienceOrbEntity.class)
-public abstract class Clumps extends Entity {
+import java.util.UUID;
+
+@Mixin(TntEntity.class)
+public abstract class Tnt extends Entity implements OwnableEntity {
     
-    @Shadow private int amount;
-    @Shadow public int orbAge;
+    private UUID entityOwner = null;
+    @Nullable @Shadow
+    private LivingEntity causingEntity;
     
-    @Shadow
-    public abstract int getExperienceAmount();
-    
-    public Clumps(EntityType<?> entityType_1, World world_1) {
+    public Tnt(EntityType<?> entityType_1, World world_1) {
         super(entityType_1, world_1);
     }
     
-    @Inject(at = @At("TAIL"), method = "tick")
-    public void onTick(CallbackInfo callback) {
-        if (!this.world.isClient) {
-            // Get orbs of same tile
-            this.world.getEntities(
-                ExperienceOrbEntity.class,
-                this.getBoundingBox(),
-                (orb -> (!orb.getUuid().equals(this.getUuid())) && orb.isAlive())
-            ).stream().filter((orb) -> {
-                // Get where found orbs are younger than the current (Let the oldest live)
-                return orb.orbAge < this.orbAge;
-            }).findAny().ifPresent((orb) -> {
-                // Remove the orbs
-                orb.remove();
-                this.remove();
-                
-                // Spawn a new orb
-                world.spawnEntity(new ExperienceOrbEntity(
-                    world,
-                    this.x,
-                    this.y,
-                    this.z,
-                    this.getExperienceAmount() + orb.getExperienceAmount()
-                ));
-            });
+    @Inject(at = @At("RETURN"), method = "<init>*")
+    public void onConstruct(CallbackInfo callback) {
+        // Update the causing entity
+        if (this.causingEntity != null)
+            this.entityOwner = this.causingEntity.getUuid();
+        else {
+            IClaimedChunk claimed = (IClaimedChunk) this.world.getWorldChunk( this.getBlockPos() );
+            this.entityOwner = claimed.getOwner();
         }
+    }
+    
+    @Override @NotNull
+    public UUID getEntityOwner() {
+        return this.entityOwner;
     }
     
 }

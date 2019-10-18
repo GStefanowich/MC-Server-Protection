@@ -108,8 +108,8 @@ public final class ClaimantPlayer extends Claimant {
     @Override
     public final Text getName() {
         if (this.name == null)
-            return (this.name = this.updateName());
-        return this.name;
+            return (this.name = this.updateName()).copy();
+        return this.name.copy();
     }
     public final Text updateName() {
         return PlayerNameUtils.fetchPlayerNick( this.getId() );
