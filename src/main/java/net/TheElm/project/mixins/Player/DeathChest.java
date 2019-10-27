@@ -122,8 +122,11 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
     public void onDamage(DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
         if ((!this.world.isClient) && ((Entity) this) instanceof ServerPlayerEntity) {
             if (source.getAttacker() instanceof PlayerEntity && callback.getReturnValue()) {
+                // If player just entered combat
+                if (this.hitByOtherPlayerAt == null)
+                    this.sendMessage(new LiteralText("You are now in combat.").formatted(Formatting.YELLOW));
+                // Set combat time to when hit
                 this.hitByOtherPlayerAt = System.currentTimeMillis();
-                this.sendMessage(new LiteralText("You are now in combat.").formatted(Formatting.YELLOW));
             }
         }
     }
