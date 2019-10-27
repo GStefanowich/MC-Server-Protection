@@ -81,6 +81,11 @@ public final class SewingMachineConfig {
     public final ConfigOption<Integer> MAX_DEATH_ELEVATION;
     public final ConfigOption<Boolean> PRINT_DEATH_CHEST_LOC;
     
+    // Player Combat
+    public final ConfigOption<Boolean> PVP_DISABLE_DEATH_CHEST;
+    public final ConfigOption<Boolean> PVP_COMBAT_LOG;
+    public final ConfigOption<Integer> PVP_COMBAT_SECONDS;
+    
     // Player nicks
     public final ConfigOption<Boolean> DO_PLAYER_NICKS;
     public final ConfigOption<Integer> NICKNAME_COST;
@@ -220,6 +225,13 @@ public final class SewingMachineConfig {
         this.MAX_DEATH_SCAN = this.addConfig( new ConfigOption<>("death_chest.max_distance", 4, JsonElement::getAsInt));
         this.MAX_DEATH_ELEVATION = this.addConfig( new ConfigOption<>("death_chest.max_elevation", 256, JsonElement::getAsInt));
         this.PRINT_DEATH_CHEST_LOC = this.addConfig( new ConfigOption<>("death_chest.print_coordinates", true, JsonElement::getAsBoolean));
+        
+        /*
+         * Player Combat
+         */
+        this.PVP_COMBAT_SECONDS = this.addConfig( new ConfigOption<>("player.pvp.combat_seconds", 30, JsonElement::getAsInt));
+        this.PVP_DISABLE_DEATH_CHEST = this.addConfig( new ConfigOption<>("player.pvp.no_death_chest", true, JsonElement::getAsBoolean));
+        this.PVP_COMBAT_LOG = this.addConfig( new ConfigOption<>("player.pvp.kill_on_logout", false, JsonElement::getAsBoolean));
         
         /*
          * Naming

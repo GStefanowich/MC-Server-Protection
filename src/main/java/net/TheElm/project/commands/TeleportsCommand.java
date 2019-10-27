@@ -141,7 +141,7 @@ public final class TeleportsCommand {
             
             dispatcher.register(CommandManager.literal("tpaccept")
                 .then(CommandManager.argument("player", EntityArgumentType.player())
-                    .requires(TeleportsCommand::sourceHasWarp)
+                    .requires(WarpUtils::hasWarp)
                     .executes(TeleportsCommand::tpAcceptCommand)
                 )
             );
@@ -149,7 +149,7 @@ public final class TeleportsCommand {
             
             dispatcher.register(CommandManager.literal("tpdeny")
                 .then(CommandManager.argument("player", EntityArgumentType.player())
-                    .requires(TeleportsCommand::sourceHasWarp)
+                    .requires(WarpUtils::hasWarp)
                     .executes(TeleportsCommand::tpDenyCommand)
                 )
             );
@@ -157,17 +157,6 @@ public final class TeleportsCommand {
         }
     }
     
-    private static boolean sourceHasWarp(final ServerCommandSource source) {
-        try {
-            return sourceHasWarp( source.getPlayer() );
-        } catch (CommandSyntaxException e) {
-            CoreMod.logError( e );
-        }
-        return false;
-    }
-    private static boolean sourceHasWarp(final ServerPlayerEntity player) {
-        return WarpUtils.getPlayerWarp( player.getUuid() ) != null;
-    }
     private static int tpaCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get players info
         final ServerCommandSource source = context.getSource();
@@ -183,7 +172,7 @@ public final class TeleportsCommand {
         
         Warp warp;
         // If the player to teleport to does not have a warp
-        if ((warp = WarpUtils.getPlayerWarp( target.getId() )) == null)
+        if ((warp = WarpUtils.getWarp( target.getId() )) == null)
             throw TARGET_NO_WARP.create( porter );
         
         final MinecraftServer server = source.getMinecraftServer();
@@ -247,7 +236,7 @@ public final class TeleportsCommand {
             throw TARGET_NOT_IN_SPAWN.create( target );
         }
         
-        Warp warp = WarpUtils.getPlayerWarp( target.getUuid() );
+        Warp warp = WarpUtils.getWarp( target.getUuid() );
         WarpUtils.teleportPlayer( warp, porter );
         
         CoreMod.logInfo(porter.getName().asString() + " was teleported to " + (porter.getUuid().equals(target.getUuid()) ? "their" : target.getName().asString() + "'s") + " warp");
@@ -272,5 +261,4 @@ public final class TeleportsCommand {
         CoreMod.PLAYER_WARP_INVITES.remove( porter );
         return Command.SINGLE_SUCCESS;
     }
-    
 }
