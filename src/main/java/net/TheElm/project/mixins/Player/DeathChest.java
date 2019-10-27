@@ -30,15 +30,19 @@ import net.TheElm.project.interfaces.BlockPlaceCallback;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.utilities.DeathChestUtils;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameRules;
@@ -71,6 +75,18 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
         // Only do if we're not keeping the inventory, and the player is actually dead! (Death Chest!)
         if ((!this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY)) && (!this.isAlive())) {
             BlockPos chestPos;
+            
+            // Check if player is in combat
+            if (SewingMachineConfig.INSTANCE.PVP_DISABLE_DEATH_CHEST.get() && (this.hitByOtherPlayerAt != null)) {
+                // Tell the player that they didn't get a death chest
+                this.sendMessage(new LiteralText("A death chest was not generated because you died in combat.").formatted(Formatting.RED));
+                
+                // Reset the hit by time
+                this.hitByOtherPlayerAt = null;
+                
+                return;
+            }
+            
             // If the inventory is NOT empty, and we found a valid position for the death chest
             if ((!this.inventory.isInvEmpty()) && ((chestPos = DeathChestUtils.getChestPosition( this.getEntityWorld(), this.getBlockPos() )) != null)) {
                 // Vanish cursed items
@@ -80,6 +96,34 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
                 if (DeathChestUtils.createDeathChestFor( (PlayerEntity)(LivingEntity)this, chestPos, this.inventory )) {
                     callback.cancel();
                 }
+            }
+        }
+    }
+    
+    /*
+     * Player Combat
+     */
+    
+    private Long hitByOtherPlayerAt = null;
+    
+    @Inject(at = @At("TAIL"), method = "tick")
+    public void onTick(CallbackInfo callback) {
+        if ((!this.world.isClient) && ((Entity) this) instanceof ServerPlayerEntity) {
+            if (this.hitByOtherPlayerAt != null && (this.hitByOtherPlayerAt < System.currentTimeMillis() - (SewingMachineConfig.INSTANCE.PVP_COMBAT_SECONDS.get() * 1000))) {
+                // Remove player from combat
+                this.hitByOtherPlayerAt = null;
+                
+                this.sendMessage(new LiteralText("You are no longer in combat.").formatted(Formatting.YELLOW));
+            }
+        }
+    }
+    
+    @Inject(at = @At("RETURN"), method = "damage")
+    public void onDamage(DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
+        if ((!this.world.isClient) && ((Entity) this) instanceof ServerPlayerEntity) {
+            if (source.getAttacker() instanceof PlayerEntity && callback.getReturnValue()) {
+                this.hitByOtherPlayerAt = System.currentTimeMillis();
+                this.sendMessage(new LiteralText("You are now in combat.").formatted(Formatting.YELLOW));
             }
         }
     }

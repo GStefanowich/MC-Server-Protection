@@ -27,11 +27,15 @@ package net.TheElm.project.mixins.Server;
 
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.utilities.LegacyConverter;
+import net.TheElm.project.utilities.TeamUtils;
+import net.minecraft.network.ClientConnection;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.net.SocketAddress;
@@ -44,6 +48,11 @@ public class PlayerManager {
         // Check if the LegacyConverter is running
         if (LegacyConverter.running())
             callback.setReturnValue(new LiteralText("The server is currently updating!"));
+    }
+    
+    @Inject(at = @At("RETURN"), method = "onPlayerConnect")
+    public void onPlayerConnect(ClientConnection connection, ServerPlayerEntity player, CallbackInfo callback) {
+        TeamUtils.applyTeams( player );
     }
     
 }
