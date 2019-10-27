@@ -53,6 +53,9 @@ import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.registry.CommandRegistry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.level.LevelProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -139,6 +142,16 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     @Nullable
     public static ServerPlayerEntity getPlayer(UUID playerUUID) {
         return ServerCore.get().getPlayerManager().getPlayer( playerUUID );
+    }
+    
+    @NotNull
+    public static BlockPos getSpawn() {
+        return ServerCore.getSpawn(DimensionType.OVERWORLD);
+    }
+    @NotNull
+    public static BlockPos getSpawn(DimensionType dimension) {
+        LevelProperties properties = get().getWorld(dimension).getLevelProperties();
+        return new BlockPos(properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ());
     }
     
 }

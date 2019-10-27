@@ -23,49 +23,33 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.enums;
+package net.TheElm.project.utilities;
 
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.interfaces.PlayerData;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.scoreboard.Team;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-public enum CompassDirections {
-    SPAWN {
-        @Override @NotNull
-        public BlockPos getPos(ServerPlayerEntity player) {
-            return ServerCore.getSpawn(player.dimension);
-        }
-        @Override
-        public CompassDirections getNext() { return WARP; }
-    },
-    WARP {
-        @Override @Nullable
-        public BlockPos getPos(ServerPlayerEntity player) {
-            return ((PlayerData) player).getWarpPos();
-        }
-        @Override
-        public CompassDirections getNext() { return BED; }
-    },
-    BED {
-        @Override @Nullable
-        public BlockPos getPos(ServerPlayerEntity player) {
-            return SPAWN.getPos( player ).equals(player.getSpawnPosition()) ? null : player.getSpawnPosition();
-        }
-        @Override
-        public CompassDirections getNext() { return SPAWN; }
-    };
+public class TeamUtils {
     
-    @Nullable
-    public abstract BlockPos getPos(ServerPlayerEntity player);
-    public abstract CompassDirections getNext();
+    private static final Team pirates;
     
-    public Text text() {
-        return new LiteralText(this.name()).formatted(Formatting.AQUA);
+    private static Scoreboard getScoreboard() {
+        return ServerCore.get().getScoreboard();
     }
+    
+    public static void applyTeams(PlayerEntity player) {
+        // TODO: Apply teams to players
+        //getScoreboard().addPlayerToTeam(player.getEntityName(), pirates);
+    }
+    
+    static {
+        pirates = new Team(getScoreboard(), "Pirates");
+        pirates.setColor(Formatting.RED);
+        pirates.setPrefix(new LiteralText("A "));
+        pirates.setShowFriendlyInvisibles(false);
+    }
+    
 }

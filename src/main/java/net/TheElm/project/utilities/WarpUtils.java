@@ -37,9 +37,11 @@ import net.minecraft.block.Material;
 import net.minecraft.block.MushroomBlock;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
+import net.minecraft.entity.Entity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerChunkManager;
@@ -287,13 +289,13 @@ public final class WarpUtils {
      * Static checks
      */
     @Nullable
-    public static Warp getPlayerWarp(final UUID uuid) {
+    public static Warp getWarp(final UUID uuid) {
         MinecraftServer server = ServerCore.get();
         
         // Read from the player
         ServerPlayerEntity player;
         if ((player = server.getPlayerManager().getPlayer( uuid )) != null)
-            return WarpUtils.getPlayerWarp( player );
+            return WarpUtils.getWarp( player );
         
         Warp warp = null;
         try {
@@ -319,13 +321,29 @@ public final class WarpUtils {
         return warp;
     }
     @Nullable
-    public static Warp getPlayerWarp(final ServerPlayerEntity player) {
+    public static Warp getWarp(final ServerPlayerEntity player) {
         if ( ((PlayerData) player).getWarpPos() == null )
             return null;
         return new Warp(((PlayerData) player).getWarpWorld(), ((PlayerData) player).getWarpPos());
     }
+    public static boolean hasWarp(final ServerCommandSource source) {
+        Entity entity = source.getEntity();
+        if (entity instanceof ServerPlayerEntity)
+            return WarpUtils.hasWarp((ServerPlayerEntity) entity);
+        return false;
+    }
+    public static boolean hasWarp(final UUID uuid) {
+        return WarpUtils.getWarp( uuid ) != null;
+    }
+    public static boolean hasWarp(final ServerPlayerEntity player) {
+        return WarpUtils.getWarp( player ) != null;
+    }
     public static boolean isPlayerCreating(final ServerPlayerEntity player) {
         return warpPlayers.contains( player.getUuid() );
+    }
+    public static void teleportPlayer(@NotNull ServerPlayerEntity player) {
+        Warp warp = WarpUtils.getWarp( player );
+        if (warp != null) WarpUtils.teleportPlayer( warp, player );
     }
     public static void teleportPlayer(@NotNull final Warp warp, @NotNull final ServerPlayerEntity player) {
         WarpUtils.teleportPlayer( warp.world, player, warp.warpPos );
