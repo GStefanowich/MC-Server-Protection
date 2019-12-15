@@ -122,7 +122,7 @@ public final class ClaimantTown extends Claimant {
     @Override
     public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
         // Read the towns ranks
-        if (tag.containsKey("members", NbtType.LIST)) {
+        if (tag.contains("members", NbtType.LIST)) {
             for (Tag member : tag.getList("members", NbtType.COMPOUND)) {
                 super.USER_RANKS.put(
                     ((CompoundTag) member).getUuid("i"),
@@ -132,10 +132,10 @@ public final class ClaimantTown extends Claimant {
         }
         
         // Get the towns owner
-        this.ownerId = (tag.hasUuid("owner") ? tag.getUuid("owner") : null);
+        this.ownerId = (tag.containsUuid("owner") ? tag.getUuid("owner") : null);
         
         // Get the town name
-        if (tag.containsKey("name", NbtType.STRING))
+        if (tag.contains("name", NbtType.STRING))
             this.name = Text.Serializer.fromJson(tag.getString("name"));
         
         // Read from tag

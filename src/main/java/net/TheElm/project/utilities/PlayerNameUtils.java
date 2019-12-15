@@ -259,7 +259,7 @@ public final class PlayerNameUtils {
     private static Text getOfflinePlayerNickname(@NotNull UUID uuid) {
         try {
             CompoundTag tag = NbtUtils.readOfflinePlayerData(uuid);
-            if ((tag != null) && tag.containsKey("PlayerNickname", NbtType.STRING))
+            if ((tag != null) && tag.contains("PlayerNickname", NbtType.STRING))
                 return Text.Serializer.fromJson(tag.getString("PlayerNickname"));
         } catch (NbtNotFoundException ignored) {}
         return null;

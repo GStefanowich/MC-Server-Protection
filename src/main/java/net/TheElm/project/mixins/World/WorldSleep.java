@@ -87,7 +87,7 @@ public abstract class WorldSleep extends World implements SleepingWorld {
         }
         
         this.players.stream().filter(LivingEntity::isSleeping).forEach((serverPlayerEntity_1) -> {
-            serverPlayerEntity_1.wakeUp(false, false, true);
+            serverPlayerEntity_1.wakeUp(false, false);
         });
         if (this.getGameRules().getBoolean(GameRules.DO_WEATHER_CYCLE)) {
             this.resetWeather();

@@ -32,6 +32,7 @@ import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -158,7 +159,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
             
             // If slot is set, equip it there (If allowed)
             if ((slot != null) && player.getEquippedStack( slot ).getItem() == Items.AIR) {
-                player.setEquippedStack(slot, itemStack);
+                player.equipStack(slot, itemStack);
                 equipped = true;
             }
             
@@ -207,9 +208,9 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     }
     @Inject(at=@At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
-        if ( tag.hasUuid( "corpsePlayerUUID" ) ) {
+        if ( tag.containsUuid( "corpsePlayerUUID" ) ) {
             this.corpsePlayerUUID = tag.getUuid("corpsePlayerUUID");
-            this.corpsePlayerItems = (ListTag) tag.getTag("corpsePlayerItems");
+            this.corpsePlayerItems = tag.getList("corpsePlayerItems", NbtType.COMPOUND);
         }
     }
 }

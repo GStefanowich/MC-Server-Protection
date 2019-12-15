@@ -62,12 +62,12 @@ public final class SpawnerCommand {
                         // Get item information
                         ItemStack spawner = new ItemStack(Items.SPAWNER);
                         Identifier mobIdentifier = EntitySummonArgumentType.getEntitySummon(context, "type");
-                        StringTag mob = new StringTag(mobIdentifier.toString());
+                        StringTag mob = StringTag.of(mobIdentifier.toString());
                         
                         // Add mob to the list
                         CompoundTag tag = spawner.getOrCreateTag();
                         ListTag list;
-                        if (tag.containsKey("EntityIds", NbtType.LIST))
+                        if (tag.contains("EntityIds", NbtType.LIST))
                             list = tag.getList("EntityIds", NbtType.STRING);
                         else {
                             list = new ListTag();

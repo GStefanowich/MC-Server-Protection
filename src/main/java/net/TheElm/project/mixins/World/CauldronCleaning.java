@@ -84,17 +84,12 @@ public abstract class CauldronCleaning extends Block {
         ItemStack binderStack = null;
         
         // Search for the spawner
-        List<Entity> list = world.getEntities(EntityType.ITEM, new Box(blockPos), entity1 -> true);
-        for (Entity found : list) {
-            // Ignore non-item entities
-            if (!(found instanceof ItemEntity))
+        List<ItemEntity> list = world.getEntities(EntityType.ITEM, new Box(blockPos), entity1 -> true);
+        for (ItemEntity item : list) {
+            if ((item.getThrower() == null) || (!item.getThrower().equals(owner)))
                 continue;
             
-            ItemEntity binderEntity = (ItemEntity) found;
-            if ((binderEntity.getThrower() == null) || (!binderEntity.getThrower().equals(owner)))
-                continue;
-            
-            binderStack = binderEntity.getStack();
+            binderStack = item.getStack();
             if (binderStack.getItem() == Items.EMERALD_BLOCK)
                 break;
             
@@ -110,7 +105,7 @@ public abstract class CauldronCleaning extends Block {
         // Get the entity IDs on the spawner
         CompoundTag spawnerTag = spawnerStack.getOrCreateTag();
         ListTag entityIds;
-        if ((!spawnerTag.containsKey("EntityIds", NbtType.LIST)) || ((entityIds = spawnerTag.getList("EntityIds", NbtType.STRING)).size() < 2))
+        if ((!spawnerTag.contains("EntityIds", NbtType.LIST)) || ((entityIds = spawnerTag.getList("EntityIds", NbtType.STRING)).size() < 2))
             return;
         
         // Remove the first spawn type

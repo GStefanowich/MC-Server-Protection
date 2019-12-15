@@ -155,7 +155,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
     @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
         // Read the players money
-        if (tag.containsKey( MoneyHolder.SAVE_KEY ))
+        if (tag.contains( MoneyHolder.SAVE_KEY ))
             this.dataTracker.set( MONEY, tag.getInt( MoneyHolder.SAVE_KEY ) );
     }
     

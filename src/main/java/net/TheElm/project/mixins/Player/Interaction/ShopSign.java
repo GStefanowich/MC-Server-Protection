@@ -202,9 +202,9 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     @Inject(at = @At("RETURN"), method = "fromTag")
     public void nbtRead(CompoundTag tag, CallbackInfo callback) {
         // Shop signs
-        if ( tag.hasUuid( "shop_owner" ) && (this.shopSign_Type = ShopSigns.valueOf(this.text[0])) != null) {
+        if ( tag.containsUuid( "shop_owner" ) && (this.shopSign_Type = ShopSigns.valueOf(this.text[0])) != null) {
             // Get the ITEM for the shop
-            if (tag.containsKey("shop_item_mod", NbtType.STRING) && tag.containsKey("shop_item_name", NbtType.STRING)) {
+            if (tag.contains("shop_item_mod", NbtType.STRING) && tag.contains("shop_item_name", NbtType.STRING)) {
                 String signItem = tag.getString("shop_item_mod") + ":" + tag.getString("shop_item_name");
                 try {
                     this.shopSign_item = new Identifier(signItem);
@@ -214,15 +214,15 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
             }
             
             // Get the BLOCK POSITIONS for deed
-            if (tag.containsKey("shop_blockPosA", NbtType.LONG) && tag.containsKey("shop_blockPosB", NbtType.LONG)) {
+            if (tag.contains("shop_blockPosA", NbtType.LONG) && tag.contains("shop_blockPosB", NbtType.LONG)) {
                 this.shopSign_posA = BlockPos.fromLong(tag.getLong("shop_blockPosA"));
                 this.shopSign_posB = BlockPos.fromLong(tag.getLong("shop_blockPosB"));
             }
             
             // Save other relevant shop sign data
             this.shopSign_Owner = tag.getUuid("shop_owner");
-            if (tag.containsKey("shop_item_count", NbtType.NUMBER)) this.shopSign_itemCount = tag.getInt("shop_item_count");
-            if (tag.containsKey("shop_price", NbtType.NUMBER)) this.shopSign_itemPrice = tag.getInt("shop_price");
+            if (tag.contains("shop_item_count", NbtType.NUMBER)) this.shopSign_itemCount = tag.getInt("shop_item_count");
+            if (tag.contains("shop_price", NbtType.NUMBER)) this.shopSign_itemPrice = tag.getInt("shop_price");
         }
     }
     

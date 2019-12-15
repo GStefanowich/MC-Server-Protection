@@ -73,15 +73,15 @@ public class ChunkSaving {
     @Inject(at = @At("RETURN"), method = "writeEntities")
     private static void loadSewingOwner(CompoundTag levelTag, WorldChunk chunk, CallbackInfo callback) {
         // Update the chunks player-owner
-        if ( levelTag.hasUuid(sewingMachineSerializationPlayer) )
+        if ( levelTag.containsUuid(sewingMachineSerializationPlayer) )
             ((IClaimedChunk) chunk).updatePlayerOwner(levelTag.getUuid(sewingMachineSerializationPlayer));
         
         // Load the inner claims
-        if (levelTag.containsKey(sewingMachineSerializationSlices, NbtType.LIST))
+        if (levelTag.contains(sewingMachineSerializationSlices, NbtType.LIST))
             ((IClaimedChunk) chunk).deserializeSlices(levelTag.getList(sewingMachineSerializationSlices, NbtType.COMPOUND));
         
         // Update the chunks town
-        if ( levelTag.hasUuid(sewingMachineSerializationTown) )
+        if ( levelTag.containsUuid(sewingMachineSerializationTown) )
             ((IClaimedChunk) chunk).updateTownOwner(levelTag.getUuid(sewingMachineSerializationTown));
     }
     

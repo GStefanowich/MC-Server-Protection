@@ -35,7 +35,7 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.IWorld;
-import net.minecraft.world.ViewableWorld;
+import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -48,18 +48,18 @@ public abstract class EndermenPlace extends Goal implements EndermanGoal {
     @Shadow
     private EndermanEntity enderman;
     @Shadow
-    public abstract boolean method_7033(ViewableWorld viewableWorld_1, BlockPos blockPos_1, BlockState blockState_1, BlockState blockState_2, BlockState blockState_3, BlockPos blockPos_2);
+    public abstract boolean method_7033(WorldView worldView_1, BlockPos blockPos_1, BlockState blockState_1, BlockState blockState_2, BlockState blockState_3, BlockPos blockPos_2);
     
     @Override
     public void tick() {
         // Get endermans information
-        Random random = this.enderman.getRand();
+        Random random = this.enderman.getRandom();
         IWorld iWorld = this.enderman.world;
         
         // Get random vector
-        int int_1 = MathHelper.floor(this.enderman.x - 1.0D + random.nextDouble() * 2.0D);
-        int int_2 = MathHelper.floor(this.enderman.y + random.nextDouble() * 2.0D);
-        int int_3 = MathHelper.floor(this.enderman.z - 1.0D + random.nextDouble() * 2.0D);
+        int int_1 = MathHelper.floor(this.enderman.getX() - 1.0D + random.nextDouble() * 2.0D);
+        int int_2 = MathHelper.floor(this.enderman.getY() + random.nextDouble() * 2.0D);
+        int int_3 = MathHelper.floor(this.enderman.getZ() - 1.0D + random.nextDouble() * 2.0D);
         
         // Get the block position to target
         BlockPos blockPositionPlace = new BlockPos(int_1, int_2, int_3);

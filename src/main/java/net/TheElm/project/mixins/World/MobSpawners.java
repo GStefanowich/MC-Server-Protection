@@ -81,7 +81,7 @@ public abstract class MobSpawners extends BlockWithEntity {
                 
                 // Save to the item (The mob)
                 for (Tag tag : list)
-                    spawnEntities.add(new StringTag(((CompoundTag) tag).getCompound("Entity").getString("id")));
+                    spawnEntities.add(StringTag.of(((CompoundTag) tag).getCompound("Entity").getString("id")));
                 
                 boolean doDrop = false;
                 
@@ -135,7 +135,7 @@ public abstract class MobSpawners extends BlockWithEntity {
     @Override
     public void onPlaced(World world, BlockPos blockPos, BlockState blockState, LivingEntity livingEntity, ItemStack itemStack) {
         CompoundTag tag = itemStack.getOrCreateTag();
-        if (tag.containsKey("EntityIds", NbtType.LIST)) {
+        if (tag.contains("EntityIds", NbtType.LIST)) {
             ListTag mob = tag.getList("EntityIds", NbtType.STRING);
             
             // Get the mob spawner entity

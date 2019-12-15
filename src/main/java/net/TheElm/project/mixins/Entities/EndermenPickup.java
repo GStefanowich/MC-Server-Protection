@@ -58,13 +58,13 @@ public abstract class EndermenPickup extends Goal implements EndermanGoal {
     @Override
     public void tick() {
         // Get endermans information
-        Random random = this.enderman.getRand();
+        Random random = this.enderman.getRandom();
         World world = this.enderman.getEntityWorld();
         
         // Get random vector
-        int int_1 = MathHelper.floor(this.enderman.x - 2.0D + random.nextDouble() * 4.0D);
-        int int_2 = MathHelper.floor(this.enderman.y + random.nextDouble() * 3.0D);
-        int int_3 = MathHelper.floor(this.enderman.z - 2.0D + random.nextDouble() * 4.0D);
+        int int_1 = MathHelper.floor(this.enderman.getX() - 2.0D + random.nextDouble() * 4.0D);
+        int int_2 = MathHelper.floor(this.enderman.getY() + random.nextDouble() * 3.0D);
+        int int_3 = MathHelper.floor(this.enderman.getZ() - 2.0D + random.nextDouble() * 4.0D);
         
         // Get the block position to target
         BlockPos blockPos = new BlockPos(int_1, int_2, int_3);
@@ -74,7 +74,7 @@ public abstract class EndermenPickup extends Goal implements EndermanGoal {
         Block block = blockState.getBlock();
         
         // Get the vector
-        Vec3d vec3d_1 = new Vec3d((double) MathHelper.floor(this.enderman.x) + 0.5D, (double) int_2 + 0.5D, (double) MathHelper.floor(this.enderman.z) + 0.5D);
+        Vec3d vec3d_1 = new Vec3d((double) MathHelper.floor(this.enderman.getX()) + 0.5D, (double) int_2 + 0.5D, (double) MathHelper.floor(this.enderman.getZ()) + 0.5D);
         Vec3d vec3d_2 = new Vec3d((double) int_1 + 0.5D, (double) int_2 + 0.5D, (double) int_3 + 0.5D);
         
         // Attack the block
@@ -95,7 +95,7 @@ public abstract class EndermenPickup extends Goal implements EndermanGoal {
             }
             
             this.enderman.setCarriedBlock(blockState); // Set as held
-            world.clearBlockState(blockPos, false); // Remove from the world
+            world.removeBlock(blockPos, false); // Remove from the world
         }
     }
     
