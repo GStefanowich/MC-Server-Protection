@@ -62,7 +62,7 @@ public abstract class BlockInteraction {
     @Shadow public ServerWorld world;
     @Shadow public ServerPlayerEntity player;
     
-    @Inject(at = @At("HEAD"), method = "method_14263", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "processBlockBreakingAction", cancellable = true)
     private void onBlockBreakChange(BlockPos blockPos, Action action, Direction direction, int i, CallbackInfo info) {
         ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this.player, this.world, Hand.MAIN_HAND, blockPos, direction, action);
         if ( result != ActionResult.PASS ) {

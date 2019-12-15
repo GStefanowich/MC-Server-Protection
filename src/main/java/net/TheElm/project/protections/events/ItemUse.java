@@ -55,8 +55,8 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.ViewableWorld;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldView;
 import org.jetbrains.annotations.Nullable;
 
 public final class ItemUse {
@@ -146,7 +146,7 @@ public final class ItemUse {
         return ActionResult.PASS;
     }
     @Nullable
-    private static Direction findNewRotation(ViewableWorld world, BlockPos blockPos, Block block, BlockState blockState) {
+    private static Direction findNewRotation(WorldView world, BlockPos blockPos, Block block, BlockState blockState) {
         Direction starting = blockState.get(HorizontalFacingBlock.FACING), rotation = starting.rotateYClockwise();
         do {
             if (block.canPlaceAt(blockState.with(HorizontalFacingBlock.FACING, rotation), world, blockPos))

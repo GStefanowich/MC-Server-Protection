@@ -214,7 +214,7 @@ public final class NbtUtils {
     @Nullable
     public static BlockPos tagToBlockPos(@Nullable CompoundTag compound) {
         if (compound != null) {
-            if (compound.containsKey("x", NbtType.NUMBER) && compound.containsKey("y", NbtType.NUMBER) && compound.containsKey("z", NbtType.NUMBER))
+            if (compound.contains("x", NbtType.NUMBER) && compound.contains("y", NbtType.NUMBER) && compound.contains("z", NbtType.NUMBER))
                 return new BlockPos(compound.getDouble("x"), compound.getDouble("y"), compound.getDouble("z"));
         }
         return null;
@@ -252,7 +252,7 @@ public final class NbtUtils {
                 JsonObject lore = new JsonObject();
                 lore.addProperty("translate", entity.getTranslationKey());
                 lore.addProperty("color", (entity.getCategory().isAnimal() ? Formatting.GOLD : Formatting.RED).getName());
-                loreTag.add(new StringTag(lore.toString()));
+                loreTag.add(StringTag.of(lore.toString()));
             }
         }
         

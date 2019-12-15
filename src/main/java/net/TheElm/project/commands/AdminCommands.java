@@ -175,7 +175,7 @@ public final class AdminCommands {
         boolean alive;
         if (alive = player.isAlive()) {
             // Heal the player
-            player.setHealth(player.getHealthMaximum());
+            player.setHealth(player.getMaximumHealth());
             
             // Tell the player
             TranslatableServerSide.send(player, "player.abilities.healed_self");

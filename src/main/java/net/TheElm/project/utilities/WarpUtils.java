@@ -305,8 +305,8 @@ public final class WarpUtils {
                 return null;
             
             // Read the player warp location after restarting
-            if (playerNBT.containsKey("playerWarpX") && playerNBT.containsKey("playerWarpY") && playerNBT.containsKey("playerWarpZ")) {
-                int warpDimension = (playerNBT.containsKey("playerWarpD") ? playerNBT.getInt("playerWarpD") : 0);
+            if (playerNBT.contains("playerWarpX") && playerNBT.contains("playerWarpY") && playerNBT.contains("playerWarpZ")) {
+                int warpDimension = (playerNBT.contains("playerWarpD") ? playerNBT.getInt("playerWarpD") : 0);
                 warp = new Warp(
                     server.getWorld(DimensionType.byRawId(warpDimension)),
                     new BlockPos(
@@ -365,7 +365,7 @@ public final class WarpUtils {
         // Unbind player from entities
         player.stopRiding();
         if (player.isSleeping()) {
-            player.wakeUp(true, true, false);
+            player.wakeUp(true, true);
         }
         
         // Move the player
@@ -381,9 +381,9 @@ public final class WarpUtils {
         if (world instanceof ServerWorld) {
             world.playSound( null, blockPos, SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.MASTER, 1.0f, 1.0f );
             ((ServerWorld) world).spawnParticles(ParticleTypes.POOF,
-                player.x,
-                player.y + 1.0D,
-                player.z,
+                player.getX(),
+                player.getY() + 1.0D,
+                player.getZ(),
                 50,
                 0.0D,
                 0.0D,

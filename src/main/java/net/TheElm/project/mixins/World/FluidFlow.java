@@ -36,7 +36,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
-import net.minecraft.world.ViewableWorld;
+import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Mixin;
@@ -57,8 +57,8 @@ public abstract class FluidFlow extends Fluid {
         // If world is Server World
         if (world instanceof ServerWorld) {
             // Get chunks
-            WorldChunk startingChunk = (WorldChunk)((ViewableWorld) world).getChunk( sourcePos );
-            WorldChunk nextChunk = (WorldChunk)((ViewableWorld) world).getChunk( flowPos );
+            WorldChunk startingChunk = (WorldChunk)((WorldView) world).getChunk( sourcePos );
+            WorldChunk nextChunk = (WorldChunk)((WorldView) world).getChunk( flowPos );
             
             // If chunk is the same chunk, Allow
             if (startingChunk == nextChunk)
@@ -71,8 +71,8 @@ public abstract class FluidFlow extends Fluid {
     }
     
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/fluid/BaseFluid.isInfinite()Z"), method = "getUpdatedState")
-    protected boolean onUpdate(BaseFluid fluid, ViewableWorld viewableWorld, BlockPos blockPos, BlockState blockState) {
-        if (SewingMachineConfig.INSTANCE.NETHER_INFINITE_LAVA.get() && viewableWorld.getDimension().getType() == DimensionType.THE_NETHER)
+    protected boolean onUpdate(BaseFluid fluid, WorldView worldView, BlockPos blockPos, BlockState blockState) {
+        if (SewingMachineConfig.INSTANCE.NETHER_INFINITE_LAVA.get() && worldView.getDimension().getType() == DimensionType.THE_NETHER)
             return true;
         return this.isInfinite();
     }

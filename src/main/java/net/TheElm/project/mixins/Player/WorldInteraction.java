@@ -123,8 +123,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             if (!enemies.isEmpty()) {
                 // Get the area around the player
                 Box searchRegion = new Box(
-                    new BlockPos(this.x + 20, this.y + 10, this.z + 20),
-                    new BlockPos(this.x - 20, this.y - 10, this.z - 20)
+                    new BlockPos(this.getX() + 20, this.getY() + 10, this.getZ() + 20),
+                    new BlockPos(this.getX() - 20, this.getY() - 10, this.getZ() - 20)
                 );
                 
                 // Get local players
@@ -178,7 +178,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     private void updateHealthBar() {
         if (this.healthBar != null) {
             // Get the health percentage
-            float percentage = this.getHealth() / this.getHealthMaximum();
+            float percentage = this.getHealth() / this.getMaximumHealth();
             
             if (percentage != this.healthBar.getPercent()) {
                 // Update the bar
@@ -301,13 +301,13 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     
     @Override
-    public void setPlayerSpawn(final BlockPos blockPos, final boolean overrideGlobal) {
+    public void setPlayerSpawn(final BlockPos blockPos, final boolean overrideGlobal, final boolean showPlayerMessage) {
         ServerPlayerEntity player = ((ServerPlayerEntity)(LivingEntity) this);
         // If the bed the player slept in is different 
         if ((!overrideGlobal) && (!blockPos.equals(player.getSpawnPosition()))) {
             // Don't show the command message again if the player clicked it
             if ( PlayerSpawnCommand.commandRanUUIDs.remove( player.getUuid() ) ) {
-                super.setPlayerSpawn(blockPos, overrideGlobal);
+                super.setPlayerSpawn(blockPos, overrideGlobal, showPlayerMessage);
                 return;
             }
             
@@ -328,11 +328,11 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             
             CoreMod.logInfo("Player " + this.getName().asString() + " spawn updated to X " + blockPos.getX() + ", Z " + blockPos.getZ() + ", Y " + blockPos.getY());
         }
-        super.setPlayerSpawn(blockPos, overrideGlobal);
+        super.setPlayerSpawn(blockPos, overrideGlobal, showPlayerMessage);
     }
     
     @Inject(at = @At("RETURN"), method = "wakeUp")
-    public void onBedEjected(final boolean sleepTimer, final boolean leftBed, final boolean updateSpawn, final CallbackInfo callback) {
+    public void onBedEjected(final boolean sleepTimer, final boolean leftBed, final CallbackInfo callback) {
         if (!SewingMachineConfig.INSTANCE.DO_SLEEP_VOTE.get())
             return;
         
@@ -386,34 +386,34 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
         // Read the player warp location after restarting
-        if ( tag.containsKey( "playerWarpX" ) && tag.containsKey( "playerWarpY" ) && tag.containsKey( "playerWarpZ" ) ) {
+        if ( tag.contains( "playerWarpX" ) && tag.contains( "playerWarpY" ) && tag.contains( "playerWarpZ" ) ) {
             this.warpPos = new BlockPos(
                 tag.getInt("playerWarpX"),
                 tag.getInt("playerWarpY"),
                 tag.getInt("playerWarpZ")
             );
-            if ( tag.containsKey( "playerWarpD" ) )
+            if ( tag.contains( "playerWarpD" ) )
                 this.warpDimension = tag.getInt("playerWarpD");
         }
         
         // Get the nickname
-        if (tag.containsKey("PlayerNickname", NbtType.STRING))
+        if (tag.contains("PlayerNickname", NbtType.STRING))
             this.playerNickname = Text.Serializer.fromJson(tag.getString("PlayerNickname"));
         
         // Get when first joined
-        if (tag.containsKey("FirstJoinedAtTime", NbtType.LONG))
+        if (tag.contains("FirstJoinedAtTime", NbtType.LONG))
             this.firstJoinedAt = tag.getLong("FirstJoinedAtTime");
         
         // Get when last joined
-        if (tag.containsKey("LastJoinedAtTime", NbtType.LONG))
+        if (tag.contains("LastJoinedAtTime", NbtType.LONG))
             this.lastJoinedAt = tag.getLong("LastJoinedAtTime");
         
         // Get the entered overworld portal
-        if (tag.containsKey("LastPortalOverworld", NbtType.COMPOUND))
+        if (tag.contains("LastPortalOverworld", NbtType.COMPOUND))
             this.overworldPortal = NbtUtils.tagToBlockPos(tag.getCompound("LastPortalOverworld"));
         
         // Get the entered nether portal
-        if (tag.containsKey("LastPortalNether", NbtType.COMPOUND))
+        if (tag.contains("LastPortalNether", NbtType.COMPOUND))
             this.theNetherPortal = NbtUtils.tagToBlockPos(tag.getCompound("LastPortalNether"));
     }
     @Inject(at = @At("TAIL"), method = "copyFrom")

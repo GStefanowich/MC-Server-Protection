@@ -40,7 +40,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.PortalForcer;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -49,9 +48,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PortalForcer.class)
 public abstract class Portals implements Nameable, CommandOutput {
-    
-    @Shadow @Final
-    private static PortalBlock PORTAL_BLOCK;
     
     @Nullable @Shadow
     public native BlockPattern.TeleportTarget getPortal(BlockPos blockPos_1, Vec3d vec3d_1, Direction direction_1, double double_1, double double_2, boolean boolean_1);
@@ -75,8 +71,8 @@ public abstract class Portals implements Nameable, CommandOutput {
             if (lastPos == null) return;
             
             // Check for a portal at the block
-            BlockPattern.Result pattern = PORTAL_BLOCK.findPortal(world, lastPos);
-            BlockPattern.TeleportTarget teleportTarget = pattern.method_18478(dir, lastPos, vec3d.y, entity.getVelocity(), vec3d.x);
+            BlockPattern.Result pattern = PortalBlock.findPortal(world, lastPos);
+            BlockPattern.TeleportTarget teleportTarget = pattern.getTeleportTarget(dir, lastPos, vec3d.y, entity.getVelocity(), vec3d.x);
             if (teleportTarget == null) {
                 if (dimType == DimensionType.OVERWORLD) ((PlayerData) player).setOverworldPortal( null );
                 else if (dimType == DimensionType.THE_NETHER) ((PlayerData) player).setNetherPortal( null );

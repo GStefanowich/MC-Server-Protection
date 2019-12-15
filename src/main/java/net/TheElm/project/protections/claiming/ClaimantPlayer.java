@@ -147,7 +147,7 @@ public final class ClaimantPlayer extends Claimant {
     public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
         // Get the players town
         ClaimantTown town = null;
-        if ( tag.hasUuid("town") ) {
+        if ( tag.containsUuid("town") ) {
             try {
                 town = ClaimantTown.get( tag.getUuid("town") );
                 // Ensure that the town has the player in the ranks
@@ -157,7 +157,7 @@ public final class ClaimantPlayer extends Claimant {
         this.town = town;
         
         // Additional claim limit
-        this.additionalClaims = ( tag.containsKey("claimLimit", NbtType.INT) ? tag.getInt("claimLimit") : 0 );
+        this.additionalClaims = ( tag.contains("claimLimit", NbtType.INT) ? tag.getInt("claimLimit") : 0 );
         
         // Read from SUPER
         super.readCustomDataFromTag( tag );

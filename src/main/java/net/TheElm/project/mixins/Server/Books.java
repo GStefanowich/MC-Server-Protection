@@ -48,7 +48,7 @@ public class Books {
     public static boolean isValid(@Nullable CompoundTag compound) {
         if (compound == null)
             return false;
-        if (!compound.containsKey("pages", NbtType.LIST))
+        if (!compound.contains("pages", NbtType.LIST))
             return false;
         
         int bytes = 0;

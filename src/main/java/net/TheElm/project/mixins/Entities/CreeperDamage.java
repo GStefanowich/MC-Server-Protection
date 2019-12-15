@@ -48,7 +48,7 @@ public abstract class CreeperDamage extends HostileEntity {
     @Shadow
     private native void spawnEffectsCloud();
     @Shadow
-    public abstract boolean isCharged();
+    public abstract boolean shouldRenderOverlay();
     
     protected CreeperDamage(EntityType<? extends HostileEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
@@ -75,10 +75,10 @@ public abstract class CreeperDamage extends HostileEntity {
                 // Imitate the real explosion that happened;
                 this.dead = true;
                 this.world.createExplosion(this,
-                    this.x,
-                    this.y,
-                    this.z,
-                    (float) this.explosionRadius * ( this.isCharged() ? 2.0F : 1.0F ), // The explosion radius based on the charge
+                    this.getX(),
+                    this.getY(),
+                    this.getZ(),
+                    (float) this.explosionRadius * ( this.shouldRenderOverlay() ? 2.0F : 1.0F ), // The explosion radius based on the charge
                     Explosion.DestructionType.NONE // NO EXPLOSION
                 );
                 this.remove(); // Delete our creeper
