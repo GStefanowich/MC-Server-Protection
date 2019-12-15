@@ -63,7 +63,7 @@ public final class InventoryUtils {
         Block block = blockState.getBlock();
         
         if ( block instanceof ChestBlock )
-            return ChestBlock.getInventory( blockState, world, blockPos, true );
+            return ChestBlock.getInventory( (ChestBlock)block, blockState, world, blockPos, true );
         if ( blockEntity instanceof BarrelBlockEntity )
             return (BarrelBlockEntity) blockEntity;
         return null;

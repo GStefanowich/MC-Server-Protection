@@ -57,7 +57,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class Death extends Entity {
     
     @Shadow protected boolean dead;
-    @Shadow public abstract boolean addPotionEffect(StatusEffectInstance statusEffectInstance);
+    @Shadow public abstract boolean addStatusEffect(StatusEffectInstance statusEffectInstance);
     
     public Death(EntityType<?> entityType_1, World world_1) {
         super(entityType_1, world_1);
@@ -82,11 +82,11 @@ public abstract class Death extends Entity {
         // Get the attacker
         ServerPlayerEntity player = (ServerPlayerEntity) damageSource.getAttacker();
         ItemStack itemStack = player.getStackInHand(Hand.OFF_HAND);
-        if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getTag()) == null) || ((spawnerTag = spawnerTag.method_10553()) == null) || (!spawnerTag.containsKey("EntityIds", NbtType.LIST)))
+        if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getTag()) == null) || ((spawnerTag = spawnerTag.copy()) == null) || (!spawnerTag.contains("EntityIds", NbtType.LIST)))
             return;
         
         // Get the identifier of the mob we killed
-        StringTag mobId = new StringTag(EntityType.getId(this.getType()).toString());
+        StringTag mobId = StringTag.of(EntityType.getId(this.getType()).toString());
         
         // Get current entity IDs
         ListTag entityIds = spawnerTag.getList("EntityIds", NbtType.STRING);
@@ -104,7 +104,7 @@ public abstract class Death extends Entity {
                 
                 // Play sound
                 player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.MASTER, 1.0f, 1.0f);
-                this.addPotionEffect(new StatusEffectInstance(StatusEffects.GLOWING, 60, 1, false, true));
+                this.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 60, 1, false, false));
                 
                 // Should drop a new spawner
                 boolean dropNew = false;

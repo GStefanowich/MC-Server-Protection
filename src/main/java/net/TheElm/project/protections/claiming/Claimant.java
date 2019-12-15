@@ -229,14 +229,14 @@ public abstract class Claimant {
             throw new RuntimeException("Invalid NBT data match");
         
         // Get the claim size
-        if (tag.containsKey("landChunks", NbtType.LIST)) {
+        if (tag.contains("landChunks", NbtType.LIST)) {
             for (Tag it : tag.getList("landChunks",NbtType.INT_ARRAY)) {
                 this.CLAIMED_CHUNKS.add(((IntArrayTag) it).getIntArray());
             }
         }
         
         // Read friends
-        if (tag.containsKey(( this instanceof ClaimantTown ? "members" : "friends"), NbtType.LIST)) {
+        if (tag.contains(( this instanceof ClaimantTown ? "members" : "friends"), NbtType.LIST)) {
             for (Tag it : tag.getList(( this instanceof ClaimantTown ? "members" : "friends"), NbtType.COMPOUND)) {
                 CompoundTag friend = (CompoundTag) it;
                 this.USER_RANKS.put(
@@ -247,7 +247,7 @@ public abstract class Claimant {
         }
         
         // Read permissions
-        if (tag.containsKey("permissions", NbtType.LIST)) {
+        if (tag.contains("permissions", NbtType.LIST)) {
             for (Tag it : tag.getList("permissions", NbtType.COMPOUND)) {
                 CompoundTag permission = (CompoundTag) it;
                 this.RANK_PERMISSIONS.put(
@@ -258,7 +258,7 @@ public abstract class Claimant {
         }
         
         // Read settings
-        if (tag.containsKey("settings", NbtType.LIST)) {
+        if (tag.contains("settings", NbtType.LIST)) {
             for (Tag it : tag.getList("settings", NbtType.COMPOUND)) {
                 CompoundTag setting = (CompoundTag) it;
                 this.CHUNK_CLAIM_OPTIONS.put(

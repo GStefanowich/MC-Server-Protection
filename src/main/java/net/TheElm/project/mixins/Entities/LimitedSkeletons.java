@@ -65,8 +65,8 @@ public abstract class LimitedSkeletons extends HostileEntity implements RangedAt
         
         this.createArrowQuiver();
         if ( --this.arrowStack <= 0 ) {
-            this.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0F, 1.0F / (this.getRand().nextFloat() * 0.4F + 0.8F));
-            this.setEquippedStack(EquipmentSlot.MAINHAND, this.getEquipmentSword(this.world.getLocalDifficulty(this.getBlockPos())));
+            this.playSound(SoundEvents.ENTITY_ITEM_BREAK, 1.0F, 1.0F / (this.getRandom().nextFloat() * 0.4F + 0.8F));
+            this.equipStack(EquipmentSlot.MAINHAND, this.getEquipmentSword(this.world.getLocalDifficulty(this.getBlockPos())));
             this.updateAttackType();
         }
     }
@@ -80,7 +80,7 @@ public abstract class LimitedSkeletons extends HostileEntity implements RangedAt
     
     @Inject(at=@At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
-        if ( tag.containsKey( "arrowStack" ) ) {
+        if ( tag.contains( "arrowStack" ) ) {
             this.arrowStack = tag.getInt("arrowStack");
         }
         this.createArrowQuiver();
@@ -120,14 +120,14 @@ public abstract class LimitedSkeletons extends HostileEntity implements RangedAt
         if (this.arrowStack == null) this.arrowStack = this.getQuiverMaximum( this.world.getDifficulty() );
     }
     private int getQuiverMaximum( Difficulty difficulty ) {
-        int arrows = this.getRand().nextInt( 16 );
+        int arrows = this.getRandom().nextInt( 16 );
         int tier = difficulty.getId();
         if ( tier < 3 )
-            arrows += this.getRand().nextInt( 16 );
+            arrows += this.getRandom().nextInt( 16 );
         if ( tier < 2 )
-            arrows += this.getRand().nextInt( 16 );
+            arrows += this.getRandom().nextInt( 16 );
         if ( tier < 1 )
-            arrows += this.getRand().nextInt( 16 );
+            arrows += this.getRandom().nextInt( 16 );
         return arrows;
     }
     

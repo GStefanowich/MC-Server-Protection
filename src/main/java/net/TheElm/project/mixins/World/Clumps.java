@@ -67,9 +67,9 @@ public abstract class Clumps extends Entity {
                 // Spawn a new orb
                 world.spawnEntity(new ExperienceOrbEntity(
                     world,
-                    this.x,
-                    this.y,
-                    this.z,
+                    this.getX(),
+                    this.getY(),
+                    this.getZ(),
                     this.getExperienceAmount() + orb.getExperienceAmount()
                 ));
             });

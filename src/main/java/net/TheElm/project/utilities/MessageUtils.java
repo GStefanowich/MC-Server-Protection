@@ -44,6 +44,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -75,11 +77,22 @@ public final class MessageUtils {
     }
     
     // Send a text blob from a target to a player
-    public static void sendAsWhisper(ServerPlayerEntity target, Text text) {
+    public static void sendAsWhisper(@NotNull ServerCommandSource sender, @NotNull ServerPlayerEntity target, @NotNull Text text) {
+        MessageUtils.sendAsWhisper( ( sender.getEntity() instanceof ServerPlayerEntity ? (ServerPlayerEntity) sender.getEntity() : null ), target, text );
+    }
+    public static void sendAsWhisper(@Nullable ServerPlayerEntity sender, @NotNull ServerPlayerEntity target, @NotNull Text text) {
         // Log the the server
         ServerCore.get().sendMessage(text);
         
-        // Send the message to the player
+        // Send the message to the player (SENDER)
+        if ((sender != null) && (!sender.getUuid().equals( target.getUuid() ))) {
+            MessageUtils.sendChat(
+                Stream.of( sender ),
+                text
+            );
+        }
+        
+        // Send the message to the player (TARGET)
         MessageUtils.sendChat(
             Stream.of( target ),
             text

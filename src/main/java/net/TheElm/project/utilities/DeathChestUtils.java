@@ -33,6 +33,8 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.decoration.ArmorStandEntity;
+import net.minecraft.entity.effect.StatusEffectInstance;
+import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.fluid.Fluids;
@@ -164,7 +166,7 @@ public final class DeathChestUtils {
         headData.putString("SkullOwner", playerName);
         
         // Set the armor stands equipped item
-        stand.setEquippedStack(EquipmentSlot.HEAD, head);
+        stand.equipStack(EquipmentSlot.HEAD, head);
         stand.setStackInHand( Hand.OFF_HAND, inventory.getMainHandStack().copy());
         stand.setStackInHand( Hand.MAIN_HAND, player.getOffHandStack().copy());
         
@@ -195,7 +197,9 @@ public final class DeathChestUtils {
         CoreMod.logInfo( "Death chest for " + playerName + " spawned at " + chestPos.getX() + ", " + (chestPos.getY() + 1) + ", " + chestPos.getZ() );
         
         // Add the entity to the world
-        return ( skipGroundBlock || world.setBlockState( deathPos, Blocks.DIRT.getDefaultState() ) ) && world.spawnEntity( stand );
+        return ( skipGroundBlock || world.setBlockState( deathPos, Blocks.DIRT.getDefaultState() ) )
+            && world.spawnEntity( stand ) // Spawn the Armor stand into the World
+            && stand.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, 1000000, 1, false, true )); // Apply a visual appearance to the Armor stand
     }
     
 }

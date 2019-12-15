@@ -61,7 +61,7 @@ public final class GuideUtils {
         
         // For each page
         for (JsonElement page : pages) {
-            list.add(new StringTag( page.toString() ));
+            list.add(StringTag.of( page.toString() ));
         }
         
         return list;
@@ -110,7 +110,7 @@ public final class GuideUtils {
         
         // Lore
         ListTag lore = new ListTag();
-        lore.add(new StringTag( json.toString() ));
+        lore.add(StringTag.of( json.toString() ));
         
         // Return
         return lore;

@@ -37,8 +37,6 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.Collections;
@@ -81,8 +79,7 @@ public final class PlayerSpawnCommand {
         
         // Log our definition
         CoreMod.logInfo("Player " + player.getName().asString() + " spawn updated to X " + bedPos.getX() + ", Z " + bedPos.getZ() + ", Y " + bedPos.getY());
-        player.addChatMessage( new LiteralText( "Spawn updated." ).formatted(Formatting.YELLOW), false );
-        player.setPlayerSpawn( bedPos, false );
+        player.setPlayerSpawn( bedPos, false, true );
         
         return Command.SINGLE_SUCCESS;
     }

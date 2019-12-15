@@ -32,6 +32,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.InventoryUtils.ItemRarity;
 import net.minecraft.enchantment.Enchantment;
@@ -88,28 +89,44 @@ public final class HoldingCommand {
         }
         
         // List all enchantments
-        Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments( stack );
+        final Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments( stack );
         
-        Text enchantsBuilder = ( stack.hasCustomName() ? stack.getName().formatted(Formatting.AQUA) : new TranslatableText(stack.getTranslationKey()) );
-        if (enchantments.size() > 0) {
+        final Text enchantsBuilder = ( stack.hasCustomName() ? stack.getName().formatted(Formatting.AQUA) : new TranslatableText(stack.getTranslationKey()));
+        if (!enchantments.isEmpty()) {
             ItemRarity rarity = InventoryUtils.getItemRarity( stack );
             enchantsBuilder.append(new LiteralText(" " + rarity.name()).formatted(rarity.formatting));
-        }
-        
-        // Append all translations to the hovertext
-        for ( Map.Entry<Enchantment, Integer> enchantment : enchantments.entrySet() ) {
-            Enchantment enchant = enchantment.getKey();
-            Integer level = enchantment.getValue();
             
-            enchantsBuilder.append( "\n" )
-                .append(enchant.getName( level ));
+            // Append all translations to the hovertext
+            for ( Map.Entry<Enchantment, Integer> enchantment : enchantments.entrySet() ) {
+                Enchantment enchant = enchantment.getKey();
+                Integer level = enchantment.getValue();
+        
+                enchantsBuilder.append( "\n" )
+                    .append(enchant.getName( level ));
+            }
         }
         
-        final Text enchantsText = enchantsBuilder;
-        final Text output = new LiteralText("[" + count + "x ").formatted( enchantments.size() > 0 ? Formatting.AQUA : Formatting.GRAY )
+        if (item.isDamageable()) {
+            enchantsBuilder.append("\n")
+                // Get the items durability
+                .append(( stack.isDamageable() ?
+                    new TranslatableText("item.durability",
+                        FormattingUtils.number(stack.getDamage()),
+                        FormattingUtils.number(stack.getMaxDamage())
+                    )
+                    : new TranslatableText("item.unbreakable")
+                ))
+                .append("\n")
+                // Get the repair cost
+                .append(new TranslatableText("container.repair.cost",
+                    FormattingUtils.number( stack.getRepairCost() )
+                ));
+        }
+        
+        final Text output = new LiteralText("[" + count + "x ").formatted(enchantments.isEmpty() ? Formatting.GRAY : Formatting.AQUA)
             .styled((style) -> {
-                if (enchantments.size() > 0)
-                    style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, enchantsText));
+                if (!enchantments.isEmpty())
+                    style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, enchantsBuilder));
             })
             .append(new TranslatableText(item.getTranslationKey()))
             .append("]");

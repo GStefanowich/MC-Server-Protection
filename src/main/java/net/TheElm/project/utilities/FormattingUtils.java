@@ -31,6 +31,7 @@ import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -148,6 +149,10 @@ public final class FormattingUtils {
                 return Formatting.RESET;
         }
         return null;
+    }
+    
+    public static String number(Number number) {
+        return NumberFormat.getInstance().format( number );
     }
     
 }
