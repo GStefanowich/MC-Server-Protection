@@ -89,7 +89,7 @@ public abstract class EndermenPickup extends Goal implements EndermanGoal {
             WorldChunk chunk = world.getWorldChunk( blockPos );
             
             // Check if enderman griefing is allowed (Invert because FALSE == NOT ALLOWED)
-            if ((chunk != null) && (!((IClaimedChunk) chunk).isSetting( ClaimSettings.ENDERMAN_GRIEFING ))) {
+            if ((chunk != null) && (!((IClaimedChunk) chunk).isSetting( blockPos, ClaimSettings.ENDERMAN_GRIEFING ))) {
                 this.sadEnderman();
                 return;
             }

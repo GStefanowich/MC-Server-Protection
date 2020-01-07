@@ -41,7 +41,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.file.Paths;
 import java.text.NumberFormat;
 import java.util.Locale;
 
@@ -138,22 +137,22 @@ public final class TranslatableServerSide {
         return element.getAsString();
     }
     private static JsonObject readLanguageFile(Locale language) {
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        String filePath = TranslatableServerSide.getResourcePath( language );
-        InputStream resource = classLoader.getResourceAsStream( filePath );
-        if ((language != Locale.US) && ( resource == null )) // Fallback to English
-            return TranslatableServerSide.readLanguageFile(Locale.US);
-        if (resource == null)
+        String filePath;
+        InputStream resource = CoreMod.class.getResourceAsStream(
+            filePath = TranslatableServerSide.getResourcePath( language )
+        );
+        if (resource == null) {
+            // If not already using English, Fallback to English
+            if (language != Locale.US)
+                return TranslatableServerSide.readLanguageFile(Locale.US);
+            // Throw an exception
             throw new NullPointerException("Could not read language file \"" + filePath + "\"");
+        }
+        // Return the JSON language file
         return new JsonParser().parse(new InputStreamReader( resource )).getAsJsonObject();
     }
     private static String getResourcePath(Locale locale) {
-        return Paths.get(
-            "assets",
-            CoreMod.MOD_ID,
-            "lang",
-            (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase() + ".json"
-        ).toString();
+        return "/assets/" + CoreMod.MOD_ID + "/lang/" + (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase() + ".json";
     }
     
     private static boolean matchAny(@NotNull String needle, String... haystack ) {

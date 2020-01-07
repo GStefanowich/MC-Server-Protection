@@ -22,7 +22,6 @@
     
     "Entities.ArrowDamage",
     "Entities.PotionDamage",
-    "Entities.CreeperDamage",
     "Entities.Damage",
     "Entities.Tnt",
     "Entities.Death",
@@ -32,6 +31,7 @@
     "Entities.EndermenPickup",
     "Entities.EndermenPlace",
     
+    "Entities.FireballFix",
     "Entities.WitherBoss",
     
     "Entities.Phantom",
@@ -62,6 +62,7 @@
     "World.CauldronCleaning",
     "World.MobSpawners",
     "World.Campfires",
+    "World.Saw",
     "World.ChunkSaving",
     "World.ClaimedChunk",
     "World.DragonFight",

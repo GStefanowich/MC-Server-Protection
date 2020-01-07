@@ -96,6 +96,16 @@ public final class SewingMachineConfig {
     public final ConfigOption<String> NAME_SPAWN;
     public final ConfigOption<String> NAME_WILDERNESS;
     
+    // Claiming Enabled Options
+    public final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_ENDERMAN;
+    public final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_CREEPER;
+    public final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_GHAST;
+    public final ConfigOption<Boolean> CLAIM_ALLOW_PLAYER_COMBAT;
+    public final ConfigOption<Boolean> CLAIM_ALLOW_CROP_AUTOREPLANT;
+    
+    public final ConfigOption<Boolean> CLAIM_ALLOW_TREE_CAPACITATOR;
+    public final ConfigOption<Boolean> CLAIM_ALLOW_VEIN_MINER;
+    
     public final ConfigOption<Integer> CLAIM_OP_LEVEL_SPAWN;
     public final ConfigOption<Integer> CLAIM_OP_LEVEL_OTHER;
     
@@ -272,6 +282,19 @@ public final class SewingMachineConfig {
         this.PLAYER_LIMIT_INCREASE = this.addConfig( new ConfigOption<>("claims.players.limit_increase.enabled", false, JsonElement::getAsBoolean));
         this.PLAYER_CLAIM_BUY_LIMIT = this.addConfig( new ConfigOption<>("claims.players.limit_increase.maximum", -1, JsonElement::getAsInt));
         this.PLAYER_CLAIM_BUY_COST = this.addConfig( new ConfigOption<>("claims.players.limit_increase.cost", 200, JsonElement::getAsInt));
+        
+        /*
+         * Claiming Options
+         */
+        this.CLAIM_ALLOW_GRIEFING_ENDERMAN = this.addConfig( new ConfigOption<>("claims.allow_player_override.griefing.enderman", false, JsonElement::getAsBoolean));
+        this.CLAIM_ALLOW_GRIEFING_CREEPER = this.addConfig( new ConfigOption<>("claims.allow_player_override.griefing.creeper", false, JsonElement::getAsBoolean));
+        this.CLAIM_ALLOW_GRIEFING_GHAST = this.addConfig( new ConfigOption<>("claims.allow_player_override.griefing.ghast", false, JsonElement::getAsBoolean));
+        
+        this.CLAIM_ALLOW_PLAYER_COMBAT = this.addConfig( new ConfigOption<>("claims.allow_player_override.player_pvp", true, JsonElement::getAsBoolean));
+        this.CLAIM_ALLOW_CROP_AUTOREPLANT = this.addConfig( new ConfigOption<>("claims.allow_player_override.crop_autoreplant", true, JsonElement::getAsBoolean));
+        
+        this.CLAIM_ALLOW_TREE_CAPACITATOR = new ConfigOption<>("claims.allow_player_override.tree_capacitate", false, JsonElement::getAsBoolean);
+        this.CLAIM_ALLOW_VEIN_MINER = new ConfigOption<>("claims.allow_player_override.vein_miner", false, JsonElement::getAsBoolean);
         
         /*
          * Warping

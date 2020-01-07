@@ -158,38 +158,41 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Inject(at = @At("RETURN"), method = "damage")
     public void onDamage(DamageSource damageSource, float amount, CallbackInfoReturnable<Boolean> callback) {
         if ((!this.world.isClient)) {
-            // Create the health bar
-            if (this.healthBar == null) {
-                this.healthBar = new ServerBossBar(
-                    new LiteralText("Player ").append(this.getDisplayName().formatted(Formatting.AQUA)).formatted(Formatting.WHITE),
-                    BossBar.Color.RED,
-                    BossBar.Style.NOTCHED_10
-                );
-            }
-            
             // Set the health percentage
             this.updateHealthBar();
             
             // Add the attacker to the healthbar
             if ((damageSource.getAttacker() instanceof PlayerEntity) && (damageSource.getAttacker() != this))
-                this.healthBar.addPlayer((ServerPlayerEntity) damageSource.getAttacker());
+                this.getHealthBar().addPlayer((ServerPlayerEntity) damageSource.getAttacker());
         }
     }
     private void updateHealthBar() {
-        if (this.healthBar != null) {
-            // Get the health percentage
-            float percentage = this.getHealth() / this.getMaximumHealth();
+        // Get the health percentage
+        float percentage = this.getHealth() / this.getMaximumHealth();
+        
+        if (percentage != this.getHealthBar().getPercent()) {
+            // Update the bar
+            this.getHealthBar().setPercent( percentage );
             
-            if (percentage != this.healthBar.getPercent()) {
-                // Update the bar
-                this.healthBar.setPercent(percentage);
-                
-                // Update the color of the bar
-                if (percentage >= 0.6) this.healthBar.setColor(BossBar.Color.GREEN);
-                else if (percentage >= 0.3) this.healthBar.setColor(BossBar.Color.YELLOW);
-                else this.healthBar.setColor(BossBar.Color.RED);
-            }
+            // Update the color of the bar
+            this.getHealthBar().setColor(
+                percentage >= 0.6 ? BossBar.Color.GREEN
+                    : ( percentage >= 0.3 ? BossBar.Color.YELLOW
+                        : BossBar.Color.RED
+                    )
+            );
         }
+    }
+    @NotNull
+    public ServerBossBar getHealthBar() {
+        if (this.healthBar != null)
+            return this.healthBar;
+        // Create the health bar
+        return (this.healthBar = new ServerBossBar(
+            new LiteralText("Player ").append(this.getDisplayName().formatted(Formatting.AQUA)).formatted(Formatting.WHITE),
+            BossBar.Color.RED,
+            BossBar.Style.NOTCHED_10
+        ));
     }
     
     /*

@@ -93,7 +93,7 @@ public abstract class ArrowDamage extends Entity {
                  */
                 
                 // If PvP is enabled, allow
-                if ( chunkInfo.isSetting(ClaimSettings.PLAYER_COMBAT) )
+                if ( chunkInfo.isSetting(hitEntity.getBlockPos(), ClaimSettings.PLAYER_COMBAT) )
                     return;
                 
             } else {
@@ -115,7 +115,7 @@ public abstract class ArrowDamage extends Entity {
                         return;
                     
                     // If player is allowed to harm tamed creatures
-                    if (chunkInfo.isSetting( ClaimSettings.HURT_TAMED ))
+                    if (chunkInfo.isSetting(hitEntity.getBlockPos(), ClaimSettings.HURT_TAMED) )
                         return;
                     
                 } else {

@@ -32,6 +32,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import net.TheElm.project.interfaces.BoolEnums;
 import net.minecraft.server.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.TranslatableText;
@@ -72,9 +73,10 @@ public class EnumArgumentType<E extends Enum<E>> implements ArgumentType<Enum<E>
     @Override
     public <S> CompletableFuture<Suggestions> listSuggestions(CommandContext<S> context, SuggestionsBuilder suggestionsBuilder) {
         return CommandSource.suggestMatching(
-            this.enumValues.stream().map((enumValue) -> {
-                return enumValue.name().toLowerCase();
-            }), suggestionsBuilder
+            this.enumValues.stream()
+                .filter((val) -> ((!(val instanceof BoolEnums)) || ((BoolEnums)val).isEnabled()))
+                .map((enumValue) -> enumValue.name().toLowerCase()),
+            suggestionsBuilder
         );
     }
     
