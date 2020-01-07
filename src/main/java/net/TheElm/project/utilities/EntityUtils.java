@@ -31,6 +31,7 @@ import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.minecraft.block.AnvilBlock;
 import net.minecraft.block.BarrelBlock;
 import net.minecraft.block.BeaconBlock;
+import net.minecraft.block.BeehiveBlock;
 import net.minecraft.block.BellBlock;
 import net.minecraft.block.BlastFurnaceBlock;
 import net.minecraft.block.Block;
@@ -52,6 +53,7 @@ import net.minecraft.block.SmithingTableBlock;
 import net.minecraft.block.SmokerBlock;
 import net.minecraft.block.StonecutterBlock;
 import net.minecraft.block.entity.BarrelBlockEntity;
+import net.minecraft.block.entity.BeehiveBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.block.entity.JukeboxBlockEntity;
@@ -124,7 +126,14 @@ public final class EntityUtils {
     /*
      * Get Entity Sounds
      */
-    public static SoundEvent getLockSound(Block block) {
+    public static SoundEvent getLockSound(@NotNull Block block) {
+        return EntityUtils.getLockSound(block, null);
+    }
+    public static SoundEvent getLockSound(@NotNull Block block, @Nullable BlockEntity blockEntity) {
+        if (blockEntity != null) {
+            if ( blockEntity instanceof BeehiveBlockEntity)
+                return (((BeehiveBlockEntity)blockEntity).hasNoBees() ? SoundEvents.BLOCK_BEEHIVE_DRIP : SoundEvents.BLOCK_BEEHIVE_WORK );
+        }
         if ( block instanceof BarrelBlock )
             return SoundEvents.BLOCK_FENCE_GATE_CLOSE;
         if ( block instanceof LoomBlock || block instanceof CartographyTableBlock )
@@ -143,6 +152,8 @@ public final class EntityUtils {
             return SoundEvents.BLOCK_WOOD_BREAK;
         if ( block instanceof ShulkerBoxBlock )
             return SoundEvents.BLOCK_SHULKER_BOX_CLOSE;
+        if ( block instanceof BeehiveBlock )
+            return SoundEvents.BLOCK_BEEHIVE_DRIP;
         return EntityUtils.getDefaultLockSound();
     }
     @Nullable
@@ -253,6 +264,8 @@ public final class EntityUtils {
         if ( block instanceof LecternBlock )
             return ClaimPermissions.STORAGE;
         if ( block instanceof FlowerPotBlock )
+            return ClaimPermissions.STORAGE;
+        if ( block instanceof BeehiveBlock )
             return ClaimPermissions.STORAGE;
         return null;
     }

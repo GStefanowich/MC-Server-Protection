@@ -77,7 +77,7 @@ public abstract class EndermenPlace extends Goal implements EndermanGoal {
             WorldChunk chunk = iWorld.getWorld().getWorldChunk( blockPositionPlace );
             
             // Check if enderman griefing is allowed (Invert because FALSE == NOT ALLOWED)
-            if ((chunk != null) && (!((IClaimedChunk) chunk).isSetting( ClaimSettings.ENDERMAN_GRIEFING ))) {
+            if ((chunk != null) && (!((IClaimedChunk) chunk).isSetting( blockPositionPlace, ClaimSettings.ENDERMAN_GRIEFING ))) {
                 this.sadEnderman();
                 return;
             }

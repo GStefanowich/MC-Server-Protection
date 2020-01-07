@@ -99,14 +99,14 @@ public final class ItemUse {
                 /*
                  * Rotate blocks
                  */
-                world.setBlockState(blockPos, blockState.with(HorizontalFacingBlock.FACING, rotation));
+                world.setBlockState(blockPos, blockState.with(HorizontalFacingBlock.FACING, rotation), 16 );
                 
                 return ActionResult.SUCCESS;
             } else if (player.isSneaking() && blockState.contains(PillarBlock.AXIS)) {
                 /*
                  * Change block axis
                  */
-                world.setBlockState(blockPos, ((PillarBlock) block).rotate( blockState, BlockRotation.CLOCKWISE_90 ));
+                world.setBlockState(blockPos, ((PillarBlock) block).rotate( blockState, BlockRotation.CLOCKWISE_90 ), 16 );
                 
                 return ActionResult.SUCCESS;
             } else if (block instanceof StairsBlock) {
@@ -115,7 +115,7 @@ public final class ItemUse {
                  */
                 StairShape shape = blockState.get(StairsBlock.SHAPE);
                 
-                world.setBlockState( blockPos, blockState.with(StairsBlock.SHAPE, rotateStairShape(shape)));
+                world.setBlockState( blockPos, blockState.with(StairsBlock.SHAPE, rotateStairShape(shape)), 16 );
                 
                 return ActionResult.SUCCESS;
             } else if (block instanceof DoorBlock) {

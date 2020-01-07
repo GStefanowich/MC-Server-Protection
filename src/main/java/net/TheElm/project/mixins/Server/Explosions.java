@@ -30,7 +30,9 @@ import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.TntEntity;
+import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.entity.mob.CreeperEntity;
+import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
@@ -40,7 +42,13 @@ import net.minecraft.world.World;
 import net.minecraft.world.explosion.Explosion;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin({TntEntity.class, CreeperEntity.class})
+/**
+ * TntEntity - TNT
+ * CreeperEntity - Creepers
+ * WitherEntity - Wither mob
+ * ExplosiveProjectileEntity - Wither projects
+ */
+@Mixin({TntEntity.class, CreeperEntity.class, WitherEntity.class, ExplosiveProjectileEntity.class})
 public abstract class Explosions extends Entity {
     
     public Explosions(EntityType<?> entityType_1, World world_1) {
@@ -50,7 +58,7 @@ public abstract class Explosions extends Entity {
     @Override
     public boolean canExplosionDestroyBlock(Explosion explosion, BlockView world, BlockPos blockPos, BlockState blockState, float damage) {
         if ((!blockState.isAir()) && (world instanceof ServerWorld)) {
-            ActionResult result = BlockBreakCallback.EVENT.invoker().interact((Entity)(Object) this, (ServerWorld)world, Hand.MAIN_HAND, blockPos, null, null);
+            ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this, (ServerWorld)world, Hand.MAIN_HAND, blockPos, null, null);
             if (result != ActionResult.PASS)
                 return (result == ActionResult.SUCCESS);
         }

@@ -23,20 +23,32 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.interfaces;
+package net.TheElm.project.mixins.World;
 
-import net.TheElm.project.enums.ClaimPermissions;
-import net.TheElm.project.enums.ClaimSettings;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.StonecutterBlock;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
+import org.spongepowered.asm.mixin.Mixin;
 
-import java.util.UUID;
-
-public interface Claim {
+@Mixin(StonecutterBlock.class)
+public abstract class Saw extends Block {
     
-    @Nullable
-    UUID getOwner();
-    boolean canPlayerDo(@Nullable UUID player, @NotNull ClaimPermissions perm);
-    boolean isSetting(@NotNull ClaimSettings setting);
+    public Saw(Settings settings) {
+        super(settings);
+    }
+    
+    @Override
+    public void onEntityCollision(BlockState blockState, World world, BlockPos blockPos, Entity entity) {
+        if (entity instanceof LivingEntity) {
+            entity.damage(DamageSource.GENERIC, 1.0F);
+        }
+        
+        super.onEntityCollision(blockState, world, blockPos, entity);
+    }
     
 }

@@ -170,7 +170,7 @@ public final class BlockInteraction {
                 }
                 
                 // Play a sound to the player
-                world.playSound(null, blockPos, EntityUtils.getLockSound(block), SoundCategory.BLOCKS, 0.5f, 1f);
+                world.playSound(null, blockPos, EntityUtils.getLockSound(block, blockEntity), SoundCategory.BLOCKS, 0.5f, 1f);
                 
                 // Display that this item can't be opened
                 TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",

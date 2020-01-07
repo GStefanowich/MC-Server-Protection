@@ -25,18 +25,8 @@
 
 package net.TheElm.project.interfaces;
 
-import net.TheElm.project.enums.ClaimPermissions;
-import net.TheElm.project.enums.ClaimSettings;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.UUID;
-
-public interface Claim {
+public interface BoolEnums {
     
-    @Nullable
-    UUID getOwner();
-    boolean canPlayerDo(@Nullable UUID player, @NotNull ClaimPermissions perm);
-    boolean isSetting(@NotNull ClaimSettings setting);
+    boolean isEnabled(); 
     
 }

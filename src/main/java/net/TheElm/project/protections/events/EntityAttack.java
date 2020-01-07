@@ -136,7 +136,7 @@ public final class EntityAttack {
             if ((target instanceof PlayerEntity)) {
                 if (chunk != null) {
                     // If PvP is disallowed, stop the swing
-                    if (!((IClaimedChunk) chunk).isSetting(ClaimSettings.PLAYER_COMBAT))
+                    if (!((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.PLAYER_COMBAT))
                         return ActionResult.FAIL;
                 }
                 
@@ -150,7 +150,7 @@ public final class EntityAttack {
                     return ActionResult.FAIL;
                 
                 // If player can interact with tameable mobs
-                if ((chunk != null) && ((IClaimedChunk) chunk).isSetting(ClaimSettings.HURT_TAMED))
+                if ((chunk != null) && ((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.HURT_TAMED))
                     return ActionResult.PASS;
                 
             } else {
@@ -172,7 +172,7 @@ public final class EntityAttack {
             if (target instanceof ItemFrameEntity) {
                 ItemFrameEntity itemFrame = (ItemFrameEntity) target;
                 WorldChunk chunk = world.getWorldChunk(itemFrame.getBlockPos());
-                if ((chunk == null) || ((IClaimedChunk) chunk).isSetting(ClaimSettings.CREEPER_GRIEFING))
+                if ((chunk == null) || ((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.CREEPER_GRIEFING))
                     return ActionResult.PASS;
             }
         } else {

@@ -30,6 +30,7 @@ import net.TheElm.project.interfaces.BlockPlaceCallback;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.utilities.DeathChestUtils;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -155,7 +156,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
     @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
         // Read the players money
-        if (tag.contains( MoneyHolder.SAVE_KEY ))
+        if (tag.contains( MoneyHolder.SAVE_KEY, NbtType.NUMBER ))
             this.dataTracker.set( MONEY, tag.getInt( MoneyHolder.SAVE_KEY ) );
     }
     

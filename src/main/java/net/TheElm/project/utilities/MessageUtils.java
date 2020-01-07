@@ -207,12 +207,31 @@ public final class MessageUtils {
         return MessageUtils.dimensionToTextComponent( separator, pos.getX(), pos.getY(), pos.getZ() );
     }
     public static Text dimensionToTextComponent(final String separator, final int x, final int y, final int z) {
+        String[] pos = MessageUtils.posToString(x, y, z);
         return new LiteralText("")
-            .append(new LiteralText("" + x).formatted(Formatting.AQUA))
+            .append(new LiteralText(pos[0]).formatted(Formatting.AQUA))
             .append(separator)
-            .append(new LiteralText("" + y).formatted(Formatting.AQUA))
+            .append(new LiteralText(pos[1]).formatted(Formatting.AQUA))
             .append(separator)
-            .append(new LiteralText("" + z).formatted(Formatting.AQUA));
+            .append(new LiteralText(pos[2]).formatted(Formatting.AQUA));
+    }
+    
+    public static String blockPosToString(final BlockPos pos) {
+        return MessageUtils.blockPosToString(pos, ", ");
+    }
+    public static String blockPosToString(final BlockPos pos, final String separator) {
+        return MessageUtils.blockPosToString(separator, pos.getX(), pos.getY(), pos.getZ());
+    }
+    public static String blockPosToString(final String separator, final int x, final int y, final int z) {
+        return String.join( separator, MessageUtils.posToString( x, y, z ));
+    }
+    
+    private static String[] posToString(final int x, final int y, final int z) {
+        return new String[]{
+            String.valueOf( x ),
+            String.valueOf( y ),
+            String.valueOf( z )
+        };
     }
     
     // Format a message to chat from a player

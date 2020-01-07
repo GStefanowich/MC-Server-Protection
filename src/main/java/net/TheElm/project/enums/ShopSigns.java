@@ -76,7 +76,6 @@ import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Overwrite;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -718,7 +717,7 @@ public enum ShopSigns {
      * Allow players to buy chunk claims
      */
     PLOTS( Formatting.GREEN ) {
-        @Overwrite
+        @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign(signBuilder, creator);
             
@@ -783,7 +782,7 @@ public enum ShopSigns {
             
             return Either.right( true );
         }
-        @Overwrite
+        @Override
         public boolean isEnabled() {
             return (SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.DO_CLAIMS.get() && (SewingMachineConfig.INSTANCE.PLAYER_CLAIM_BUY_LIMIT.get() != 0));
         }
