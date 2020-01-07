@@ -88,7 +88,7 @@ public abstract class TamedLead extends LivingEntity {
         WorldChunk chunk = this.getEntityWorld().getWorldChunk( this.getBlockPos() );
         
         // If player can interact with tameable
-        if (( chunk != null ) && ((IClaimedChunk) chunk).isSetting( ClaimSettings.HURT_TAMED ))
+        if (( chunk != null ) && ((IClaimedChunk) chunk).isSetting( this.getBlockPos(), ClaimSettings.HURT_TAMED ))
             return;
         
         Text owner;

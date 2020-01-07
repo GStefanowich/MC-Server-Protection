@@ -119,9 +119,7 @@ public final class ClaimantPlayer extends Claimant {
     public final boolean getProtectedChunkSetting(ClaimSettings setting) {
         if ( this.CHUNK_CLAIM_OPTIONS.containsKey( setting ) )
             return this.CHUNK_CLAIM_OPTIONS.get( setting );
-        if ( CoreMod.spawnID.equals( this.getId() ) )
-            return setting.getSpawnDefault();
-        return setting.getPlayerDefault();
+        return setting.getDefault( this.getId() );
     }
     public final int getMaxChunkLimit() {
         return this.additionalClaims + SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get();

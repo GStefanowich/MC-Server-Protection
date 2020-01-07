@@ -237,17 +237,23 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         return permReq.canPerform( userRank ) || ((town != null) && (this.chunkPlayer.getId().equals( town.getOwner() )) && permReq.canPerform(town.getFriendRank( player )));
     }
     @Override
-    public boolean canPlayerDo(@NotNull BlockPos blockPos, @Nullable UUID player, @NotNull ClaimPermissions perm) {
-        return this.getClaim( blockPos )
+    public boolean canPlayerDo(@NotNull BlockPos pos, @Nullable UUID player, @NotNull ClaimPermissions perm) {
+        return this.getClaim( pos )
             .canPlayerDo( player, perm );
     }
+    @Override
     public boolean isSetting(@NotNull ClaimSettings setting) {
-        boolean permission;
-        if ( this.chunkPlayer == null )
-            permission = setting.getPlayerDefault();
+        if (this.chunkPlayer == null)
+            return setting.getDefault( this.getOwner() );
+        return this.chunkPlayer.getProtectedChunkSetting( setting );
+    }
+    @Override
+    public boolean isSetting(@NotNull BlockPos pos, @NotNull ClaimSettings setting) {
+        if ( !setting.isEnabled() )
+            return setting.getDefault( this.getOwner() );
         else
-            permission = this.chunkPlayer.getProtectedChunkSetting( setting );
-        return permission;
+            return this.getClaim( pos )
+                .isSetting( setting );
     }
     
     @Override @NotNull

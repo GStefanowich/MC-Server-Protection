@@ -25,18 +25,27 @@
 
 package net.TheElm.project.interfaces;
 
-import net.TheElm.project.enums.ClaimPermissions;
-import net.TheElm.project.enums.ClaimSettings;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.UUID;
-
-public interface Claim {
+public interface BlockBreakEventCallback {
+    Event<BlockBreakEventCallback> EVENT = EventFactory.createArrayBacked( BlockBreakEventCallback.class, (listeners) -> (player, world, hand, blockPos, direction) -> {
+        for (BlockBreakEventCallback event : listeners) {
+            ActionResult result = event.activate(player, world, hand, blockPos, direction);
+            if (result != ActionResult.PASS)
+                return result;
+        }
+        
+        return ActionResult.PASS;
+    });
     
-    @Nullable
-    UUID getOwner();
-    boolean canPlayerDo(@Nullable UUID player, @NotNull ClaimPermissions perm);
-    boolean isSetting(@NotNull ClaimSettings setting);
-    
+    ActionResult activate(@NotNull final ServerPlayerEntity player, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace);
 }

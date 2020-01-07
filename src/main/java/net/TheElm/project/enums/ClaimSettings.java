@@ -25,17 +25,66 @@
 
 package net.TheElm.project.enums;
 
+import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.interfaces.BoolEnums;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.Nullable;
 
-public enum ClaimSettings {
+import java.util.UUID;
+
+public enum ClaimSettings implements BoolEnums {
     // "False positives"
-    ENDERMAN_GRIEFING( false, true, false ),
-    CREEPER_GRIEFING( false, true, false ),
-    PLAYER_COMBAT( false, true, false ),
-    HURT_TAMED( false, false, false ),
+    ENDERMAN_GRIEFING( false, true, false ) {
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_GRIEFING_ENDERMAN.get();
+        }
+    },
+    CREEPER_GRIEFING( false, true, false ) {
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_GRIEFING_CREEPER.get();
+        }
+    },
+    GHAST_GRIEFING( false, true, false ) {
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_GRIEFING_GHAST.get();
+        }
+    },
+    PLAYER_COMBAT( false, true, false ) {
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_PLAYER_COMBAT.get();
+        }
+    },
+    HURT_TAMED( false, false, false ) {
+        @Override
+        public boolean isEnabled() {
+            return true;
+        }
+    },
     
     // "True positives"
-    CROP_AUTOREPLANT( true, false, true );
+    CROP_AUTOREPLANT( true, false, true ) {
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_CROP_AUTOREPLANT.get();
+        }
+    },
+    TREE_CAPACITATE(true, false, false ) {
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_TREE_CAPACITATOR.get();
+        }
+    },
+    VEIN_MINER( true, false, false ) {
+        @Override
+        public boolean isEnabled() {
+            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_VEIN_MINER.get();
+        }
+    };
     
     private final boolean valueShouldBe;
     private final boolean playrDef;
@@ -59,11 +108,16 @@ public enum ClaimSettings {
             return Formatting.GREEN;
         }
     }
-    public boolean getPlayerDefault() {
+    private boolean getPlayerDefault() {
         return this.playrDef;
     }
-    public boolean getSpawnDefault() {
+    private boolean getSpawnDefault() {
         return this.spawnDef;
+    }
+    public boolean getDefault(@Nullable UUID owner) {
+        if (CoreMod.spawnID.equals( owner ))
+            return this.getSpawnDefault();
+        return this.getPlayerDefault();
     }
     
 }

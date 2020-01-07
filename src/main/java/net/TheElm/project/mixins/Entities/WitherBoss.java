@@ -25,20 +25,27 @@
 
 package net.TheElm.project.mixins.Entities;
 
+import net.TheElm.project.interfaces.ConstructableEntity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.RangedAttackMob;
 import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(WitherEntity.class)
-public abstract class WitherBoss extends HostileEntity implements RangedAttackMob {
+import java.util.UUID;
 
+@Mixin(WitherEntity.class)
+public abstract class WitherBoss extends HostileEntity implements RangedAttackMob, ConstructableEntity {
+    
+    UUID chunkSpawnedInOwner = null;
+    
     protected WitherBoss(EntityType<? extends HostileEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
     }
@@ -46,6 +53,29 @@ public abstract class WitherBoss extends HostileEntity implements RangedAttackMo
     @Inject(at = @At(value = "INVOKE", target = "net/minecraft/world/World.playGlobalEvent(ILnet/minecraft/util/math/BlockPos;I)V", shift = At.Shift.BEFORE), method = "mobTick")
     public void overrideWorldSound(CallbackInfo callback) {
         this.world.playLevelEvent( 1023, new BlockPos(this), 0 );
+    }
+    
+    @Override @Nullable
+    public UUID getEntityOwner() {
+        return this.chunkSpawnedInOwner;
+    }
+    
+    @Override
+    public void setEntityOwner(UUID owner) {
+        this.chunkSpawnedInOwner = owner;
+    }
+    
+    @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
+    public void onSavingData(CompoundTag tag, CallbackInfo callback) {
+        // Save the players money
+        if (this.getEntityOwner() != null)
+            tag.putUuid( "WitherCreator", this.getEntityOwner() );
+    }
+    @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
+    public void onReadingData(CompoundTag tag, CallbackInfo callback) {
+        // Read the players money
+        if (tag.containsUuid( "WitherCreator" ))
+            this.setEntityOwner(tag.getUuid("WitherCreator" ));
     }
     
 }

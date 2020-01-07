@@ -29,6 +29,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -38,6 +39,7 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 import java.util.concurrent.LinkedBlockingDeque;
 
 public final class EventLogger implements Runnable {
@@ -94,6 +96,10 @@ public final class EventLogger implements Runnable {
         // Get the dimension
         DimensionType dimension = world.dimension.getType();
         
+        UUID responsible = source instanceof PlayerEntity ? source.getUuid() : ( source instanceof TameableEntity ? ((TameableEntity)source).getOwnerUuid() : null);
+        if (responsible == null)
+            return false;
+        
         // Save the change
         try (MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT INTO `logging_Blocks` ( `blockWorld`, `blockX`, `blockY`, `blockZ`, `block`, `updatedBy`, `updatedEvent`, `updatedAt` ) VALUES ( ?, ?, ?, ?, ?, ?, ?, NOW() );")
             .addPrepared(dimension.getRawId())
@@ -101,7 +107,7 @@ public final class EventLogger implements Runnable {
             .addPrepared(blockPos.getY())
             .addPrepared(blockPos.getZ())
             .addPrepared(translationKey)
-            .addPrepared(source instanceof PlayerEntity ? source.getUuid() : null)
+            .addPrepared(responsible)
             .addPrepared(action)) {
             
             stmt.executeUpdate();

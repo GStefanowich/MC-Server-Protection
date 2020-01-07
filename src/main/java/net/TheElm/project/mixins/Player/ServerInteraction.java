@@ -43,6 +43,7 @@ import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
+import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -111,6 +112,14 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
         if (this.ranks == null)
             this.ranks = RankUtils.loadPlayerRanks(this.player.getGameProfile());
         return this.ranks;
+    }
+    
+    /*
+     * Health Bars
+     */
+    @NotNull
+    public ServerBossBar getHealthBar() {
+        return ((PlayerData)this.player).getHealthBar();
     }
     
     /*
@@ -205,7 +214,13 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
     // When player leaves
     @Inject(at = @At("RETURN"), method = "onDisconnected")
     public void onPlayerDisconnect(final CallbackInfo callback) {
+        // Clear the players location from the cache
+        // (Will show location again when logged back in)
         CoreMod.PLAYER_LOCATIONS.remove( this.player );
+        
+        // Remove players from the health bar when disconnecting
+        // (Don't have floating health bars remaining on-screen)
+        this.getHealthBar().clearPlayers();
     }
     
     // Change the chat format
@@ -319,7 +334,7 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
                 } finally {
                     if (popupText != null) {
                         // Show that PvP is enabled
-                        if (claimedChunk.isSetting(ClaimSettings.PLAYER_COMBAT)) {
+                        if (claimedChunk.isSetting(playerPos, ClaimSettings.PLAYER_COMBAT)) {
                             popupText.append(
                                 new LiteralText(" [").formatted(Formatting.RED)
                                     .append(TranslatableServerSide.text(player, "claim.chunk.pvp"))

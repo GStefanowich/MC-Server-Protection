@@ -28,8 +28,10 @@ package net.TheElm.project.interfaces;
 import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.ranks.PlayerRank;
+import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface PlayerData {
@@ -80,4 +82,10 @@ public interface PlayerData {
      */
     CompassDirections cycleCompass();
     CompassDirections getCompass();
+    
+    /*
+     * Health Bar
+     */
+    @NotNull
+    ServerBossBar getHealthBar();
 }

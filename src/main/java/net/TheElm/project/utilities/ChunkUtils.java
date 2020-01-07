@@ -29,6 +29,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
+import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.Claim;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -38,6 +39,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
@@ -48,6 +50,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -93,8 +96,8 @@ public final class ChunkUtils {
     public static boolean canPlayerBreakInChunk(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.BLOCKS, player, blockPos );
     }
-    public static boolean canPlayerBreakInChunk(@NotNull UUID playerId, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.BLOCKS, playerId, chunk, blockPos );
+    public static boolean canPlayerBreakInChunk(@Nullable UUID playerId, @NotNull World world, @NotNull BlockPos blockPos) {
+        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.BLOCKS, playerId, world.getWorldChunk( blockPos ), blockPos );
     }
     
     /**
@@ -183,6 +186,15 @@ public final class ChunkUtils {
         return permReq.canPerform( userRank );
     }
     
+    public static boolean isSetting(@NotNull ClaimSettings setting, @NotNull World world, @NotNull BlockPos blockPos) {
+        WorldChunk chunk = world.getWorldChunk( blockPos );
+        if (chunk != null) {
+            return ((IClaimedChunk) chunk)
+                .isSetting(blockPos, setting);
+        }
+        return setting.getDefault( null );
+    }
+    
     /*
      * Claim slices between two areas
      */
@@ -259,6 +271,10 @@ public final class ChunkUtils {
         if (player.getEntityWorld().dimension.getType() == DimensionType.THE_NETHER)
             return TranslatableServerSide.text(player, "claim.wilderness.nether").formatted(Formatting.LIGHT_PURPLE);
         return TranslatableServerSide.text( player, "claim.wilderness.general" ).formatted(Formatting.GREEN);
+    }
+    
+    public static Optional<UUID> getPosOwner(World world, BlockPos pos) {
+        return Optional.ofNullable( ((IClaimedChunk)world.getChunk( pos )).getOwner() );
     }
     
     /*
@@ -339,6 +355,13 @@ public final class ChunkUtils {
             
             // Return the test if the user can perform the action (If friend of chunk owner OR if friend of town and chunk owned by town owner)
             return permReq.canPerform( userRank );
+        }
+        
+        @Override
+        public boolean isSetting(@NotNull ClaimSettings setting) {
+            if (this.owner == null)
+                return setting.getDefault( null );
+            return this.owner.getProtectedChunkSetting( setting );
         }
     }
     

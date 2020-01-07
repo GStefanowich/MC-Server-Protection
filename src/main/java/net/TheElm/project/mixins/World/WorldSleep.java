@@ -25,11 +25,17 @@
 
 package net.TheElm.project.mixins.World;
 
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.interfaces.ConstructableEntity;
 import net.TheElm.project.interfaces.SleepingWorld;
+import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.SleepUtils;
 import net.TheElm.project.utilities.TitleUtils;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
@@ -45,10 +51,13 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.text.NumberFormat;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 
@@ -99,6 +108,19 @@ public abstract class WorldSleep extends World implements SleepingWorld {
         TitleUtils.showPlayerAlert((ServerWorld)(World) this,
             new LiteralText( "Rise and shine! Day " + formatter.format( worldDay ) + " has begun." )
         );
+    }
+    
+    @Inject(at = @At("TAIL"), method = "spawnEntity")
+    public void onSpawnMob(Entity entity, CallbackInfoReturnable<Boolean> callback) {
+        if (entity instanceof ConstructableEntity) {
+            WitherEntity wither = (WitherEntity) entity;
+            Optional<UUID> chunkOwner;
+            if ((chunkOwner = ChunkUtils.getPosOwner( this.getWorld(), entity.getBlockPos() )).isPresent())
+                ((ConstructableEntity)entity).setEntityOwner( chunkOwner.get() );
+            
+            if (entity instanceof WitherEntity)
+                CoreMod.logInfo("A new Wither Boss was summoned at " + MessageUtils.blockPosToString( wither.getBlockPos() ));
+        }
     }
     
     @Override
