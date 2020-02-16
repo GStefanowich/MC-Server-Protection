@@ -1,0 +1,79 @@
+{
+  "chat.change.town": "切换为城镇聊天频道",
+  "chat.change.global": "切换为全体聊天频道",
+  "chat.change.local": "切换为本地聊天频道",
+  
+  "claim.chunk.pvp": "PvP",
+  "claim.chunk.self": "你的 %s",
+  "claim.chunk.entering.generic": "进入 %s",
+  "claim.chunk.entering.owned": "进入 %s的 %s",
+  "claim.chunk.entering.town": "进入 %s (%s)",
+  "claim.chunk.entering.town.owned": "进入 %s - %s (%s)",
+  "claim.chunk.error.max": "你无法声明更多区块。",
+  "claim.chunk.error.claimed": "该区块已被声明。",
+  "claim.chunk.error.not_players": "该区块不属于你。",
+  "claim.chunk.error.not_claimed": "该区块没有被声明。",
+  "claim.chunk.error.radius_owned": "此区域内的一个区块属于%s。",
+  "claim.chunk.claimed": "你已经声明了 %d 个区块。",
+  "claim.chunk.unclaimed": "你已取消声明 %d 个区块。",
+  
+  "claim.block.locked": "这个 %s 属于 %s",
+  
+  "claim.wilderness.general": "野外",
+  "claim.wilderness.end": "虚空地带",
+  "claim.wilderness.nether": "荒芜地带",
+  
+  "player.none_found": "无法找到任何玩家。",
+  "player.abilities.flying_self.enabled": "飞行已启用。",
+  "player.abilities.flying_self.disabled": "飞行已禁用。",
+  "player.abilities.flying_other.enabled": "飞行已对 %s 启用。",
+  "player.abilities.flying_other.disabled": "飞行已对 %s禁用。",
+  
+  "player.abilities.godmode_self.enabled": "上帝模式已启用。",
+  "player.abilities.godmode_self.disabled": "上帝模式已禁用",
+  "player.abilities.godmode_other.enabled": "上帝模式已对 %s 启用。",
+  "player.abilities.godmode_other.disabled": "上帝模式已对 %s禁用。",
+  
+  "player.abilities.healed_self": "你已被治疗。",
+  "player.abilities.healed_other": "%s 被治疗。",
+  "player.abilities.healed_dead": "%s 死亡了。",
+  
+  "player.money": "您的余额: $%d",
+  "player.death_chest.location": "一个新的阵亡箱子已被生成在 %s.",
+  
+  "friends.rank.self": "你不能改变自己的等级。",
+  
+  "town.found": "%s 建立了名为 \"%s\" 的新城镇。",
+  "town.disband": "%s 解散了他们的城镇 \"%s\"。",
+  "town.found.poor": "你需要 %s 来创建一个城镇。",
+  "town.invite.receive": "你已被邀请至 \"%s\" ，邀请人为 %s",
+  "town.invite.join": "你加入了 %s.",
+  "town.invite.sent": "向 %s 发送加入你的城镇的邀请。",
+  "town.invite.rank": "你没有足够高的级别来邀请他人。",
+  "town.invite.fail": "无法邀请该玩家至你的城镇。",
+  "town.invite.missing": "你没有收到该城镇的邀请。",
+  
+  "warp.random.search": "请在我们为你找一个美妙的度假地的时候保持注意力集中~",
+  "warp.random.build": "建立你的新家！",
+  "warp.random.teleported": "你现在距离出生点有 %d 个方块的距离。请不要丢失这个传送点，它会帮你回到出生点。",
+  
+  "warp.notice.player.outside_spawn": "传送指令仅在出生区可用。",
+  "warp.notice.target.outside_spawn": "该名玩家在不在出生区内。",
+  "warp.notice.no_request": "该名玩家并未尝试传送到你的位置。",
+  "warp.notice.no_warp": "该名玩家没有传送点。",
+  "warp.notice.offline": "该名玩家不能在离线时收到你的传送请求。",
+  "warp.notice.player": "%s 传送到了你的传送点。",
+  
+  "shop.error.database": "在进行操作时发生了一个错误。",
+  "shop.error.chest_open": "不能在箱子打开时进行该操作。",
+  "shop.error.self_sell": "不能向自己出售物品。",
+  "shop.error.self_buy": "不能购买自己的物品。",
+  "shop.error.stock_player": "你没有 %s。",
+  "shop.error.stock_chest": "箱子内的 %s 已售完。",
+  "shop.error.money_player": "你没有足够的钱。",
+  "shop.error.money_chest": "商店的拥有者没有足够的钱。",
+  
+  "spawn.set.missing_bed": "复活点必须设置在一张床上。",
+  
+  "ruler.no_block": "一个方块的位置无法找到。"
+}
