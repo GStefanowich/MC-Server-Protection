@@ -29,6 +29,7 @@ import net.TheElm.project.utilities.ColorUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.CatEntity;
 import net.minecraft.entity.passive.TameableEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.util.DyeColor;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -45,8 +46,10 @@ public abstract class CatDye extends TameableEntity {
     
     @Inject(at = @At("TAIL"), method = "setCollarColor")
     public void onUpdateCollar(DyeColor dye, CallbackInfo callback) {
+        // TODO: Fix color sync to the client
         if (this.hasCustomName())
-            this.setCustomName(this.getCustomName().formatted(ColorUtils.getNearestFormatting(dye)));
+            this.setCustomName(new LiteralText(this.getCustomName().asString())
+                .formatted(ColorUtils.getNearestFormatting(dye)));
     }
     
 }
