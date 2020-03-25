@@ -46,6 +46,7 @@ public abstract class WolfDye extends TameableEntity {
     
     @Inject(at = @At("RETURN"), method = "setCollarColor")
     public void onUpdateCollar(DyeColor dye, CallbackInfo callback) {
+        // TODO: Fix color sync to the client
         if (this.hasCustomName())
             this.setCustomName(new LiteralText(this.getCustomName().asString())
                 .formatted(ColorUtils.getNearestFormatting(dye)));
