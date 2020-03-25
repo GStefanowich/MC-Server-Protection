@@ -56,7 +56,6 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.dimension.TheEndDimension;
 
 import java.util.Collection;
 import java.util.UUID;
@@ -118,13 +117,10 @@ public final class TeleportsCommand {
                     // Get location information
                     ServerCommandSource source = context.getSource();
                     ServerPlayerEntity player = source.getPlayer();
-                    ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.THE_END);
                     
-                    WarpUtils.teleportPlayer(
-                        world,
-                        player,
-                        TheEndDimension.SPAWN_POINT
-                    );
+                    // Move the player to the end
+                    player.changeDimension(DimensionType.THE_END);
+                    
                     return Command.SINGLE_SUCCESS;
                 })
             );

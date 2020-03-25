@@ -25,81 +25,92 @@
 
 package net.TheElm.project.mixins.Player;
 
-import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import com.mojang.authlib.GameProfile;
 import net.TheElm.project.enums.ChatRooms;
-import net.TheElm.project.enums.ClaimSettings;
-import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.interfaces.BlockBreakCallback;
+import net.TheElm.project.interfaces.BlockInteractionCallback;
+import net.TheElm.project.interfaces.ItemUseCallback;
 import net.TheElm.project.interfaces.PlayerChat;
-import net.TheElm.project.interfaces.PlayerData;
-import net.TheElm.project.interfaces.PlayerMovement;
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.interfaces.PlayerPermissions;
 import net.TheElm.project.protections.ranks.PlayerRank;
-import net.TheElm.project.utilities.CasingUtils;
-import net.TheElm.project.utilities.ChunkUtils;
-import net.TheElm.project.utilities.MessageUtils;
-import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.RankUtils;
-import net.TheElm.project.utilities.TitleUtils;
-import net.TheElm.project.utilities.TranslatableServerSide;
-import net.minecraft.entity.boss.ServerBossBar;
+import net.minecraft.block.BedBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.DoorBlock;
+import net.minecraft.block.HorizontalFacingBlock;
+import net.minecraft.block.TallPlantBlock;
+import net.minecraft.block.enums.BedPart;
+import net.minecraft.block.enums.DoubleBlockHalf;
+import net.minecraft.client.network.packet.BlockUpdateS2CPacket;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.ClientConnection;
-import net.minecraft.network.Packet;
-import net.minecraft.network.listener.ServerPlayPacketListener;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.network.packet.ChatMessageC2SPacket;
-import net.minecraft.server.network.packet.PlayerMoveC2SPacket;
-import net.minecraft.server.network.packet.VehicleMoveC2SPacket;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.server.network.ServerPlayerInteractionManager;
+import net.minecraft.server.network.packet.PlayerActionC2SPacket.Action;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.WorldChunk;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.text.NumberFormat;
-import java.util.Calendar;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.UUID;
 
-@Mixin(ServerPlayNetworkHandler.class)
-public abstract class ServerInteraction implements ServerPlayPacketListener, PlayerMovement, PlayerChat, PlayerData {
+@Mixin(ServerPlayerInteractionManager.class)
+public abstract class ServerInteraction implements PlayerPermissions, PlayerChat {
+    
+    @Shadow public ServerWorld world;
+    @Shadow public ServerPlayerEntity player;
     
     /*
-     * Shadow Methods
+     * Chat Handlers
      */
-    @Shadow @Final public ClientConnection client;
-    @Shadow @Final private MinecraftServer server;
-    @Shadow private ServerPlayerEntity player;
-    @Shadow private int messageCooldown;
+    private ChatRooms chatRoom = ChatRooms.GLOBAL;
+    private HashSet<UUID> mutedPlayers = new HashSet<>();
+    private boolean isGlobalMuted = false;
     
-    @Shadow public native void sendPacket(Packet<?> packet);
-    @Shadow public native void disconnect(Text text);
-    @Shadow private native void executeCommand(String string);
-    
-    /*
-     * Claims
-     */
-    private ClaimantPlayer playerClaimData = null;
+    @Override @NotNull
+    public ChatRooms getChatRoom() {
+        return this.chatRoom;
+    }
+    @Override
+    public void setChatRoom(@NotNull ChatRooms room) {
+        // Set the chat room
+        this.chatRoom = room;
+    }
     
     @Override
-    public ClaimantPlayer getClaim() {
-        return this.playerClaimData;
+    public boolean toggleMute() {
+        return this.toggleMute(!this.isGlobalMuted);
+    }
+    @Override
+    public boolean toggleMute(boolean muted) {
+        return (this.isGlobalMuted = muted);
+    }
+    @Override
+    public boolean toggleMute(GameProfile player) {
+        UUID uuid = player.getId();
+        if (!this.mutedPlayers.remove(uuid))
+            return this.mutedPlayers.add(uuid);
+        else return false;
+    }
+    @Override
+    public boolean isMuted() {
+        return this.isGlobalMuted;
+    }
+    @Override
+    public boolean isMuted(GameProfile player) {
+        return this.mutedPlayers.contains(player.getId());
     }
     
     /*
@@ -113,241 +124,62 @@ public abstract class ServerInteraction implements ServerPlayPacketListener, Pla
             this.ranks = RankUtils.loadPlayerRanks(this.player.getGameProfile());
         return this.ranks;
     }
-    
-    /*
-     * Health Bars
-     */
-    @NotNull
-    public ServerBossBar getHealthBar() {
-        return ((PlayerData)this.player).getHealthBar();
-    }
-    
-    /*
-     * Chat Handlers
-     */
-    private ChatRooms chatRoom = ChatRooms.GLOBAL;
-    
-    @Override @NotNull
-    public ChatRooms getChatRoom() {
-        return this.chatRoom;
-    }
     @Override
-    public void setChatRoom(@NotNull ChatRooms room) {
-        // Set the chat room
-        this.chatRoom = room;
+    public void resetRanks() {
+        this.ranks = null;
     }
     
-    /*
-     * Modified methods
-     */
-    
-    // On connect
-    @Inject(at = @At("RETURN"), method = "<init>")
-    public void onPlayerConnect(MinecraftServer server, ClientConnection client, ServerPlayerEntity player, CallbackInfo callback) {
-        // Set the players position as in the wilderness
-        CoreMod.PLAYER_LOCATIONS.put( player, null );
-        
-        // Initialize user claims from database
-        this.playerClaimData = ( SewingMachineConfig.INSTANCE.DO_CLAIMS.get() ? ClaimantPlayer.get( player.getUuid() ) : null );
-        
-        // Check if server has been joined before
-        if (((PlayerData) player).getFirstJoinAt() == null) {
-            // Get starting money
-            int startingMoney = SewingMachineConfig.INSTANCE.STARTING_MONEY.get();
-            
-            // Give the player the starting amount
-            if ( SewingMachineConfig.INSTANCE.DO_MONEY.get() && (startingMoney > 0))
-                MoneyUtils.givePlayerMoney( player, startingMoney );
-            
-            // Give the player the starting items
-            for (Map.Entry<Item, Integer> item : SewingMachineConfig.INSTANCE.STARTING_ITEMS.get().entrySet()) {
-                ItemStack stack = new ItemStack( item.getKey() );
-                stack.setCount( item.getValue() );
-                
-                player.inventory.offerOrDrop( player.world, stack );
-            }
-            
-            // Set first join for later referencing
-            ((PlayerData) player).updateFirstJoin();
-        } else {
-            Long lastJoin;
-            int allowance = SewingMachineConfig.INSTANCE.DAILY_ALLOWANCE.get();
-            
-            // If we should give a daily allowance
-            if ((allowance > 0) && ((lastJoin = ((PlayerData) player).getLastJoinAt()) != null)) {
-                
-                // Get the timestamp of the start of today
-                Calendar calendar = Calendar.getInstance();
-                calendar.set(Calendar.HOUR_OF_DAY, 0);
-                calendar.set(Calendar.MINUTE, 0);
-                calendar.set(Calendar.SECOND, 0);
-                calendar.set(Calendar.MILLISECOND, 0);
-                long startOfDay = calendar.getTimeInMillis();
-                
-                // If players last join was before the start of TODAY
-                if (lastJoin <= startOfDay) {
-                    // Give that player money
-                    MoneyUtils.givePlayerMoney(player, allowance);
-                    
-                    // Tell them they were awarded money
-                    player.sendMessage(new LiteralText("You were given $").formatted(Formatting.YELLOW).append(new LiteralText(NumberFormat.getInstance().format(allowance)).formatted(Formatting.AQUA, Formatting.BOLD)).append(" for logging in today!"));
-                }
-            }
+    @Inject(at = @At("HEAD"), method = "processBlockBreakingAction", cancellable = true)
+    private void onBlockBreakChange(BlockPos blockPos, Action action, Direction direction, int i, CallbackInfo info) {
+        ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this.player, this.world, Hand.MAIN_HAND, blockPos, direction, action);
+        if ( result != ActionResult.PASS ) {
+            this.updateNeighboringBlockStates( blockPos );
+            info.cancel();
         }
-        
-        // Always update join time to NOW
-        ((PlayerData) player).updateLastJoin();
     }
     
-    // On player move
-    @Inject(at = @At("TAIL"), method = "onPlayerMove")
-    public void onPlayerMove(final PlayerMoveC2SPacket movement, final CallbackInfo callback) {
-        this.movedPlayer( this.player );
-    }
-    
-    // On vehicle move
-    @Inject(at = @At("TAIL"), method = "onVehicleMove")
-    public void onVehicleMove(final VehicleMoveC2SPacket movement, final CallbackInfo callback) {
-        this.movedPlayer( this.player );
-    }
-    
-    // When player leaves
-    @Inject(at = @At("RETURN"), method = "onDisconnected")
-    public void onPlayerDisconnect(final CallbackInfo callback) {
-        // Clear the players location from the cache
-        // (Will show location again when logged back in)
-        CoreMod.PLAYER_LOCATIONS.remove( this.player );
-        
-        // Remove players from the health bar when disconnecting
-        // (Don't have floating health bars remaining on-screen)
-        this.getHealthBar().clearPlayers();
-    }
-    
-    // Change the chat format
-    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/server/PlayerManager.broadcastChatMessage(Lnet/minecraft/text/Text;Z)V"), method = "onChatMessage", cancellable = true)
-    public void onChatMessage(ChatMessageC2SPacket chatMessageC2SPacket, CallbackInfo callback) {
-        if (!SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
-            return;
-        
-        // Parse the users message
-        String rawString = StringUtils.normalizeSpace(chatMessageC2SPacket.getChatMessage());
-        
-        // The chatroom to send the message in
-        ChatRooms chatRoom = this.getChatRoom();
-        
-        // Create a chat message
-        Text chatText = MessageUtils.formatPlayerMessage( this.player, chatRoom, rawString );
-        
-        // Send the new chat message to the currently selected chat room
-        MessageUtils.sendTo(chatRoom, this.player, chatText);
-        
-        // Cancel the original
-        callback.cancel();
-    }
-    
-    public void movedPlayer( final ServerPlayerEntity player ) {
-        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
-            return;
-        
-        World world = player.getEntityWorld();
-        BlockPos blockPos = player.getBlockPos();
-        
-        WorldChunk chunk = world.getWorldChunk( blockPos );
-        if ( !CoreMod.PLAYER_LOCATIONS.containsKey( player ) ) {
-            this.showPlayerNewLocation( player, chunk );
-            
-        } else {
-            UUID playerLocation = CoreMod.PLAYER_LOCATIONS.get( player );
-            UUID chunkOwner = ( chunk == null ? null : ((IClaimedChunk) chunk).getOwner( blockPos ) );
-            
-            // If the location has changed
-            if ( ( ( playerLocation != null ) && (!playerLocation.equals( chunkOwner )) ) || ( ( chunkOwner != null ) && (!chunkOwner.equals( playerLocation )) ) ) {
-                this.showPlayerNewLocation( player, chunk );
+    @Inject(at = @At("HEAD"), method = "interactItem", cancellable = true)
+    private void beforeItemInteract(final PlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
+        if (!player.world.isClient) {
+            ActionResult result = ItemUseCallback.EVENT.invoker().use((ServerPlayerEntity) player, world, hand, itemStack);
+            if (result != ActionResult.PASS) {
+                callback.setReturnValue(result);
             }
         }
     }
     
-    public void showPlayerNewLocation(@NotNull final PlayerEntity player, @Nullable final WorldChunk local) {
-        BlockPos playerPos = player.getBlockPos();
-        UUID locationOwner;
-        
-        if ( ( local == null ) || ((locationOwner = ((IClaimedChunk) local).getOwner( playerPos )) == null ) ) {
-            Text popupText = ChunkUtils.getPlayerWorldWilderness( player )
-                .append(
-                    new LiteralText( " [" ).formatted(Formatting.RED)
-                        .append( TranslatableServerSide.text( player, "claim.chunk.pvp" ) )
-                        .append("]" )
-                );
-            
-            // If the player is in the wilderness
-            CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, null );
-            TitleUtils.showPlayerAlert(player, Formatting.GREEN, popupText );
-            
-        } else {
-            CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, locationOwner);
-            (new Thread(() -> {
-                IClaimedChunk claimedChunk = (IClaimedChunk) local;
-                Text popupText = null;
-                popupText = new LiteralText("Entering ")
-                    .formatted(Formatting.WHITE);
-                
-                ClaimantPlayer owner  = ClaimantPlayer.get( locationOwner );
-                
-                try {
-                    // If player is in spawn protection
-                    if (locationOwner.equals(CoreMod.spawnID)) {
-                        popupText.append(
-                            owner.getName( player )
-                        );
-                        return;
-                    }
-                    
-                    String landName = "homestead";
-                    ClaimantTown town;
-                    if ((town = claimedChunk.getTown()) != null) {
-                        landName = town.getTownType();
-                    }
-                    
-                    if (town == null) {
-                        // If player is in their own land (No Town)
-                        if ((locationOwner.equals(claimedChunk.getOwner())) && (locationOwner.equals(player.getUuid()))) {
-                            popupText.append(new LiteralText("your " + landName).formatted(Formatting.DARK_GREEN));
-                            return;
-                        }
-                        
-                        // If player is in another players area (No Town)
-                        popupText.append(owner.getName( player ))
-                            .append(new LiteralText("'s " + landName));
-                        return;
-                    }
-                    
-                    // If player is in another players town
-                    popupText.append(town.getName(player.getUuid())); // Town name
-                    if (!locationOwner.equals(town.getOwner())) // Append the chunk owner (If not the towns)
-                        popupText.append(" - ").append(claimedChunk.getOwnerName( player ));
-                    popupText.append( // Town type
-                        new LiteralText(" (")
-                            .append(new LiteralText(CasingUtils.Words(town.getTownType())).formatted(Formatting.DARK_AQUA))
-                            .append(")")
-                    );
-                    
-                } finally {
-                    if (popupText != null) {
-                        // Show that PvP is enabled
-                        if (claimedChunk.isSetting(playerPos, ClaimSettings.PLAYER_COMBAT)) {
-                            popupText.append(
-                                new LiteralText(" [").formatted(Formatting.RED)
-                                    .append(TranslatableServerSide.text(player, "claim.chunk.pvp"))
-                                    .append("]")
-                            );
-                        }
-                        
-                        // Show the message to the player
-                        TitleUtils.showPlayerAlert(player, Formatting.WHITE, popupText);
-                    }
-                }
-            })).start();
+    @Inject(at = @At("HEAD"), method = "interactBlock", cancellable = true)
+    private void beforeBlockInteract(final PlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, final BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> callback) {
+        if (!player.world.isClient) {
+            ActionResult result = BlockInteractionCallback.EVENT.invoker().interact((ServerPlayerEntity)player, world, hand, itemStack, blockHitResult);
+            if (result != ActionResult.PASS) {
+                this.updateNeighboringBlockStates(blockHitResult.getBlockPos());
+                callback.setReturnValue(result);
+            }
         }
     }
     
+    private void updateNeighboringBlockStates(BlockPos blockPos) {
+        BlockState blockState = world.getBlockState(blockPos);
+        Block block = blockState.getBlock();
+        BlockPos part = null;
+        
+        if ( block instanceof BedBlock ) {
+            Direction facing = blockState.get(HorizontalFacingBlock.FACING);
+            BedPart bedPart = blockState.get(BedBlock.PART);
+            part = blockPos.offset(bedPart == BedPart.HEAD ? facing.getOpposite() : facing);
+        } else if ( block instanceof HorizontalFacingBlock ) {
+            Direction facing = blockState.get(HorizontalFacingBlock.FACING);
+            part = blockPos.offset(facing.getOpposite());
+        } else if ( block instanceof TallPlantBlock ) {
+            DoubleBlockHalf half = blockState.get(TallPlantBlock.HALF);
+            part = blockPos.offset(half == DoubleBlockHalf.LOWER ? Direction.UP : Direction.DOWN);
+        } else if ( block instanceof DoorBlock ) {
+            DoubleBlockHalf half = blockState.get(DoorBlock.HALF);
+            part = half == DoubleBlockHalf.LOWER ? blockPos.up() : blockPos.down();
+        }
+        
+        if (part != null) this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(world, part));
+        this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(world, blockPos));
+    }
 }

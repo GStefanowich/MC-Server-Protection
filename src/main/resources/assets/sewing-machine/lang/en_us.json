@@ -3,6 +3,16 @@
   "chat.change.global": "Switched to Global chat.",
   "chat.change.local": "Switched to Local chat.",
   
+  "chat.muted": "You are muted and cannot send messages in %s.",
+  "chat.mute.player": "You will no longer see messages from %s.",
+  "chat.unmute.player": "You will now see messages from %s.",
+  "chat.mute.global": "%s is now muted for all players.",
+  "chat.unmute.global": "%s is no longer muted for all players.",
+  
+  "chat.room.local": "local",
+  "chat.room.global": "global",
+  "chat.room.town": "town",
+  
   "claim.chunk.pvp": "PvP",
   "claim.chunk.self": "your %s",
   "claim.chunk.entering.generic": "Entering %s",
@@ -40,6 +50,7 @@
   
   "player.money": "Your wallet: $%d",
   "player.death_chest.location": "A new death chest has been spawned at %s.",
+  "player.no_backpack": "You do not have a backpack.",
   
   "friends.rank.self": "You can't change your own rank.",
   
@@ -72,6 +83,9 @@
   "shop.error.stock_chest": "Chest is out of %s.",
   "shop.error.money_player": "You do not have enough money.",
   "shop.error.money_chest": "Shop owner does not have enough money.",
+  
+  "backpack.no_downsize": "You cannot buy a backpack smaller than your current backpack.",
+  "backpack.need_previous": "You must buy the previous backpack first.",
   
   "spawn.set.missing_bed": "Spawn position must be set at a bed.",
   

@@ -27,7 +27,6 @@ package net.TheElm.project.interfaces;
 
 import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.TheElm.project.protections.ranks.PlayerRank;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -49,7 +48,6 @@ public interface PlayerData {
      * Player claim information
      */
     ClaimantPlayer getClaim();
-    PlayerRank[] getRanks();
     
     /*
      * Player join information

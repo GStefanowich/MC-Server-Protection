@@ -32,9 +32,11 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.exceptions.ShopBuilderException;
+import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.protections.BlockDistance;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
@@ -837,6 +839,94 @@ public enum ShopSigns {
             player.giveItemStack( book );
             player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
             return Either.right( true );
+        }
+    },
+    /*
+     * Player backpacks
+     */
+    BACKPACK( Formatting.YELLOW ) {
+        @Override
+        public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
+            super.formatSign(signBuilder, creator);
+            
+            if (!creator.isCreative())
+                return false;
+            
+            // Parse the String from the sign
+            if ((!signBuilder.textMatchCount(signBuilder.getLines()[1])) || (!signBuilder.textMatchPrice(signBuilder.getLines()[2])))
+                return false;
+            
+            if ((signBuilder.itemSize() % 9 != 0 ) || signBuilder.itemSize() > 54)
+                throw new ShopBuilderException(new LiteralText("Backpack size must be multiples of 9, no larger than 54."));
+            
+            NumberFormat formatter = NumberFormat.getInstance();
+            
+            SignBlockEntity sign = signBuilder.getSign();
+            sign.setTextOnRow( 1, new LiteralText(formatter.format(signBuilder.itemSize()) + " slots"));
+            sign.setTextOnRow( 2,
+                new LiteralText("for ").formatted(Formatting.BLACK)
+                    .append(new LiteralText("$" + signBuilder.shopPrice()).formatted(Formatting.DARK_BLUE))
+            );
+            sign.setTextOnRow( 3, new LiteralText(""));
+            
+            // Set the sign owner to SPAWN
+            signBuilder.shopOwner( CoreMod.spawnID );
+            
+            return true;
+        }
+        @Override
+        public Either<Text, Boolean> onInteract(ServerPlayerEntity player, BlockPos signPos, ShopSignBlockEntity sign) {
+            // These should NOT be null
+            if ((sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null))
+                return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
+            
+            // Get the number of rows in the backpack
+            int newPackRows = sign.getShopItemCount() / 9;
+            
+            // If shops disabled
+            if ( !this.isEnabled() )
+                return Either.right( true );
+            
+            BackpackCarrier backpackCarrier = (BackpackCarrier) player;
+            PlayerBackpack backpack = backpackCarrier.getBackpack();
+            
+            try {
+                // Check the current backpack size
+                if ((backpack != null) && (newPackRows <= backpack.getRows()))
+                    return Either.left(TranslatableServerSide.text(player, "backpack.no_downsize"));
+                
+                // If backpacks must be purchased in order
+                if ( SewingMachineConfig.INSTANCE.BACKPACK_SEQUENTIAL.get() ) {
+                    int currentRows = ( backpack == null ? 0 : backpack.getRows() );
+                    if ((newPackRows - 1) > currentRows)
+                        return Either.left(TranslatableServerSide.text(player, "backpack.need_previous"));
+                }
+                
+                // Take the players money
+                if (!MoneyUtils.takePlayerMoney(player, sign.getShopItemPrice()))
+                    return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
+                
+                backpackCarrier.setBackpack(( backpack == null ?
+                    new PlayerBackpack(player, newPackRows)
+                    : new PlayerBackpack(backpack, newPackRows)
+                ));
+                
+                player.sendMessage(new LiteralText("Backpack size is now ").formatted(Formatting.YELLOW)
+                    .append(new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() )).formatted(Formatting.AQUA))
+                );
+                
+                // Log the transaction
+                CoreMod.logInfo( player.getName().asString() + " bought a " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " slot backpack for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) );
+                
+            } catch (NotEnoughMoneyException e) {
+                return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
+            }
+            
+            return Either.right( true );
+        }
+        @Override
+        public boolean isEnabled() {
+            return (SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.ALLOW_BACKPACKS.get());
         }
     };
     

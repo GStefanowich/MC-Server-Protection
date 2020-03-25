@@ -36,13 +36,9 @@ public class AnvilCost {
     
     @ModifyConstant(method = "updateResult", constant = @Constant(intValue = 40))
     private int anvilMaxLevelOverride(int oldValue) {
-        int modLimit = SewingMachineConfig.INSTANCE.ANVIL_UPPER_LIMIT.get();
-        if (modLimit == 0)
-            return oldValue;
-        if (modLimit < 0)
+        if (SewingMachineConfig.INSTANCE.ANVIL_DISABLE_COST_LIMIT.isSet())
             return Integer.MAX_VALUE;
-        
-        return modLimit;
+        return oldValue;
     }
     
 }

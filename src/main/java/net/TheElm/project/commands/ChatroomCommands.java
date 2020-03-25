@@ -29,41 +29,42 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerChat;
+import net.TheElm.project.utilities.CommandUtilities;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
+import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.command.arguments.MessageArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 
 public final class ChatroomCommands {
     
     private ChatroomCommands() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        if (!SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
-            return;
-        
-        LiteralCommandNode<ServerCommandSource> townChat = dispatcher.register(CommandManager.literal("t")
-            .requires(ClaimCommand::sourceInTown)
+        dispatcher.register(CommandManager.literal("t")
+            .requires((source) -> SewingMachineConfig.INSTANCE.CHAT_MODIFY.get() && ClaimCommand.sourceInTown( source ))
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
             .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
         );
         CoreMod.logDebug( "- Registered Town chat command" );
         
-        LiteralCommandNode<ServerCommandSource> globalChat = dispatcher.register(CommandManager.literal("g")
+        dispatcher.register(CommandManager.literal("g")
+            .requires((source) -> SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
             .executes((context -> switchToChatRoom(context, ChatRooms.GLOBAL)))
         );
         CoreMod.logDebug( "- Registered Global chat command" );
         
-        LiteralCommandNode<ServerCommandSource> localChat = dispatcher.register(CommandManager.literal("l")
+        dispatcher.register(CommandManager.literal("l")
+            .requires((source) -> SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
             .executes((context -> switchToChatRoom(context, ChatRooms.LOCAL)))
         );
@@ -71,34 +72,56 @@ public final class ChatroomCommands {
         
         dispatcher.register(CommandManager.literal("chat")
             .then(CommandManager.literal("town")
-                .requires(ClaimCommand::sourceInTown)
+                .requires(( source ) -> SewingMachineConfig.INSTANCE.CHAT_MODIFY.get() && ClaimCommand.sourceInTown( source ))
                 .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
                 .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
             )
             .then(CommandManager.literal("global")
+                .requires(( source ) -> SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
                 .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
                 .executes((context -> switchToChatRoom(context, ChatRooms.GLOBAL)))
             )
             .then(CommandManager.literal("local")
+                .requires(( source ) -> SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
                 .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
                 .executes((context -> switchToChatRoom(context, ChatRooms.LOCAL)))
             )
         );
         
+        dispatcher.register(CommandManager.literal("mute")
+            .requires(( source ) -> (SewingMachineConfig.INSTANCE.CHAT_MODIFY.get()) && (SewingMachineConfig.INSTANCE.CHAT_MUTE_SELF.get() || SewingMachineConfig.INSTANCE.CHAT_MUTE_OP.get() && source.hasPermissionLevel( 3 )))
+            .then(CommandManager.argument("player", EntityArgumentType.player())
+                .suggests( CommandUtilities::getOnlinePlayerNames )
+                .then(CommandManager.literal("global")
+                    .requires(( source ) -> SewingMachineConfig.INSTANCE.CHAT_MUTE_OP.get() && source.hasPermissionLevel( 3 ))
+                    .executes(ChatroomCommands::opMute)
+                )
+                .executes(ChatroomCommands::playerMute)
+            )
+        );
     }
     
-    private static int sendToChatRoom(final CommandContext<ServerCommandSource> context, final ChatRooms chatRoom) throws CommandSyntaxException {
+    private static int sendToChatRoom(final CommandContext<ServerCommandSource> context, final ChatRooms room) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
+        
+        if ((room != ChatRooms.TOWN) && ((PlayerChat)player).isMuted()) {
+            player.sendMessage(TranslatableServerSide.text(
+                player,
+                "chat.muted",
+                room
+            ).formatted(Formatting.RED));
+            return Command.SINGLE_SUCCESS;
+        }
         
         // Format the text
         Text chatText = MessageUtils.formatPlayerMessage(
             player,
-            chatRoom,
+            room,
             MessageArgumentType.getMessage(context, "text")
         );
         
         // Send the new chat message to the currently selected chat room
-        MessageUtils.sendTo(chatRoom, player, chatText);
+        MessageUtils.sendTo(room, player, chatText);
         
         return Command.SINGLE_SUCCESS;
     }
@@ -114,4 +137,34 @@ public final class ChatroomCommands {
         return Command.SINGLE_SUCCESS;
     }
     
+    private static int playerMute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        if (!SewingMachineConfig.INSTANCE.CHAT_MUTE_SELF.get())
+            return ChatroomCommands.opMute( context );
+        
+        ServerCommandSource source = context.getSource();
+        PlayerChat self = (PlayerChat)(source.getPlayer());
+        
+        ServerPlayerEntity target = EntityArgumentType.getPlayer( context, "player" );
+        
+        source.sendFeedback(TranslatableServerSide.text(
+            source,
+            (self.toggleMute( target.getGameProfile() ) ? "chat.mute.player" : "chat.unmute.player"),
+            target.getDisplayName()
+        ).formatted(Formatting.GREEN), false);
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int opMute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity target = EntityArgumentType.getPlayer( context, "player" );
+        PlayerChat chatter = (PlayerChat) target;
+        
+        source.sendFeedback(TranslatableServerSide.text(
+            source,
+            (chatter.toggleMute() ? "chat.mute.global" : "chat.unmute.global"),
+            target.getDisplayName()
+        ).formatted(Formatting.GREEN), false);
+        
+        return Command.SINGLE_SUCCESS;
+    }
 }

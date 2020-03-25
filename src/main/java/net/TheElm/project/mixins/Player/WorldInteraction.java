@@ -32,14 +32,18 @@ import net.TheElm.project.commands.PlayerSpawnCommand;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.CompassDirections;
+import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.interfaces.PlayerPermissions;
 import net.TheElm.project.interfaces.PlayerServerLanguage;
+import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.NbtUtils;
+import net.TheElm.project.utilities.RankUtils;
 import net.TheElm.project.utilities.SleepUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.client.network.packet.PlayerSpawnPositionS2CPacket;
@@ -50,8 +54,10 @@ import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
@@ -77,8 +83,9 @@ import java.util.Locale;
 import java.util.Set;
 
 @Mixin(ServerPlayerEntity.class)
-public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerServerLanguage, Nicknamable, PlayerChat {
+public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerPermissions, BackpackCarrier, PlayerServerLanguage, Nicknamable, PlayerChat {
     
+    @Shadow public ServerPlayerInteractionManager interactionManager;
     @Shadow public ServerPlayNetworkHandler networkHandler;
     @Shadow private String clientLanguage;
     @Shadow private boolean notInAnyWorld;
@@ -103,11 +110,24 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     private BlockPos overworldPortal = null;
     private BlockPos theNetherPortal = null;
     
+    // Backpack
+    private PlayerBackpack backpack = null;
+    
     // Compass
     private CompassDirections compassDirections = CompassDirections.SPAWN;
     
     public WorldInteraction(World world_1, GameProfile gameProfile_1) {
         super(world_1, gameProfile_1);
+    }
+    
+    @Inject(at = @At("RETURN"), method = "<init>*")
+    public void onInitialize(CallbackInfo callback) {
+        // Set the player to "adventure"-like if they are not allowed to modify the world
+        if (!RankUtils.hasPermission(this, "world.interact")) {
+            this.abilities.allowModifyWorld = false;
+            this.abilities.invulnerable = true;
+            this.sendAbilitiesUpdate();
+        }
     }
     
     /*
@@ -210,7 +230,11 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     
     @Override
     public PlayerRank[] getRanks() {
-        return ((PlayerData)this.networkHandler).getRanks();
+        return ((PlayerPermissions)this.interactionManager).getRanks();
+    }
+    @Override
+    public void resetRanks() {
+        ((PlayerPermissions)this.interactionManager).resetRanks();
     }
     
     /*
@@ -366,6 +390,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             tag.putInt("playerWarpZ", this.warpPos.getZ());
             tag.putInt("playerWarpD", this.getWarpDimensionId());
         }
+        
         // Store the players nickname
         if ( this.playerNickname != null )
             tag.putString("PlayerNickname", Text.Serializer.toJson(this.playerNickname));
@@ -385,6 +410,18 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         // Store where the player exited the nether at
         if ( this.theNetherPortal != null )
             tag.put("LastPortalNether", NbtUtils.blockPosToTag(this.theNetherPortal));
+        
+        // Store the players backpack
+        if (this.backpack != null) {
+            tag.putInt("BackpackSize", this.backpack.getRows());
+            tag.put("Backpack", this.backpack.getTags());
+    
+            ListTag pickupTags = this.backpack.getPickupTags();
+            if (!pickupTags.isEmpty())
+                tag.put("BackpackPickup", pickupTags);
+        }
+        
+        tag.putBoolean("chatMuted", this.isMuted());
     }
     @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
@@ -418,6 +455,23 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         // Get the entered nether portal
         if (tag.contains("LastPortalNether", NbtType.COMPOUND))
             this.theNetherPortal = NbtUtils.tagToBlockPos(tag.getCompound("LastPortalNether"));
+        
+        // Read the players backpack
+        if (tag.contains("BackpackSize", NbtType.NUMBER) && tag.contains("Backpack", NbtType.LIST)) {
+            this.backpack = new PlayerBackpack(this, tag.getInt("BackpackSize"));
+            this.backpack.readTags(tag.getList("Backpack", NbtType.COMPOUND));
+            
+            if (tag.contains("BackpackPickup", NbtType.LIST))
+                this.backpack.readPickupTags(tag.getList("BackpackPickup", NbtType.STRING));
+        } else {
+            int startingBackpack = SewingMachineConfig.INSTANCE.BACKPACK_STARTING_ROWS.get();
+            if ( startingBackpack > 0 )
+                this.backpack = new PlayerBackpack(this, Math.min(startingBackpack, 6));
+        }
+        
+        // Read if player is muted
+        if (tag.contains("chatMuted", NbtType.BYTE))
+            this.toggleMute(tag.getBoolean("chatMuted"));
     }
     @Inject(at = @At("TAIL"), method = "copyFrom")
     public void onCopyData(ServerPlayerEntity player, boolean alive, CallbackInfo callback) {
@@ -444,6 +498,9 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         
         // Compass directions
         this.setCompassDirection(((PlayerData) player).getCompass());
+        
+        // Copy the backpack inventory
+        this.backpack = ((BackpackCarrier)player).getBackpack();
     }
     
     /*
@@ -469,11 +526,32 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
      */
     @Override @NotNull
     public ChatRooms getChatRoom() {
-        return ((PlayerChat)this.networkHandler).getChatRoom();
+        return ((PlayerChat)this.interactionManager).getChatRoom();
     }
     @Override
     public void setChatRoom(@NotNull ChatRooms room) {
-        ((PlayerChat)this.networkHandler).setChatRoom( room );
+        ((PlayerChat)this.interactionManager).setChatRoom( room );
+    }
+    
+    @Override
+    public boolean toggleMute() {
+        return ((PlayerChat)this.interactionManager).toggleMute();
+    }
+    @Override
+    public boolean toggleMute(boolean muted) {
+        return ((PlayerChat)this.interactionManager).toggleMute(muted);
+    }
+    @Override
+    public boolean toggleMute(GameProfile player) {
+        return ((PlayerChat)this.interactionManager).toggleMute( player );
+    }
+    @Override
+    public boolean isMuted() {
+        return ((PlayerChat)this.interactionManager).isMuted();
+    }
+    @Override
+    public boolean isMuted(GameProfile player) {
+        return ((PlayerChat)this.interactionManager).isMuted( player );
     }
     
     /*
@@ -495,6 +573,18 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Nullable
     public BlockPos getRulerB() {
         return this.rulerB;
+    }
+    
+    /*
+     * Player Backpack
+     */
+    @Override @Nullable
+    public PlayerBackpack getBackpack() {
+        return this.backpack;
+    }
+    @Override
+    public void setBackpack( PlayerBackpack backpack ) {
+        this.backpack = backpack;
     }
     
     /*

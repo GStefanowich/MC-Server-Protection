@@ -27,7 +27,7 @@ package net.TheElm.project.config;
 
 import com.google.gson.JsonElement;
 
-public abstract class ConfigBase {
+public abstract class ConfigBase<T extends Object> {
     
     private final String path;
     private boolean wasDefined = false;

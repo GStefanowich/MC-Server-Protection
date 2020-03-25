@@ -50,24 +50,23 @@ public final class MiscCommands {
     private MiscCommands() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        if (SewingMachineConfig.INSTANCE.COMMAND_SHRUG.get()) {
-            dispatcher.register(CommandManager.literal("shrug")
-                    .then(CommandManager.argument("message", StringArgumentType.greedyString())
-                            .executes(MiscCommands::shrugMessage)
-                    )
-                    .executes(MiscCommands::shrug)
-            );
-            CoreMod.logDebug("- Registered Nick command");
-        }
-        if (SewingMachineConfig.INSTANCE.COMMAND_TABLEFLIP.get()) {
-            dispatcher.register(CommandManager.literal("tableflip")
-                    .then(CommandManager.argument("message", StringArgumentType.greedyString())
-                            .executes(MiscCommands::flipMessage)
-                    )
-                    .executes(MiscCommands::flip)
-            );
-            CoreMod.logDebug("- Registered Nick command");
-        }
+        dispatcher.register(CommandManager.literal("shrug")
+            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_SHRUG.get())
+            .then(CommandManager.argument("message", StringArgumentType.greedyString())
+                .executes(MiscCommands::shrugMessage)
+            )
+            .executes(MiscCommands::shrug)
+        );
+        CoreMod.logDebug("- Registered Nick command");
+        
+        dispatcher.register(CommandManager.literal("tableflip")
+            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_TABLEFLIP.get())
+            .then(CommandManager.argument("message", StringArgumentType.greedyString())
+                .executes(MiscCommands::flipMessage)
+            )
+            .executes(MiscCommands::flip)
+        );
+        CoreMod.logDebug("- Registered Nick command");
     }
     
     private static int shrug(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

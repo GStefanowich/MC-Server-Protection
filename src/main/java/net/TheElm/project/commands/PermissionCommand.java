@@ -25,18 +25,68 @@
 
 package net.TheElm.project.commands;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.commands.ArgumentTypes.PermissionArgumentType;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 
 public final class PermissionCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        if (SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get()) {
-            
-            CoreMod.logDebug("- Registered Permission command");
-        }
+        dispatcher.register(CommandManager.literal("permissions")
+            .requires((source) -> SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get() && source.hasPermissionLevel( 2 ))
+            .then(CommandManager.literal("help")
+                .then(CommandManager.argument("permission", StringArgumentType.word())
+                    .suggests( PermissionArgumentType::suggestsNodes )
+                    .executes( PermissionCommand::nodeInfo )
+                )
+            )
+            .then(CommandManager.literal("add")
+                .then(CommandManager.argument("rank", StringArgumentType.word())
+                    .suggests( PermissionArgumentType::suggestsRanks )
+                    .then(CommandManager.argument("permission", StringArgumentType.word())
+                        .suggests( PermissionArgumentType::suggestsNodes )
+                        .executes( PermissionCommand::addNodeToRank )
+                    )
+                    .executes( PermissionCommand::addRank )
+                )
+            )
+            .then(CommandManager.literal("remove")
+                .then(CommandManager.argument("rank", StringArgumentType.word())
+                    .suggests( PermissionArgumentType::suggestsRanks )
+                    .then(CommandManager.argument("permission", StringArgumentType.word())
+                        .suggests( PermissionArgumentType::suggestsNodes )
+                        .executes( PermissionCommand::delNodeFromRank )
+                    )
+                    .executes( PermissionCommand::delRank )
+                )
+            )
+        );
+        CoreMod.logDebug("- Registered Permission command");
+    }
+    
+    public static int nodeInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return Command.SINGLE_SUCCESS;
+    }
+    
+    public static int addRank(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return Command.SINGLE_SUCCESS;
+    }
+    public static int delRank(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return Command.SINGLE_SUCCESS;
+    }
+    
+    public static int addNodeToRank(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return Command.SINGLE_SUCCESS;
+    }
+    public static int delNodeFromRank(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return Command.SINGLE_SUCCESS;
     }
     
 }

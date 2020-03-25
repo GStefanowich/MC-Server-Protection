@@ -48,7 +48,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ProjectileEntity.class)
-public abstract class ArrowDamage extends Entity {
+public abstract class ProjectileDamage extends Entity {
     
     @Shadow @Nullable
     public abstract Entity getOwner();
@@ -59,7 +59,7 @@ public abstract class ArrowDamage extends Entity {
     @Shadow
     private SoundEvent sound;
     
-    protected ArrowDamage(EntityType<? extends ProjectileEntity> entityType_1, World world_1) {
+    protected ProjectileDamage(EntityType<? extends ProjectileEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
     }
     

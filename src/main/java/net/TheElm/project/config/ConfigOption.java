@@ -27,23 +27,30 @@ package net.TheElm.project.config;
 
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonSerializer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
-public final class ConfigOption<T extends Object> extends ConfigBase {
+public final class ConfigOption<T extends Object> extends ConfigBase<T> {
     
     private final Function<JsonElement, T> setter;
     private T value;
+    private JsonSerializer<T> serializer = null;
     
-    public ConfigOption(@NotNull String location, Function<JsonElement, T> setter) {
+    public ConfigOption(@NotNull String location, @Nullable Function<JsonElement, T> setter) {
         this( location, null, setter );
     }
-    public ConfigOption(@NotNull String location, T defaultValue, Function<JsonElement, T> setter) {
+    public ConfigOption(@NotNull String location, @Nullable T defaultValue, @Nullable Function<JsonElement, T> setter) {
+        this( location, defaultValue, setter, null );
+    }
+    public ConfigOption(@NotNull String location, @Nullable T defaultValue, @Nullable Function<JsonElement, T> setter, @Nullable JsonSerializer<T> serializer) {
         super( location );
         
         this.value = defaultValue;
         this.setter = setter;
+        this.serializer = serializer;
     }
     
     @Override
@@ -53,9 +60,34 @@ public final class ConfigOption<T extends Object> extends ConfigBase {
     public final T get() {
         return this.value;
     }
+    
+    public final boolean isSet() {
+        T val = this.get();
+        if (val instanceof Boolean)
+            return (Boolean)val;
+        if (val instanceof Number)
+            return ((Number)val).longValue() >= 0;
+        return val != null;
+    }
+    
     @Override
     public final JsonElement getElement() {
-        return new GsonBuilder().create().toJsonTree(this.value);
+        return ConfigOption.convertToJSON( this.value, this.serializer );
+    }
+    
+    public final ConfigOption<T> serializer(JsonSerializer<T> serializer) {
+        this.serializer = serializer;
+        return this;
+    }
+    
+    public static JsonElement convertToJSON( @Nullable Object src ) {
+        return ConfigOption.convertToJSON( src, null );
+    }
+    public static <T extends Object> JsonElement convertToJSON( @Nullable T src, @Nullable JsonSerializer<T> serializer ) {
+        GsonBuilder builder = new GsonBuilder();
+        if (src != null && serializer != null)
+            builder.registerTypeAdapter(src.getClass(), serializer);
+        return builder.create().toJsonTree( src );
     }
     
 }

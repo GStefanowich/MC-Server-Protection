@@ -23,33 +23,22 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Entities;
+package net.TheElm.project.mixins.Items;
 
-import net.TheElm.project.utilities.ChunkUtils;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.passive.AnimalEntity;
-import net.minecraft.entity.passive.CowEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.World;
+import net.TheElm.project.config.SewingMachineConfig;
+import net.minecraft.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(CowEntity.class)
-public abstract class CowMilk extends AnimalEntity {
+@Mixin(ItemStack.class)
+public abstract class RepairCost {
     
-    protected CowMilk(EntityType<? extends AnimalEntity> entityType_1, World world_1) {
-        super(entityType_1, world_1);
-    }
-    
-    @Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
-    private void playerInteractMod(final PlayerEntity player, final Hand hand, CallbackInfoReturnable<Boolean> callback) {
-        BlockPos mobPositioning = this.getBlockPos();
-        if (!ChunkUtils.canPlayerInteractFriendlies( player, mobPositioning ))
-            callback.setReturnValue( false );
+    @Inject(at = @At("RETURN"), method = "getRepairCost", cancellable = true)
+    public void onGetCost(CallbackInfoReturnable<Integer> callback) {
+        if (SewingMachineConfig.INSTANCE.ANVIL_DISABLE_COST_REPAIR.get())
+            callback.setReturnValue( 0 );
     }
     
 }

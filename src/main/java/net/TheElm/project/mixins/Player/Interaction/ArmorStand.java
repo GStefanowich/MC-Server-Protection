@@ -33,6 +33,7 @@ import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.fabricmc.fabric.api.util.NbtType;
+import net.minecraft.block.Block;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -43,6 +44,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
@@ -57,11 +59,14 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
 
@@ -71,8 +76,42 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     private UUID corpsePlayerUUID = null;
     private ListTag corpsePlayerItems = null;
     
+    @Shadow public native boolean shouldShowArms();
+    @Shadow private native void setShowArms( boolean show );
+    
+    @Shadow public native boolean shouldHideBasePlate();
+    @Shadow private native void setHideBasePlate(boolean bl);
+    
     protected ArmorStand(EntityType<? extends LivingEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
+    }
+    
+    /*
+     * Armor Stand Modifications
+     */
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/block/Block.dropStack(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/item/ItemStack;)V"), method = "method_6924")
+    private void onDropSelf(World world, BlockPos blockPos, ItemStack itemStack) {
+        boolean showArms = this.shouldShowArms();
+        boolean hidePlate = this.shouldHideBasePlate();
+        
+        if (showArms || hidePlate) {
+            CompoundTag name = itemStack.getOrCreateSubTag("display");
+            CompoundTag enti = itemStack.getOrCreateSubTag("EntityTag");
+            enti.putBoolean("ShowArms", showArms);
+            enti.putBoolean("NoBasePlate", hidePlate);
+            
+            ListTag lore = new ListTag();
+            lore.add(StringTag.of("{\"text\":\""
+                + String.join(", ", Arrays.asList(
+                    ( hidePlate ? "No base" : "Base" ),
+                    ( showArms ? "Arms" : "No Arms" )
+                ))
+                + "\",\"color\":\"gray\"}"));
+            
+            name.put("Lore", lore);
+        }
+        
+        Block.dropStack(world, blockPos, itemStack);
     }
     
     /*
@@ -94,12 +133,67 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
         }
         
         // Player is in creative
-        if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || player.isSpectator())
+        if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get())
+            || player.isSpectator()
+            // If player can loot armor stand
+            || ChunkUtils.canPlayerLootChestsInChunk(player, this.getBlockPos()))
+        {
+            ItemStack handStack = player.getStackInHand( hand );
+            
+            if (!this.shouldHideBasePlate()) {
+                if (player.isSneaking() && handStack.isEmpty() && (vec3d.y < 0.5D)) {
+                    this.setHideBasePlate( true );
+                    
+                    this.dropStack(new ItemStack(Items.SMOOTH_STONE_SLAB, 1));
+                    
+                    callback.setReturnValue(ActionResult.SUCCESS);
+                    return;
+                }
+            } else if (handStack.getItem().equals(Items.SMOOTH_STONE_SLAB)) {
+                handStack.decrement( 1 );
+                this.setHideBasePlate( false );
+                
+                callback.setReturnValue(ActionResult.SUCCESS);
+                return;
+            }
+            
+            // Take away the arms
+            if (this.shouldShowArms()) {
+                if (player.isSneaking() && handStack.isEmpty()) {
+                    this.setShowArms( false );
+                    
+                    ItemStack mainHand = this.getStackInHand(Hand.MAIN_HAND);
+                    ItemStack offHand = this.getStackInHand(Hand.OFF_HAND);
+                    
+                    // Remove items from hands
+                    if (!mainHand.isEmpty()) {
+                        this.dropStack(mainHand);
+                        this.setStackInHand(Hand.MAIN_HAND, ItemStack.EMPTY);
+                    }
+                    if (!offHand.isEmpty()) {
+                        this.dropStack(offHand);
+                        this.setStackInHand(Hand.OFF_HAND, ItemStack.EMPTY);
+                    }
+                    
+                    // Drop the arms on the ground
+                    this.dropStack(new ItemStack(Items.STICK, 2));
+                    
+                    callback.setReturnValue(ActionResult.SUCCESS);
+                    return;
+                }
+            }
+            
+            // Add arms
+            else if (handStack.getItem().equals(Items.STICK) && (handStack.getCount() >= 2)) {
+                handStack.decrement( 2 );
+                this.setShowArms( true );
+                
+                callback.setReturnValue(ActionResult.SUCCESS);
+                return;
+            }
+            
             return;
-        
-        // If player can loot armor stand
-        if (ChunkUtils.canPlayerLootChestsInChunk(player, this.getBlockPos()))
-            return;
+        }
         
         // Player sound
         this.playSound( EntityUtils.getLockSound( this ), 1, 1 );

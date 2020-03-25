@@ -70,13 +70,11 @@ public final class MoneyCommand {
     private MoneyCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        if (!SewingMachineConfig.INSTANCE.DO_MONEY.get())
-            return;
-        
         /*
          * Player Pay
          */
         LiteralCommandNode<ServerCommandSource> pay = dispatcher.register( CommandManager.literal( "pay" )
+            .requires((source) -> SewingMachineConfig.INSTANCE.DO_MONEY.get())
             .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
                 .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
                     .suggests( CommandUtilities::getAllPlayerNames )
@@ -90,6 +88,7 @@ public final class MoneyCommand {
          * Player Money Management
          */
         dispatcher.register( CommandManager.literal("money" )
+            .requires((source) -> SewingMachineConfig.INSTANCE.DO_MONEY.get())
             // Admin GIVE money (Adds money)
             .then( CommandManager.literal("give" )
                 // If player is OP
@@ -321,7 +320,7 @@ public final class MoneyCommand {
                 MoneyUtils.givePlayerMoney( player, amount );
         }
         
-        return Command.SINGLE_SUCCESS;
+        return MoneyCommand.commandMoneyGet( context );
     }
     
     private static int commandMoneyRequest(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

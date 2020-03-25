@@ -25,17 +25,19 @@
 
 package net.TheElm.project.protections.ranks;
 
+import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 public final class PlayerRank implements Comparable<PlayerRank> {
     
-    private final HashSet<String> nodes = new HashSet<>();
+    private final SortedSet<String> nodes = new TreeSet<>();
     private String parent;
     
     private final String iden;
@@ -82,10 +84,10 @@ public final class PlayerRank implements Comparable<PlayerRank> {
         return contains;
     }
     public boolean isAdditive(String node) {
-        return this.hasNode("+*") || this.hasNode("+" + node);
+        return this.hasNode("+" + Permissions.ALL_PERMISSIONS) || this.hasNode("+" + node);
     }
     public boolean isSubtractive(String node) {
-        return this.hasNode("-*") || this.hasNode("-" + node);
+        return this.hasNode("-" + Permissions.ALL_PERMISSIONS) || this.hasNode("-" + node);
     }
     
     /*
