@@ -25,6 +25,8 @@
 
 package net.TheElm.project.mixins.Player;
 
+import net.TheElm.project.interfaces.BackpackCarrier;
+import net.TheElm.project.objects.PlayerBackpack;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -37,14 +39,24 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerInventory.class)
 public abstract class FullInventory implements Inventory, Nameable {
     
     @Shadow public PlayerEntity player;
     
+    @Shadow public abstract boolean insertStack(ItemStack itemStack);
+    
+    @Inject(at = @At("HEAD"), method = "insertStack", cancellable = true)
+    public void onInsertStack(ItemStack itemStack, CallbackInfoReturnable<Boolean> callback) {
+        PlayerBackpack backpack = ((BackpackCarrier)this.player).getBackpack();
+        if ((backpack != null) && backpack.shouldAutoPickup(itemStack) && backpack.insertStack( itemStack ) && itemStack.isEmpty())
+            callback.setReturnValue( true );
+    }
+    
     @Inject(at = @At(value = "INVOKE", target = "net/minecraft/entity/player/PlayerEntity.dropItem(Lnet/minecraft/item/ItemStack;Z)Lnet/minecraft/entity/ItemEntity;"), method = "offerOrDrop", cancellable = true)
-    private void setDropOwner(World world, ItemStack itemStack, CallbackInfo callbackInfo) {
+    private void setDropOwner(World world, ItemStack itemStack, CallbackInfo callback) {
         // Drop the item from the player
         ItemEntity drop = this.player.dropItem( itemStack, true );
         
@@ -52,7 +64,7 @@ public abstract class FullInventory implements Inventory, Nameable {
         if ( drop != null ) drop.setOwner(this.player.getUuid());
         
         // Cancel a second drop
-        callbackInfo.cancel();
+        callback.cancel();
     }
     
 }

@@ -25,9 +25,15 @@
 
 package net.TheElm.project.enums;
 
+import net.TheElm.project.interfaces.ServerTranslatable;
+import net.TheElm.project.utilities.TranslatableServerSide;
+import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.NotNull;
 
-public enum ChatRooms {
+import java.util.Locale;
+
+public enum ChatRooms implements ServerTranslatable {
     WHISPER( Formatting.LIGHT_PURPLE ),
     LOCAL( Formatting.BLUE ),
     GLOBAL( Formatting.WHITE ),
@@ -37,6 +43,14 @@ public enum ChatRooms {
     
     ChatRooms(Formatting... formattings) {
         this.formatting = formattings;
+    }
+    
+    @Override
+    public @NotNull Text translate(@NotNull Locale locale) {
+        return TranslatableServerSide.text(
+            locale,
+            "chat.room." + this.name().toLowerCase()
+        );
     }
     
     public Formatting[] getFormatting() {

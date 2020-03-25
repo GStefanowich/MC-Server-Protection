@@ -31,6 +31,8 @@ import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.utilities.DeathChestUtils;
 import net.fabricmc.fabric.api.util.NbtType;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -38,6 +40,8 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.item.RangedWeaponItem;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
@@ -130,6 +134,12 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
                 this.hitByOtherPlayerAt = System.currentTimeMillis();
             }
         }
+    }
+    
+    @Inject(at = @At("RETURN"), method = "getArrowType", cancellable = true)
+    public void onCheckArrowType(ItemStack weapon, CallbackInfoReturnable<ItemStack> callback) {
+        if ((weapon.getItem() instanceof RangedWeaponItem) && callback.getReturnValue().isEmpty() && (EnchantmentHelper.getLevel(Enchantments.INFINITY, weapon) > 0 ))
+            callback.setReturnValue(new ItemStack(Items.ARROW));
     }
     
     /* 

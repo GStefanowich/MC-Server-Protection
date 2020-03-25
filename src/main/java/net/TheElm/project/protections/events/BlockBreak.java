@@ -82,8 +82,8 @@ public final class BlockBreak {
         BlockBreakCallback.EVENT.register(BlockBreak::blockBreak);
         
         // Register actions to take after blocks have been broken
-        //BlockBreakEventCallback.EVENT.register(BlockEvents::eventTreeCapacitator);
-        //BlockBreakEventCallback.EVENT.register(BlockEvents::eventVeinMiner);
+        BlockBreakEventCallback.EVENT.register(BlockEvents::eventTreeCapacitator);
+        BlockBreakEventCallback.EVENT.register(BlockEvents::eventVeinMiner);
     }
     
     /**
@@ -96,7 +96,7 @@ public final class BlockBreak {
      * @param action The break status of the block
      * @return If the block is allowed to be broken
      */
-    private static ActionResult blockBreak(@NotNull final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
+    private static ActionResult blockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         ActionResult result;
         if (((result = BlockBreak.canBlockBreak( entity, world, hand, blockPos, blockFace, action)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get() && (action == Action.STOP_DESTROY_BLOCK))
             BlockBreak.onSucceedBreak( entity, world, hand, blockPos, blockFace );
@@ -113,10 +113,13 @@ public final class BlockBreak {
      * @param action The break status of the block
      * @return If the block is allowed to be broken
      */
-    public static ActionResult canBlockBreak(@NotNull final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
+    public static ActionResult canBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
+        if (entity == null && CoreMod.isDebugging())
+            CoreMod.logError(new NullPointerException("'entity' is a Null."));
+        
         if (entity instanceof ServerPlayerEntity) {
             ServerPlayerEntity player = (ServerPlayerEntity) entity;
-    
+            
             // If player is in creative
             if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || (action == Action.ABORT_DESTROY_BLOCK))
                 return ActionResult.PASS;
@@ -248,7 +251,7 @@ public final class BlockBreak {
             );
         }
         else {
-            CoreMod.logInfo( entity.getClass().getCanonicalName() );
+            if (entity != null) CoreMod.logDebug( entity.getClass().getCanonicalName() + " broke a block!" );
         }
         
         return ActionResult.PASS;
@@ -262,7 +265,7 @@ public final class BlockBreak {
      * @param blockPos 
      * @param blockFace 
      */
-    private static void onSucceedBreak(@NotNull final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace) {
+    private static void onSucceedBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace) {
         // Log the block being broken
         BlockBreak.logBlockBreakEvent( entity, world, blockPos );
         
@@ -277,7 +280,7 @@ public final class BlockBreak {
      * @param world The world that the block was broken in
      * @param blockPos The position that the block was broken at
      */
-    private static void logBlockBreakEvent(@NotNull final Entity entity, @NotNull final ServerWorld world, @NotNull final BlockPos blockPos) {
+    private static void logBlockBreakEvent(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final BlockPos blockPos) {
         EventLogger.log(new BlockEvent(entity, BlockAction.BREAK, world.getBlockState(blockPos).getBlock(), blockPos));
     }
     

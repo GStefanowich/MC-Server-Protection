@@ -30,10 +30,10 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.interfaces.CommandSource;
 import net.TheElm.project.interfaces.Nicknamable;
@@ -55,31 +55,30 @@ public final class NickNameCommand {
     private NickNameCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        if (SewingMachineConfig.INSTANCE.DO_PLAYER_NICKS.get()) {
-            LiteralCommandNode<ServerCommandSource> pay = dispatcher.register(CommandManager.literal("nick")
-                .then(CommandManager.literal("reset")
-                    .then(CommandManager.argument("target", EntityArgumentType.player())
-                        .requires((source) -> source.hasPermissionLevel(4))
-                        .executes((context) -> {
-                            ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "target");
-                            return setNickForPlayer(player, null);
-                        })
-                    )
+        dispatcher.register(CommandManager.literal("nick")
+            .requires((source) -> SewingMachineConfig.INSTANCE.DO_PLAYER_NICKS.get())
+            .then(CommandManager.literal("reset")
+                .then(CommandManager.argument("target", EntityArgumentType.player())
+                    .requires((source) -> source.hasPermissionLevel(4))
                     .executes((context) -> {
-                        ServerPlayerEntity player = context.getSource().getPlayer();
+                        ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "target");
                         return setNickForPlayer(player, null);
                     })
                 )
-                .then(CommandManager.argument("nick", StringArgumentType.string())
-                    .requires((source) -> (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get()) || ((CommandSource)source).hasPermission("player.nick"))
-                    .then(CommandManager.argument("color", ColorArgumentType.color())
-                        .executes(NickNameCommand::commandNickSetColored)
-                    )
-                    .executes(NickNameCommand::commandNickSet)
+                .executes((context) -> {
+                    ServerPlayerEntity player = context.getSource().getPlayer();
+                    return setNickForPlayer(player, null);
+                })
+            )
+            .then(CommandManager.argument("nick", StringArgumentType.string())
+                .requires((source) -> (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get()) || ((CommandSource)source).hasPermission(Permissions.PLAYER_NICKNAME))
+                .then(CommandManager.argument("color", ColorArgumentType.color())
+                    .executes(NickNameCommand::commandNickSetColored)
                 )
-            );
-            CoreMod.logDebug("- Registered Nick command");
-        }
+                .executes(NickNameCommand::commandNickSet)
+            )
+        );
+        CoreMod.logDebug("- Registered Nick command");
     }
     
     private static int commandNickSet(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

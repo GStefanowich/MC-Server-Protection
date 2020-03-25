@@ -380,7 +380,8 @@ public final class WarpUtils {
         BlockPos blockPos = player.getBlockPos();
         if (world instanceof ServerWorld) {
             world.playSound( null, blockPos, SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.MASTER, 1.0f, 1.0f );
-            ((ServerWorld) world).spawnParticles(ParticleTypes.POOF,
+            EffectUtils.particleSwirl(ParticleTypes.WITCH, (ServerWorld) world, player.getPos(), 10);
+            /*((ServerWorld) world).spawnParticles(ParticleTypes.POOF,
                 player.getX(),
                 player.getY() + 1.0D,
                 player.getZ(),
@@ -389,7 +390,7 @@ public final class WarpUtils {
                 0.0D,
                 0.0D,
                 0.05D
-            );
+            );*/
         }
     }
     public static BlockPos getWorldSpawn(@NotNull final World world) {

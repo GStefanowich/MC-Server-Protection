@@ -38,7 +38,7 @@ public class Phantom {
     
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/entity/player/PlayerEntity.isSpectator()Z"), method = "spawn")
     public boolean spawn(PlayerEntity player) {
-        return ChunkUtils.isPlayerWithinSpawn((ServerPlayerEntity) player) || player.isSpectator();
+        return player.isSpectator() || ChunkUtils.isPlayerWithinSpawn((ServerPlayerEntity) player);
     }
     
 }

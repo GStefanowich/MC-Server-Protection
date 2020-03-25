@@ -23,33 +23,32 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Entities;
+package net.TheElm.project.mixins.Entities.Decorative;
 
-import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.ColorUtils;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.passive.AnimalEntity;
-import net.minecraft.entity.passive.SheepEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.Hand;
-import net.minecraft.util.math.BlockPos;
+import net.minecraft.entity.passive.TameableEntity;
+import net.minecraft.entity.passive.WolfEntity;
+import net.minecraft.text.LiteralText;
+import net.minecraft.util.DyeColor;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(SheepEntity.class)
-public abstract class SheepShear extends AnimalEntity {
+@Mixin(WolfEntity.class)
+public abstract class WolfDye extends TameableEntity {
     
-    protected SheepShear(EntityType<? extends AnimalEntity> entityType_1, World world_1) {
-        super(entityType_1, world_1);
+    protected WolfDye(EntityType<? extends TameableEntity> entityType, World world) {
+        super(entityType, world);
     }
     
-    @Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
-    private void playerInteractMod(final PlayerEntity player, final Hand hand, CallbackInfoReturnable<Boolean> callback) {
-        BlockPos mobPositioning = this.getBlockPos();
-        if (!ChunkUtils.canPlayerInteractFriendlies( player, mobPositioning ))
-            callback.setReturnValue( false );
+    @Inject(at = @At("RETURN"), method = "setCollarColor")
+    public void onUpdateCollar(DyeColor dye, CallbackInfo callback) {
+        if (this.hasCustomName())
+            this.setCustomName(new LiteralText(this.getCustomName().asString())
+                .formatted(ColorUtils.getNearestFormatting(dye)));
     }
     
 }
