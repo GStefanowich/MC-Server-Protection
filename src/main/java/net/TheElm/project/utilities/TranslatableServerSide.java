@@ -30,6 +30,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.interfaces.PlayerServerLanguage;
+import net.TheElm.project.interfaces.ServerTranslatable;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -55,20 +56,20 @@ public final class TranslatableServerSide {
         player.sendMessage(TranslatableServerSide.text(player, key, objects));
     }
     
-    public static Text text(ServerCommandSource source, String key, Object... objects) {
+    public static @NotNull Text text(ServerCommandSource source, String key, Object... objects) {
         if (source.getEntity() instanceof ServerPlayerEntity)
             return TranslatableServerSide.text( (ServerPlayerEntity)source.getEntity(), key, objects );
         return TranslatableServerSide.text( Locale.getDefault(), key, objects );
     }
-    public static Text text(PlayerEntity player, String key, Object... objects) {
+    public static @NotNull Text text(PlayerEntity player, String key, Object... objects) {
         if (!(player instanceof ServerPlayerEntity))
             return null;
         return TranslatableServerSide.text((ServerPlayerEntity) player, key, objects);
     }
-    public static Text text(ServerPlayerEntity player, String key, Object... objects) {
+    public static @NotNull Text text(ServerPlayerEntity player, String key, Object... objects) {
         return TranslatableServerSide.text( ((PlayerServerLanguage)player).getClientLanguage(), key, objects );
     }
-    private static Text text(Locale language, String key, Object... objects) {
+    public static @NotNull Text text(Locale language, String key, Object... objects) {
         String text = TranslatableServerSide.getTranslation( language, key );
         
         for (int i = 0; i < objects.length; ++i) {
@@ -82,7 +83,7 @@ public final class TranslatableServerSide {
         
         return TranslatableServerSide.replace( language, text, objects);
     }
-    private static Text replace(Locale language, String text, Object... objects) {
+    private static @NotNull Text replace(Locale language, String text, Object... objects) {
         if ( objects.length <= 0 )
             return new LiteralText( text );
         String[] separated = text.split( "((?<=%[a-z])|(?=%[a-z]))" );
@@ -97,6 +98,9 @@ public final class TranslatableServerSide {
             if ( matchAny( seg, "%s", "%d", "%f" ) ) {
                 // Get the objects that were provided
                 Object obj = objects[ O++ ];
+                if (obj instanceof ServerTranslatable)
+                    obj = ((ServerTranslatable)obj).translate( language ).formatted(Formatting.AQUA);
+                
                 if ( ("%s".equalsIgnoreCase( seg )) && ( obj instanceof Text ) ) {
                     // Create if null
                     if (out == null) out = new LiteralText("");

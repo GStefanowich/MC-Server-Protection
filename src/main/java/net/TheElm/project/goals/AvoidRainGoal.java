@@ -67,7 +67,7 @@ public class AvoidRainGoal extends Goal {
         if (this.mob.getRandom().nextInt(120) != 0)
             return false;
         // Find cover
-        return this.mob.isInsideWaterOrRain() && this.foundCover( locateCover() );
+        return this.mob.isTouchingWaterOrRain() && this.foundCover( locateCover() );
     }
     
     @Override

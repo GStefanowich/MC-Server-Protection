@@ -26,6 +26,8 @@
 package net.TheElm.project.protections.events;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.utilities.ChunkUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LogBlock;
@@ -53,7 +55,7 @@ public class BlockEvents {
         BlockState blockState = world.getBlockState( blockPos );
         Block block = blockState.getBlock();
         
-        if (!(block instanceof LogBlock && player.isSneaking()))
+        if (!(ChunkUtils.isSetting(ClaimSettings.TREE_CAPACITATE, world, blockPos) && block instanceof LogBlock && player.isSneaking()))
             return ActionResult.PASS;
         
         CoreMod.logInfo("Broke a tree block.");
@@ -68,7 +70,7 @@ public class BlockEvents {
         BlockState blockState = world.getBlockState( blockPos );
         Block block = blockState.getBlock();
         
-        if (!(block instanceof OreBlock && player.isSneaking()))
+        if (!(ChunkUtils.isSetting(ClaimSettings.VEIN_MINER, world, blockPos) && block instanceof OreBlock && player.isSneaking()))
             return ActionResult.PASS;
         
         Set<BlockPos> ores = BlockEvents.gatherOreVein(block, world, blockPos);
@@ -81,34 +83,39 @@ public class BlockEvents {
         return ActionResult.SUCCESS;
     }
     private static Set<BlockPos> gatherOreVein(@NotNull final Block block, @NotNull final ServerWorld world, @NotNull final BlockPos originPos) {
-        Set<BlockPos> list = new HashSet<>();
+        Set<BlockPos> set = new HashSet<>();
+        
         // Get all of the adjacent ores
-        BlockEvents.gatherOreVein(block, world, originPos, list);
-        return list;
+        BlockEvents.gatherOreVein(block, world, originPos, set);
+        
+        return set;
     }
-    private static void gatherOreVein(@NotNull final Block block, @NotNull final ServerWorld world, @NotNull final BlockPos originPos, @NotNull Set<BlockPos> list, Direction... directions) {
+    private static void gatherOreVein(@NotNull final Block block, @NotNull final ServerWorld world, @NotNull final BlockPos originPos, @NotNull Set<BlockPos> set, Direction... directions) {
         // For all possible directions
         for (Direction direction : Direction.values()) {
             Set<Direction> directionSet = new HashSet<>(Arrays.asList( directions ));
             if (directionSet.contains( direction ))
                 continue;
+            
             BlockPos searchPos = originPos.offset( direction );
             BlockState state = world.getBlockState( searchPos );
             
+            // If ore type is equal
             if (state.getBlock().equals( block )) {
                 boolean added = true;
                 
                 // Add the currently location to the list
-                added = list.add( searchPos );
+                added = set.add( searchPos );
                 
                 // Get more adjacent ore
                 directionSet.add( direction.getOpposite() );
                 
+                // If position was added to the set (Not already in the set)
                 if ( added ) BlockEvents.gatherOreVein(
                     block,
                     world,
                     searchPos,
-                    list,
+                    set,
                     directionSet.toArray(new Direction[0])
                 );
             }

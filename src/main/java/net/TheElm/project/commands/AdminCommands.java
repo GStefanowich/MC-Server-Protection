@@ -27,9 +27,11 @@ package net.TheElm.project.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.utilities.TranslatableServerSide;
@@ -92,6 +94,20 @@ public final class AdminCommands {
                 .executes(AdminCommands::selfRepair)
             );
             CoreMod.logDebug("- Registered Repair command");
+        }
+        
+        // Create DEBUG commands
+        if (CoreMod.isDebugging()) {
+            dispatcher.register(CommandManager.literal("dragon-players")
+                .then(CommandManager.argument("count", IntegerArgumentType.integer( 0 ))
+                    .executes((context) -> {
+                        SewingMachineConfig.INSTANCE.DRAGON_PLAYERS.set(ConfigOption.convertToJSON(
+                            IntegerArgumentType.getInteger( context, "count" )
+                        ));
+                        return Command.SINGLE_SUCCESS;
+                    })
+                )
+            );
         }
     }
     

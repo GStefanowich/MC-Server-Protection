@@ -33,8 +33,9 @@ import com.mojang.authlib.GameProfile;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
-import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.interfaces.PlayerPermissions;
 import net.TheElm.project.protections.ranks.PlayerRank;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,15 +43,18 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class RankUtils {
     
     private static HashMap<String, PlayerRank> RANKS = new LinkedHashMap<>();
+    private static final String GLOBAL_RANK = "*";
     
     private RankUtils() {}
     
@@ -61,6 +65,9 @@ public final class RankUtils {
     public static PlayerRank getRank(@Nullable String identifier) {
         if (identifier == null) return null;
         return RankUtils.RANKS.get( identifier );
+    }
+    public static Set<String> getRanks() {
+        return RANKS.keySet();
     }
     
     /*
@@ -73,7 +80,7 @@ public final class RankUtils {
         return RankUtils.getPlayerRanks(player);
     }
     public static PlayerRank[] getPlayerRanks(@NotNull ServerPlayerEntity player) {
-        return ((PlayerData) player).getRanks();
+        return ((PlayerPermissions) player).getRanks();
     }
     public static PlayerRank[] loadPlayerRanks(@NotNull GameProfile profile) {
         String uuid = profile.getId().toString();
@@ -82,15 +89,15 @@ public final class RankUtils {
             List<PlayerRank> ranks = new ArrayList<>();
             
             // Everyone is a "GLOBAL"
-            PlayerRank rank = getRank("*");
+            PlayerRank rank = getRank(GLOBAL_RANK);
             if (rank != null) ranks.add(rank);
             
             // Get all the players listed ranks
             JsonElement list;
-            if ((json.has(uuid) && ((list = json.get(uuid)) instanceof JsonArray)) || (json.has("*") && ((list = json.get("*")) instanceof JsonArray))) {
+            if ((json.has(uuid) && ((list = json.get(uuid)) instanceof JsonArray)) || (json.has(GLOBAL_RANK) && ((list = json.get(GLOBAL_RANK)) instanceof JsonArray))) {
                 for (JsonElement listElement : list.getAsJsonArray()) {
                     String identifier = listElement.getAsString();
-                    if (!"*".equals(identifier)) {
+                    if (!GLOBAL_RANK.equals(identifier)) {
                         rank = getRank(identifier);
                         if (rank != null) ranks.add(rank);
                     }
@@ -121,12 +128,21 @@ public final class RankUtils {
         
         return result;
     }
+    public static boolean hasPermission(@NotNull PlayerEntity player, String permission) {
+        if (!(player instanceof ServerPlayerEntity)) return true;
+        return RankUtils.hasPermission( (ServerPlayerEntity)player, permission );
+    }
     
-    public static void init() {
+    public static boolean reload() {
+        return RankUtils.reload( false );
+    }
+    public static boolean reload( boolean verbose ) {
         // Check if enabled in the config
         if (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get())
-            return;
+            return false;
         RankUtils.RANKS.clear();
+        
+        CoreMod.logInfo("Loading permissions file.");
         
         // Read from the `ranks.json` file
         try {
@@ -136,22 +152,22 @@ public final class RankUtils {
                 String identifier = list.getKey();
                 JsonElement tmp = list.getValue();
                 if (!tmp.isJsonObject()) continue;
-                
+    
                 // Get the rank information
                 JsonObject rankData = tmp.getAsJsonObject();
-                
+    
                 // Get how the rank should be displayed
                 String display = null;
-                if (rankData.has( "display" ) && (tmp = (rankData.get("display"))).getAsJsonPrimitive().isString())
+                if (rankData.has("display") && (tmp = (rankData.get("display"))).getAsJsonPrimitive().isString())
                     display = tmp.getAsString();
-                
+    
                 // Create the rank
-                PlayerRank rank = new PlayerRank( identifier, display );
-                
+                PlayerRank rank = new PlayerRank(identifier, display);
+    
                 // Set the rank parent
                 if (rankData.has("inherit") && (tmp = (rankData.get("inherit"))).getAsJsonPrimitive().isString())
-                    rank.setParent( tmp.getAsString() );
-                
+                    rank.setParent(tmp.getAsString());
+    
                 // Add the ranks permissions
                 if (rankData.has("permissions") && (tmp = rankData.get("permissions")).isJsonArray()) {
                     for (JsonElement node : tmp.getAsJsonArray()) {
@@ -160,9 +176,23 @@ public final class RankUtils {
                     }
                 }
                 
-                RANKS.put( identifier, rank );
+                RANKS.put(identifier, rank);
             }
-        } catch (FileNotFoundException ignored) {}
+            
+            return true;
+        } catch (IOException e) {
+            if ( verbose ) CoreMod.logError( e );
+            return false;
+        } finally {
+            // Permission to interact with the world should be given by default, unless taken away
+            PlayerRank rank;
+            if ((rank = getRank(GLOBAL_RANK)) != null) {
+                if (!( rank.isAdditive("world.interact") || rank.isSubtractive("world.interact") )) {
+                    rank.addNode("+world.interact");
+                    CoreMod.logInfo("Added interact to the EVERYONE perm.");
+                } else CoreMod.logInfo("EVERYONE perm has perm.");
+            } else CoreMod.logInfo("Could not find EVERYONE perm.");
+        }
     }
     private static JsonObject fileRanks() throws FileNotFoundException {
         JsonObject main = RankUtils.fileLoad();
@@ -188,6 +218,6 @@ public final class RankUtils {
         JsonElement element = jp.parse(new FileReader(ranksFile));
         return element.getAsJsonObject();
     }
-    static { init(); }
+    static { reload(); }
     
 }

@@ -37,9 +37,9 @@ import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.InventoryUtils.ItemRarity;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -56,37 +56,38 @@ public final class HoldingCommand {
     private HoldingCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        if (SewingMachineConfig.INSTANCE.COMMAND_EQUIPMENT.get()) {
-            // Command to display the object the player is holding
-            dispatcher.register(CommandManager.literal("hand")
+        // Command to display the object the player is holding
+        for (EquipmentSlot slot : EquipmentSlot.values()) {
+            dispatcher.register(CommandManager.literal(slot.getName())
+                .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_EQUIPMENT.get())
                 .then(CommandManager.argument("message", StringArgumentType.greedyString())
-                    .executes(HoldingCommand::handMessage)
+                    .executes((source) -> HoldingCommand.handMessage(source, slot))
                 )
-                .executes(HoldingCommand::hand)
+                .executes((source) -> HoldingCommand.slot(source, slot))
             );
-            CoreMod.logDebug("- Registered Hand command");
         }
+        CoreMod.logDebug("- Registered Equipment command");
     }
     
-    private static int hand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return HoldingCommand.holding( context, "" );
+    private static int slot(CommandContext<ServerCommandSource> context, EquipmentSlot slot) throws CommandSyntaxException {
+        return HoldingCommand.holding( context, slot,"" );
     }
-    private static int handMessage(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return HoldingCommand.holding( context, StringArgumentType.getString(context, "message") );
+    private static int handMessage(CommandContext<ServerCommandSource> context, EquipmentSlot slot) throws CommandSyntaxException {
+        return HoldingCommand.holding( context, slot, StringArgumentType.getString(context, "message") );
     }
-    private static int holding(CommandContext<ServerCommandSource> context, String message) throws CommandSyntaxException {
+    private static int holding(CommandContext<ServerCommandSource> context, EquipmentSlot slot, String message) throws CommandSyntaxException {
         // Get player information
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         // Get hand item
-        ItemStack stack = player.getMainHandStack();
-        Item item = stack.getItem();
-        int count = stack.getCount();
-        
-        if ((count <= 0 ) || item.equals(Items.AIR)) {
-            player.sendMessage(new LiteralText("You aren't holding any item.").formatted(Formatting.RED));
+        ItemStack stack = player.getEquippedStack( slot );
+        if (stack.isEmpty()) {
+            player.sendMessage(new LiteralText("You don't have any item in that " + ( slot.getType() == EquipmentSlot.Type.HAND ? "hand" : "equipment slot" ) + ".").formatted(Formatting.RED));
             return Command.SINGLE_SUCCESS;
         }
+        
+        Item item = stack.getItem();
+        int count = stack.getCount();
         
         // List all enchantments
         final Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments( stack );

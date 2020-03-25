@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 
-public final class ConfigArray<T extends Object> extends ConfigBase {
+public final class ConfigArray<T extends Object> extends ConfigBase<T> {
     
     private final Function<JsonElement, T> setter;
     private final List<T> value;
@@ -52,7 +52,8 @@ public final class ConfigArray<T extends Object> extends ConfigBase {
     
     @Override
     public JsonElement getElement() {
-        return new GsonBuilder().disableHtmlEscaping().create().toJsonTree(this.value);
+        return new GsonBuilder()
+            .disableHtmlEscaping().create().toJsonTree(this.value);
     }
     public List<T> get() {
         return this.value;

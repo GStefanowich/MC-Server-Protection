@@ -25,6 +25,7 @@
 
 package net.TheElm.project.interfaces;
 
+import com.mojang.authlib.GameProfile;
 import net.TheElm.project.enums.ChatRooms;
 import org.jetbrains.annotations.NotNull;
 
@@ -33,5 +34,11 @@ public interface PlayerChat {
     @NotNull
     ChatRooms getChatRoom();
     void setChatRoom(@NotNull ChatRooms room);
+    
+    boolean toggleMute();
+    boolean toggleMute(boolean muted);
+    boolean toggleMute(GameProfile player);
+    boolean isMuted();
+    boolean isMuted(GameProfile player);
     
 }

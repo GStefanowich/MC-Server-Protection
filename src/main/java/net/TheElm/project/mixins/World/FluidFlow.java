@@ -52,13 +52,13 @@ public abstract class FluidFlow extends Fluid {
     @Shadow
     protected abstract boolean isInfinite();
     
-    @Inject(at = @At("HEAD"), method = {"method_15746", "method_15738"}, cancellable = true)
+    @Inject(at = @At("HEAD"), method = {"method_15746", "canFlow"}, cancellable = true)
     protected void gettingFluidDirections(BlockView world, Fluid fluid, BlockPos sourcePos, BlockState sourceState, Direction flowDirection, BlockPos flowPos, BlockState flowState, FluidState fluidState, CallbackInfoReturnable<Boolean> callback) {
         // If world is Server World
         if (world instanceof ServerWorld) {
             // Get chunks
-            WorldChunk startingChunk = (WorldChunk)((WorldView) world).getChunk( sourcePos );
-            WorldChunk nextChunk = (WorldChunk)((WorldView) world).getChunk( flowPos );
+            WorldChunk startingChunk = ((ServerWorld) world).getWorldChunk( sourcePos );
+            WorldChunk nextChunk = ((ServerWorld) world).getWorldChunk( flowPos );
             
             // If chunk is the same chunk, Allow
             if (startingChunk == nextChunk)

@@ -31,11 +31,13 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.objects.ChatFormat;
 import net.TheElm.project.protections.logging.EventLogger.LoggingIntervals;
 import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -74,6 +76,10 @@ public final class SewingMachineConfig {
     // Chat
     public final ConfigOption<Boolean> CHAT_MODIFY;
     public final ConfigOption<Boolean> CHAT_SHOW_TOWNS;
+    public final ConfigOption<ChatFormat> CHAT_FORMAT;
+    
+    public final ConfigOption<Boolean> CHAT_MUTE_SELF;
+    public final ConfigOption<Boolean> CHAT_MUTE_OP;
     
     // Player Death Chests
     public final ConfigOption<Boolean> DO_DEATH_CHESTS;
@@ -124,10 +130,19 @@ public final class SewingMachineConfig {
     
     // Players
     public final ConfigOption<Map<Item, Integer>> STARTING_ITEMS;
+    public final ConfigOption<Boolean> FRIEND_WHITELIST;
+    
+    public final ConfigOption<Boolean> START_WITH_RECIPES;
+    
     public final ConfigOption<Integer> PLAYER_CLAIMS_LIMIT;
     public final ConfigOption<Boolean> PLAYER_LIMIT_INCREASE;
     public final ConfigOption<Integer> PLAYER_CLAIM_BUY_LIMIT;
     public final ConfigOption<Integer> PLAYER_CLAIM_BUY_COST;
+    
+    // Backpacks
+    public final ConfigOption<Boolean> ALLOW_BACKPACKS;
+    public final ConfigOption<Boolean> BACKPACK_SEQUENTIAL;
+    public final ConfigOption<Integer> BACKPACK_STARTING_ROWS;
     
     // Towns
     public final ConfigOption<Integer> TOWN_FOUND_COST;
@@ -175,10 +190,13 @@ public final class SewingMachineConfig {
     public final ConfigOption<Boolean> OVERWORLD_PORTAL_LOC;
     public final ConfigOption<Boolean> NETHER_PORTAL_LOC;
     public final ConfigOption<Boolean> LIMIT_SKELETON_ARROWS;
+    public final ConfigOption<Boolean> COWS_EAT_MYCELIUM;
     public final ConfigOption<Boolean> EXTINGUISH_CAMPFIRES;
-    public final ConfigOption<Integer> ANVIL_UPPER_LIMIT;
+    public final ConfigOption<Boolean> ANVIL_DISABLE_COST_LIMIT;
+    public final ConfigOption<Boolean> ANVIL_DISABLE_COST_REPAIR;
     public final ConfigOption<Boolean> PREVENT_NETHER_ENDERMEN;
     public final ConfigOption<Boolean> NETHER_INFINITE_LAVA;
+    public final ConfigOption<Boolean> RANDOM_NAME_VILLAGERS;
     
     public final ConfigOption<Boolean> SILK_TOUCH_SPAWNERS;
     public final ConfigOption<Integer> SPAWNER_PICKUP_DAMAGE;
@@ -208,6 +226,11 @@ public final class SewingMachineConfig {
          * Chat Booleans
          */
         this.CHAT_MODIFY = this.addConfig( new ConfigOption<>("chat.modify", true, JsonElement::getAsBoolean));
+        this.CHAT_FORMAT = this.addConfig( new ConfigOption<>("chat.format", ChatFormat.parse("[%w] %n: %m"), ChatFormat::parse, ChatFormat::serializer));
+        
+        this.CHAT_MUTE_SELF = this.addConfig( new ConfigOption<>("chat.mute.personal_mute", true, JsonElement::getAsBoolean));
+        this.CHAT_MUTE_OP = this.addConfig( new ConfigOption<>("chat.mute.moderator_mute", true, JsonElement::getAsBoolean));
+        
         this.CHAT_SHOW_TOWNS = this.addConfig( new ConfigOption<>("chat.show_towns", true, JsonElement::getAsBoolean));
         
         /*
@@ -242,6 +265,13 @@ public final class SewingMachineConfig {
         this.PVP_COMBAT_SECONDS = this.addConfig( new ConfigOption<>("player.pvp.combat_seconds", 30, JsonElement::getAsInt));
         this.PVP_DISABLE_DEATH_CHEST = this.addConfig( new ConfigOption<>("player.pvp.no_death_chest", true, JsonElement::getAsBoolean));
         this.PVP_COMBAT_LOG = this.addConfig( new ConfigOption<>("player.pvp.kill_on_logout", false, JsonElement::getAsBoolean));
+        
+        /*
+         * Backpacks
+         */
+        this.ALLOW_BACKPACKS = this.addConfig( new ConfigOption<>("player.backpacks.enable", true, JsonElement::getAsBoolean));
+        this.BACKPACK_STARTING_ROWS = this.addConfig( new ConfigOption<>("player.backpacks.starting_rows", 0, JsonElement::getAsInt));
+        this.BACKPACK_SEQUENTIAL = this.addConfig( new ConfigOption<>("player.backpacks.require_seqential", true, JsonElement::getAsBoolean));
         
         /*
          * Naming
@@ -293,8 +323,8 @@ public final class SewingMachineConfig {
         this.CLAIM_ALLOW_PLAYER_COMBAT = this.addConfig( new ConfigOption<>("claims.allow_player_override.player_pvp", true, JsonElement::getAsBoolean));
         this.CLAIM_ALLOW_CROP_AUTOREPLANT = this.addConfig( new ConfigOption<>("claims.allow_player_override.crop_autoreplant", true, JsonElement::getAsBoolean));
         
-        this.CLAIM_ALLOW_TREE_CAPACITATOR = new ConfigOption<>("claims.allow_player_override.tree_capacitate", false, JsonElement::getAsBoolean);
-        this.CLAIM_ALLOW_VEIN_MINER = new ConfigOption<>("claims.allow_player_override.vein_miner", false, JsonElement::getAsBoolean);
+        this.CLAIM_ALLOW_TREE_CAPACITATOR = new ConfigOption<>("claims.allow_player_override.tree_capacitate", CoreMod.isDebugging(), JsonElement::getAsBoolean);
+        this.CLAIM_ALLOW_VEIN_MINER = new ConfigOption<>("claims.allow_player_override.vein_miner", CoreMod.isDebugging(), JsonElement::getAsBoolean);
         
         /*
          * Warping
@@ -342,6 +372,7 @@ public final class SewingMachineConfig {
          * Permission options
          */
         this.HANDLE_PERMISSIONS = this.addConfig( new ConfigOption<>("server.permissions.enabled", true, JsonElement::getAsBoolean));
+        this.FRIEND_WHITELIST = this.addConfig( new ConfigOption<>("server.whitelist.friends_add_friends", false, JsonElement::getAsBoolean));
         
         /*
          * Miscellaneous
@@ -349,14 +380,17 @@ public final class SewingMachineConfig {
         this.OVERWORLD_PORTAL_LOC = this.addConfig( new ConfigOption<>("fun.world.portal_fix.overworld", false, JsonElement::getAsBoolean));
         this.NETHER_PORTAL_LOC = this.addConfig( new ConfigOption<>("fun.world.portal_fix.nether", true, JsonElement::getAsBoolean));
         
+        this.START_WITH_RECIPES = this.addConfig( new ConfigOption<>("player.recipes.unlock_all", false, JsonElement::getAsBoolean));
+        
         this.NETHER_INFINITE_LAVA = this.addConfig( new ConfigOption<>("fun.world.nether.infinite_lava", false, JsonElement::getAsBoolean));
         
         this.EXTINGUISH_CAMPFIRES = this.addConfig( new ConfigOption<>("fun.world.extinguish_campfires", true, JsonElement::getAsBoolean));
+        this.COWS_EAT_MYCELIUM = this.addConfig( new ConfigOption<>("fun.mobs.cows.eat_mycelium", true, JsonElement::getAsBoolean));
         this.LIMIT_SKELETON_ARROWS = this.addConfig( new ConfigOption<>("fun.mobs.skeletons.limit_arrows", true, JsonElement::getAsBoolean));
         this.PREVENT_NETHER_ENDERMEN = this.addConfig( new ConfigOption<>("fun.mobs.enderman.no_nether", false, JsonElement::getAsBoolean));
-        this.ANVIL_UPPER_LIMIT = this.addConfig( new ConfigOption<>("fun.anvil_limit", 40, JsonElement::getAsInt));
-        
-        CoreMod.logInfo( "Loading configuration file." );
+        this.RANDOM_NAME_VILLAGERS = this.addConfig( new ConfigOption<>("fun.mobs.villagers.random_names", true, JsonElement::getAsBoolean));
+        this.ANVIL_DISABLE_COST_LIMIT = this.addConfig( new ConfigOption<>("fun.anvil.disable_level_cap", false, JsonElement::getAsBoolean));
+        this.ANVIL_DISABLE_COST_REPAIR = this.addConfig( new ConfigOption<>("fun.anvil.disable_repair_increment", false, JsonElement::getAsBoolean));
         
         File config = null;
         try {
@@ -365,7 +399,7 @@ public final class SewingMachineConfig {
             /*
              * Read the existing config
              */
-            JsonElement loaded = this.loadFromJSON(this.loadFromFile(config));
+            JsonElement loaded = this.reload(config);
             
             /*
              * Save any new values
@@ -381,6 +415,15 @@ public final class SewingMachineConfig {
     
     public final boolean preExisting() {
         return this.fileExists;
+    }
+    public final @Nullable JsonElement reload() throws IOException {
+        return this.reload(this.getConfigFile());
+    }
+    public final @Nullable JsonElement reload(File config) throws IOException {
+        CoreMod.logInfo( "Loading configuration file." );
+        
+        //Read the existing config
+        return this.loadFromJSON(this.loadFromFile(config));
     }
     
     private <T> ConfigOption<T> addConfig( ConfigOption<T> config ) {

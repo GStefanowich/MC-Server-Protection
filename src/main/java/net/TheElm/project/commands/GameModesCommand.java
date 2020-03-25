@@ -29,6 +29,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.interfaces.CommandSource;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -39,29 +40,28 @@ import net.minecraft.world.GameMode;
 public final class GameModesCommand {
     
     private GameModesCommand() {}
-
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        
         dispatcher.register( CommandManager.literal("gms" )
-            .requires((source) -> source.hasPermissionLevel( 2 ))
+            .requires((source) -> source.hasPermissionLevel( 2 ) || ((CommandSource)source).hasPermission("player.gamemode.survival"))
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.SURVIVAL ))
         );
         CoreMod.logDebug( "- Registered GMS command" );
         
         dispatcher.register( CommandManager.literal("gmc" )
-            .requires((source) -> source.hasPermissionLevel( 2 ))
+            .requires((source) -> source.hasPermissionLevel( 2 ) || ((CommandSource)source).hasPermission("player.gamemode.creative"))
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.CREATIVE ))
         );
         CoreMod.logDebug( "- Registered GMC command" );
         
         dispatcher.register( CommandManager.literal("gma" )
-            .requires((source) -> source.hasPermissionLevel( 2 ))
+            .requires((source) -> source.hasPermissionLevel( 2 ) || ((CommandSource)source).hasPermission("player.gamemode.adventure"))
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.ADVENTURE ))
         );
         CoreMod.logDebug( "- Registered GMA command" );
         
         dispatcher.register( CommandManager.literal("gmsp" )
-            .requires((source) -> source.hasPermissionLevel( 2 ))
+            .requires((source) -> source.hasPermissionLevel( 2 ) || ((CommandSource)source).hasPermission("player.gamemode.spectator"))
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.SPECTATOR ))
         );
         CoreMod.logDebug( "- Registered GMSP command" );

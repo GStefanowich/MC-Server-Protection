@@ -29,6 +29,7 @@ import com.google.gson.JsonObject;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.exceptions.NbtNotFoundException;
+import net.TheElm.project.objects.WorldPos;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.EntityType;
@@ -39,6 +40,9 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -205,18 +209,63 @@ public final class NbtUtils {
      * Simplifications
      */
     public static CompoundTag blockPosToTag(@NotNull BlockPos blockPos) {
+        return NbtUtils.blockPosToTag(null, blockPos, null);
+    }
+    public static CompoundTag blockPosToTag(@NotNull WorldPos blockPointer) {
+        return NbtUtils.blockPosToTag(blockPointer, null);
+    }
+    public static CompoundTag blockPosToTag(@NotNull WorldPos blockPointer, @Nullable Direction direction) {
+        return NbtUtils.blockPosToTag(blockPointer.getWorld(), blockPointer.getBlockPos(), direction);
+    }
+    public static CompoundTag blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos) {
+        return NbtUtils.blockPosToTag(world, blockPos, null);
+    }
+    public static CompoundTag blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos, @Nullable Direction direction) {
         CompoundTag compound = new CompoundTag();
+        if (world != null)
+            NbtUtils.worldToTag(compound, world);
+        if (blockPos != null)
+            NbtUtils.blockPosToTag(compound, blockPos);
+        if (direction != null)
+            NbtUtils.directionToTag(compound, direction);
+        return compound;
+    }
+    private static CompoundTag blockPosToTag(@NotNull CompoundTag compound, @NotNull BlockPos blockPos) {
         compound.putInt("x", blockPos.getX());
         compound.putInt("y", blockPos.getY());
         compound.putInt("z", blockPos.getZ());
         return compound;
     }
+    private static CompoundTag worldToTag(@NotNull CompoundTag compound, @NotNull World world) {
+        compound.putInt("world", world.getDimension().getType().getRawId());
+        return compound;
+    }
+    private static CompoundTag directionToTag(@NotNull CompoundTag compound, @NotNull Direction direction) {
+        compound.putInt("direction", direction.getId());
+        return compound;
+    }
+    
     @Nullable
     public static BlockPos tagToBlockPos(@Nullable CompoundTag compound) {
         if (compound != null) {
             if (compound.contains("x", NbtType.NUMBER) && compound.contains("y", NbtType.NUMBER) && compound.contains("z", NbtType.NUMBER))
                 return new BlockPos(compound.getDouble("x"), compound.getDouble("y"), compound.getDouble("z"));
         }
+        return null;
+    }
+    @Nullable
+    public static WorldPos tagToWorldPos(@Nullable CompoundTag compound) {
+        if (compound != null) {
+            BlockPos blockPos = NbtUtils.tagToBlockPos( compound );
+            if ( blockPos != null && compound.contains("world", NbtType.NUMBER) )
+                return new WorldPos(DimensionType.byRawId( compound.getInt("world") ), blockPos);
+        }
+        return null;
+    }
+    @Nullable
+    public static Direction tagToDirection(@Nullable CompoundTag compound) {
+        if (compound != null && compound.contains("direction", NbtType.NUMBER))
+            return Direction.byId(compound.getInt("direction"));
         return null;
     }
     

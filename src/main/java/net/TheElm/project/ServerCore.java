@@ -25,14 +25,15 @@
 
 package net.TheElm.project;
 
-import com.google.gson.GsonBuilder;
 import net.TheElm.project.commands.AdminCommands;
+import net.TheElm.project.commands.BackpackCommand;
 import net.TheElm.project.commands.ChatroomCommands;
 import net.TheElm.project.commands.ClaimCommand;
 import net.TheElm.project.commands.GameModesCommand;
 import net.TheElm.project.commands.HoldingCommand;
 import net.TheElm.project.commands.LoggingCommand;
 import net.TheElm.project.commands.MiscCommands;
+import net.TheElm.project.commands.ModCommands;
 import net.TheElm.project.commands.ModsCommand;
 import net.TheElm.project.commands.MoneyCommand;
 import net.TheElm.project.commands.NickNameCommand;
@@ -40,8 +41,10 @@ import net.TheElm.project.commands.PermissionCommand;
 import net.TheElm.project.commands.PlayerSpawnCommand;
 import net.TheElm.project.commands.RulerCommand;
 import net.TheElm.project.commands.SpawnerCommand;
+import net.TheElm.project.commands.TeleportEffectCommand;
 import net.TheElm.project.commands.TeleportsCommand;
 import net.TheElm.project.commands.WaystoneCommand;
+import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.protections.events.BlockBreak;
 import net.TheElm.project.protections.events.BlockInteraction;
@@ -73,25 +76,32 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         super.initialize();
         
         SewingMachineConfig CONFIG = SewingMachineConfig.INSTANCE;
-        CommandRegistry REGISTRY = CommandRegistry.INSTANCE;
+        CommandRegistry COMMANDS = CommandRegistry.INSTANCE;
         
         CoreMod.logInfo( "Registering our commands." );
-        REGISTRY.register(false, AdminCommands::register );
-        REGISTRY.register(false, ChatroomCommands::register );
-        REGISTRY.register(false, ClaimCommand::register );
-        REGISTRY.register(false, GameModesCommand::register );
-        REGISTRY.register(false, HoldingCommand::register );
-        REGISTRY.register(false, LoggingCommand::register );
-        REGISTRY.register(false, MiscCommands::register );
-        REGISTRY.register(false, ModsCommand::register );
-        REGISTRY.register(false, MoneyCommand::register );
-        REGISTRY.register(false, NickNameCommand::register );
-        REGISTRY.register(false, PermissionCommand::register );
-        REGISTRY.register(false, PlayerSpawnCommand::register );
-        REGISTRY.register(false, RulerCommand::register );
-        REGISTRY.register(false, SpawnerCommand::register );
-        REGISTRY.register(false, TeleportsCommand::register );
-        REGISTRY.register(false, WaystoneCommand::register );
+        COMMANDS.register(false, AdminCommands::register );
+        COMMANDS.register(false, BackpackCommand::register );
+        COMMANDS.register(false, ChatroomCommands::register );
+        COMMANDS.register(false, ClaimCommand::register );
+        COMMANDS.register(false, GameModesCommand::register );
+        COMMANDS.register(false, HoldingCommand::register );
+        COMMANDS.register(false, LoggingCommand::register );
+        COMMANDS.register(false, MiscCommands::register );
+        COMMANDS.register(false, ModCommands::register );
+        COMMANDS.register(false, ModsCommand::register );
+        COMMANDS.register(false, MoneyCommand::register );
+        COMMANDS.register(false, NickNameCommand::register );
+        COMMANDS.register(false, PermissionCommand::register );
+        COMMANDS.register(false, PlayerSpawnCommand::register );
+        COMMANDS.register(false, RulerCommand::register );
+        COMMANDS.register(false, SpawnerCommand::register );
+        COMMANDS.register(false, TeleportsCommand::register );
+        COMMANDS.register(false, WaystoneCommand::register );
+        
+        // Debug commands
+        if ( CoreMod.isDebugging() ) {
+            COMMANDS.register(false, TeleportEffectCommand::register);
+        }
         
         // Create registry based listeners
         BlockBreak.init();
@@ -124,7 +134,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         
         // Update the mod version in config
         try {
-            CONFIG.CONFIG_VERSION.set(new GsonBuilder().create().toJsonTree(CoreMod.getModVersion()));
+            CONFIG.CONFIG_VERSION.set(ConfigOption.convertToJSON(CoreMod.getModVersion()));
             CONFIG.save();
             
             // Alert the mod presence

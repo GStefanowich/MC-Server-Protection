@@ -27,7 +27,7 @@ package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.PlayerData;
-import net.minecraft.block.PortalBlock;
+import net.minecraft.block.NetherPortalBlock;
 import net.minecraft.block.pattern.BlockPattern;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.command.CommandOutput;
@@ -54,8 +54,8 @@ public abstract class Portals implements Nameable, CommandOutput {
     
     @Inject(at = @At("HEAD"), method = "usePortal", cancellable = true)
     public void onDimensionUpdate(Entity entity, float fl, CallbackInfoReturnable<Boolean> callback) {
-        Vec3d vec3d = entity.getLastPortalDirectionVector();
-        Direction dir = entity.getLastPortalDirection();
+        Vec3d vec3d = entity.getLastNetherPortalDirectionVector();
+        Direction dir = entity.getLastNetherPortalDirection();
         if (entity instanceof ServerPlayerEntity) {
             ServerPlayerEntity player = (ServerPlayerEntity) entity;
             ServerWorld world = player.getServerWorld();
@@ -71,7 +71,7 @@ public abstract class Portals implements Nameable, CommandOutput {
             if (lastPos == null) return;
             
             // Check for a portal at the block
-            BlockPattern.Result pattern = PortalBlock.findPortal(world, lastPos);
+            BlockPattern.Result pattern = NetherPortalBlock.findPortal(world, lastPos);
             BlockPattern.TeleportTarget teleportTarget = pattern.getTeleportTarget(dir, lastPos, vec3d.y, entity.getVelocity(), vec3d.x);
             if (teleportTarget == null) {
                 if (dimType == DimensionType.OVERWORLD) ((PlayerData) player).setOverworldPortal( null );

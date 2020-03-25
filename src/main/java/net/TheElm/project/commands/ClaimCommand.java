@@ -64,6 +64,7 @@ import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
 import net.minecraft.server.Whitelist;
 import net.minecraft.server.WhitelistEntry;
 import net.minecraft.server.command.CommandManager;
@@ -167,14 +168,21 @@ public final class ClaimCommand {
         LiteralCommandNode<ServerCommandSource> friends = dispatcher.register( CommandManager.literal("friends")
             // Whiteliat a friend
             .then( CommandManager.literal( "whitelist" )
+                .requires((context) -> SewingMachineConfig.INSTANCE.FRIEND_WHITELIST.get())
                 .then( CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
+                    .suggests((context, builder) -> {
+                        PlayerManager manager = context.getSource().getMinecraftServer().getPlayerManager();
+                        return CommandSource.suggestMatching(manager.getPlayerList().stream()
+                            .filter(( player ) -> !manager.getWhitelist().isAllowed( player.getGameProfile() ))
+                            .map(( player ) -> player.getGameProfile().getName()), builder);
+                    })
                     .executes(ClaimCommand::inviteFriend)
                 )
             )
             // Set a friends rank
             .then( CommandManager.literal("set")
                 .then( CommandManager.argument( "rank", StringArgumentType.word())
-                    .suggests( EnumArgumentType.create( ClaimRanks.class )::listSuggestions )
+                    .suggests( EnumArgumentType.enumerate( ClaimRanks.class ) )
                     .then( CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtilities::getAllPlayerNames)
                         .executes(ClaimCommand::addRank)
@@ -184,7 +192,7 @@ public final class ClaimCommand {
             // Remove a friends rank
             .then( CommandManager.literal("remove")
                 .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
-                    .suggests(CommandUtilities::getAllPlayerNames)
+                    //.suggests(CommandUtilities::getAllPlayerNames)
                     .executes(ClaimCommand::remRank)
                 )
             )
@@ -271,10 +279,16 @@ public final class ClaimCommand {
             // Update claim permissions
             .then( CommandManager.literal("permissions")
                 .then( CommandManager.argument( "permission", StringArgumentType.word())
-                    .suggests( EnumArgumentType.create( ClaimPermissions.class )::listSuggestions )
+                    .suggests( EnumArgumentType.enumerate( ClaimPermissions.class ) )
                     .then( CommandManager.argument( "rank", StringArgumentType.word())
-                        .suggests( EnumArgumentType.create( ClaimRanks.class )::listSuggestions )
+                        .suggests( EnumArgumentType.enumerate( ClaimRanks.class ) )
                         .executes( ClaimCommand::updateSetting )
+                    )
+                )
+                .then( CommandManager.literal("*")
+                    .then( CommandManager.argument( "rank", StringArgumentType.word())
+                        .suggests( EnumArgumentType.enumerate( ClaimRanks.class ) )
+                        .executes( ClaimCommand::updateSettings )
                     )
                 )
             )
@@ -287,7 +301,7 @@ public final class ClaimCommand {
             // Chunk settings
             .then( CommandManager.literal("settings")
                 .then( CommandManager.argument( "setting", StringArgumentType.word())
-                    .suggests( EnumArgumentType.create( ClaimSettings.class )::listSuggestions )
+                    .suggests( EnumArgumentType.enumerate( ClaimSettings.class ) )
                     .then( CommandManager.argument( "bool", BoolArgumentType.bool() )
                         .executes( ClaimCommand::updateBoolean )
                     )
@@ -815,6 +829,31 @@ public final class ClaimCommand {
             .append(new LiteralText(CasingUtils.Sentence(rank.name())).formatted(Formatting.AQUA))
             .append(new LiteralText(".").formatted(Formatting.WHITE))
         );
+        
+        // Return command success
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int updateSettings(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get enums
+        ClaimRanks rank = EnumArgumentType.getEnum(ClaimRanks.class, StringArgumentType.getString(context, "rank"));
+        
+        // Get the player
+        ServerPlayerEntity player = context.getSource().getPlayer();
+        
+        for ( ClaimPermissions permissions : ClaimPermissions.values() ) {
+            
+            // Update the runtime
+            ((PlayerData) player).getClaim()
+                .updatePermission(permissions, rank);
+            
+            // Notify the player
+            player.sendMessage(new LiteralText("Interacting with ").formatted(Formatting.WHITE)
+                .append(new LiteralText(CasingUtils.Sentence(permissions.name())).formatted(Formatting.AQUA))
+                .append(new LiteralText(" is now limited to ").formatted(Formatting.WHITE))
+                .append(new LiteralText(CasingUtils.Sentence(rank.name())).formatted(Formatting.AQUA))
+                .append(new LiteralText(".").formatted(Formatting.WHITE))
+            );
+        }
         
         // Return command success
         return Command.SINGLE_SUCCESS;
