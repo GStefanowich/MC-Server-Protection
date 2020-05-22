@@ -126,33 +126,53 @@ public final class TeleportsCommand {
             );
         }
         
-        if (SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get()) {
-            dispatcher.register(CommandManager.literal("tpa")
-                .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
-                    .suggests(CommandUtilities::getAllPlayerNames)
-                    .executes(TeleportsCommand::tpaCommand)
-                )
-            );
-            CoreMod.logDebug("- Registered TPA command");
-            
-            dispatcher.register(CommandManager.literal("tpaccept")
-                .then(CommandManager.argument("player", EntityArgumentType.player())
-                    .requires(WarpUtils::hasWarp)
-                    .executes(TeleportsCommand::tpAcceptCommand)
-                )
-            );
-            CoreMod.logDebug("- Registered TPAccept command");
-            
-            dispatcher.register(CommandManager.literal("tpdeny")
-                .then(CommandManager.argument("player", EntityArgumentType.player())
-                    .requires(WarpUtils::hasWarp)
-                    .executes(TeleportsCommand::tpDenyCommand)
-                )
-            );
-            CoreMod.logDebug("- Registered TPDeny command");
-        }
+        dispatcher.register(CommandManager.literal("tpa")
+            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get())
+            .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                .suggests(CommandUtilities::getAllPlayerNames)
+                .executes(TeleportsCommand::tpaCommand)
+            )
+            .executes(TeleportsCommand::homeCommand)
+        );
+        CoreMod.logDebug("- Registered TPA command");
+        
+        dispatcher.register(CommandManager.literal("tpaccept")
+            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get())
+            .then(CommandManager.argument("player", EntityArgumentType.player())
+                .requires(WarpUtils::hasWarp)
+                .executes(TeleportsCommand::tpAcceptCommand)
+            )
+        );
+        CoreMod.logDebug("- Registered TPAccept command");
+        
+        dispatcher.register(CommandManager.literal("tpdeny")
+            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get())
+            .then(CommandManager.argument("player", EntityArgumentType.player())
+                .requires(WarpUtils::hasWarp)
+                .executes(TeleportsCommand::tpDenyCommand)
+            )
+        );
+        CoreMod.logDebug("- Registered TPDeny command");
+        
+        dispatcher.register(CommandManager.literal("home")
+            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get())
+            .executes(TeleportsCommand::homeCommand)
+        );
+        CoreMod.logDebug("- Registered Home command");
     }
     
+    private static int homeCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get players info
+        final ServerCommandSource source = context.getSource();
+        final ServerPlayerEntity porter = source.getPlayer();
+        
+        return TeleportsCommand.tpaToPlayer(
+            source.getMinecraftServer(),
+            porter,
+            porter.getUuid(),
+            porter.getEntityName()
+        );
+    }
     private static int tpaCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get players info
         final ServerCommandSource source = context.getSource();
@@ -162,45 +182,53 @@ public final class TeleportsCommand {
         Collection<GameProfile> argumentType = GameProfileArgumentType.getProfileArgument( context, "player" );
         GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
+        return TeleportsCommand.tpaToPlayer(
+            source.getMinecraftServer(),
+            porter,
+            target.getId(),
+            target.getName()
+        );
+    }
+    private static int tpaToPlayer(MinecraftServer server, ServerPlayerEntity porter, UUID target, String name) throws CommandSyntaxException {
+        final PlayerManager manager = server.getPlayerManager();
+        
         // Check if player is within spawn
         if (!ChunkUtils.isPlayerWithinSpawn( porter ))
             throw PLAYER_NOT_IN_SPAWN.create( porter );
         
         Warp warp;
         // If the player to teleport to does not have a warp
-        if ((warp = WarpUtils.getWarp( target.getId() )) == null)
+        if ((warp = WarpUtils.getWarp( target )) == null)
             throw TARGET_NO_WARP.create( porter );
         
-        final MinecraftServer server = source.getMinecraftServer();
-        final PlayerManager manager = server.getPlayerManager();
-        
-        ServerPlayerEntity targetPlayer = manager.getPlayer( target.getId() );
+        ServerPlayerEntity targetPlayer = manager.getPlayer( target );
         
         // Accept the teleport automatically
-        if ( ChunkUtils.canPlayerWarpTo( porter, target.getId() ) ) {
+        if ( ChunkUtils.canPlayerWarpTo( porter, target ) ) {
             WarpUtils.teleportPlayer( warp, porter );
             
-            CoreMod.logInfo(porter.getName().asString() + " was teleported to " + (porter.getUuid().equals(target.getId()) ? "their" : target.getName() + "'s") + " warp");
+            CoreMod.logInfo(porter.getName().asString() + " was teleported to " + (porter.getUuid().equals(target) ? "their" : name + "'s") + " warp");
             
             // Notify the player
-            if ((targetPlayer != null) && (!target.getId().equals(porter.getUuid()))) {
-                TitleUtils.showPlayerAlert(
-                    targetPlayer,
-                    Formatting.YELLOW,
-                    TranslatableServerSide.text( targetPlayer, "warp.notice.player", porter.getDisplayName() )
-                );
-                targetPlayer.playSound(SoundEvents.UI_TOAST_IN, SoundCategory.MASTER, 1.0f, 1.0f);
+            if (!porter.isSpectator()) {
+                if ((targetPlayer != null) && (!target.equals(porter.getUuid()))) {
+                    TitleUtils.showPlayerAlert(
+                        targetPlayer,
+                        Formatting.YELLOW,
+                        TranslatableServerSide.text(targetPlayer, "warp.notice.player", porter.getDisplayName())
+                    );
+                    targetPlayer.playSound(SoundEvents.UI_TOAST_IN, SoundCategory.MASTER, 1.0f, 1.0f);
+                }
             }
-            
         } else {
             // If player not online
             if (targetPlayer == null)
                 throw TeleportsCommand.TARGET_NOT_ONLINE.create( porter );
             
             // Add the player to the list of invitations
-            CoreMod.PLAYER_WARP_INVITES.put(porter, target.getId());
+            CoreMod.PLAYER_WARP_INVITES.put(porter, target);
             
-            CoreMod.logInfo(porter.getName().asString() + " has requested to teleport to " + (porter.getUuid().equals(target.getId()) ? "their" : target.getName() + "'s") + " warp");
+            CoreMod.logInfo(porter.getName().asString() + " has requested to teleport to " + (porter.getUuid().equals(target) ? "their" : name + "'s") + " warp");
             
             // Notify the target
             targetPlayer.sendMessage(porter.getName().formatted(Formatting.AQUA)

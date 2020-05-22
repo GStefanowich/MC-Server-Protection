@@ -99,7 +99,7 @@ public abstract class TamedLead extends LivingEntity {
         } else {
             // Get the name of the CHUNK OWNER
             if ( chunk != null )
-                owner = ((IClaimedChunk) chunk).getOwnerName( player );
+                owner = ((IClaimedChunk) chunk).getOwnerName( player, this.getBlockPos() );
             else
                 owner = new LiteralText( "unknown player" )
                     .formatted(Formatting.LIGHT_PURPLE);
@@ -116,7 +116,7 @@ public abstract class TamedLead extends LivingEntity {
         
         // Make sure the client knows that they are not leashing
         player.networkHandler.sendPacket(
-            new EntityAttachS2CPacket(this, (Entity)null)
+            new EntityAttachS2CPacket(this, null)
         );
         
         // Decline allowing leading

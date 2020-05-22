@@ -72,31 +72,38 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
     private WeakReference<ClaimantTown> chunkTown = null;
     private ClaimantPlayer chunkPlayer = null;
     
-    public ClaimantTown updateTownOwner(@Nullable UUID owner) {
+    @Override
+    public ClaimantTown updateTownOwner(@Nullable UUID owner, boolean fresh) {
         ClaimantTown town = null;
         if (owner != null) {
             try {
                 town = ClaimantTown.get( owner );
             } catch (NbtNotFoundException ignored) {}
         }
+        
         // Make sure we have the towns permissions cached
         this.chunkTown = (town == null ? null : new WeakReference<>( town ));
-        this.markDirty();
+        
+        if ( fresh )
+            this.markDirty();
+        
         return this.getTown();
     }
-    private ClaimantTown updateTownOwner(@NotNull ClaimantTown town) {
-        this.markDirty();
+    private ClaimantTown loadTownReference(@NotNull ClaimantTown town) {
         return (this.chunkTown = new WeakReference<>(town)).get();
     }
-    public ClaimantPlayer updatePlayerOwner(@Nullable UUID owner) {
+    @Override
+    public ClaimantPlayer updatePlayerOwner(@Nullable UUID owner, boolean fresh) {
         this.chunkPlayer = ( owner == null ? null : ClaimantPlayer.get( owner ));
-        this.markDirty();
+        
+        if (fresh)
+            this.markDirty();
         
         // If there is no player owner, there is no town
         if (owner == null) {
             // Reset the inner slices (SHOULD NOT RESET SPAWN)
             this.resetSlices();
-            this.updateTownOwner((UUID) null);
+            this.updateTownOwner(null, fresh);
         }
         return this.chunkPlayer;
     }
@@ -108,11 +115,10 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
                 continue;
             slice.reset();
         }
+        this.markDirty();
     }
-    public void updateSliceOwner(UUID owner, int slicePos) {
-        this.updateSliceOwner(owner, slicePos, 0, 256);
-    }
-    public void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo) {
+    @Override
+    public void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo, boolean fresh) {
         // If heights are invalid
         if (World.isHeightInvalid( yFrom ) || World.isHeightInvalid( yTo ))
             return;
@@ -126,6 +132,10 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         int yMin = Math.min( yFrom, yTo );
         
         slice.set(new InnerClaim(owner, yMax, yMin));
+        
+        // Make sure the chunk gets saved
+        if ( fresh )
+            this.markDirty();
     }
     public UUID[] getSliceOwner(int slicePos, int yFrom, int yTo) {
         ClaimSlice slice;
@@ -144,17 +154,16 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         return owners.toArray(new UUID[0]);
     }
     
-    @NotNull
-    public Claim getClaim(BlockPos blockPos) {
+    public @NotNull Claim getClaim(BlockPos blockPos) {
         int slicePos = ChunkUtils.getPositionWithinChunk( blockPos );
         
         ClaimSlice slice;
         if ((slice = this.claimSlices[slicePos]) != null) {
             // Get inside claim
-            Claim inner = slice.get( blockPos.getY() );
+            InnerClaim inner = slice.get( blockPos.getY() );
             
             // If claim inner is not nobody
-            if (inner.getOwner() != null)
+            if (inner.getOwner() != null && inner.isWithin(blockPos.getY()))
                 return inner;
         }
         
@@ -172,14 +181,12 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
             throw new TranslationKeyException("claim.chunk.error.max");
     }
     
-    @Nullable
-    public UUID getOwner() {
+    public @Nullable UUID getOwner() {
         if (this.chunkPlayer == null)
             return null;
         return this.chunkPlayer.getId();
     }
-    @Nullable
-    public UUID getOwner(BlockPos pos) {
+    public @Nullable UUID getOwner(BlockPos pos) {
         int slicePos = ChunkUtils.getPositionWithinChunk( pos );
         if ( this.claimSlices[slicePos] != null ) {
             ClaimSlice slice = claimSlices[slicePos];
@@ -193,32 +200,35 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         }
         return this.getOwner();
     }
-    @Nullable
-    public UUID getTownId() {
+    public @Nullable UUID getTownId() {
         ClaimantTown town;
         if ((town = this.getTown()) == null)
             return null;
         return town.getId();
     }
-    @Nullable
-    public ClaimantTown getTown() {
+    public @Nullable ClaimantTown getTown() {
         if (( this.chunkPlayer == null ))
             return null;
         if (this.chunkTown == null) {
             ClaimantTown playerTown;
             if ((playerTown = this.chunkPlayer.getTown()) != null)
-                return this.updateTownOwner(playerTown);
+                return this.loadTownReference(playerTown);
         }
         return (this.chunkTown == null ? null : this.chunkTown.get());
     }
     
-    public Text getOwnerName(@NotNull PlayerEntity zonePlayer) {
-        if ( this.chunkPlayer == null )
+    @Override
+    public Text getOwnerName(@NotNull PlayerEntity zonePlayer, @NotNull BlockPos pos) {
+        UUID owner = this.getOwner(pos);
+        if ( owner == null )
             return new LiteralText(SewingMachineConfig.INSTANCE.NAME_WILDERNESS.get())
                 .formatted(Formatting.GREEN);
         
-        // Get the owners name
-        return this.chunkPlayer.getName( zonePlayer.getUuid() );
+        // Get the owner of the chunk
+        ClaimantPlayer chunkPlayer = ClaimantPlayer.get(owner);
+        
+        // Get the owners name (Colored using the relation to the zonePlayer)
+        return chunkPlayer.getName( zonePlayer.getUuid() );
     }
     
     @Override
@@ -256,8 +266,8 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
                 .isSetting( setting );
     }
     
-    @Override @NotNull
-    public ListTag serializeSlices() {
+    @Override
+    public @NotNull ListTag serializeSlices() {
         ListTag serialized = new ListTag();
         ClaimSlice slice;
         for (int i = 0; i < this.claimSlices.length; i++) {
@@ -313,7 +323,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
                 int upper = ((CompoundTag) claimTag).getInt("upper");
                 int lower = ((CompoundTag) claimTag).getInt("lower");
                 
-                this.updateSliceOwner( owner, i, lower, upper );
+                this.updateSliceOwner( owner, i, lower, upper, false );
             }
         }
     }

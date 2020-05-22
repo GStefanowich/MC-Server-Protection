@@ -47,7 +47,10 @@ import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public final class MessageUtils {
@@ -214,6 +217,22 @@ public final class MessageUtils {
             .append(new LiteralText(pos[1]).formatted(Formatting.AQUA))
             .append(separator)
             .append(new LiteralText(pos[2]).formatted(Formatting.AQUA));
+    }
+    
+    public static <O> Text listToTextComponent(final Collection<O> list, Function<O, Text> function) {
+        return MessageUtils.listToTextComponent(list, ", ", function);
+    }
+    public static <O> Text listToTextComponent(final Collection<O> list, String separator, Function<O, Text> function) {
+        Text base = new LiteralText("");
+        
+        Iterator<O> iterator = list.iterator();
+        while (iterator.hasNext()) {
+            base.append(function.apply(iterator.next()));
+            if (iterator.hasNext())
+                base.append(separator);
+        }
+        
+        return base;
     }
     
     public static String blockPosToString(final BlockPos pos) {

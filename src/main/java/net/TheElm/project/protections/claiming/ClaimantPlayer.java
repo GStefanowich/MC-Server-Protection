@@ -162,8 +162,7 @@ public final class ClaimantPlayer extends Claimant {
     }
     
     /* Get the PlayerPermissions object from the cache */
-    @NotNull
-    public static ClaimantPlayer get(@NotNull UUID playerUUID) {
+    public static @NotNull ClaimantPlayer get(@NotNull UUID playerUUID) {
         ClaimantPlayer player;
         
         // If contained in the cache
@@ -173,8 +172,7 @@ public final class ClaimantPlayer extends Claimant {
         // Create new object
         return new ClaimantPlayer( playerUUID );
     }
-    @NotNull
-    public static ClaimantPlayer get(@NotNull GameProfile profile) {
+    public static @NotNull ClaimantPlayer get(@NotNull GameProfile profile) {
         return ClaimantPlayer.get(profile.getId());
     }
     

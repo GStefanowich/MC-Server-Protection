@@ -58,6 +58,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
@@ -241,15 +242,14 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
      * Server joins
      */
     
-    @Nullable
-    public Long getFirstJoinAt() {
+    public @Nullable Long getFirstJoinAt() {
         return this.firstJoinedAt;
     }
     public void updateFirstJoin() {
         this.firstJoinedAt = Calendar.getInstance().getTimeInMillis();
     }
-    @Nullable
-    public Long getLastJoinAt() {
+    
+    public @Nullable Long getLastJoinAt() {
         return this.lastJoinedAt;
     }
     public void updateLastJoin() {
@@ -260,20 +260,19 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
      * Warping
      */
     
-    @Nullable
-    public Integer getWarpDimensionId() {
+    public @Nullable Integer getWarpDimensionId() {
         if (this.getWarpPos() == null)
             return null;
         if (this.warpDimension == null)
             this.warpDimension = 0;
         return this.warpDimension;
     }
-    @Nullable @Override
-    public World getWarpWorld() {
-        return this.getServer().getWorld(DimensionType.byRawId(this.warpDimension));
+    @Override
+    public @Nullable ServerWorld getWarpWorld() {
+        return this.getServer().getWorld(DimensionType.byRawId( this.warpDimension ));
     }
-    @Nullable @Override
-    public BlockPos getWarpPos() {
+    @Override
+    public @Nullable BlockPos getWarpPos() {
         return this.warpPos;
     }
     @Override

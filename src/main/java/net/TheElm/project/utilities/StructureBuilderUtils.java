@@ -27,7 +27,6 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.server.world.ServerWorld;
@@ -40,24 +39,31 @@ import net.minecraft.world.World;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public final class StructureBuilderUtils {
     
+    private final String name;
     private final World world;
     private final long delay = 50L;
     
     private HashMap<BlockPos, BlockState> structureBlocks = new LinkedHashMap<>();
-    private HashMap<BlockPos, BlockEntity> structureEntity = new LinkedHashMap<>();
+    private HashMap<BlockPos, Supplier<BlockEntity>> structureEntity = new LinkedHashMap<>();
     
     public StructureBuilderUtils(World world, String structureName) {
         this.world = world;
+        this.name = structureName;
         CoreMod.logInfo( "Building new " + structureName );
+    }
+    
+    public String getName() {
+        return this.name;
     }
     
     public void addBlock(BlockPos blockPos, BlockState blockState) {
         this.structureBlocks.put( blockPos, blockState );
     }
-    public void addEntity(BlockPos blockPos, BlockEntity blockEntity) {
+    public void addEntity(BlockPos blockPos, Supplier<BlockEntity> blockEntity) {
         this.structureEntity.put( blockPos, blockEntity );
     }
     
@@ -69,11 +75,12 @@ public final class StructureBuilderUtils {
     }
     public void build() throws InterruptedException {
         // Place all of the blocks
-        for (Map.Entry<BlockPos, BlockState> blockEntry : this.structureBlocks.entrySet()) {
-            BlockPos blockPos = blockEntry.getKey();
-            BlockState block = blockEntry.getValue();
+        for (Map.Entry<BlockPos, BlockState> iterator : this.structureBlocks.entrySet()) {
+            BlockPos blockPos = iterator.getKey();
+            BlockState block = iterator.getValue();
             
-            if (block.getBlock() == Blocks.AIR)
+            // If block is already the same
+            if (block.getBlock() == this.world.getBlockState(blockPos).getBlock())
                 continue;
             
             this.world.setBlockState( blockPos, block );
@@ -82,11 +89,13 @@ public final class StructureBuilderUtils {
         }
         
         // Update the block entities
-        for (Map.Entry<BlockPos, BlockEntity> blockEntry : this.structureEntity.entrySet()) {
-            this.world.setBlockEntity(
-                blockEntry.getKey(),
-                blockEntry.getValue()
-            );
+        for (Map.Entry<BlockPos, Supplier<BlockEntity>> iterator : this.structureEntity.entrySet()) {
+            BlockPos blockPos = iterator.getKey();
+            BlockEntity entity = iterator.getValue().get();
+            
+            // Get the chunk directly (Won't update properly otherwise)
+            this.world.getWorldChunk( blockPos ) // Update the block entity
+                .setBlockEntity( blockPos, entity );
         }
     }
     public <T extends ParticleEffect> void particlesSounds(T particle, SoundEvent sound, double deltaX, double deltaY, double deltaZ, double speed, int count, BlockPos... blockPositions) throws InterruptedException {

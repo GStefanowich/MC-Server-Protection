@@ -28,6 +28,7 @@ package net.TheElm.project.mixins.World;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.ChunkSerializer;
 import net.minecraft.world.chunk.Chunk;
@@ -61,8 +62,10 @@ public class ChunkSaving {
             if ((player = ((IClaimedChunk) chunk).getOwner()) != null)
                 levelTag.putUuid(sewingMachineSerializationPlayer, player);
             
+            ListTag slices = ((IClaimedChunk) chunk).serializeSlices();
+            
             // Save the inner claims
-            levelTag.put(sewingMachineSerializationSlices, ((IClaimedChunk) chunk).serializeSlices());
+            levelTag.put(sewingMachineSerializationSlices, slices);
             
             // Save the chunks town
             if ((town = ((IClaimedChunk) chunk).getTownId()) != null)
@@ -74,7 +77,7 @@ public class ChunkSaving {
     private static void loadSewingOwner(CompoundTag levelTag, WorldChunk chunk, CallbackInfo callback) {
         // Update the chunks player-owner
         if ( levelTag.containsUuid(sewingMachineSerializationPlayer) )
-            ((IClaimedChunk) chunk).updatePlayerOwner(levelTag.getUuid(sewingMachineSerializationPlayer));
+            ((IClaimedChunk) chunk).updatePlayerOwner(levelTag.getUuid(sewingMachineSerializationPlayer), false);
         
         // Load the inner claims
         if (levelTag.contains(sewingMachineSerializationSlices, NbtType.LIST))
@@ -82,7 +85,7 @@ public class ChunkSaving {
         
         // Update the chunks town
         if ( levelTag.containsUuid(sewingMachineSerializationTown) )
-            ((IClaimedChunk) chunk).updateTownOwner(levelTag.getUuid(sewingMachineSerializationTown));
+            ((IClaimedChunk) chunk).updateTownOwner(levelTag.getUuid(sewingMachineSerializationTown), false);
     }
     
 }
