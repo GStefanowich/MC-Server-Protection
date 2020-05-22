@@ -26,13 +26,12 @@
 package net.TheElm.project.mixins.Blocks;
 
 import net.TheElm.project.enums.ClaimPermissions;
-import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.utilities.BlockUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.PistonBlock;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -61,19 +60,11 @@ public class Pistons {
             movePos = blockPos;
         }
         
-        // Get chunks
-        WorldChunk protectedChunk = world.getWorldChunk( movePos );
-        WorldChunk movementChunk = world.getWorldChunk( pistonPos );
-        
-        // If chunks are the same
-        if (protectedChunk == movementChunk) return;
-        
         // TODO: Fix desync when pulling blocks that suddenly vanish
         
         // Check that first chunk owner can modify the next chunk
-        if (!((IClaimedChunk) protectedChunk).canPlayerDo(pistonPos, ((IClaimedChunk) movementChunk).getOwner(), ClaimPermissions.BLOCKS ))
+        if (!BlockUtils.canBlockModifyBlock(world, movePos, pistonPos, ClaimPermissions.BLOCKS ))
             callback.setReturnValue(false);
-        
     }
     
 }

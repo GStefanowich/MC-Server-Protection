@@ -28,6 +28,7 @@ package net.TheElm.project.interfaces;
 import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.minecraft.entity.boss.ServerBossBar;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
@@ -38,7 +39,7 @@ public interface PlayerData {
     /*
      * Saved warp data
      */
-    World getWarpWorld();
+    ServerWorld getWarpWorld();
     Integer getWarpDimensionId();
     BlockPos getWarpPos();
     void setWarpPos(@Nullable BlockPos blockPos);

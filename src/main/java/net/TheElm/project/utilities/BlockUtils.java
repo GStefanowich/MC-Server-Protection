@@ -25,11 +25,16 @@
 
 package net.TheElm.project.utilities;
 
+import net.TheElm.project.enums.ClaimPermissions;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.RayTraceContext;
+import net.minecraft.world.World;
+import net.minecraft.world.chunk.WorldChunk;
 
 public final class BlockUtils {
     
@@ -51,6 +56,23 @@ public final class BlockUtils {
         );
         
         return world.rayTrace(new RayTraceContext( posVec, traceVec, RayTraceContext.ShapeType.OUTLINE, RayTraceContext.FluidHandling.ANY, entity));
+    }
+    
+    /**
+     * Simple check of permissions based on the owners of two positions
+     * @param world The world to test the permissions in
+     * @param protectedPos The position that is being interacted with ()
+     * @param sourcePos The position doing the interacting (A piston, player, etc)
+     * @param permission The permission to test
+     * @return Whether sourcePos is allowed to do something to protectedPos
+     */
+    public static boolean canBlockModifyBlock(World world, BlockPos protectedPos, BlockPos sourcePos, ClaimPermissions permission) {
+        // Get chunks
+        WorldChunk protectedChunk = world.getWorldChunk(protectedPos);
+        WorldChunk sourceChunk = world.getWorldChunk(sourcePos);
+        
+        // Check that first chunk owner can modify the next chunk
+        return ((IClaimedChunk) protectedChunk).canPlayerDo(protectedPos, ((IClaimedChunk) sourceChunk).getOwner(sourcePos), permission);
     }
     
 }

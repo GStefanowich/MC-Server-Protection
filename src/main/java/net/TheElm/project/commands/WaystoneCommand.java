@@ -34,6 +34,8 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.command.arguments.EntityArgumentType;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -59,6 +61,7 @@ public class WaystoneCommand {
                 .then( CommandManager.argument( "player", EntityArgumentType.player())
                     .executes(WaystoneCommand::resetPlayer)
                 )
+                .executes(WaystoneCommand::resetSelf)
             )
             .then(CommandManager.literal("send")
                 .then(CommandManager.argument("players", EntityArgumentType.players())
@@ -72,31 +75,52 @@ public class WaystoneCommand {
     
     private static int setToCurrentLocation(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        Entity entity = source.getEntity();
         ServerPlayerEntity target = EntityArgumentType.getPlayer( context, "player" );
         
-        BlockPos blockPos = player.getBlockPos();
+        // Get the position to set the waystone to
+        BlockPos blockPos = (entity instanceof PlayerEntity ? entity.getBlockPos() : new BlockPos(source.getPosition()).up());
         
         // Update the positioning
         ((PlayerData) target).setWarpPos( blockPos );
-        ((PlayerData) target).setWarpDimension( player.getServerWorld() );
+        ((PlayerData) target).setWarpDimension( source.getWorld() );
         
-        player.sendMessage(new LiteralText("").formatted(Formatting.YELLOW)
-            .append(target.getName().formatted(Formatting.AQUA))
-            .append("'s waystone is now set to ")
+        source.sendFeedback(new LiteralText("Set ")
+            .append(target.getDisplayName().deepCopy())
+            .append("'s waystone to ")
             .append(MessageUtils.blockPosToTextComponent(blockPos))
-            .append(".")
+            .append("."),
+            true
         );
         
         return Command.SINGLE_SUCCESS;
     }
+    private static int resetSelf(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get source of the command
+        ServerCommandSource source = context.getSource();
+        
+        // Send feedback to the source
+        source.sendFeedback(new LiteralText("Waystone reset."), true);
+        
+        // Reset the waystone
+        return WaystoneCommand.reset(source.getPlayer());
+    }
     private static int resetPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get source of the command
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity target = EntityArgumentType.getPlayer( context, "player" );
         
-        // Reset the position
-        ((PlayerData) target).setWarpPos( null );
+        // Send feedback to the source
+        source.sendFeedback(new LiteralText("Reset the waystone of ")
+            .append(target.getDisplayName().deepCopy())
+            .append("."), true);
         
+        // Reset the waystone
+        return WaystoneCommand.reset(target);
+    }
+    private static int reset(ServerPlayerEntity player) {
+        // Reset the position
+        ((PlayerData) player).setWarpPos( null );
         return Command.SINGLE_SUCCESS;
     }
     private static int sendHome(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

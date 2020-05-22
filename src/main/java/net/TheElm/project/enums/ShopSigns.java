@@ -64,6 +64,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
@@ -494,7 +495,7 @@ public enum ShopSigns {
                 return Either.right(this.generateNewWarp(player));
             } else {
                 // Warp the player to their home
-                this.teleportPlayer( warp.world, warp.warpPos, player );
+                WarpUtils.teleportPlayer( warp.world, player, warp.warpPos );
             }
             return Either.right( true );
         }
@@ -509,7 +510,7 @@ public enum ShopSigns {
                 final MinecraftServer server;
                 if ((server = player.getServer()) == null)
                     return;
-                final World world = server.getWorld(DimensionType.OVERWORLD);
+                final ServerWorld world = server.getWorld(DimensionType.OVERWORLD);
                 final BlockPos spawnPos = WarpUtils.getWorldSpawn( world );
                 
                 // Tell the player
@@ -535,7 +536,7 @@ public enum ShopSigns {
                 
                 // Teleport the player
                 BlockPos safeTeleportPos = newWarp.getSafeTeleportPos(world);
-                this.teleportPlayer(world, safeTeleportPos, player);
+                WarpUtils.teleportPlayer(world, player, safeTeleportPos);
                 
                 // Save the warp for later
                 newWarp.save(world, safeTeleportPos, player);
@@ -548,9 +549,6 @@ public enum ShopSigns {
                 ), MessageType.CHAT);
             }).start();
             return true;
-        }
-        private void teleportPlayer(@NotNull final World world, @NotNull final BlockPos warpPos, @NotNull final ServerPlayerEntity player) {
-            WarpUtils.teleportPlayer( world, player, warpPos );
         }
     },
     /*

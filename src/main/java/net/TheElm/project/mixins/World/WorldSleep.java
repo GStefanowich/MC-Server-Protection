@@ -65,12 +65,9 @@ import java.util.function.BooleanSupplier;
 public abstract class WorldSleep extends World implements SleepingWorld {
     
     // Shadows from ServerWorld
-    @Shadow
-    private List<ServerPlayerEntity> players;
-    @Shadow
-    private boolean allPlayersSleeping;
-    @Shadow
-    private native void resetWeather();
+    @Shadow private List<ServerPlayerEntity> players;
+    @Shadow private boolean allPlayersSleeping;
+    @Shadow private native void resetWeather();
     
     protected WorldSleep(LevelProperties levelProperties_1, DimensionType dimensionType_1, BiFunction<World, Dimension, ChunkManager> biFunction_1, Profiler profiler_1, boolean boolean_1) {
         super(levelProperties_1, dimensionType_1, biFunction_1, profiler_1, boolean_1);
@@ -82,7 +79,7 @@ public abstract class WorldSleep extends World implements SleepingWorld {
         int sleepingPercentage;
         if ( (!this.getDimension().canPlayersSleep()) // If non-sleeping dimension (End/Nether)
                 || ( this.players.size() <= 0 ) // If nobody is online
-                || this.allPlayersSleeping // If everyone is already sleeping (Vanilla default)
+                //|| this.allPlayersSleeping // If everyone is already sleeping (Vanilla default)
                 || (!SewingMachineConfig.INSTANCE.DO_SLEEP_VOTE.get()) // If sleep voting is disabled
                 || ( SewingMachineConfig.INSTANCE.SLEEP_PERCENT.get() <= 0 ) // If the required sleeping percentage is 0 (disabled)
                 || ((sleepingPercentage = SleepUtils.getSleepingPercentage( this )) < SewingMachineConfig.INSTANCE.SLEEP_PERCENT.get() )
@@ -90,36 +87,57 @@ public abstract class WorldSleep extends World implements SleepingWorld {
         
         this.allPlayersSleeping = false;
         
+        // Set the time back to day
         if (this.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
             long time = this.getTimeOfDay() + 24000L;
             this.setTimeOfDay(time - time % 24000L);
         }
         
+        // Wake all players up
         this.players.stream().filter(LivingEntity::isSleeping).forEach((serverPlayerEntity_1) -> {
             serverPlayerEntity_1.wakeUp(false, false);
         });
+        
+        // Change the weather
         if (this.getGameRules().getBoolean(GameRules.DO_WEATHER_CYCLE)) {
-            this.resetWeather();
+            boolean raining = this.properties.isRaining();
+            boolean thunder = this.properties.isThundering();
+            
+            // If currently raining, end
+            if (raining || thunder)
+                this.resetWeather();
+            else if (this.random.nextInt(4) <= 0) {
+                int maxSec = 1200;
+                int minSec = 300;
+                
+                // Random chance to start raining
+                this.properties.setClearWeatherTime(0);
+                this.properties.setRainTime((this.random.nextInt(maxSec - minSec) + minSec) * 20);
+                this.properties.setRaining(true);
+                this.properties.setThunderTime(0);
+                this.properties.setThundering(false);
+            }
         }
         
         long worldDay = this.getTimeOfDay() / 24000L % 2147483647L;
+        long worldYear = worldDay / 365;
+        worldDay = worldDay - (worldYear * 365);
         
         NumberFormat formatter = NumberFormat.getInstance();
         TitleUtils.showPlayerAlert((ServerWorld)(World) this,
-            new LiteralText( "Rise and shine! Day " + formatter.format( worldDay ) + " has begun." )
+            new LiteralText( "Rise and shine! Day " + formatter.format( worldDay ) + " of " + formatter.format( worldYear ) + " A.C. has begun." )
         );
     }
     
     @Inject(at = @At("TAIL"), method = "spawnEntity")
     public void onSpawnMob(Entity entity, CallbackInfoReturnable<Boolean> callback) {
         if (entity instanceof ConstructableEntity) {
-            WitherEntity wither = (WitherEntity) entity;
             Optional<UUID> chunkOwner;
             if ((chunkOwner = ChunkUtils.getPosOwner( this.getWorld(), entity.getBlockPos() )).isPresent())
                 ((ConstructableEntity)entity).setEntityOwner( chunkOwner.get() );
             
             if (entity instanceof WitherEntity)
-                CoreMod.logInfo("A new Wither Boss was summoned at " + MessageUtils.blockPosToString( wither.getBlockPos() ));
+                CoreMod.logInfo("A new Wither Boss was summoned at " + MessageUtils.blockPosToString(entity.getBlockPos()));
         }
     }
     

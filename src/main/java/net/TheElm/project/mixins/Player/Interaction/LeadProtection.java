@@ -62,7 +62,7 @@ public abstract class LeadProtection extends AbstractDecorationEntity {
         // Display that this leash can't be removed
         TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
             EntityUtils.getLockedName( this ),
-            ( chunk == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName( player ) )
+            ( chunk == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName( player, this.getBlockPos() ) )
         ));
         
         this.playSound(SoundEvents.ENTITY_LEASH_KNOT_BREAK,0.5f, 1f );
