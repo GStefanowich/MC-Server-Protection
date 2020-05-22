@@ -38,13 +38,13 @@ import net.minecraft.block.MushroomBlock;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ChunkTicketType;
-import net.minecraft.server.world.ServerChunkManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -52,8 +52,8 @@ import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.LevelProperties;
 import org.jetbrains.annotations.NotNull;
@@ -77,21 +77,26 @@ public final class WarpUtils {
         this.updateWarpPos( pos );
     }
     
-    private void updateWarpPos(BlockPos warpPos) {
+    private boolean updateWarpPos(@Nullable BlockPos warpPos) {
+        if (warpPos == null)
+            return false;
+        
         this.createWarpAt = warpPos;
         this.region = new Pair<>(
             new BlockPos( this.createWarpAt.getX() - 4, this.createWarpAt.getY() - 4, this.createWarpAt.getZ() - 3 ),
             new BlockPos( this.createWarpAt.getX() + 4, this.createWarpAt.getY() + 4, this.createWarpAt.getZ() + 6 )
         );
+        
+        return true;
     }
     
-    public BlockPos getWarpPositionIn(final World world) {
+    public BlockPos getWarpPositionIn(final ServerWorld world) {
         int x = this.createWarpAt.getX();
         int z = this.createWarpAt.getZ();
         do {
             CoreMod.logInfo( "Finding a new warp position!" );
             this.updateWarpPos( new BlockPos( getRandom( x ), 256, getRandom( z ) ) );
-        } while ((this.createWarpAt = this.isValid( world, this.createWarpAt,50,true ) ) == null);
+        } while (!this.updateWarpPos(this.isValid( world, this.createWarpAt,50,true)));
         
         return this.createWarpAt;
     }
@@ -158,19 +163,19 @@ public final class WarpUtils {
             && ( material != Material.LEAVES )
             && ( material != Material.ICE )
             && ( material != Material.PACKED_ICE )
-            && ( mustBeUnowned || world.getBlockState( pos.up() ).isAir() ) ? pos : null;
+            && ( world.getBlockState( pos.up() ).isAir() ) ? pos : null;
     }
     
-    public boolean build(final ServerPlayerEntity player, final World world) {
+    public boolean build(final ServerPlayerEntity player, final ServerWorld world) {
         return this.build(player, world, true);
     }
-    public boolean build(final ServerPlayerEntity player, final World world, final boolean dropBlocks) {
+    public boolean build(final ServerPlayerEntity player, final ServerWorld world, final boolean dropBlocks) {
         // Get the area of blocks to claim
-        if (!ChunkUtils.canPlayerClaimSlices( player.getServerWorld(), this.region.getLeft(), this.region.getRight() ))
+        if (!ChunkUtils.canPlayerClaimSlices( world, this.region.getLeft(), this.region.getRight() ))
             return false;
         
         // Claim the defined slices in the name of Spawn
-        ChunkUtils.claimSlices( player.getServerWorld(), CoreMod.spawnID, this.region.getLeft(), this.region.getRight() );
+        ChunkUtils.claimSlices( world, CoreMod.spawnID, this.region.getLeft(), this.region.getRight() );
         
         // Create the structure
         StructureBuilderUtils structure = new StructureBuilderUtils( world, "waystone" );
@@ -236,14 +241,18 @@ public final class WarpUtils {
         };
         for ( BlockPos blockPos : commandBlocks ) {
             // Place the command block
-            CommandBlockBlockEntity cmdBlockEntity = BlockEntityType.COMMAND_BLOCK.instantiate();
-            if (cmdBlockEntity != null) {
-                cmdBlockEntity.getCommandExecutor().setCommand("spawn @a[x=" + this.createWarpAt.getX() + ",z=" + this.createWarpAt.getZ() + ",y=" + this.createWarpAt.getY() + ",distance=0..2]");
+            structure.addBlock(blockPos, cmdBlock);
+            structure.addEntity(blockPos, () -> {
+                CommandBlockBlockEntity blockEntity = BlockEntityType.COMMAND_BLOCK.instantiate();
+                if (blockEntity != null) {
+                    blockEntity.getCommandExecutor()
+                        .setCommand("spawn @a[x=" + this.createWarpAt.getX() + ",z=" + this.createWarpAt.getZ() + ",y=" + this.createWarpAt.getY() + ",distance=0..2]");
+                    
+                    CoreMod.logDebug("Setting the warp command block entity");
+                }
                 
-                // Place the block
-                structure.addBlock(this.createWarpAt.down(), cmdBlock);
-                structure.addEntity(this.createWarpAt.down(), cmdBlockEntity);
-            }
+                return blockEntity;
+            });
         }
         
         // Pressure plate
@@ -256,8 +265,13 @@ public final class WarpUtils {
         }
         
         try {
+            // Destroy the blocks where the waystone goes
             structure.destroy( dropBlocks );
+            
+            // Build the structure
             structure.build();
+            
+            // Play sounds
             structure.particlesSounds(ParticleTypes.HAPPY_VILLAGER, SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f, 1.0f, 1.0f, 12,
                 new BlockPos( this.createWarpAt.getX() - 1, this.createWarpAt.getY() + 3, this.createWarpAt.getZ() - 1 ),
                 new BlockPos( this.createWarpAt.getX() + 1, this.createWarpAt.getY() + 2, this.createWarpAt.getZ() + 1 ),
@@ -267,6 +281,8 @@ public final class WarpUtils {
         } catch (InterruptedException e) {
             throw new RuntimeException( e );
         }
+        
+        CoreMod.logInfo("Completed constructing new " + structure.getName());
         
         return true;
     }
@@ -343,44 +359,96 @@ public final class WarpUtils {
     }
     public static void teleportPlayer(@NotNull ServerPlayerEntity player) {
         Warp warp = WarpUtils.getWarp( player );
-        if (warp != null) WarpUtils.teleportPlayer( warp, player );
+        if (warp != null)
+            WarpUtils.teleportPlayer( warp, player );
     }
     public static void teleportPlayer(@NotNull final Warp warp, @NotNull final ServerPlayerEntity player) {
         WarpUtils.teleportPlayer( warp.world, player, warp.warpPos );
     }
-    public static void teleportPlayer(@NotNull final World world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
+    public static void teleportPlayer(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
+        Entity bottom = player.getRootVehicle(),
+            entity = player;
+        
+        // Spawn the particles
+        WarpUtils.teleportPoof( world, bottom );
+        
+        // If the entity can be teleported within the same world
+        if (world == player.world || bottom == player)
+            WarpUtils.teleportEntity(world, bottom, tpPos );
+        else while (entity != null) {
+            // Get the entity vehicle
+            Entity vehicle = entity.getVehicle();
+            
+            WarpUtils.teleportEntity(world, entity, tpPos);
+            
+            // Teleport the vehicle
+            entity = vehicle;
+        }
+    }
+    public static void teleportEntity(@NotNull final ServerWorld world, @NotNull Entity entity, @NotNull final BlockPos tpPos) {
         // Get the chunks
         ChunkPos chunkPos = new ChunkPos( tpPos );
         
-        // Load the chunk getting teleported to
-        if (!world.isChunkLoaded( chunkPos.x, chunkPos.z ))
-            world.getChunk( chunkPos.x, chunkPos.z, ChunkStatus.FULL, true );
-        
-        // Spawn the particles
-        WarpUtils.teleportPoof( world, player );
+        // Get the X, Y, and Z
+        double x = tpPos.getX() + 0.5D,
+            y = tpPos.getY(),
+            z = tpPos.getZ() + 0.5D;
         
         // Set the teleport ticket
-        ((ServerChunkManager)world.getChunkManager()).addTicket(ChunkTicketType.POST_TELEPORT, chunkPos, 1, player.getEntityId());
+        world.getChunkManager().addTicket(ChunkTicketType.POST_TELEPORT, chunkPos, 1, entity.getEntityId());
         
-        // Unbind player from entities
-        player.stopRiding();
-        if (player.isSleeping()) {
-            player.wakeUp(true, true);
+        if (entity instanceof ServerPlayerEntity) {
+            ServerPlayerEntity player = (ServerPlayerEntity)entity;
+            
+            // Unbind player from entities
+            player.stopRiding();
+            if (player.isSleeping()) // Make sure that the player is not sleeping
+                player.wakeUp(true, true);
+            
+            // Move the player
+            if (world == player.world) {
+                player.networkHandler.requestTeleport(x, y, z, player.yaw, player.pitch);
+                player.networkHandler.syncWithPlayerPosition();
+            } else {
+                player.teleport(world, x, y, z, player.yaw, player.pitch);
+            }
+        } else {
+            float i = MathHelper.wrapDegrees( entity.yaw );
+            float j = MathHelper.wrapDegrees( entity.pitch );
+            j = MathHelper.clamp(j, -90.0F, 90.0F);
+            
+            if (world == entity.world) {
+                entity.refreshPositionAndAngles(x, y, z, i, j);
+                entity.setHeadYaw( i );
+            } else {
+                entity.detach();
+                entity.dimension = world.dimension.getType();
+                Entity copyFrom = entity;
+                entity = entity.getType().create( world );
+                
+                // Return if the entity failed to copy
+                if (entity == null)
+                    return;
+                
+                entity.copyFrom(copyFrom);
+                entity.refreshPositionAndAngles(x, y, z, i,j);
+                entity.setHeadYaw( i );
+                world.onDimensionChanged(entity);
+                copyFrom.removed = true;
+            }
         }
         
-        // Move the player
-        if (world == player.world) {
-            player.networkHandler.requestTeleport(tpPos.getX() + 0.5D, tpPos.getY(), tpPos.getZ() + 0.5D, player.yaw, player.pitch);
-            player.networkHandler.syncWithPlayerPosition();
-        } else if (world instanceof ServerWorld) {
-            player.teleport((ServerWorld) world, tpPos.getX() + 0.5D, tpPos.getY(), tpPos.getZ() + 0.5D, player.yaw, player.pitch);
+        // Change the entity to not falling
+        if (!(entity instanceof LivingEntity) || !((LivingEntity)entity).isFallFlying()) {
+            entity.setVelocity(entity.getVelocity().multiply(1.0D, 0.0D, 1.0D));
+            entity.onGround = true;
         }
     }
-    private static void teleportPoof(final World world, final ServerPlayerEntity player) {
-        BlockPos blockPos = player.getBlockPos();
+    private static void teleportPoof(final World world, final Entity entity) {
+        BlockPos blockPos = entity.getBlockPos();
         if (world instanceof ServerWorld) {
             world.playSound( null, blockPos, SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.MASTER, 1.0f, 1.0f );
-            EffectUtils.particleSwirl(ParticleTypes.WITCH, (ServerWorld) world, player.getPos(), 10);
+            EffectUtils.particleSwirl(ParticleTypes.WITCH, (ServerWorld) world, entity.getPos(), 10);
             /*((ServerWorld) world).spawnParticles(ParticleTypes.POOF,
                 player.getX(),
                 player.getY() + 1.0D,
@@ -393,16 +461,16 @@ public final class WarpUtils {
             );*/
         }
     }
-    public static BlockPos getWorldSpawn(@NotNull final World world) {
+    public static BlockPos getWorldSpawn(@NotNull final ServerWorld world) {
         LevelProperties properties = world.getLevelProperties();
         return new BlockPos( properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ() );
     }
     
     public static class Warp {
         public final BlockPos warpPos;
-        public final World world;
+        public final ServerWorld world;
         
-        private Warp(World world, BlockPos blockPos) {
+        private Warp(ServerWorld world, BlockPos blockPos) {
             this.warpPos = blockPos;
             this.world = world;
         }

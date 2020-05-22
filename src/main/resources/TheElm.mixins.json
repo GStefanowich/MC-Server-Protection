@@ -5,14 +5,16 @@
   "mixins": [
   ],
   "server": [
+    "Interfaces.WhitelistAccessor",
+    
     "Commands.Me",
     "Commands.Stop",
     "Commands.Time",
     "Commands.Whisper",
     
     "Blocks.AbstractFurnace",
+    "Blocks.HopperBlock",
     "Blocks.Pistons",
-    "Blocks.WaystoneBlock",
     
     "Items.RepairCost",
     "Items.Shovel",
@@ -71,6 +73,7 @@
     "World.ChunkSaving",
     "World.ClaimedChunk",
     "World.DragonFight",
+    "World.RaidFight",
     "World.WorldSleep",
     "World.FluidFlow",
     "World.Portals",
@@ -82,7 +85,8 @@
     "Server.MOTD",
     "Server.PlayerList",
     "Server.PlayerManager",
-    "Server.Save"
+    "Server.Save",
+    "Server.Whitelist"
   ],
   "injectors": {
     "defaultRequire": 1

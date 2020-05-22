@@ -78,7 +78,7 @@ public abstract class HorseRide extends HorseBaseEntity {
             // Get the name of the CHUNK OWNER
             WorldChunk chunk = world.getWorldChunk( this.getBlockPos() );
             if ( chunk != null )
-                owner = ((IClaimedChunk) chunk).getOwnerName( player );
+                owner = ((IClaimedChunk) chunk).getOwnerName( player, this.getBlockPos() );
             else
                 owner = new LiteralText( "unknown player" )
                     .formatted(Formatting.LIGHT_PURPLE);

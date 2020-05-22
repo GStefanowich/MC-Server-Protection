@@ -51,6 +51,7 @@ import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.PlayerMovement;
+import net.TheElm.project.interfaces.WhitelistedPlayer;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
@@ -62,6 +63,7 @@ import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.command.arguments.GameProfileArgumentType;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -79,6 +81,7 @@ import net.minecraft.text.Text;
 import net.minecraft.text.Texts;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.UserCache;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
@@ -165,9 +168,9 @@ public final class ClaimCommand {
         /*
          * Friends Command
          */
-        LiteralCommandNode<ServerCommandSource> friends = dispatcher.register( CommandManager.literal("friends")
+        LiteralCommandNode<ServerCommandSource> friends = dispatcher.register(CommandManager.literal("friends")
             // Whiteliat a friend
-            .then( CommandManager.literal( "whitelist" )
+            .then(CommandManager.literal( "whitelist" )
                 .requires((context) -> SewingMachineConfig.INSTANCE.FRIEND_WHITELIST.get())
                 .then( CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                     .suggests((context, builder) -> {
@@ -178,19 +181,27 @@ public final class ClaimCommand {
                     })
                     .executes(ClaimCommand::inviteFriend)
                 )
+                .executes(ClaimCommand::invitedListSelf)
+            )
+            .then(CommandManager.literal("get")
+                .requires((source) -> source.hasPermissionLevel(3))
+                .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                    .suggests(CommandUtilities::getAllPlayerNames)
+                    .executes(ClaimCommand::invitedListOther)
+                )
             )
             // Set a friends rank
-            .then( CommandManager.literal("set")
-                .then( CommandManager.argument( "rank", StringArgumentType.word())
-                    .suggests( EnumArgumentType.enumerate( ClaimRanks.class ) )
-                    .then( CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
+            .then(CommandManager.literal("set")
+                .then(CommandManager.argument( "rank", StringArgumentType.word())
+                    .suggests(EnumArgumentType.enumerate( ClaimRanks.class ))
+                    .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtilities::getAllPlayerNames)
                         .executes(ClaimCommand::addRank)
                     )
                 )
             )
             // Remove a friends rank
-            .then( CommandManager.literal("remove")
+            .then(CommandManager.literal("remove")
                 .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                     //.suggests(CommandUtilities::getAllPlayerNames)
                     .executes(ClaimCommand::remRank)
@@ -995,7 +1006,8 @@ public final class ClaimCommand {
      * Let players add friends to the whitelist
      */
     private static int inviteFriend(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        Whitelist whitelist = context.getSource().getMinecraftServer().getPlayerManager().getWhitelist();
+        ServerCommandSource source = context.getSource();
+        Whitelist whitelist = source.getMinecraftServer().getPlayerManager().getWhitelist();
         int count = 0;
         
         // Get the reference of the player to whitelist
@@ -1005,8 +1017,17 @@ public final class ClaimCommand {
         while ( gameProfiles.hasNext() ) {
             GameProfile profile = gameProfiles.next();
             if (!whitelist.isAllowed( profile )) {
+                // Create the entry and set invited by
+                WhitelistEntry entry = new WhitelistEntry( profile );
+                
+                Entity player = source.getEntity();
+                if (player instanceof PlayerEntity)
+                    ((WhitelistedPlayer)entry).setInvitedBy(player.getUuid());
+                
                 // Add profile to the whitelist
-                whitelist.add( new WhitelistEntry( profile ) );
+                whitelist.add( entry );
+                
+                // For each profile added to the whitelist
                 context.getSource().sendFeedback(new TranslatableText("commands.whitelist.add.success", Texts.toText( profile )), true);
                 ++count;
             }
@@ -1017,6 +1038,73 @@ public final class ClaimCommand {
         } else {
             return count;
         }
+    }
+    private static int invitedListSelf(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get command context information
+        ServerCommandSource source = context.getSource();
+        
+        return ClaimCommand.invitedList(
+            source,
+            source.getPlayer().getGameProfile()
+        );
+    }
+    private static int invitedListOther(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get command context information
+        ServerCommandSource source = context.getSource();
+        Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
+        
+        for (GameProfile profile : profiles) {
+            return ClaimCommand.invitedList(
+                source,
+                profile
+            );
+        }
+        
+        return 0;
+    }
+    private static int invitedList(ServerCommandSource source, GameProfile player) throws CommandSyntaxException {
+        // Get information about the server
+        MinecraftServer server = source.getMinecraftServer();
+        UserCache cache = server.getUserCache();
+        Whitelist whitelist = server.getPlayerManager().getWhitelist();
+        
+        // Store information about invites
+        GameProfile invitedBy = null;
+        List<WhitelistEntry> invited = new ArrayList<>();
+        
+        ClaimantPlayer claim = ClaimantPlayer.get(player.getId());
+        
+        // Loop the whitelist
+        for (WhitelistEntry entry : whitelist.values()) {
+            if (player.getId().equals(((WhitelistedPlayer)entry).getUUID()))
+                invitedBy = cache.getByUuid(((WhitelistedPlayer)entry).getInvitedBy());
+            else if (player.getId().equals(((WhitelistedPlayer) entry).getInvitedBy()))
+                invited.add(entry);
+        }
+        
+        Entity entity = source.getEntity();
+        boolean isPlayer = (entity instanceof PlayerEntity && player.getId().equals(entity.getUuid()));
+        
+        // Output as text
+        Text out = null;
+        if (invitedBy != null)
+            out = new LiteralText("").append(new LiteralText(isPlayer ? "You" : player.getName()).formatted(Formatting.GRAY))
+                .append(" " + ( isPlayer ? "were" : "was" ) + " invited to the server by ").formatted(Formatting.WHITE)
+                .append(new LiteralText(invitedBy.getName()).formatted(claim.getFriendRank(invitedBy.getId()).getColor()));
+        
+        Text inv = new LiteralText("").append(new LiteralText(isPlayer ? "You" : player.getName()).formatted(Formatting.GRAY))
+            .append(" invited the following players: ").formatted(Formatting.WHITE)
+            .append(MessageUtils.listToTextComponent(invited, (entry) -> {
+                ClaimRanks rank = claim.getFriendRank(((WhitelistedPlayer)entry).getUUID());
+                return new LiteralText(((WhitelistedPlayer)entry).getName()).formatted(rank.getColor());
+            }));
+        
+        if (out == null) out = inv;
+        else out.append("\n").append(inv);
+        
+        source.sendFeedback(out, false);
+        
+        return Command.SINGLE_SUCCESS;
     }
     
     /*

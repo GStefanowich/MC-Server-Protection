@@ -169,7 +169,10 @@ public abstract class Claimant {
         this.dirty = true;
     }
     public final void save() {
-        if (this.dirty) this.forceSave();
+        if (this.dirty) {
+            this.forceSave();
+            this.dirty = false;
+        }
     }
     public boolean forceSave() {
         if (CoreMod.isDebugging()) CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.spawnID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );

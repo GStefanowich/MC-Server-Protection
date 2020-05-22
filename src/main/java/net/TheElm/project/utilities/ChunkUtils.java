@@ -172,7 +172,7 @@ public final class ChunkUtils {
      * @return If the player is a high enough rank to teleport to the target
      */
     public static boolean canPlayerWarpTo(PlayerEntity player, UUID target) {
-        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+        if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || (SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get() && (player.isCreative() || player.isSpectator())))
             return SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get();
         
         // Check our chunk permissions
@@ -200,17 +200,23 @@ public final class ChunkUtils {
      */
     public static void claimSlices(ServerWorld world, UUID player, BlockPos firstPos, BlockPos secondPos) {
         // Get range of values
-        BlockPos min = getMinimumPosition(firstPos, secondPos);
-        BlockPos max = getMaximumPosition(firstPos, secondPos);
+        BlockPos min = ChunkUtils.getMinimumPosition(firstPos, secondPos);
+        BlockPos max = ChunkUtils.getMaximumPosition(firstPos, secondPos);
+        
+        // Log the blocks being claimed
+        CoreMod.logDebug("Claiming " + MessageUtils.blockPosToString(min) + " to " + MessageUtils.blockPosToString(max));
         
         // Iterate through the blocks
         for (int x = min.getX(); x <= max.getX(); x++) {
             for (int z = min.getZ(); z <= max.getZ(); z++) {
                 BlockPos sliceLoc = new BlockPos( x, 0, z );
-                int slicePos = getPositionWithinChunk( sliceLoc );
+                int slicePos = ChunkUtils.getPositionWithinChunk( sliceLoc );
                 
-                WorldChunk chunk = world.getWorldChunk( sliceLoc );
-                ((IClaimedChunk) chunk).updateSliceOwner( player, slicePos, min.getY(), max.getY() );
+                // Get the chunk
+                WorldChunk chunk = world.getWorldChunk(sliceLoc);
+                
+                // Update the owner of the chunk
+                ((IClaimedChunk) chunk).updateSliceOwner(player, slicePos, min.getY(), max.getY());
             }
         }
     }
@@ -258,7 +264,9 @@ public final class ChunkUtils {
     public static boolean isPlayerWithinSpawn(@NotNull final ServerPlayerEntity player) {
         if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
             return true;
-        return CoreMod.spawnID.equals(ChunkUtils.getPlayerLocation( player ));
+        // If player is in creative/spectator, or is within Spawn
+        return (SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get() && (player.isCreative() || player.isSpectator()))
+            || CoreMod.spawnID.equals(ChunkUtils.getPlayerLocation( player ));
     }
     public static int getPositionWithinChunk(BlockPos blockPos) {
         int chunkIndex = blockPos.getX() & 0xF;
@@ -341,6 +349,10 @@ public final class ChunkUtils {
         }
         public int lower() {
             return this.yLower;
+        }
+        
+        public boolean isWithin(int y) {
+            return y >= this.lower() && y <= this.upper();
         }
         
         @Override

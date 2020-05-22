@@ -46,8 +46,14 @@ import java.util.UUID;
 
 public interface IClaimedChunk extends Chunk {
     
-    ClaimantTown updateTownOwner(@Nullable UUID owner);
-    ClaimantPlayer updatePlayerOwner(@Nullable UUID owner);
+    ClaimantTown updateTownOwner(@Nullable UUID owner, boolean fresh);
+    default ClaimantTown updateTownOwner(@Nullable UUID owner) {
+        return this.updateTownOwner(owner, true);
+    }
+    ClaimantPlayer updatePlayerOwner(@Nullable UUID owner, boolean fresh);
+    default ClaimantPlayer updatePlayerOwner(@Nullable UUID owner) {
+        return this.updatePlayerOwner(owner, true);
+    }
     void canPlayerClaim(@NotNull UUID owner) throws TranslationKeyException;
     
     @Nullable
@@ -59,7 +65,10 @@ public interface IClaimedChunk extends Chunk {
     @Nullable
     ClaimantTown getTown();
     
-    Text getOwnerName(@NotNull PlayerEntity zonePlayer);
+    default Text getOwnerName(@NotNull PlayerEntity zonePlayer) {
+        return this.getOwnerName(zonePlayer, zonePlayer.getBlockPos());
+    }
+    Text getOwnerName(@NotNull PlayerEntity zonePlayer, @NotNull BlockPos pos);
     
     boolean canPlayerDo(@NotNull BlockPos blockPos, @Nullable UUID player, @NotNull ClaimPermissions perm);
     boolean isSetting(@NotNull BlockPos pos, @NotNull ClaimSettings setting);
@@ -71,8 +80,13 @@ public interface IClaimedChunk extends Chunk {
     ListTag serializeSlices();
     void deserializeSlices(@NotNull ListTag serialized);
     
-    void updateSliceOwner(UUID owner, int slicePos);
-    void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo);
+    default void updateSliceOwner(UUID owner, int slicePos) {
+        this.updateSliceOwner(owner, slicePos, 0, 256);
+    }
+    default void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo) {
+        this.updateSliceOwner(owner, slicePos, yFrom, yTo, true);
+    }
+    void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo, boolean fresh);
     UUID[] getSliceOwner(int slicePos, int yFrom, int yTo);
     
     /*
