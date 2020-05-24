@@ -42,6 +42,7 @@ import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -65,7 +66,7 @@ public abstract class CoreMod {
     public static final String MOD_ID = "sewing-machine";
     
     // Create ourselves a universal logger
-    private static final Logger logger = LogManager.getLogger( MOD_ID );
+    private static final Logger logger = LogManager.getLogger();
     
     // Mod memory cache for claims
     public static final Map<ServerPlayerEntity, UUID> PLAYER_LOCATIONS = Collections.synchronizedMap(new WeakHashMap<>()); // Reference of where players are
@@ -268,24 +269,26 @@ public abstract class CoreMod {
      * Our logger
      */
     public static final String logPrefix = "[SEW] ";
-    public static void logInfo(@Nullable String message ) {
-        logger.info( logPrefix + message );
-    }
     public static void logInfo(@Nullable Text message ) {
-        CoreMod.logInfo( message == null ? "NULL" : message.getString() );
+        Text out = new LiteralText(logPrefix);
+        if (message == null) out.append("NULL");
+        else out.append(message);
+        logger.info(out.getString());
+    }
+    public static void logInfo(@Nullable String message ) {
+        CoreMod.logInfo(new LiteralText(message == null ? "NULL" : message));
     }
     public static void logInfo(@Nullable Object message ) {
         CoreMod.logInfo( message == null ? "NULL" : message.toString() );
     }
     
-    public static void logDebug( String message ) {
+    public static void logDebug(@Nullable String message ) {
         if (CoreMod.isDebugging())
             CoreMod.logInfo( message );
-        else
-            logger.debug( logPrefix + message );
     }
     public static void logDebug( @Nullable Text message ) {
-        logDebug( message == null ? "NULL" : message.getString() );
+        if (message == null) CoreMod.logDebug("NULL");
+        else if (CoreMod.isDebugging()) CoreMod.logInfo(message);
     }
     
     public static void logError( String message ) {

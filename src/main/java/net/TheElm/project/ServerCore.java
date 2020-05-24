@@ -57,6 +57,7 @@ import net.fabricmc.fabric.api.registry.CommandRegistry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.LevelProperties;
 import org.jetbrains.annotations.NotNull;
@@ -160,8 +161,12 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     }
     @NotNull
     public static BlockPos getSpawn(DimensionType dimension) {
-        LevelProperties properties = get().getWorld(dimension).getLevelProperties();
+        LevelProperties properties = ServerCore.getWorld(dimension).getLevelProperties();
         return new BlockPos(properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ());
+    }
+    @NotNull
+    public static World getWorld(DimensionType dimension) {
+        return ServerCore.get().getWorld(dimension);
     }
     
 }

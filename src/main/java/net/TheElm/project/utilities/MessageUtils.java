@@ -44,6 +44,7 @@ import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
@@ -181,6 +182,28 @@ public final class MessageUtils {
             translationKey,
             objects
         );
+    }
+    
+    // Send command block text to OPs
+    public static void consoleToOps(Text event) {
+        MessageUtils.consoleToOps(new LiteralText("@"), event);
+    }
+    public static void consoleToOps(Text player, Text event) {
+        MinecraftServer server = ServerCore.get();
+        
+        Text send = (new TranslatableText("chat.type.admin", player, event)).formatted(Formatting.GRAY, Formatting.ITALIC);
+        if (server.getGameRules().getBoolean(GameRules.SEND_COMMAND_FEEDBACK)) {
+            Iterator iterator = server.getPlayerManager().getPlayerList().iterator();
+            
+            while( iterator.hasNext() ) {
+                ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity)iterator.next();
+                if (server.getPlayerManager().isOperator(serverPlayerEntity.getGameProfile()))
+                    serverPlayerEntity.sendMessage(send);
+            }
+        }
+        
+        if (server.getGameRules().getBoolean(GameRules.LOG_ADMIN_COMMANDS))
+            server.sendMessage(send);
     }
     
     // Send a translation blob to a stream of players
