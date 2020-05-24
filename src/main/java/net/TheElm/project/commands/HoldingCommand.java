@@ -101,7 +101,7 @@ public final class HoldingCommand {
             for ( Map.Entry<Enchantment, Integer> enchantment : enchantments.entrySet() ) {
                 Enchantment enchant = enchantment.getKey();
                 Integer level = enchantment.getValue();
-        
+                
                 enchantsBuilder.append( "\n" )
                     .append(enchant.getName( level ));
             }
@@ -112,7 +112,7 @@ public final class HoldingCommand {
                 // Get the items durability
                 .append(( stack.isDamageable() ?
                     new TranslatableText("item.durability",
-                        FormattingUtils.number(stack.getDamage()),
+                        FormattingUtils.number(stack.getMaxDamage() - stack.getDamage()),
                         FormattingUtils.number(stack.getMaxDamage())
                     )
                     : new TranslatableText("item.unbreakable")

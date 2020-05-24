@@ -51,6 +51,7 @@ import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.PlayerMovement;
+import net.TheElm.project.interfaces.VillagerTownie;
 import net.TheElm.project.interfaces.WhitelistedPlayer;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -64,6 +65,7 @@ import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -112,6 +114,7 @@ public final class ClaimCommand {
     private static final ExceptionTranslatableServerSide TOWN_INVITE_RANK = new ExceptionTranslatableServerSide("town.invite.rank");
     private static final ExceptionTranslatableServerSide TOWN_INVITE_FAIL = new ExceptionTranslatableServerSide("town.invite.fail");
     private static final ExceptionTranslatableServerSide TOWN_INVITE_MISSING = new ExceptionTranslatableServerSide("town.invite.missing");
+    private static final SimpleCommandExceptionType TOWN_NOT_EXISTS = new SimpleCommandExceptionType(new LiteralText("That town does not exist."));
     
     private ClaimCommand() {}
     
@@ -215,17 +218,17 @@ public final class ClaimCommand {
          * Register the town command
          */
         LiteralCommandNode<ServerCommandSource> towns = dispatcher.register( CommandManager.literal( "town" )
-            .then( CommandManager.literal("new" )
+            .then(CommandManager.literal("new" )
                 .requires(ClaimCommand::sourceNotMayor)
                 .then( CommandManager.argument("name", StringArgumentType.greedyString())
                     .executes(ClaimCommand::townFound)
                 )
             )
-            .then( CommandManager.literal("disband")
+            .then(CommandManager.literal("disband")
                 .requires(ClaimCommand::sourceIsMayor)
                 .executes(ClaimCommand::townDisband)
             )
-            .then( CommandManager.literal("claim")
+            .then(CommandManager.literal("claim")
                 .requires(ClaimCommand::sourceIsMayor)
                 .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                     .suggests(CommandUtilities::getAllPlayerNames)
@@ -233,33 +236,43 @@ public final class ClaimCommand {
                 )
                 .executes(ClaimCommand::claimChunkTown)
             )
-            .then( CommandManager.literal("unclaim")
+            .then(CommandManager.literal("unclaim")
                 .requires(ClaimCommand::sourceInTown)
                 .executes(ClaimCommand::unclaimChunkTown)
             )
-            .then( CommandManager.literal("invite")
+            .then(CommandManager.literal("invite")
                 .requires(ClaimCommand::sourceIsMayor)
                 .then( CommandManager.argument("target", EntityArgumentType.player())
                     .executes(ClaimCommand::townInvite)
                 )
             )
-            .then( CommandManager.literal("join")
+            .then(CommandManager.literal("join")
                 .requires(ClaimCommand::sourceNotInTown)
                 .then( CommandManager.argument("town", StringArgumentType.greedyString())
                     .suggests(ClaimCommand::listTownInvites)
                     .executes(ClaimCommand::playerJoinsTown)
                 )
             )
-            .then( CommandManager.literal("leave")
+            .then(CommandManager.literal("leave")
                 .requires((source) -> ClaimCommand.sourceInTown( source ) && ClaimCommand.sourceNotMayor( source ))
                 .executes(ClaimCommand::playerPartsTown)
             )
-            .then( CommandManager.literal("set")
+            .then(CommandManager.literal("set")
                 .requires((source) -> source.hasPermissionLevel(4))
-                .then( CommandManager.argument("target", GameProfileArgumentType.gameProfile())
+                .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                     .suggests(CommandUtilities::getAllPlayerNames)
-                    .then( CommandManager.argument("town", StringArgumentType.greedyString())
+                    .then(CommandManager.argument("town", StringArgumentType.greedyString())
+                        .suggests(CommandUtilities::getAllTowns)
                         .executes(ClaimCommand::adminSetPlayerTown)
+                    )
+                )
+            )
+            .then(CommandManager.literal("villagers")
+                .requires((source) -> source.hasPermissionLevel(4))
+                .then(CommandManager.argument("entities", EntityArgumentType.entities())
+                    .then(CommandManager.argument("town", StringArgumentType.greedyString())
+                        .suggests(CommandUtilities::getAllTowns)
+                        .executes(ClaimCommand::adminSetEntityTown)
                     )
                 )
             )
@@ -273,19 +286,13 @@ public final class ClaimCommand {
         // The main command
         LiteralCommandNode<ServerCommandSource> protection = dispatcher.register( CommandManager.literal("protection" )
             // Claim a chunk
-            .then( CommandManager.literal("claim" )
-                .redirect( claim )
-            )
+            .then( claim )
             
             // Unclaim a chunk
-            .then( CommandManager.literal("unclaim")
-                .redirect( unclaim )
-            )
+            .then( unclaim )
             
             // Towns
-            .then( CommandManager.literal("town")
-                .redirect( towns )
-            )
+            .then( towns )
             
             // Update claim permissions
             .then( CommandManager.literal("permissions")
@@ -305,9 +312,7 @@ public final class ClaimCommand {
             )
             
             // Update friends
-            .then( CommandManager.literal("friends")
-                .redirect( friends )
-            )
+            .then( friends )
             
             // Chunk settings
             .then( CommandManager.literal("settings")
@@ -794,7 +799,7 @@ public final class ClaimCommand {
         
         // Get the town
         String townName = StringArgumentType.getString(context, "town");
-        ClaimantTown town = CoreMod.getFromCache( ClaimantTown.class, townName );
+        ClaimantTown town = CoreMod.getFromCache(ClaimantTown.class, townName);
         if (town == null)
             throw TOWN_INVITE_MISSING.create(source.getPlayer());
         
@@ -803,6 +808,31 @@ public final class ClaimCommand {
         ClaimantPlayer.get( player ).setTown( town );
         
         return Command.SINGLE_SUCCESS;
+    }
+    private static int adminSetEntityTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        
+        Collection<? extends Entity> entities = EntityArgumentType.getEntities(context, "entities");
+        String townName = StringArgumentType.getString(context, "town");
+        ClaimantTown town = CoreMod.getFromCache(ClaimantTown.class, townName);
+        if (town == null)
+            throw TOWN_NOT_EXISTS.create();
+        
+        int added = 0;
+        for (Entity entity : entities) {
+            if (!(entity instanceof VillagerEntity))
+                continue;
+            if (((VillagerTownie)entity).setTown(town))
+                added++;
+        }
+        
+        source.sendFeedback(new LiteralText("Added ")
+            .append(new LiteralText(NumberFormat.getInstance().format(added)).formatted(Formatting.AQUA))
+            .append(" villagers to ")
+            .append(town.getName())
+            .append("."), false);
+        
+        return added;
     }
     private static CompletableFuture<Suggestions> listTownInvites(CommandContext<ServerCommandSource> context, SuggestionsBuilder suggestionsBuilder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();

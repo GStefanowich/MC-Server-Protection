@@ -29,8 +29,8 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonSerializationContext;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ChatRooms;
+import net.TheElm.project.utilities.MessageUtils;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -76,12 +76,11 @@ public final class ChatFormat {
         Text shorter = new LiteralText( shortKey == null ? "~" : shortKey );
         
         // Create the hover event
-        Formatting formatting = worldColor( dimension );
-        HoverEvent hover = new HoverEvent( HoverEvent.Action.SHOW_TEXT, longer.formatted( formatting ));
+        Formatting formatting = this.worldColor( dimension );
         
         return ( showAsLong ? longer : shorter )
             .formatted( formatting )
-            .styled((styler) -> styler.setHoverEvent( hover ));
+            .styled(MessageUtils.simpleHoverText(longer.formatted( formatting )));
     }
     private Formatting worldColor(DimensionType dimension) {
         if (DimensionType.OVERWORLD == dimension)

@@ -20,8 +20,9 @@ public abstract class RaidFight extends PersistentState {
     
     @Inject(at = @At("HEAD"), method = "startRaid", cancellable = true)
     public void onStartRaid(ServerPlayerEntity player, CallbackInfoReturnable<Raid> callback) {
-        // TODO: Test that raids are properly prevented
+        // Get the players position
         BlockPos pos = player.getBlockPos();
+        // Test if the player has permission to interact with the village
         if (!(ChunkUtils.canPlayerInteractFriendlies(player, pos)
             && ChunkUtils.canPlayerBreakInChunk(player, pos)
             && ChunkUtils.canPlayerLootChestsInChunk(player, pos))

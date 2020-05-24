@@ -29,8 +29,10 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -42,6 +44,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 public final class CommandUtilities {
     
@@ -51,16 +54,28 @@ public final class CommandUtilities {
             .map(( player ) -> player.getGameProfile().getName()), builder);
     }
     public static CompletableFuture<Suggestions> getAllPlayerNames(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
-        Set<String> usernames = new HashSet<>();
+        Set<String> userNames = new HashSet<>();
         
         MinecraftServer server = context.getSource().getMinecraftServer();
         PlayerManager playerManager = server.getPlayerManager();
         
-        usernames.addAll(Arrays.asList( playerManager.getPlayerNames() ) );
-        usernames.addAll(Arrays.asList( playerManager.getWhitelistedNames() ));
+        userNames.addAll(Arrays.asList( playerManager.getPlayerNames() ) );
+        userNames.addAll(Arrays.asList( playerManager.getWhitelistedNames() ));
         
         return CommandSource.suggestMatching(
-            usernames,
+            userNames,
+            builder
+        );
+    }
+    
+    public static CompletableFuture<Suggestions> getAllTowns(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+        Set<String> townNames = new HashSet<>();
+    
+        Stream<ClaimantTown> towns = CoreMod.getCacheStream(ClaimantTown.class);
+        towns.forEach(town -> townNames.add(town.getName().getString()));
+        
+        return CommandSource.suggestMatching(
+            townNames,
             builder
         );
     }

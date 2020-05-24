@@ -29,7 +29,9 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.ConstructableEntity;
 import net.TheElm.project.interfaces.SleepingWorld;
+import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.IntUtils;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.SleepUtils;
 import net.TheElm.project.utilities.TitleUtils;
@@ -107,25 +109,28 @@ public abstract class WorldSleep extends World implements SleepingWorld {
             if (raining || thunder)
                 this.resetWeather();
             else if (this.random.nextInt(4) <= 0) {
-                int maxSec = 1200;
-                int minSec = 300;
-                
                 // Random chance to start raining
                 this.properties.setClearWeatherTime(0);
-                this.properties.setRainTime((this.random.nextInt(maxSec - minSec) + minSec) * 20);
+                this.properties.setRainTime(IntUtils.random(this.random, 300, 1200) * 20);
                 this.properties.setRaining(true);
                 this.properties.setThunderTime(0);
                 this.properties.setThundering(false);
             }
         }
         
-        long worldDay = this.getTimeOfDay() / 24000L % 2147483647L;
-        long worldYear = worldDay / 365;
-        worldDay = worldDay - (worldYear * 365);
+        long worldDay = IntUtils.timeToDays(this);
+        long worldYear = worldDay / SewingMachineConfig.INSTANCE.CALENDAR_DAYS.get();
+        worldDay = worldDay - (worldYear * SewingMachineConfig.INSTANCE.CALENDAR_DAYS.get());
         
         NumberFormat formatter = NumberFormat.getInstance();
+        String year = CasingUtils.Acronym(SewingMachineConfig.INSTANCE.CALENDAR_YEAR_EPOCH.get(), true);
         TitleUtils.showPlayerAlert((ServerWorld)(World) this,
-            new LiteralText( "Rise and shine! Day " + formatter.format( worldDay ) + " of " + formatter.format( worldYear ) + " A.C. has begun." )
+            new LiteralText("Rise and shine! Day ")
+                .append(formatter.format( worldDay ))
+                .append(" of ")
+                .append(formatter.format( worldYear ))
+                .append(year.isEmpty() ? "" : " " + year)
+                .append(" has begun.")
         );
     }
     

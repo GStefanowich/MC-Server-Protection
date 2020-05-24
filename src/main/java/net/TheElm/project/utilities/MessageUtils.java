@@ -36,7 +36,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
@@ -50,6 +52,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -268,6 +271,14 @@ public final class MessageUtils {
         return PlayerNameUtils.getServerChatDisplay( chatRoom )
             .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
             .append(text.formatted(chatRoom.getFormatting()));
+    }
+    
+    // Text Events
+    public static Consumer<Style> simpleHoverText(String text, Formatting... styled) {
+        return MessageUtils.simpleHoverText(new LiteralText(text).formatted(styled));
+    }
+    public static Consumer<Style> simpleHoverText(Text text) {
+        return style -> style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, text));
     }
     
 }
