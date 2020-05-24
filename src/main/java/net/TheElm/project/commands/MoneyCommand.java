@@ -132,9 +132,8 @@ public final class MoneyCommand {
                 )
             )
             // Player PAY money (Transfers money)
-            .then( CommandManager.literal("pay" )
-                .redirect( pay )
-            )
+            .then( pay )
+            
             // Player REQUEST money (Send player a request)
             .then( CommandManager.literal( "request" )
                 .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )

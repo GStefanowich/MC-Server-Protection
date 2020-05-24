@@ -28,6 +28,7 @@ package net.TheElm.project.mixins.Server;
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.TheElm.project.utilities.IntUtils;
 import net.TheElm.project.utilities.TradeUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.AbstractTraderEntity;
@@ -50,7 +51,7 @@ public abstract class WanderingTraders extends AbstractTraderEntity {
     }
     
     private static Int2ObjectMap<TradeOffers.Factory[]> copyToFastUtilMap(ImmutableMap<Integer, TradeOffers.Factory[]> immutableMap_1) {
-        return new Int2ObjectOpenHashMap( immutableMap_1 );
+        return new Int2ObjectOpenHashMap<>( immutableMap_1 );
     }
     
     @Inject(at = @At("HEAD"), method = "fillRecipes", cancellable = true)
@@ -58,90 +59,148 @@ public abstract class WanderingTraders extends AbstractTraderEntity {
         TradeOffers.Factory[] mainFactory = WANDERING_TRADER_TRADES.get(1);
         TradeOffers.Factory[] rareFactory = WANDERING_TRADER_TRADES.get(2);
         if (mainFactory != null && rareFactory != null) {
-            TraderOfferList traderOfferList_1 = this.getOffers();
-            this.fillRecipesFromPool(traderOfferList_1, mainFactory, 5);
+            // Fill trades from the mainFactory
+            TraderOfferList tradeOffers = this.getOffers();
+            this.fillRecipesFromPool(tradeOffers, mainFactory, IntUtils.random(this.random, 4, 12));
             
-            int int_1 = this.random.nextInt(rareFactory.length);
+            // Get one random trade from the rare factory
+            int randomTrade = this.random.nextInt(rareFactory.length);
+            TradeOffers.Factory factory = rareFactory[randomTrade];
             
-            TradeOffers.Factory tradeOffers$Factory_1 = rareFactory[int_1];
-            TradeOffer tradeOffer_1 = tradeOffers$Factory_1.create(this, this.random);
-            if (tradeOffer_1 != null) {
-                traderOfferList_1.add(tradeOffer_1);
-            }
+            // Create a trade using the factory
+            TradeOffer tradeOffer = factory.create(this, this.random);
+            if (tradeOffer != null)
+                tradeOffers.add(tradeOffer);
         }
         callback.cancel();
     }
     
     // TODO: Make wandering traders have useful trades. Spawn eggs?
     private static final Int2ObjectMap<TradeOffers.Factory[]> WANDERING_TRADER_TRADES = copyToFastUtilMap(
-        ImmutableMap.of(
-            1, new TradeOffers.Factory[]{
-                TradeUtils.createSellItem(Items.SEA_PICKLE, 64, 1, 5, 1),
-                TradeUtils.createSellItem(Items.SLIME_BALL, 64, 1, 5, 1),
-                TradeUtils.createSellItem(Items.GLOWSTONE, 64, 1, 5, 1),
-                TradeUtils.createSellItem(Items.NAUTILUS_SHELL, 64, 1, 5, 1),
-                TradeUtils.createSellItem(Items.FERN, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.SUGAR_CANE, 64, 1, 8, 1),
-                TradeUtils.createSellItem(Items.PUMPKIN, 64, 1, 4, 1),
-                TradeUtils.createSellItem(Items.KELP, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.CACTUS, 64, 1, 8, 1),
-                TradeUtils.createSellItem(Items.DANDELION, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.POPPY, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.BLUE_ORCHID, 64, 1, 8, 1),
-                TradeUtils.createSellItem(Items.ALLIUM, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.AZURE_BLUET, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.RED_TULIP, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.ORANGE_TULIP, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.WHITE_TULIP, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.PINK_TULIP, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.OXEYE_DAISY, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.CORNFLOWER, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.LILY_OF_THE_VALLEY, 64, 1, 7, 1),
-                TradeUtils.createSellItem(Items.WHEAT_SEEDS, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.BEETROOT_SEEDS, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.PUMPKIN_SEEDS, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.MELON_SEEDS, 64, 1, 12, 1),
-                TradeUtils.createSellItem(Items.ACACIA_SAPLING, 5, 1, 8, 1),
-                TradeUtils.createSellItem(Items.BIRCH_SAPLING, 5, 1, 8, 1),
-                TradeUtils.createSellItem(Items.DARK_OAK_SAPLING, 5, 1, 8, 1),
-                TradeUtils.createSellItem(Items.JUNGLE_SAPLING, 5, 1, 8, 1),
-                TradeUtils.createSellItem(Items.OAK_SAPLING, 5, 1, 8, 1),
-                TradeUtils.createSellItem(Items.SPRUCE_SAPLING, 5, 1, 8, 1),
-                TradeUtils.createSellItem(Items.RED_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.WHITE_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.BLUE_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.PINK_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.BLACK_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.GREEN_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.LIGHT_GRAY_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.MAGENTA_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.YELLOW_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.GRAY_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.PURPLE_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.LIGHT_BLUE_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.LIME_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.ORANGE_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.BROWN_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.CYAN_DYE, 1, 3, 12, 1),
-                TradeUtils.createSellItem(Items.BRAIN_CORAL_BLOCK, 3, 1, 8, 1),
-                TradeUtils.createSellItem(Items.BUBBLE_CORAL_BLOCK, 3, 1, 8, 1),
-                TradeUtils.createSellItem(Items.FIRE_CORAL_BLOCK, 3, 1, 8, 1),
-                TradeUtils.createSellItem(Items.HORN_CORAL_BLOCK, 3, 1, 8, 1),
-                TradeUtils.createSellItem(Items.TUBE_CORAL_BLOCK, 3, 1, 8, 1),
-                TradeUtils.createSellItem(Items.VINE, 1, 1, 12, 1),
-                TradeUtils.createSellItem(Items.BROWN_MUSHROOM, 1, 1, 12, 1),
-                TradeUtils.createSellItem(Items.RED_MUSHROOM, 1, 1, 12, 1),
-                TradeUtils.createSellItem(Items.LILY_PAD, 1, 2, 5, 1),
-                TradeUtils.createSellItem(Items.SAND, 1, 8, 8, 1),
-                TradeUtils.createSellItem(Items.RED_SAND, 1, 4, 6, 1)
+        ImmutableMap.of(1, new TradeOffers.Factory[] {
+                TradeUtils.createSellItem(1, 1, Items.FERN, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.SUGAR_CANE, 8, 1),
+                TradeUtils.createSellItem(1, 1, Items.DANDELION, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.POPPY, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.BLUE_ORCHID, 8, 1),
+                TradeUtils.createSellItem(1, 1, Items.ALLIUM, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.AZURE_BLUET, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.RED_TULIP, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.ORANGE_TULIP, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.WHITE_TULIP, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.PINK_TULIP, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.OXEYE_DAISY, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.CORNFLOWER, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.LILY_OF_THE_VALLEY, 7, 1),
+                TradeUtils.createSellItem(1, 1, Items.WHEAT_SEEDS, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.BEETROOT_SEEDS, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.PUMPKIN_SEEDS, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.MELON_SEEDS, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.VINE, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.BROWN_MUSHROOM, 12, 1),
+                TradeUtils.createSellItem(1, 1, Items.RED_MUSHROOM, 12, 1),
+                TradeUtils.createSellItem(1, 2, Items.LILY_PAD, 5, 1),
+                TradeUtils.createSellItem(1, 8, Items.SAND, 8, 1),
+                TradeUtils.createSellItem(1, 4, Items.RED_SAND, 6, 1),
+                /* 2 Emerald Trades */
+                TradeUtils.createSellItem(2, 1, Items.SEA_PICKLE, 5, 1),
+                TradeUtils.createSellItem(2, 1, Items.GLOWSTONE, 5, 1),
+                /* 3 Emerald Trades */
+                TradeUtils.createSellItem(3, 1, Items.BRAIN_CORAL_BLOCK, 8, 1),
+                TradeUtils.createSellItem(3, 1, Items.BUBBLE_CORAL_BLOCK, 8, 1),
+                TradeUtils.createSellItem(3, 1, Items.FIRE_CORAL_BLOCK, 8, 1),
+                TradeUtils.createSellItem(3, 1, Items.HORN_CORAL_BLOCK, 8, 1),
+                TradeUtils.createSellItem(3, 1, Items.TUBE_CORAL_BLOCK, 8, 1),
+                TradeUtils.createSellItem(3, 1, Items.KELP, 12, 1),
+                TradeUtils.createSellItem(3, 1, Items.CACTUS, 8, 1),
+                /* 4 Emerald Trades */
+                TradeUtils.createSellItem(4, 1, Items.SLIME_BALL, 5, 1),
+                /* 5 Emerald Trades */
+                TradeUtils.createSellItem(5, 1, Items.ACACIA_SAPLING, 8, 1),
+                TradeUtils.createSellItem(5, 1, Items.BIRCH_SAPLING, 8, 1),
+                TradeUtils.createSellItem(5, 1, Items.DARK_OAK_SAPLING, 8, 1),
+                TradeUtils.createSellItem(5, 1, Items.JUNGLE_SAPLING, 8, 1),
+                TradeUtils.createSellItem(5, 1, Items.OAK_SAPLING, 8, 1),
+                TradeUtils.createSellItem(5, 1, Items.SPRUCE_SAPLING, 8, 1),
+                TradeUtils.createSellItem(5, 1, Items.NAUTILUS_SHELL, 5, 1),
+                /* Spawn Egg Trades */
+                TradeUtils.createSellSpawnEgg(32, Items.MOOSHROOM_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.COW_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.SHEEP_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.PIG_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.CHICKEN_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.HORSE_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.MULE_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.DONKEY_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.LLAMA_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.CAT_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.WOLF_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.TURTLE_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.FOX_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.PANDA_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.PARROT_SPAWN_EGG, 5, 1),
+                TradeUtils.createSellSpawnEgg(32, Items.POLAR_BEAR_SPAWN_EGG, 5, 1),
+                /* Music Discs */
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_11, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_13, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_BLOCKS, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_CAT, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_CHIRP, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_FAR, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_MALL, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_MELLOHI, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_STAL, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_STRAD, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_WAIT, 1, 10),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_WARD, 1, 10),
+                
+                TradeUtils.createSellItem(14, 1, Items.NAME_TAG, 5, 2),
+                TradeUtils.createSellItem(2, 3, Items.LEAD, 5, 2),
+                
+                TradeUtils.createSellItem(1, 3, Items.ENDER_PEARL, 4, 1),
+                TradeUtils.createSellItem(1, 2, Items.BLAZE_ROD, 5, 1),
+                TradeUtils.createSellItem(5, 1, Items.RABBIT_FOOT, 6, 1),
+                TradeUtils.createSellItem(12, 1, Items.BELL, 1, 1),
+                TradeUtils.createSellItem(6, 1, Items.SADDLE, 3, 1),
+                TradeUtils.createSellItem(8, 3, Items.NETHER_WART, 5, 1),
+                TradeUtils.createSellItem(14, 1, Items.WITHER_ROSE, 3, 2),
+                TradeUtils.createSellItem(5, 1, Items.DRAGON_BREATH, 3, 2),
+                
+                TradeUtils.createSellItem(1, 1, Items.CAKE, 3, 7),
+                TradeUtils.createSellItem(1, 3, Items.COOKED_BEEF, 12, 5),
+                TradeUtils.createSellItem(1, 3, Items.COOKED_CHICKEN, 12, 5),
+                TradeUtils.createSellItem(1, 8, Items.COOKIE, 8, 4),
+                
+                TradeUtils.createSellItem(8, 1, Items.CREEPER_BANNER_PATTERN, 1, 15),
+                TradeUtils.createSellItem(8, 1, Items.FLOWER_BANNER_PATTERN, 1, 15),
+                TradeUtils.createSellItem(8, 1, Items.GLOBE_BANNER_PATTERN, 1, 15),
+                TradeUtils.createSellItem(8, 1, Items.MOJANG_BANNER_PATTERN, 1, 15),
+                TradeUtils.createSellItem(8, 1, Items.SKULL_BANNER_PATTERN, 1, 15),
+                
+                TradeUtils.createSellItem(2, Items.EMERALD, 7, Items.LEATHER, 1, Items.LEATHER_HORSE_ARMOR, 3, 5),
+                TradeUtils.createSellItem(2, Items.EMERALD, 7, Items.IRON_INGOT, 1, Items.IRON_HORSE_ARMOR, 3, 9),
+                TradeUtils.createSellItem(2, Items.EMERALD, 7, Items.GOLD_INGOT, 1, Items.GOLDEN_HORSE_ARMOR, 3, 14),
+                TradeUtils.createSellItem(2, Items.EMERALD, 7, Items.DIAMOND, 1, Items.DIAMOND_HORSE_ARMOR, 3, 20),
             },
-        2, new TradeOffers.Factory[]{
-                TradeUtils.createSellItem(Items.TROPICAL_FISH_BUCKET, 5, 1, 4, 1),
-                TradeUtils.createSellItem(Items.PUFFERFISH_BUCKET, 5, 1, 4, 1),
-                TradeUtils.createSellItem(Items.PACKED_ICE, 3, 1, 6, 1),
-                TradeUtils.createSellItem(Items.BLUE_ICE, 6, 1, 6, 1),
-                TradeUtils.createSellItem(Items.GUNPOWDER, 1, 1, 8, 1),
-                TradeUtils.createSellItem(Items.PODZOL, 3, 3, 6, 1)
+            2, new TradeOffers.Factory[] {
+                /* 1 Emerald Trades */
+                TradeUtils.createSellItem(1, 1, Items.GUNPOWDER, 8, 1),
+                /* 3 Emerald Trades */
+                TradeUtils.createSellItem(3, 1, Items.PACKED_ICE, 6, 1),
+                TradeUtils.createSellItem(3, 3, Items.PODZOL, 6, 1),
+                /* 5 Emerald Trades */
+                TradeUtils.createSellItem(5, 1, Items.TROPICAL_FISH_BUCKET, 4, 1),
+                TradeUtils.createSellItem(5, 1, Items.PUFFERFISH_BUCKET, 4, 1),
+                /* 6 Emerald Trades */
+                TradeUtils.createSellItem(6, 1, Items.BLUE_ICE, 6, 1),
+                /* Rare Items */
+                TradeUtils.createSellItem(3, 1, Items.EXPERIENCE_BOTTLE, 32, 0),
+                TradeUtils.createSellItem(6, Items.EMERALD_BLOCK, 2, Items.SHULKER_SHELL, 6, 20),
+                TradeUtils.createSellItem(9, Items.EMERALD_BLOCK, 1, Items.HEART_OF_THE_SEA, 1, Items.TRIDENT, 1, 45),
+                TradeUtils.createSellItem(50, 1, Items.TOTEM_OF_UNDYING, 2, 4),
+                TradeUtils.createSellItem(16, Items.EMERALD, 1, Items.GOLDEN_APPLE, 1, Items.ENCHANTED_GOLDEN_APPLE, 1, 8),
+                /* Spawn more wandering traders */
+                TradeUtils.createSellSpawnEgg(55, Items.WANDERING_TRADER_SPAWN_EGG, 5, 1),
             }
         )
     );

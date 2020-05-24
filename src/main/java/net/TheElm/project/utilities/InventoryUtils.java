@@ -246,7 +246,8 @@ public final class InventoryUtils {
     }
     
     public static ItemRarity getItemRarity(ItemStack stack) {
-        float total = 0.0f;
+        int iRarity = 0;
+        boolean isBook = (stack.getItem().equals(Items.ENCHANTED_BOOK));
         
         // Get all enchantments
         Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments( stack );
@@ -258,24 +259,26 @@ public final class InventoryUtils {
             
             int level = e.getValue();
             float levelP = (float)level / enchantment.getMaximumLevel();
-            if (enchantment.isTreasure()) levelP += 1;
+            if (enchantment.isTreasure()) levelP += isBook ? 1 : 0.25f;
             
             float rarity = (float)( 11 - enchantment.getWeight().getWeight() ) * levelP;
-            total += rarity;
+            iRarity += rarity;
+            
+            System.out.println("Rarity of " + enchantment.getTranslationKey() + " is " + rarity);
         }
         
-        int iRarity = Math.round(total / enchantments.size());
-        
         // Offset the levels by TWO for books
-        int o = ( stack.getItem() == Items.ENCHANTED_BOOK ? 2 : 0 );
+        int o = ( isBook ? 2 : 1 );
         
-        if (iRarity >= (8 + o))
+        System.out.println( "Rarity is: " + iRarity );
+        
+        if (iRarity >= (24 / o))
             return ItemRarity.LEGENDARY;
-        if (iRarity >= (6 + o))
+        if (iRarity >= (12 / o))
             return ItemRarity.EPIC;
-        if (iRarity >= (4 + o))
+        if (iRarity >= (6 / o))
             return ItemRarity.RARE;
-        if (iRarity >= (2 + o))
+        if (iRarity >= (3 / o))
             return ItemRarity.UNCOMMON;
         return ItemRarity.COMMON;
     }

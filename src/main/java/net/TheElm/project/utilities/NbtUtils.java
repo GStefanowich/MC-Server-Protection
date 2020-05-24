@@ -51,15 +51,18 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 
 public final class NbtUtils {
     
     private NbtUtils() {}
     
-    @NotNull
-    public static File worldFolder() {
+    public static @NotNull File worldFolder() {
         return new File(CoreMod.getFabric().getGameDirectory(),
             ServerCore.get().getLevelName());
     }
@@ -126,8 +129,7 @@ public final class NbtUtils {
     /*
      * Claims
      */
-    @NotNull
-    public static CompoundTag readClaimData(Claimant.ClaimantType type, UUID uuid) {
+    public static @NotNull CompoundTag readClaimData(Claimant.ClaimantType type, UUID uuid) {
         File file = Paths.get(
             worldFolder().getAbsolutePath(),
             "sewing-machine",
@@ -245,16 +247,14 @@ public final class NbtUtils {
         return compound;
     }
     
-    @Nullable
-    public static BlockPos tagToBlockPos(@Nullable CompoundTag compound) {
+    public static @Nullable BlockPos tagToBlockPos(@Nullable CompoundTag compound) {
         if (compound != null) {
             if (compound.contains("x", NbtType.NUMBER) && compound.contains("y", NbtType.NUMBER) && compound.contains("z", NbtType.NUMBER))
                 return new BlockPos(compound.getDouble("x"), compound.getDouble("y"), compound.getDouble("z"));
         }
         return null;
     }
-    @Nullable
-    public static WorldPos tagToWorldPos(@Nullable CompoundTag compound) {
+    public static @Nullable WorldPos tagToWorldPos(@Nullable CompoundTag compound) {
         if (compound != null) {
             BlockPos blockPos = NbtUtils.tagToBlockPos( compound );
             if ( blockPos != null && compound.contains("world", NbtType.NUMBER) )
@@ -262,11 +262,29 @@ public final class NbtUtils {
         }
         return null;
     }
-    @Nullable
-    public static Direction tagToDirection(@Nullable CompoundTag compound) {
+    public static @Nullable Direction tagToDirection(@Nullable CompoundTag compound) {
         if (compound != null && compound.contains("direction", NbtType.NUMBER))
             return Direction.byId(compound.getInt("direction"));
         return null;
+    }
+    
+    /*
+     * Lists
+     */
+    public static @NotNull <T> ListTag toList(Collection<T> collection, Function<T, String> function) {
+        ListTag list = new ListTag();
+        for (T obj : collection)
+            list.add(StringTag.of(function.apply(obj)));
+        return list;
+    }
+    public static @NotNull <T> Collection<T> fromList(ListTag list, Function<String, T> function) {
+        List<T> collection = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            T obj = function.apply(list.getString(i));
+            if (obj != null)
+                collection.add(obj);
+        }
+        return collection;
     }
     
     /*

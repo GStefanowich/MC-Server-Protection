@@ -26,19 +26,57 @@
 package net.TheElm.project.mixins.Player;
 
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.utilities.InventoryUtils;
+import net.TheElm.project.utilities.NbtUtils;
 import net.minecraft.container.AnvilContainer;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
+import org.spongepowered.asm.mixin.injection.Redirect;
+
+import java.util.Arrays;
 
 @Mixin(AnvilContainer.class)
 public class AnvilCost {
+    
+    @Shadow @Final
+    private PlayerEntity player;
     
     @ModifyConstant(method = "updateResult", constant = @Constant(intValue = 40))
     private int anvilMaxLevelOverride(int oldValue) {
         if (SewingMachineConfig.INSTANCE.ANVIL_DISABLE_COST_LIMIT.isSet())
             return Integer.MAX_VALUE;
         return oldValue;
+    }
+    
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/inventory/Inventory.setInvStack(ILnet/minecraft/item/ItemStack;)V"), method = "updateResult")
+    public void onUpdateOutput(Inventory inventory, int slot, ItemStack item) {
+        if ((!item.isEmpty()) && item.hasEnchantments()) {
+            CompoundTag display = item.getOrCreateSubTag("display");;
+            
+            // Get the rarity of the new output item
+            InventoryUtils.ItemRarity rarity = InventoryUtils.getItemRarity(item);
+            
+            // Generate the lore
+            Text lore = new LiteralText("One ")
+                .append(new LiteralText(rarity.name()))
+                .append(" ").append(new TranslatableText(item.getTranslationKey()));
+            Text madeBy = new LiteralText("Forged by ")
+                .append(this.player.getEntityName());
+            display.put("Lore", NbtUtils.toList(Arrays.asList(lore, madeBy), Text.Serializer::toJson));
+        }
+        
+        inventory.setInvStack(slot, item);
     }
     
 }

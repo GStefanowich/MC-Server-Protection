@@ -147,13 +147,13 @@ public final class LoggingCommand {
                 String blockTranslation = results.getString("block");
                 boolean add = (BlockAction.valueOf(results.getString("updatedEvent")) == BlockAction.PLACE);
                 UUID updatedBy = UUID.fromString(results.getString("updatedBy"));
-                Consumer<Style> hoverEvent = (styler) -> styler.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new LiteralText(updatedBy.toString())));
                 
                 // Add the row text to the main text
                 return new LiteralText("\n" + results.getRow() + ". ")
                     .append(new LiteralText( add ? "+ " : "- " ).append(new TranslatableText(blockTranslation)).formatted( add ? Formatting.GREEN: Formatting.RED ))
                     .append(" by ")
-                    .append(PlayerNameUtils.fetchPlayerName(updatedBy).formatted(Formatting.AQUA).styled(hoverEvent))
+                    .append(PlayerNameUtils.fetchPlayerName(updatedBy).formatted(Formatting.AQUA)
+                        .styled(MessageUtils.simpleHoverText(updatedBy.toString())))
                     .append("\n     at ")
                     .append(new LiteralText(results.getTimestamp("updatedAt").toString()).formatted(Formatting.GRAY));
             }));

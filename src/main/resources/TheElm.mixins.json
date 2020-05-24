@@ -18,6 +18,7 @@
     
     "Items.RepairCost",
     "Items.Shovel",
+    "Items.SpawnEggs",
     
     "Entities.Decorative.CatDye",
     "Entities.Decorative.WolfDye",
@@ -80,13 +81,15 @@
     "World.Nether",
     
     "Server.Books",
+    "Server.DeathMessages",
     "Server.Explosions",
     "Server.ServerCommandSource",
     "Server.MOTD",
     "Server.PlayerList",
     "Server.PlayerManager",
     "Server.Save",
-    "Server.Whitelist"
+    "Server.Whitelist",
+    "Server.WanderingTraders"
   ],
   "injectors": {
     "defaultRequire": 1

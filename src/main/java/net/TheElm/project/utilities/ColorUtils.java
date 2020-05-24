@@ -25,6 +25,7 @@
 
 package net.TheElm.project.utilities;
 
+import net.minecraft.block.MaterialColor;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Formatting;
 
@@ -38,6 +39,9 @@ public final class ColorUtils {
     private static final Random RANDOM;
     private ColorUtils() {}
     
+    private static Color materialToColor(MaterialColor material) {
+        return new Color(material.color);
+    }
     private static Color dyeToColor(DyeColor color) {
         float[] components = color.getColorComponents();
         return new Color(components[0], components[1], components[2]);
@@ -90,6 +94,9 @@ public final class ColorUtils {
     }
     
     public static DyeColor getNearestDye(Formatting color) {
+        DyeColor dye = DyeColor.byName(color.getName(), null);
+        if (dye != null)
+            return dye;
         return ColorUtils.getNearestDye(ColorUtils.formatToColor( color ));
     }
     public static DyeColor getNearestDye(String hex) {
@@ -123,6 +130,9 @@ public final class ColorUtils {
     }
     
     public static Formatting getNearestFormatting(DyeColor color) {
+        Formatting formatting = Formatting.byName(color.getName());
+        if (formatting != null)
+            return formatting;
         return ColorUtils.getNearestFormatting(ColorUtils.dyeToColor( color ));
     }
     public static Formatting getNearestFormatting(String hex) {

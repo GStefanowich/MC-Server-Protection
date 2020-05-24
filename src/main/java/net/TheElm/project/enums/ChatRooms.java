@@ -34,7 +34,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Locale;
 
 public enum ChatRooms implements ServerTranslatable {
-    WHISPER( Formatting.LIGHT_PURPLE ),
+    WHISPER( Formatting.GRAY, Formatting.ITALIC ),
     LOCAL( Formatting.BLUE ),
     GLOBAL( Formatting.WHITE ),
     TOWN( Formatting.GREEN );

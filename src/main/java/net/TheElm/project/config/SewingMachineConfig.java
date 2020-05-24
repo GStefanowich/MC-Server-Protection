@@ -148,6 +148,9 @@ public final class SewingMachineConfig {
     public final ConfigOption<Integer> TOWN_FOUND_COST;
     public final ConfigOption<Integer> TOWN_CLAIMS_LIMIT;
     
+    public final ConfigOption<Boolean> TOWN_VILLAGERS_INCLUDE;
+    public final ConfigOption<Integer> TOWN_VILLAGERS_VALUE;
+    
     // Economy
     public final ConfigOption<Boolean> DO_MONEY;
     public final ConfigOption<Integer> STARTING_MONEY;
@@ -197,6 +200,9 @@ public final class SewingMachineConfig {
     public final ConfigOption<Boolean> PREVENT_NETHER_ENDERMEN;
     public final ConfigOption<Boolean> NETHER_INFINITE_LAVA;
     public final ConfigOption<Boolean> RANDOM_NAME_VILLAGERS;
+    
+    public final ConfigOption<String> CALENDAR_YEAR_EPOCH;
+    public final ConfigOption<Integer> CALENDAR_DAYS;
     
     public final ConfigOption<Boolean> SILK_TOUCH_SPAWNERS;
     public final ConfigOption<Integer> SPAWNER_PICKUP_DAMAGE;
@@ -305,9 +311,12 @@ public final class SewingMachineConfig {
         /*
          * Claiming
          */
-        this.PLAYER_CLAIMS_LIMIT = this.addConfig( new ConfigOption<>( "claims.players.limit", 40, JsonElement::getAsInt));
-        this.TOWN_FOUND_COST = this.addConfig( new ConfigOption<>( "claims.towns.cost", 500, JsonElement::getAsInt));
-        this.TOWN_CLAIMS_LIMIT = this.addConfig( new ConfigOption<>( "claims.towns.limit", 200, JsonElement::getAsInt));
+        this.PLAYER_CLAIMS_LIMIT = this.addConfig( new ConfigOption<>("claims.players.limit", 40, JsonElement::getAsInt));
+        this.TOWN_FOUND_COST = this.addConfig( new ConfigOption<>("claims.towns.cost", 500, JsonElement::getAsInt));
+        this.TOWN_CLAIMS_LIMIT = this.addConfig( new ConfigOption<>("claims.towns.limit", 200, JsonElement::getAsInt));
+        
+        this.TOWN_VILLAGERS_INCLUDE = this.addConfig( new ConfigOption<>("claims.towns.villagers.include", true, JsonElement::getAsBoolean));
+        this.TOWN_VILLAGERS_VALUE = this.addConfig( new ConfigOption<>("claims.towns.villagers.value", 3, JsonElement::getAsInt));
         
         this.PLAYER_LIMIT_INCREASE = this.addConfig( new ConfigOption<>("claims.players.limit_increase.enabled", false, JsonElement::getAsBoolean));
         this.PLAYER_CLAIM_BUY_LIMIT = this.addConfig( new ConfigOption<>("claims.players.limit_increase.maximum", -1, JsonElement::getAsInt));
@@ -383,6 +392,9 @@ public final class SewingMachineConfig {
         this.START_WITH_RECIPES = this.addConfig( new ConfigOption<>("player.recipes.unlock_all", false, JsonElement::getAsBoolean));
         
         this.NETHER_INFINITE_LAVA = this.addConfig( new ConfigOption<>("fun.world.nether.infinite_lava", false, JsonElement::getAsBoolean));
+        
+        this.CALENDAR_YEAR_EPOCH = this.addConfig( new ConfigOption<>("fun.calendar.epoch", "After Creation", JsonElement::getAsString));
+        this.CALENDAR_DAYS = this.addConfig( new ConfigOption<>("fun.calendar.days", 365, JsonElement::getAsInt));
         
         this.EXTINGUISH_CAMPFIRES = this.addConfig( new ConfigOption<>("fun.world.extinguish_campfires", true, JsonElement::getAsBoolean));
         this.COWS_EAT_MYCELIUM = this.addConfig( new ConfigOption<>("fun.mobs.cows.eat_mycelium", true, JsonElement::getAsBoolean));

@@ -98,11 +98,14 @@ import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.village.VillagerData;
+import net.minecraft.village.VillagerType;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -111,8 +114,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 public final class EntityUtils {
     
@@ -371,5 +376,207 @@ public final class EntityUtils {
         if (reason == null)
             manager.disconnectAllPlayers();
         else new ArrayList<>(manager.getPlayerList()).forEach((player) -> player.networkHandler.disconnect( reason ));
+    }
+    
+    public static final class Naming {
+        private Naming() {}
+        
+        private static final NamedVillagers DESERT = new DesertVillagers();
+        private static final NamedVillagers JUNGLE = new JungleVillagers();
+        private static final NamedVillagers PLAINS = new PlainsVillagers();
+        private static final NamedVillagers SAVANNA = new SavannaVillagers();
+        private static final NamedVillagers SNOW = new SnowVillagers();
+        private static final NamedVillagers SWAMP = new SwampVillagers();
+        private static final NamedVillagers TAIGA = new TaigaVillagers();
+        
+        public static @Nullable Text create(Random random, VillagerData data, int maxSyllables) {
+            int syllables = IntUtils.random(random, 2, maxSyllables);
+            
+            VillagerType type = data.getType();
+            NamedVillagers schema;
+            if (type.equals(VillagerType.DESERT))
+                schema = Naming.DESERT;
+            else if (type.equals(VillagerType.JUNGLE))
+                schema = Naming.JUNGLE;
+            else if (type.equals(VillagerType.PLAINS))
+                schema = Naming.PLAINS;
+            else if (type.equals(VillagerType.SAVANNA))
+                schema = Naming.SAVANNA;
+            else if (type.equals(VillagerType.SNOW))
+                schema = Naming.SNOW;
+            else if (type.equals(VillagerType.SWAMP))
+                schema = Naming.SWAMP;
+            else if (type.equals(VillagerType.TAIGA))
+                schema = Naming.TAIGA;
+            else return null;
+            
+            // Get a set of syllables
+            StringBuilder name = new StringBuilder();
+            for (int i = 0; i < syllables; i++)
+                name.append(schema.get(random, i + 1));
+            
+            // Convert the name to a Text object
+            return new LiteralText(CasingUtils.Sentence(name.toString()));
+        }
+        
+        private static abstract class NamedVillagers {
+            private final String[] syllables;
+            private final int prefixes;
+            private final int suffixes;
+            
+            protected NamedVillagers(String[] prefix, String[] any, String[] suffix) {
+                this.syllables = Stream.of(prefix, any, suffix)
+                    .flatMap(Arrays::stream)
+                    .toArray(String[]::new);
+                this.prefixes = prefix.length;
+                this.suffixes = suffix.length;
+            }
+            protected NamedVillagers(String[] prefix, String[] any) {
+                this(prefix, any, new String[0]);
+            }
+            protected NamedVillagers(String[] list) {
+                this(new String[0], list);
+            }
+            
+            public @NotNull String get(Random random, int nth) {
+                if (this.syllables.length == 0)
+                    return "";
+                int min, max;
+                
+                if ((nth <= 1) && ((this.syllables.length - suffixes) != 0)) {
+                    min = 0;
+                    max = this.syllables.length - suffixes;
+                } else {
+                    min = prefixes;
+                    max = this.syllables.length;
+                }
+                
+                return this.syllables[IntUtils.random(random, min + 1, max + 1) - 1];
+            }
+        }
+        private static final class DesertVillagers extends NamedVillagers {
+            public DesertVillagers() {
+                super(new String[] {
+                    "ha",
+                    "ge",
+                    "he"
+                }, new String[] {
+                    "do",
+                    "to",
+                    "ga"
+                }, new String[] {
+                    "ph",
+                    "ru",
+                    "rt",
+                    "hn",
+                    "lm"
+                });
+            }
+        }
+        private static final class JungleVillagers extends NamedVillagers {
+            public JungleVillagers() {
+                super(new String[] {
+                    "bo"
+                }, new String[] {
+                    "jo",
+                    "ja",
+                    "je",
+                    "me",
+                    "le"
+                }, new String[] {
+                    "ru",
+                    "ul",
+                    "e",
+                    "ff",
+                    "ge"
+                });
+            }
+        }
+        private static final class PlainsVillagers extends NamedVillagers {
+            public PlainsVillagers() {
+                super(new String[] {
+                    "fo",
+                    "tre",
+                    "ou"
+                }, new String[] {
+                    "ar",
+                    "an",
+                    "ee",
+                    "ur"
+                }, new String[] {
+                    "b",
+                    "a",
+                    "o",
+                    "di",
+                    "wl",
+                    "to"
+                });
+            }
+        }
+        private static final class SavannaVillagers extends NamedVillagers {
+            public SavannaVillagers() {
+                super(new String[] {
+                    "gr",
+                    "ge"
+                }, new String[] {
+                    "ee",
+                    "eg",
+                    "ag"
+                }, new String[] {
+                    "ve",
+                    "o",
+                    "off"
+                });
+            }
+        }
+        private static final class SnowVillagers extends NamedVillagers {
+            public SnowVillagers() {
+                super(new String[] {
+                    "he",
+                    "ka",
+                    "co",
+                    "wa"
+                }, new String[] {
+                    "in",
+                    "di"
+                }, new String[] {
+                    "le",
+                    "ne",
+                    "na",
+                    "gl"
+                });
+            }
+        }
+        private static final class SwampVillagers extends NamedVillagers {
+            public SwampVillagers() {
+                super(new String[] {
+                    "gh",
+                    "ca",
+                    "pa"
+                }, new String[] {
+                    "ma",
+                    "ou"
+                }, new String[] {
+                    "ost",
+                    "am"
+                });
+            }
+        }
+        private static final class TaigaVillagers extends NamedVillagers {
+            public TaigaVillagers() {
+                super(new String[] {
+                    "za",
+                    "an",
+                    "le"
+                }, new String[] {
+                    "oo",
+                    "ee",
+                    "wa"
+                }, new String[] {
+                    "ch",
+                    "tt"
+                });
+            }
+        }
     }
 }

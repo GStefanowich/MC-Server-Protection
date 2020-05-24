@@ -199,7 +199,7 @@ public abstract class Claimant {
             // Save the ranked player to our data tag
             rankList.add( friendTag );
         }
-        tag.put(( this instanceof ClaimantTown ? "members" : "friends"), rankList);
+        tag.put(rankNbtTag(this), rankList);
         
         // Save our list of permissions
         ListTag permList = new ListTag();
@@ -239,8 +239,8 @@ public abstract class Claimant {
         }
         
         // Read friends
-        if (tag.contains(( this instanceof ClaimantTown ? "members" : "friends"), NbtType.LIST)) {
-            for (Tag it : tag.getList(( this instanceof ClaimantTown ? "members" : "friends"), NbtType.COMPOUND)) {
+        if (tag.contains(rankNbtTag(this), NbtType.LIST)) {
+            for (Tag it : tag.getList(rankNbtTag(this), NbtType.COMPOUND)) {
                 CompoundTag friend = (CompoundTag) it;
                 this.USER_RANKS.put(
                     friend.getUuid("i"),
@@ -272,6 +272,9 @@ public abstract class Claimant {
         }
     }
     
+    private static String rankNbtTag(Claimant claimant) {
+        return (claimant instanceof ClaimantTown ? "members" : "friends");
+    }
     public enum ClaimantType {
         TOWN,
         PLAYER
