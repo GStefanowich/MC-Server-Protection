@@ -139,6 +139,9 @@ public final class SewingMachineConfig {
     public final ConfigOption<Integer> PLAYER_CLAIM_BUY_LIMIT;
     public final ConfigOption<Integer> PLAYER_CLAIM_BUY_COST;
     
+    // Player Inventory
+    public final ConfigOption<Boolean> TOTEM_ANYWHERE;
+    
     // Backpacks
     public final ConfigOption<Boolean> ALLOW_BACKPACKS;
     public final ConfigOption<Boolean> BACKPACK_SEQUENTIAL;
@@ -273,11 +276,16 @@ public final class SewingMachineConfig {
         this.PVP_COMBAT_LOG = this.addConfig( new ConfigOption<>("player.pvp.kill_on_logout", false, JsonElement::getAsBoolean));
         
         /*
+         * Inventory
+         */
+        this.TOTEM_ANYWHERE = this.addConfig( new ConfigOption<>("player.inventory.totem_of_undying", true, JsonElement::getAsBoolean));
+        
+        /*
          * Backpacks
          */
-        this.ALLOW_BACKPACKS = this.addConfig( new ConfigOption<>("player.backpacks.enable", true, JsonElement::getAsBoolean));
-        this.BACKPACK_STARTING_ROWS = this.addConfig( new ConfigOption<>("player.backpacks.starting_rows", 0, JsonElement::getAsInt));
-        this.BACKPACK_SEQUENTIAL = this.addConfig( new ConfigOption<>("player.backpacks.require_seqential", true, JsonElement::getAsBoolean));
+        this.ALLOW_BACKPACKS = this.addConfig( new ConfigOption<>("player.inventory.backpacks.enable", true, JsonElement::getAsBoolean));
+        this.BACKPACK_STARTING_ROWS = this.addConfig( new ConfigOption<>("player.inventory.backpacks.starting_rows", 0, JsonElement::getAsInt));
+        this.BACKPACK_SEQUENTIAL = this.addConfig( new ConfigOption<>("player.inventory.backpacks.require_seqential", true, JsonElement::getAsBoolean));
         
         /*
          * Naming

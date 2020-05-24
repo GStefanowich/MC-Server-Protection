@@ -385,7 +385,10 @@ public final class WarpUtils {
             entity = vehicle;
         }
     }
-    public static void teleportEntity(@NotNull final ServerWorld world, @NotNull Entity entity, @NotNull final BlockPos tpPos) {
+    public static void teleportEntity(@NotNull final World world, @NotNull Entity entity, @NotNull final BlockPos tpPos) {
+        // Must be a ServerWorld
+        if (world.isClient) return;
+        
         // Get the chunks
         ChunkPos chunkPos = new ChunkPos( tpPos );
         
@@ -395,7 +398,7 @@ public final class WarpUtils {
             z = tpPos.getZ() + 0.5D;
         
         // Set the teleport ticket
-        world.getChunkManager().addTicket(ChunkTicketType.POST_TELEPORT, chunkPos, 1, entity.getEntityId());
+        ((ServerWorld) world).getChunkManager().addTicket(ChunkTicketType.POST_TELEPORT, chunkPos, 1, entity.getEntityId());
         
         if (entity instanceof ServerPlayerEntity) {
             ServerPlayerEntity player = (ServerPlayerEntity)entity;
@@ -410,7 +413,7 @@ public final class WarpUtils {
                 player.networkHandler.requestTeleport(x, y, z, player.yaw, player.pitch);
                 player.networkHandler.syncWithPlayerPosition();
             } else {
-                player.teleport(world, x, y, z, player.yaw, player.pitch);
+                player.teleport(((ServerWorld) world), x, y, z, player.yaw, player.pitch);
             }
         } else {
             float i = MathHelper.wrapDegrees( entity.yaw );
@@ -433,7 +436,7 @@ public final class WarpUtils {
                 entity.copyFrom(copyFrom);
                 entity.refreshPositionAndAngles(x, y, z, i,j);
                 entity.setHeadYaw( i );
-                world.onDimensionChanged(entity);
+                ((ServerWorld) world).onDimensionChanged(entity);
                 copyFrom.removed = true;
             }
         }

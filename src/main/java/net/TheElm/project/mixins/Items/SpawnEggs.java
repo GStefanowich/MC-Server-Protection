@@ -21,6 +21,9 @@ public abstract class SpawnEggs extends Item {
         super(settings);
     }
     
+    /*
+     * Prevent Spawn eggs from modifying Spawners in survival mode
+     */
     @Inject(at = @At(value = "HEAD", target = "net/minecraft/world/BlockView.getBlockEntity(Lnet/minecraft/util/math/BlockPos;)Lnet/minecraft/block/entity/BlockEntity;"), method = "useOnBlock", cancellable = true)
     public void onUse(ItemUsageContext context, CallbackInfoReturnable<ActionResult> callback) {
         World world = context.getWorld();

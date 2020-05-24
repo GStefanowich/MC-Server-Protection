@@ -112,6 +112,8 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
         if (town != null) town.removeVillager((VillagerEntity)(Entity)this);
     }
     
+    // TODO: Added Villagers to a town automatically after a successful breeding
+    
     @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
     public void onSavingData(CompoundTag tag, CallbackInfo callback) {
         if (this.town != null)

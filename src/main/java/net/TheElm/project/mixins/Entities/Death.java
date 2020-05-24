@@ -25,9 +25,12 @@
 
 package net.TheElm.project.mixins.Entities;
 
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.utilities.NbtUtils;
+import net.TheElm.project.utilities.WarpUtils;
 import net.fabricmc.fabric.api.util.NbtType;
+import net.minecraft.advancement.criterion.Criterions;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
@@ -45,13 +48,17 @@ import net.minecraft.nbt.StringTag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.stat.Stats;
 import net.minecraft.util.Hand;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
 public abstract class Death extends Entity {
@@ -59,10 +66,17 @@ public abstract class Death extends Entity {
     @Shadow protected boolean dead;
     @Shadow public abstract boolean addStatusEffect(StatusEffectInstance statusEffectInstance);
     
+    @Shadow public abstract void setHealth(float f);
+    @Shadow public abstract boolean clearStatusEffects();
+    @Shadow public abstract ItemStack getStackInHand(Hand hand);
+    
     public Death(EntityType<?> entityType_1, World world_1) {
         super(entityType_1, world_1);
     }
     
+    /*
+     * Add mobs to a Mob Spawner
+     */
     @Inject(at = @At("TAIL"), method = "onDeath")
     public void onDeath(DamageSource damageSource, CallbackInfo callback) {
         // If disabled
@@ -127,4 +141,72 @@ public abstract class Death extends Entity {
         }
     }
     
+    /*
+     * Check for totem of undying
+     */
+    @Inject(at = @At("HEAD"), method = "tryUseTotem", cancellable = true)
+    public void onUseTotem(DamageSource source, CallbackInfoReturnable<Boolean> callback) {
+        if (source.isOutOfWorld())
+            callback.setReturnValue(false);
+        else {
+            ItemStack totem = null;
+            
+            // Check the hands
+            Hand[] hands = Hand.values();
+            for (int slot = 0; slot < hands.length; slot++) {
+                ItemStack hand = this.getStackInHand(hands[slot]);
+                if (hand.getItem() == Items.TOTEM_OF_UNDYING) {
+                    totem = hand.copy();
+                    hand.decrement(1);
+                    break;
+                }
+            }
+            
+            // Check the inventory
+            if (totem == null && (((Entity)this) instanceof ServerPlayerEntity) && SewingMachineConfig.INSTANCE.TOTEM_ANYWHERE.get()) {
+                ServerPlayerEntity player = (ServerPlayerEntity)(Entity)this;
+                for (int slot = 0; slot < player.inventory.getInvSize(); slot++) {
+                    ItemStack pack = player.inventory.getInvStack(slot);
+                    if (pack.getItem() == Items.TOTEM_OF_UNDYING) {
+                        totem = pack.copy();
+                        pack.decrement(1);
+                        break;
+                    }
+                }
+            }
+            
+            if (totem != null) {
+                if (((Entity)this) instanceof ServerPlayerEntity) {
+                    ServerPlayerEntity player = (ServerPlayerEntity)(Entity)this;
+                    player.incrementStat(Stats.USED.getOrCreateStat(Items.TOTEM_OF_UNDYING));
+                    Criterions.USED_TOTEM.trigger(player, totem);
+                }
+                
+                this.setHealth(1.0F);
+                this.clearStatusEffects();
+                
+                if (source.isFire())
+                    this.addStatusEffect(new StatusEffectInstance(StatusEffects.FIRE_RESISTANCE, 900, 1));
+                this.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 900, 1));
+                this.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 100, 1));
+                this.world.sendEntityStatus(this, (byte)35);
+            }
+            
+            callback.setReturnValue(totem != null);
+        }
+    }
+    
+    /*
+     * Check for falling into the Void in The End
+     */
+    @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
+    public void onDamage(DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
+        // Ignore if running as the client
+        if ((this.world.isClient) || (this.world.getDimension().getType() != DimensionType.THE_END))
+            return;
+        
+        World overWorld = ServerCore.getWorld(DimensionType.OVERWORLD);
+        if (source.isOutOfWorld())
+            WarpUtils.teleportEntity(overWorld, this, new BlockPos(this.getX(), 400, this.getZ()));
+    }
 }
