@@ -43,17 +43,17 @@ import java.util.Random;
 
 public class TradeUtils {
     
-    public static TradeOffers.Factory createSellItem(int countWants, Item itemWants, int countOffers, Item itemOffers, int maxTrades, int experience) {
-        return new SellTradeFactory(itemWants, countWants, itemOffers, countOffers, maxTrades, experience);
+    public static TradeOffers.Factory createSellItem(int countWants, Item itemWants, int countOffers, Item itemOffers, int maxTrades) {
+        return new SellTradeFactory(itemWants, countWants, itemOffers, countOffers, maxTrades);
     }
-    public static TradeOffers.Factory createSellItem(int countWants1, Item itemWants1, int countWants2, Item itemWants2, int countOffers, Item itemOffers, int maxTrades, int experience) {
-        return new SellTradeFactory(itemWants1, countWants1, itemWants2, countWants2, itemOffers, countOffers, maxTrades, experience);
+    public static TradeOffers.Factory createSellItem(int countWants1, Item itemWants1, int countWants2, Item itemWants2, int countOffers, Item itemOffers, int maxTrades) {
+        return new SellTradeFactory(itemWants1, countWants1, itemWants2, countWants2, itemOffers, countOffers, maxTrades);
     }
-    public static TradeOffers.Factory createSellItem(int countEmeralds, int countOffers, Item itemOffers, int maxTrades, int experience) {
-        return TradeUtils.createSellItem(countEmeralds, Items.EMERALD, countOffers, itemOffers, maxTrades, experience);
+    public static TradeOffers.Factory createSellItem(int countEmeralds, int countOffers, Item itemOffers, int maxTrades) {
+        return TradeUtils.createSellItem(countEmeralds, Items.EMERALD, countOffers, itemOffers, maxTrades);
     }
-    public static TradeOffers.Factory createSellSpawnEgg(int minimumEmeralds, Item itemOffers, int maxTrades, int experience) {
-        return new EggTradeFactory(itemOffers, minimumEmeralds,maxTrades, experience);
+    public static TradeOffers.Factory createSellSpawnEgg(int minimumEmeralds, Item itemOffers, int maxTrades) {
+        return new EggTradeFactory(itemOffers, minimumEmeralds,maxTrades);
     }
     
     private static class SellTradeFactory implements TradeOffers.Factory {
@@ -67,12 +67,11 @@ public class TradeUtils {
         private final int countOffers;
         
         private final int maxTrades;
-        private final int experience;
         
-        public SellTradeFactory(@NotNull Item itemWants, int countWants, @NotNull Item itemOffers, int countOffers, int maxTrades, int experience) {
-            this(itemWants, countWants, null, 0, itemOffers, countOffers, maxTrades, experience);
+        public SellTradeFactory(@NotNull Item itemWants, int countWants, @NotNull Item itemOffers, int countOffers, int maxTrades) {
+            this(itemWants, countWants, null, 0, itemOffers, countOffers, maxTrades);
         }
-        public SellTradeFactory(@NotNull Item itemWants1, int countWants1, @Nullable Item itemWants2, int countWants2, @NotNull Item itemOffers, int countOffers, int maxTrades, int experience) {
+        public SellTradeFactory(@NotNull Item itemWants1, int countWants1, @Nullable Item itemWants2, int countWants2, @NotNull Item itemOffers, int countOffers, int maxTrades) {
             this.itemWants1 = itemWants1;
             this.itemWants2 = itemWants2;
             
@@ -83,7 +82,6 @@ public class TradeUtils {
             this.countOffers = countOffers;
             
             this.maxTrades = maxTrades;
-            this.experience = experience;
         }
         
         @Override
@@ -97,7 +95,7 @@ public class TradeUtils {
                 // Offers
                 new ItemStack(this.itemOffers, this.countOffers),
                 this.maxTrades, // Max trades
-                this.experience, // Experience
+                1, // Experience
                 0.05F // Multiplier
             );
         }
@@ -107,14 +105,12 @@ public class TradeUtils {
         private final int minimumCost;
         
         private final int maxTrades;
-        private final int experience;
         
-        private EggTradeFactory(@NotNull Item spawnEgg, int minimumCost, int maxTrades, int experience) {
+        private EggTradeFactory(@NotNull Item spawnEgg, int minimumCost, int maxTrades) {
             this.spawnEgg = spawnEgg;
             this.minimumCost = minimumCost;
             
             this.maxTrades = maxTrades;
-            this.experience = experience;
         }
         
         @Override
@@ -135,7 +131,7 @@ public class TradeUtils {
                 // Offers
                 spawnEgg,
                 this.maxTrades,
-                this.experience,
+                1,
                 0.05F
             );
         }
