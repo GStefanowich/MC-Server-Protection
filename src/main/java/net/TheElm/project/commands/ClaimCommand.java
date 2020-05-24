@@ -826,11 +826,17 @@ public final class ClaimCommand {
                 added++;
         }
         
+        Text amount = new LiteralText(NumberFormat.getInstance().format(added)).formatted(Formatting.AQUA);
         source.sendFeedback(new LiteralText("Added ")
-            .append(new LiteralText(NumberFormat.getInstance().format(added)).formatted(Formatting.AQUA))
+            .append(amount)
             .append(" villagers to ")
             .append(town.getName())
             .append("."), false);
+        if (added > 0) {
+            town.send(new LiteralText("")
+                .append(amount)
+                .append(" villagers have been added to your town."));
+        }
         
         return added;
     }

@@ -27,6 +27,7 @@ package net.TheElm.project.protections.claiming;
 
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
@@ -35,6 +36,7 @@ import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -113,6 +115,14 @@ public final class ClaimantPlayer extends Claimant {
     }
     public final Text updateName() {
         return PlayerNameUtils.fetchPlayerNick( this.getId() );
+    }
+    
+    /* Send Messages */
+    @Override
+    public final void send(Text text) {
+        UUID playerId = this.getId();
+        ServerPlayerEntity player = ServerCore.getPlayer(playerId);
+        if (player != null) player.sendMessage(text);
     }
     
     /* Claimed chunk options */

@@ -91,6 +91,7 @@ public final class ClaimantTown extends Claimant {
     }
     public final boolean addVillager(VillagerEntity villager) {
         if (this.villagers.add(villager.getUuid())) {
+            CoreMod.logInfo("Added a new villager to " + this.getName().getString() + "!");
             this.markDirty();
             return true;
         }
@@ -128,6 +129,15 @@ public final class ClaimantTown extends Claimant {
             return true;
         }
         return false;
+    }
+    
+    /* Send Messages */
+    @Override
+    public final void send(Text text) {
+        this.getFriends().forEach((uuid) -> {
+            ServerPlayerEntity player = ServerCore.getPlayer(uuid);
+            if (player != null) player.sendMessage(text);
+        });
     }
     
     /* Nbt saving */
