@@ -27,6 +27,7 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.VillagerTownie;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.ChunkUtils;
@@ -37,12 +38,16 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.InteractionObserver;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.passive.AbstractTraderEntity;
+import net.minecraft.entity.passive.PassiveEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.stat.Stats;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.village.VillagerData;
 import net.minecraft.village.VillagerDataContainer;
 import net.minecraft.world.World;
@@ -58,6 +63,7 @@ import java.util.UUID;
 @Mixin(VillagerEntity.class)
 public abstract class Villager extends AbstractTraderEntity implements InteractionObserver, VillagerDataContainer, VillagerTownie {
     
+    /*private static final MemoryModuleType<UUID> TOWN;*/
     private UUID town = null;
     
     public Villager(EntityType<? extends AbstractTraderEntity> entityType_1, World world_1) {
@@ -112,7 +118,53 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
         if (town != null) town.removeVillager((VillagerEntity)(Entity)this);
     }
     
-    // TODO: Added Villagers to a town automatically after a successful breeding
+    @Inject(at = @At("RETURN"), method = "createChild")
+    public void onBirth(PassiveEntity spouse, CallbackInfoReturnable<VillagerEntity> callback) {
+        VillagerEntity child = callback.getReturnValue();
+        
+        // Give the baby a name
+        if (SewingMachineConfig.INSTANCE.RANDOM_NAME_VILLAGERS.get()) {
+            Text name = EntityUtils.Naming.create(child.getRandom(), child.getVillagerData(), 4);
+            if (name != null) {
+                /*
+                 * Assign random villager name
+                 */
+                child.setCustomName(name);
+                child.setCustomNameVisible(false);
+            }
+        }
+        
+        // Add the baby to the Town
+        if (SewingMachineConfig.INSTANCE.TOWN_VILLAGERS_INCLUDE.get()) {
+            BlockPos pos = spouse.getBlockPos();
+            ClaimantTown town = ((IClaimedChunk)this.world.getChunk(pos)).getTown();
+            if ((town != null) && ((VillagerTownie)child).setTown(town)) {
+                // Get names of all involved villagers
+                Text pName = null,
+                     sName = null,
+                     bName = null;
+                
+                if (SewingMachineConfig.INSTANCE.RANDOM_NAME_VILLAGERS.get()) {
+                    if (this.hasCustomName() && spouse.hasCustomName()) {
+                        pName = this.getDisplayName().formatted(Formatting.WHITE);
+                        sName = spouse.getDisplayName().formatted(Formatting.WHITE);
+                    }
+                    if (child.hasCustomName())
+                        bName = child.getDisplayName().formatted(Formatting.WHITE);
+                }
+                
+                town.send(((pName != null && sName != null && bName != null) ?
+                    new LiteralText("").append(pName).append(" and ")
+                        .append(sName).append(" have welcome a new villager, ")
+                        .append(bName).append(", into your town.")
+                    : (bName != null ?
+                        new LiteralText("A new villager, ").append(bName).append(", has been welcomed into your town.")
+                        : new LiteralText("A new villager has been welcomed into your town.")
+                    )
+                ).formatted(Formatting.GRAY, Formatting.ITALIC));
+            }
+        }
+    }
     
     @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
     public void onSavingData(CompoundTag tag, CallbackInfo callback) {
@@ -142,5 +194,9 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
             }
         }
     }
+    
+    /*static {
+        TOWN = Registry.register(Registry.MEMORY_MODULE_TYPE, new Identifier("", ""), new MemoryModuleType<>(Optional.empty()));
+    }*/
     
 }

@@ -124,6 +124,9 @@ public abstract class Claimant {
         return this.getName().formatted( playerRank.getColor() );
     }
     
+    /* Send Messages */
+    public abstract void send(Text text);
+    
     /* Town types */
     public final ClaimantType getType() {
         return this.type;
