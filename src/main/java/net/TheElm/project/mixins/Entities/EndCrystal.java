@@ -29,8 +29,10 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.decoration.EnderCrystalEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -45,8 +47,10 @@ public abstract class EndCrystal extends Entity {
     
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
     public void damage(DamageSource damageSource, float damage, CallbackInfoReturnable<Boolean> callback) {
-        if (this.world instanceof ServerWorld) {
-            if ( ((ServerWorld) this.world).getAliveEnderDragons().size() <= 0 )
+        // If attacker is a player
+        if ((this.world instanceof ServerWorld) && (damageSource.getAttacker() instanceof PlayerEntity)) {
+            // If end the end, and ender dragon exists
+            if ((this.world.getDimension().getType().equals(DimensionType.THE_END)) && (((ServerWorld) this.world).getAliveEnderDragons().size() <= 0))
                 callback.setReturnValue(false);
         }
     }

@@ -56,4 +56,20 @@ public final class CasingUtils {
         return modify.toLowerCase();
     }
     
+    public static String Acronym( @NotNull String modify ) {
+        return CasingUtils.Acronym( modify, false );
+    }
+    public static String Acronym( @NotNull String modify, boolean dots ) {
+        StringBuilder acronym = new StringBuilder();
+        
+        for (String split : modify.split(" ")) {
+            if (split.length() <= 0)
+                continue;
+            char first = split.charAt(0);
+            acronym.append(first).append(dots && Character.isLetter(first) ? "." : "");
+        }
+        
+        return acronym.toString();
+    }
+    
 }

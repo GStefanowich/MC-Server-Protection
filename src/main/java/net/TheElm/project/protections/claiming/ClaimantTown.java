@@ -34,20 +34,23 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.TownNameUtils;
 import net.fabricmc.fabric.api.util.NbtType;
+import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public final class ClaimantTown extends Claimant {
     
     private boolean deleted = false;
     private UUID ownerId;
+    private Set<UUID> villagers;
     
     protected ClaimantTown(@NotNull UUID townId) {
         super(ClaimantType.TOWN, townId);
@@ -72,12 +75,33 @@ public final class ClaimantTown extends Claimant {
         this.markDirty();
     }
     public final int getResidentCount() {
-        return this.getFriends().size();
+        return this.getFriends().size()
+            + (SewingMachineConfig.INSTANCE.TOWN_VILLAGERS_INCLUDE.get()
+                && SewingMachineConfig.INSTANCE.TOWN_VILLAGERS_VALUE.get() > 0 ? this.getVillagers().size() / SewingMachineConfig.INSTANCE.TOWN_VILLAGERS_VALUE.get() : 0);
     }
     
     @Override
     public Text getName() {
         return this.name.deepCopy();
+    }
+    
+    /* Villager Options */
+    public final Set<UUID> getVillagers() {
+        return this.villagers;
+    }
+    public final boolean addVillager(VillagerEntity villager) {
+        if (this.villagers.add(villager.getUuid())) {
+            this.markDirty();
+            return true;
+        }
+        return false;
+    }
+    public final boolean removeVillager(VillagerEntity villager) {
+        if (this.villagers.remove(villager.getUuid())) {
+            this.markDirty();
+            return true;
+        }
+        return false;
     }
     
     /* Player Friend Options */
@@ -111,32 +135,29 @@ public final class ClaimantTown extends Claimant {
     public final void writeCustomDataToTag(@NotNull CompoundTag tag) {
         if (this.ownerId == null) throw new RuntimeException("Town owner should not be null");
         
-        tag.putUuid( "owner", this.ownerId );
+        tag.putUuid("owner", this.ownerId);
         
         if ( this.name != null )
             tag.putString("name", Text.Serializer.toJson( this.name ));
+        
+        tag.put("villagers", NbtUtils.toList(this.getVillagers(), UUID::toString));
         
         // Write to tag
         super.writeCustomDataToTag( tag );
     }
     @Override
     public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
-        // Read the towns ranks
-        if (tag.contains("members", NbtType.LIST)) {
-            for (Tag member : tag.getList("members", NbtType.COMPOUND)) {
-                super.USER_RANKS.put(
-                    ((CompoundTag) member).getUuid("i"),
-                    ClaimRanks.valueOf(((CompoundTag) member).getString("r"))
-                );
-            }
-        }
-        
         // Get the towns owner
         this.ownerId = (tag.containsUuid("owner") ? tag.getUuid("owner") : null);
         
         // Get the town name
         if (tag.contains("name", NbtType.STRING))
             this.name = Text.Serializer.fromJson(tag.getString("name"));
+        
+        // Get the towns villagers
+        this.villagers = new HashSet<>();
+        if (tag.contains("villagers", NbtType.LIST))
+            this.villagers.addAll(NbtUtils.fromList(tag.getList("villagers", NbtType.STRING), UUID::fromString));
         
         // Read from tag
         super.readCustomDataFromTag( tag );
