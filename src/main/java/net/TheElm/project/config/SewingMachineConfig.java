@@ -285,7 +285,7 @@ public final class SewingMachineConfig {
          */
         this.ALLOW_BACKPACKS = this.addConfig( new ConfigOption<>("player.inventory.backpacks.enable", true, JsonElement::getAsBoolean));
         this.BACKPACK_STARTING_ROWS = this.addConfig( new ConfigOption<>("player.inventory.backpacks.starting_rows", 0, JsonElement::getAsInt));
-        this.BACKPACK_SEQUENTIAL = this.addConfig( new ConfigOption<>("player.inventory.backpacks.require_seqential", true, JsonElement::getAsBoolean));
+        this.BACKPACK_SEQUENTIAL = this.addConfig( new ConfigOption<>("player.inventory.backpacks.require_sequential", true, JsonElement::getAsBoolean));
         
         /*
          * Naming
