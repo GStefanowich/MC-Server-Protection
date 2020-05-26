@@ -25,9 +25,14 @@ public class Ban {
     
     private static final SimpleCommandExceptionType BAN_EXEMPT = new SimpleCommandExceptionType(new LiteralText("That player cannot be banned."));
     
+    /**
+     * @author TheElm
+     * @reason Added use of permission node to command
+     * @param dispatcher Command Dispatcher
+     */
     @Overwrite
-    public static void register(CommandDispatcher<ServerCommandSource> commandDispatcher) {
-        commandDispatcher.register(CommandManager.literal("ban")
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        dispatcher.register(CommandManager.literal("ban")
             .requires((source) -> source.getMinecraftServer().getPlayerManager().getUserBanList().isEnabled()
                 && source.hasPermissionLevel(3) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_BAN))
             .then(CommandManager.argument("targets", GameProfileArgumentType.gameProfile())

@@ -19,9 +19,14 @@ import java.util.Collection;
 @Mixin(PardonCommand.class)
 public class Pardon {
     
+    /**
+     * @author TheElm
+     * @reason Added use of permission node to command
+     * @param dispatcher Command Dispatcher
+     */
     @Overwrite
-    public static void register(CommandDispatcher<ServerCommandSource> commandDispatcher) {
-        commandDispatcher.register(CommandManager.literal("pardon")
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        dispatcher.register(CommandManager.literal("pardon")
             .requires((source) -> source.getMinecraftServer().getPlayerManager().getIpBanList().isEnabled()
                 && (source.hasPermissionLevel(3) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_UNBAN)))
             .then(CommandManager.argument("targets", GameProfileArgumentType.gameProfile())
