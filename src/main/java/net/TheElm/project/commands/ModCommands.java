@@ -71,7 +71,7 @@ public final class ModCommands {
             source.sendFeedback(new LiteralText("Config has been reloaded.").formatted(Formatting.GREEN), true);
             
             // Re-send the command-tree to all players
-            ModCommands.ReloadCommandTree( source.getMinecraftServer(), false );
+            ModCommands.ReloadCommandTree(source.getMinecraftServer(), false);
             
             return Command.SINGLE_SUCCESS;
         } catch (IOException e) {
@@ -88,24 +88,24 @@ public final class ModCommands {
         if (!success)
             source.sendFeedback(new LiteralText("Failed to reload permissions, see console for errors").formatted(Formatting.RED), true);
         else{
-            ModCommands.ReloadCommandTree( source.getMinecraftServer(), true );
+            ModCommands.ReloadCommandTree(source.getMinecraftServer(), true);
             source.sendFeedback(new LiteralText("Permissions file has been reloaded").formatted(Formatting.GREEN), true);
         }
         
         return success ? Command.SINGLE_SUCCESS : -1;
     }
     
-    private static void ReloadCommandTree( MinecraftServer server, boolean reloadPermissions ) {
+    private static void ReloadCommandTree(MinecraftServer server, boolean reloadPermissions) {
         PlayerManager playerManager = server.getPlayerManager();
         
         // For all players
         for (ServerPlayerEntity player : playerManager.getPlayerList()) {
-            // Resend the player the command tree
-            playerManager.sendCommandTree(player);
-            
             // Clear permissions
             if (reloadPermissions)
                 ((PlayerPermissions) player).resetRanks();
+            
+            // Resend the player the command tree
+            playerManager.sendCommandTree(player);
         }
     }
     

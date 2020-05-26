@@ -86,8 +86,6 @@ public class TradeUtils {
         
         @Override
         public TradeOffer create(Entity entity, Random random) {
-            System.out.println(entity.getDisplayName().asString());
-            
             return new TradeOffer(
                 // Wants
                 new ItemStack(this.itemWants1, this.countWants1),

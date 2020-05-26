@@ -63,6 +63,7 @@ import java.util.UUID;
 @Mixin(VillagerEntity.class)
 public abstract class Villager extends AbstractTraderEntity implements InteractionObserver, VillagerDataContainer, VillagerTownie {
     
+    // TODO: Attempt saving the town UUID as a Memory, not directly as a property
     /*private static final MemoryModuleType<UUID> TOWN;*/
     private UUID town = null;
     
@@ -91,6 +92,10 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
     public boolean setTown(ClaimantTown town) {
         if (town == null) {
             boolean wasNull = this.town == null;
+            if (!wasNull) {
+                ClaimantTown reference = this.getTown();
+                reference.removeVillager((VillagerEntity)(Entity)this);
+            }
             this.town = null;
             return wasNull;
         } else {
@@ -114,8 +119,7 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
     
     @Inject(at = @At("TAIL"), method = "onDeath")
     public void onDeath(DamageSource source, CallbackInfo callback) {
-        ClaimantTown town = this.getTown();
-        if (town != null) town.removeVillager((VillagerEntity)(Entity)this);
+        this.setTown(null);
     }
     
     @Inject(at = @At("RETURN"), method = "createChild")

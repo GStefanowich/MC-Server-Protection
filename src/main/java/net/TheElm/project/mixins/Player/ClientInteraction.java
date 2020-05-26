@@ -48,13 +48,13 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.Packet;
 import net.minecraft.network.listener.ServerPlayPacketListener;
+import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
+import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
+import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.network.packet.ChatMessageC2SPacket;
-import net.minecraft.server.network.packet.PlayerMoveC2SPacket;
-import net.minecraft.server.network.packet.VehicleMoveC2SPacket;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -83,7 +83,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
     /*
      * Shadow Methods
      */
-    @Shadow @Final public ClientConnection client;
+    @Shadow @Final public ClientConnection connection;
     @Shadow @Final private MinecraftServer server;
     @Shadow private ServerPlayerEntity player;
     @Shadow private int messageCooldown;

@@ -35,13 +35,14 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
-import net.TheElm.project.interfaces.CommandSource;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.MoneyUtils;
-import net.minecraft.client.network.packet.PlayerListS2CPacket;
+import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.command.arguments.ColorArgumentType;
 import net.minecraft.command.arguments.EntityArgumentType;
+import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
+import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket.Action;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -71,7 +72,7 @@ public final class NickNameCommand {
                 })
             )
             .then(CommandManager.argument("nick", StringArgumentType.string())
-                .requires((source) -> (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get()) || ((CommandSource)source).hasPermission(Permissions.PLAYER_NICKNAME))
+                .requires((source) -> (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get()) || RankUtils.hasPermission(source, Permissions.PLAYER_NICKNAME))
                 .then(CommandManager.argument("color", ColorArgumentType.color())
                     .executes(NickNameCommand::commandNickSetColored)
                 )
@@ -120,7 +121,7 @@ public final class NickNameCommand {
         
         // Send update to the player list
         ServerCore.get().getPlayerManager().sendToAll(
-            (new PlayerListS2CPacket(PlayerListS2CPacket.Action.UPDATE_DISPLAY_NAME, player))
+            (new PlayerListS2CPacket(Action.UPDATE_DISPLAY_NAME, player))
         );
         
         return Command.SINGLE_SUCCESS;

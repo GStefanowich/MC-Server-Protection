@@ -52,7 +52,7 @@ public abstract class FluidFlow extends Fluid {
     @Shadow
     protected abstract boolean isInfinite();
     
-    @Inject(at = @At("HEAD"), method = {"method_15746", "canFlow"}, cancellable = true)
+    @Inject(at = @At("HEAD"), method = {"canFlowThrough", "canFlow"}, cancellable = true)
     protected void gettingFluidDirections(BlockView world, Fluid fluid, BlockPos sourcePos, BlockState sourceState, Direction flowDirection, BlockPos flowPos, BlockState flowState, FluidState fluidState, CallbackInfoReturnable<Boolean> callback) {
         // If world is Server World
         if (world instanceof ServerWorld) {

@@ -194,7 +194,7 @@ public abstract class WanderingTraders extends AbstractTraderEntity {
                 TradeUtils.createSellItem(6, 1, Items.BLUE_ICE, 6),
                 /* Rare Items */
                 TradeUtils.createSellItem(3, 1, Items.EXPERIENCE_BOTTLE, 32),
-                TradeUtils.createSellItem(6, Items.EMERALD_BLOCK, 2, Items.SHULKER_SHELL, 6),
+                TradeUtils.createSellItem(54, 2, Items.SHULKER_SHELL, 6),
                 TradeUtils.createSellItem(9, Items.EMERALD_BLOCK, 1, Items.HEART_OF_THE_SEA, 1, Items.TRIDENT, 1),
                 TradeUtils.createSellItem(50, 1, Items.TOTEM_OF_UNDYING, 2),
                 TradeUtils.createSellItem(16, Items.EMERALD, 1, Items.GOLDEN_APPLE, 1, Items.ENCHANTED_GOLDEN_APPLE, 1),
