@@ -25,9 +25,14 @@ public class Kick {
     
     private static final SimpleCommandExceptionType KICK_EXEMPT = new SimpleCommandExceptionType(new LiteralText("That player cannot be kicked."));
     
+    /**
+     * @author TheElm
+     * @reason Added use of permission node to command
+     * @param dispatcher Command Dispatcher
+     */
     @Overwrite
-    public static void register(CommandDispatcher<ServerCommandSource> commandDispatcher) {
-        commandDispatcher.register(CommandManager.literal("kick")
+    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+        dispatcher.register(CommandManager.literal("kick")
             .requires((source) -> source.hasPermissionLevel(3) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_KICK))
             .then(CommandManager.argument("targets", EntityArgumentType.players())
                 .then(CommandManager.argument("reason", MessageArgumentType.message())
