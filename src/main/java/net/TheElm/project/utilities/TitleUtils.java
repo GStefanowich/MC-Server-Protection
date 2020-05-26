@@ -26,9 +26,9 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
-import net.minecraft.client.network.packet.TitleS2CPacket;
-import net.minecraft.client.network.packet.TitleS2CPacket.Action;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
+import net.minecraft.network.packet.s2c.play.TitleS2CPacket.Action;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;

@@ -56,7 +56,7 @@ public abstract class Claimant {
     protected final Map<UUID, ClaimRanks> USER_RANKS = Collections.synchronizedMap(new HashMap<>());
     protected final Map<ClaimSettings, Boolean> CHUNK_CLAIM_OPTIONS = Collections.synchronizedMap(new HashMap<>());
     protected final Map<ClaimPermissions, ClaimRanks> RANK_PERMISSIONS = Collections.synchronizedMap(new HashMap<>());
-    protected final Set<int[]> CLAIMED_CHUNKS = Collections.synchronizedSet(new LinkedHashSet<>());
+    protected final Set<IntArrayTag> CLAIMED_CHUNKS = Collections.synchronizedSet(new LinkedHashSet<>());
     
     private boolean dirty = false;
     
@@ -134,11 +134,11 @@ public abstract class Claimant {
     public final void addToCount(WorldChunk... chunks) {
         for (WorldChunk chunk : chunks) {
             ChunkPos pos = chunk.getPos();
-            this.CLAIMED_CHUNKS.add(new int[]{
+            this.CLAIMED_CHUNKS.add(new IntArrayTag(new int[]{
                 chunk.getWorld().dimension.getType().getRawId(),
                 pos.x,
                 pos.z
-            });
+            }));
         }
         this.markDirty();
     }
@@ -146,9 +146,9 @@ public abstract class Claimant {
         for (WorldChunk chunk : chunks) {
             ChunkPos pos = chunk.getPos();
             this.CLAIMED_CHUNKS.removeIf((array) -> (
-                array[0] == chunk.getWorld().dimension.getType().getRawId()
-                && array[1] == pos.x
-                && array[2] == pos.z
+                array.get(0).getInt() == chunk.getWorld().dimension.getType().getRawId()
+                && array.get(1).getInt() == pos.x
+                && array.get(2).getInt() == pos.z
             ));
         }
         this.markDirty();
@@ -156,8 +156,8 @@ public abstract class Claimant {
     public final int getCount() {
         return this.CLAIMED_CHUNKS.size();
     }
-    public final void forEachChunk(Consumer<int[]> action) {
-        for (int[] it : new LinkedHashSet<>(this.CLAIMED_CHUNKS)) {
+    public final void forEachChunk(Consumer<IntArrayTag> action) {
+        for (IntArrayTag it : new LinkedHashSet<>(this.CLAIMED_CHUNKS)) {
             action.accept(it);
         }
     }
@@ -186,9 +186,7 @@ public abstract class Claimant {
     public void writeCustomDataToTag(@NotNull CompoundTag tag) {
         // Save our chunks
         ListTag chunkList = new ListTag();
-        for (int[] array : this.CLAIMED_CHUNKS) {
-            chunkList.add(new IntArrayTag( array ));
-        }
+        chunkList.addAll(this.CLAIMED_CHUNKS);
         tag.put("landChunks", chunkList);
         
         // Save our list of friends
@@ -237,7 +235,7 @@ public abstract class Claimant {
         // Get the claim size
         if (tag.contains("landChunks", NbtType.LIST)) {
             for (Tag it : tag.getList("landChunks",NbtType.INT_ARRAY)) {
-                this.CLAIMED_CHUNKS.add(((IntArrayTag) it).getIntArray());
+                this.CLAIMED_CHUNKS.add((IntArrayTag) it);
             }
         }
         

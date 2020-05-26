@@ -27,9 +27,12 @@ package net.TheElm.project.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.interfaces.CommandSource;
+import net.TheElm.project.enums.Permissions;
+import net.TheElm.project.utilities.RankUtils;
+import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -43,29 +46,44 @@ public final class GameModesCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register( CommandManager.literal("gms" )
-            .requires((source) -> source.hasPermissionLevel( 2 ) || ((CommandSource)source).hasPermission("player.gamemode.survival"))
+            .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SURVIVAL))
+            .then(CommandManager.argument("player", EntityArgumentType.player())
+                .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SURVIVAL_OTHER))
+                .executes((context) -> setPlayerGameMode(context, GameMode.SURVIVAL))
+            )
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.SURVIVAL ))
         );
         CoreMod.logDebug( "- Registered GMS command" );
         
         dispatcher.register( CommandManager.literal("gmc" )
-            .requires((source) -> source.hasPermissionLevel( 2 ) || ((CommandSource)source).hasPermission("player.gamemode.creative"))
+            .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_CREATIVE))
+            .then(CommandManager.argument("player", EntityArgumentType.player())
+                .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_CREATIVE_OTHER))
+                .executes((context) -> setPlayerGameMode(context, GameMode.CREATIVE))
+            )
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.CREATIVE ))
         );
         CoreMod.logDebug( "- Registered GMC command" );
         
         dispatcher.register( CommandManager.literal("gma" )
-            .requires((source) -> source.hasPermissionLevel( 2 ) || ((CommandSource)source).hasPermission("player.gamemode.adventure"))
+            .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_ADVENTURE))
+            .then(CommandManager.argument("player", EntityArgumentType.player())
+                .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_ADVENTURE_OTHER))
+                .executes((context) -> setPlayerGameMode(context, GameMode.ADVENTURE))
+            )
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.ADVENTURE ))
         );
         CoreMod.logDebug( "- Registered GMA command" );
         
         dispatcher.register( CommandManager.literal("gmsp" )
-            .requires((source) -> source.hasPermissionLevel( 2 ) || ((CommandSource)source).hasPermission("player.gamemode.spectator"))
+            .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SPECTATOR))
+            .then(CommandManager.argument("player", EntityArgumentType.player())
+                .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SPECTATOR_OTHER))
+                .executes((context) -> setPlayerGameMode(context, GameMode.SPECTATOR))
+            )
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.SPECTATOR ))
         );
         CoreMod.logDebug( "- Registered GMSP command" );
-        
     }
     
     private static int setPlayerGameMode(ServerCommandSource source, GameMode gameMode) throws CommandSyntaxException {
@@ -74,6 +92,17 @@ public final class GameModesCommand {
         
         source.sendFeedback(new TranslatableText("commands.gamemode.success.self", gmText), true);
         player.setGameMode( gameMode );
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int setPlayerGameMode(CommandContext<ServerCommandSource> context, GameMode gameMode) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+        Text gmText = new TranslatableText("gameMode." + gameMode.getName());
+        
+        source.sendFeedback(new TranslatableText("commands.gamemode.success.other", gmText), true);
+        player.setGameMode( gameMode );
+        player.sendMessage(new TranslatableText("gameMode.changed", gmText));
         
         return Command.SINGLE_SUCCESS;
     }

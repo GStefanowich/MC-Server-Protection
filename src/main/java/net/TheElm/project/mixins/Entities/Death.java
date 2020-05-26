@@ -175,20 +175,26 @@ public abstract class Death extends Entity {
                 }
             }
             
+            // If a totem was found
             if (totem != null) {
+                // If totem user is a player, increase stats
                 if (((Entity)this) instanceof ServerPlayerEntity) {
                     ServerPlayerEntity player = (ServerPlayerEntity)(Entity)this;
                     player.incrementStat(Stats.USED.getOrCreateStat(Items.TOTEM_OF_UNDYING));
                     Criterions.USED_TOTEM.trigger(player, totem);
                 }
                 
+                // Set the health back
                 this.setHealth(1.0F);
                 this.clearStatusEffects();
                 
+                // Apply status effects
                 if (source.isFire())
                     this.addStatusEffect(new StatusEffectInstance(StatusEffects.FIRE_RESISTANCE, 900, 1));
                 this.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 900, 1));
                 this.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 100, 1));
+                
+                // Update the entity status as alive
                 this.world.sendEntityStatus(this, (byte)35);
             }
             

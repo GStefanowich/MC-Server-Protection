@@ -28,7 +28,7 @@ package net.TheElm.project.mixins.Server;
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.client.network.packet.PlayerListS2CPacket;
+import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;

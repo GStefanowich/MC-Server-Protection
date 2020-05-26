@@ -263,14 +263,10 @@ public final class InventoryUtils {
             
             float rarity = (float)( 11 - enchantment.getWeight().getWeight() ) * levelP;
             iRarity += rarity;
-            
-            System.out.println("Rarity of " + enchantment.getTranslationKey() + " is " + rarity);
         }
         
         // Offset the levels by TWO for books
         int o = ( isBook ? 2 : 1 );
-        
-        System.out.println( "Rarity is: " + iRarity );
         
         if (iRarity >= (24 / o))
             return ItemRarity.LEGENDARY;

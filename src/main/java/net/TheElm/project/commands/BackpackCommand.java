@@ -33,8 +33,8 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.objects.PlayerBackpack;
-import net.minecraft.client.network.ClientDummyContainerProvider;
 import net.minecraft.command.arguments.ItemStackArgumentType;
+import net.minecraft.container.SimpleNamedContainerFactory;
 import net.minecraft.item.Item;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -91,7 +91,7 @@ public final class BackpackCommand {
         if (backpack == null)
             throw PLAYERS_NO_BACKPACK.create( player );
         
-        player.openContainer(new ClientDummyContainerProvider((i, playerInventory, playerEntityx) ->
+        player.openContainer(new SimpleNamedContainerFactory((i, playerInventory, playerEntityx) ->
             backpack.createContainer(i, playerInventory, backpack),
         backpack.getName()));
         
