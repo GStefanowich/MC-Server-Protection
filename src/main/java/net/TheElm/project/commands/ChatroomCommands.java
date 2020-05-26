@@ -29,22 +29,28 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ChatRooms;
+import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.utilities.CommandUtilities;
 import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.RankUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.command.arguments.MessageArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 public final class ChatroomCommands {
+    
+    private static final SimpleCommandExceptionType MUTE_EXEMPT = new SimpleCommandExceptionType(new LiteralText("That player is exempt from being muted."));
     
     private ChatroomCommands() {}
     
@@ -88,12 +94,14 @@ public final class ChatroomCommands {
             )
         );
         
+        // TODO: Add Mute permission node
+        // TODO: Add shadow mute
         dispatcher.register(CommandManager.literal("mute")
             .requires(( source ) -> (SewingMachineConfig.INSTANCE.CHAT_MODIFY.get()) && (SewingMachineConfig.INSTANCE.CHAT_MUTE_SELF.get() || SewingMachineConfig.INSTANCE.CHAT_MUTE_OP.get() && source.hasPermissionLevel( 3 )))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .suggests( CommandUtilities::getOnlinePlayerNames )
                 .then(CommandManager.literal("global")
-                    .requires(( source ) -> SewingMachineConfig.INSTANCE.CHAT_MUTE_OP.get() && source.hasPermissionLevel( 3 ))
+                    .requires(( source ) -> SewingMachineConfig.INSTANCE.CHAT_MUTE_OP.get() && (source.hasPermissionLevel(3 ) || RankUtils.hasPermission(source, Permissions.CHAT_COMMAND_MUTE)))
                     .executes(ChatroomCommands::opMute)
                 )
                 .executes(ChatroomCommands::playerMute)
@@ -159,12 +167,17 @@ public final class ChatroomCommands {
         ServerPlayerEntity target = EntityArgumentType.getPlayer( context, "player" );
         PlayerChat chatter = (PlayerChat) target;
         
-        source.sendFeedback(TranslatableServerSide.text(
-            source,
-            (chatter.toggleMute() ? "chat.mute.global" : "chat.unmute.global"),
-            target.getDisplayName()
-        ).formatted(Formatting.GREEN), false);
+        if (RankUtils.hasPermission(target, Permissions.CHAT_COMMAND_MUTE_EXEMPT) || target.allowsPermissionLevel(1))
+            throw MUTE_EXEMPT.create();
+        else {
+            source.sendFeedback(TranslatableServerSide.text(
+                source,
+                (chatter.toggleMute() ? "chat.mute.global" : "chat.unmute.global"),
+                target.getDisplayName()
+            ).formatted(Formatting.GREEN), false);
+            
+            return Command.SINGLE_SUCCESS;
+        }
         
-        return Command.SINGLE_SUCCESS;
     }
 }

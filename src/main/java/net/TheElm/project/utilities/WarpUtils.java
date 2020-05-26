@@ -39,6 +39,8 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
@@ -50,6 +52,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
@@ -61,6 +64,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
@@ -369,8 +374,11 @@ public final class WarpUtils {
         Entity bottom = player.getRootVehicle(),
             entity = player;
         
-        // Spawn the particles
-        WarpUtils.teleportPoof( world, bottom );
+        // Spawn the particles (In the entities world)
+        WarpUtils.teleportPoof( bottom);
+        
+        // Warp anything attached to the player
+        WarpUtils.teleportFriendlies(world, player, tpPos);
         
         // If the entity can be teleported within the same world
         if (world == player.world || bottom == player)
@@ -447,7 +455,28 @@ public final class WarpUtils {
             entity.onGround = true;
         }
     }
-    private static void teleportPoof(final World world, final Entity entity) {
+    private static void teleportFriendlies(@NotNull final World world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
+        BlockPos playerPos = player.getBlockPos();
+        int x = playerPos.getX(),
+            y = playerPos.getY(),
+            z = playerPos.getZ();
+        List<MobEntity> list = world.getNonSpectatingEntities(MobEntity.class, new Box((double)x - 7.0D, (double)y - 7.0D, (double)z - 7.0D, (double)x + 7.0D, (double)y + 7.0D, (double)z + 7.0D));
+        Iterator<MobEntity> iterator = list.iterator();
+        
+        while (iterator.hasNext()) {
+            MobEntity mob = iterator.next();
+            boolean lead = (mob.getHoldingEntity() == player),
+                ride = (mob.getVehicle() == player);
+            
+            if (lead || ride || (mob instanceof TameableEntity && (!((TameableEntity)mob).isSitting()))) {
+                if (lead && (!ride))
+                    WarpUtils.teleportPoof(mob);
+                WarpUtils.teleportEntity(world, mob, tpPos);
+            }
+        }
+    }
+    private static void teleportPoof(final Entity entity) {
+        final World world = entity.getEntityWorld();
         BlockPos blockPos = entity.getBlockPos();
         if (world instanceof ServerWorld) {
             world.playSound( null, blockPos, SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.MASTER, 1.0f, 1.0f );

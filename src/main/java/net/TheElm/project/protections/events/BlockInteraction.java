@@ -50,11 +50,11 @@ import net.minecraft.block.entity.EnderChestBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.enums.DoorHinge;
 import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.client.network.packet.GuiSlotUpdateS2CPacket;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.BucketItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.network.packet.s2c.play.ContainerSlotUpdateS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -187,7 +187,7 @@ public final class BlockInteraction {
         if (placeResult == ActionResult.FAIL) {
             PlayerInventory inventory = player.inventory;
             int slot = inventory.selectedSlot;
-            player.networkHandler.sendPacket(new GuiSlotUpdateS2CPacket(-2, slot, inventory.getInvStack(slot)));
+            player.networkHandler.sendPacket(new ContainerSlotUpdateS2CPacket(-2, slot, inventory.getInvStack(slot)));
         }
         return placeResult;
     }

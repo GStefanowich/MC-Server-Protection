@@ -30,6 +30,7 @@ import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.minecraft.client.options.ChatVisibility;
 import net.minecraft.network.MessageType;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.server.MinecraftServer;
@@ -85,9 +86,13 @@ public final class MessageUtils {
     
     // Send a text blob from a target to a player
     public static void sendAsWhisper(@NotNull ServerCommandSource sender, @NotNull ServerPlayerEntity target, @NotNull Text text) {
-        MessageUtils.sendAsWhisper( ( sender.getEntity() instanceof ServerPlayerEntity ? (ServerPlayerEntity) sender.getEntity() : null ), target, text );
+        if (!MessageUtils.sendAsWhisper( ( sender.getEntity() instanceof ServerPlayerEntity ? (ServerPlayerEntity) sender.getEntity() : null ), target, text ))
+            sender.sendFeedback(new LiteralText("")
+                .append(target.getDisplayName())
+                .append(" could not receive your message.")
+                .formatted(Formatting.RED, Formatting.ITALIC), false);
     }
-    public static void sendAsWhisper(@Nullable ServerPlayerEntity sender, @NotNull ServerPlayerEntity target, @NotNull Text text) {
+    public static boolean sendAsWhisper(@Nullable ServerPlayerEntity sender, @NotNull ServerPlayerEntity target, @NotNull Text text) {
         // Log the the server
         ServerCore.get().sendMessage(text);
         
@@ -99,11 +104,18 @@ public final class MessageUtils {
             );
         }
         
-        // Send the message to the player (TARGET)
-        MessageUtils.sendChat(
-            Stream.of( target ),
-            text
-        );
+        ChatVisibility visibility = target.getClientChatVisibility();
+        if (visibility != ChatVisibility.FULL)
+            return false;
+        else {
+            // Send the message to the player (TARGET)
+            MessageUtils.sendChat(
+                Stream.of( target ),
+                text
+            );
+            
+            return true;
+        }
     }
     
     // Send a text blob to a local area

@@ -123,6 +123,24 @@ public final class ClaimCommand {
             return;
         
         /*
+         * Admin Force commands
+         */
+        dispatcher.register(CommandManager.literal("chunk")
+            .requires((source) -> source.hasPermissionLevel(4))
+            .then(CommandManager.literal("set")
+                .then(CommandManager.literal("player")
+                    .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
+                        .suggests(CommandUtilities::getAllPlayerNames)
+                        .executes(ClaimCommand::rawSetChunkPlayer)
+                    )
+                )
+                .then(CommandManager.literal("town")
+                    .executes(ClaimCommand::rawSetChunkTown)
+                )
+            )
+        );
+        
+        /*
          * Claim Command
          */
         LiteralCommandNode<ServerCommandSource> claim = dispatcher.register( CommandManager.literal("claim" )
@@ -172,7 +190,7 @@ public final class ClaimCommand {
          * Friends Command
          */
         LiteralCommandNode<ServerCommandSource> friends = dispatcher.register(CommandManager.literal("friends")
-            // Whiteliat a friend
+            // Whitelist a friend
             .then(CommandManager.literal( "whitelist" )
                 .requires((context) -> SewingMachineConfig.INSTANCE.FRIEND_WHITELIST.get())
                 .then( CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
@@ -305,8 +323,8 @@ public final class ClaimCommand {
                 )
                 .then( CommandManager.literal("*")
                     .then( CommandManager.argument( "rank", StringArgumentType.word())
-                        .suggests( EnumArgumentType.enumerate( ClaimRanks.class ) )
-                        .executes( ClaimCommand::updateSettings )
+                        .suggests(EnumArgumentType.enumerate(ClaimRanks.class ))
+                        .executes(ClaimCommand::updateSettings)
                     )
                 )
             )
@@ -315,23 +333,40 @@ public final class ClaimCommand {
             .then( friends )
             
             // Chunk settings
-            .then( CommandManager.literal("settings")
-                .then( CommandManager.argument( "setting", StringArgumentType.word())
-                    .suggests( EnumArgumentType.enumerate( ClaimSettings.class ) )
-                    .then( CommandManager.argument( "bool", BoolArgumentType.bool() )
-                        .executes( ClaimCommand::updateBoolean )
+            .then(CommandManager.literal("settings")
+                .then(CommandManager.argument( "setting", StringArgumentType.word())
+                    .suggests(EnumArgumentType.enumerate( ClaimSettings.class ))
+                    .then(CommandManager.argument( "bool", BoolArgumentType.bool())
+                        .executes(ClaimCommand::updateBoolean)
                     )
                 )
             )
             
             // Import from older version
-            .then( CommandManager.literal("legacy-import")
+            .then(CommandManager.literal("legacy-import")
                 .requires((source -> source.hasPermissionLevel( 4 ) && LegacyConverter.isLegacy()))
-                .executes( ClaimCommand::convertFromLegacy )
+                .executes(ClaimCommand::convertFromLegacy )
             )
         );
         
         CoreMod.logDebug( "- Registered Protection command" );
+    }
+    
+    /*
+     * Set data for a chunk
+     */
+    private static int rawSetChunkPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        Collection<GameProfile> targets = GameProfileArgumentType.getProfileArgument(context, "target");
+        
+        ServerPlayerEntity player = source.getPlayer();
+        for (GameProfile target : targets)
+            return ClaimCommand.claimChunkAt(target.getId(), false, player, player.world.getWorldChunk(player.getBlockPos()));
+        return 0;
+    }
+    private static int rawSetChunkTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        
+        return Command.SINGLE_SUCCESS;
     }
     
     /*
@@ -342,7 +377,7 @@ public final class ClaimCommand {
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         // Claim the chunk for own player
-        return ClaimCommand.claimChunk( player.getUuid(), player );
+        return ClaimCommand.claimChunk(player.getUuid(), player);
     }
     private static int claimChunkSelfRadius(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the player running the command
@@ -378,7 +413,7 @@ public final class ClaimCommand {
         }
         
         // Claim all chunks
-        return ClaimCommand.claimChunkAt( player.getUuid(), player, chunksToClaim.toArray(new WorldChunk[0]));
+        return ClaimCommand.claimChunkAt(player.getUuid(), true, player, chunksToClaim.toArray(new WorldChunk[0]));
     }
     private static int claimChunkTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
@@ -425,17 +460,17 @@ public final class ClaimCommand {
     private static int claimChunk(final UUID chunkFor, final ServerPlayerEntity claimant) throws CommandSyntaxException {
         // Get run from positioning
         BlockPos blockPos = claimant.getBlockPos();
-        return ClaimCommand.claimChunkAt( chunkFor, claimant, claimant.world.getWorldChunk(blockPos) );
+        return ClaimCommand.claimChunkAt(chunkFor, true, claimant, claimant.world.getWorldChunk(blockPos));
     }
-    public static int claimChunkAt(final UUID chunkFor, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
-        new Thread(ClaimCommand.claimChunkThread( chunkFor, claimant, worldChunks)).start();
+    public static int claimChunkAt(final UUID chunkFor, final boolean verify, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
+        new Thread(ClaimCommand.claimChunkThread( chunkFor, verify, claimant, worldChunks)).start();
         return Command.SINGLE_SUCCESS;
     }
-    private static Runnable claimChunkThread(final UUID chunkFor, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
+    private static Runnable claimChunkThread(final UUID chunkFor, final boolean verify, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
         // Handle the claim in a new thread (Because it could have to load chunks)
         return (() -> {
             try {
-                if (!ClaimCommand.tryClaimChunkAt(chunkFor, claimant, worldChunks))
+                if (!ClaimCommand.tryClaimChunkAt(chunkFor, verify, claimant, worldChunks))
                     throw CHUNK_ALREADY_OWNED.create( claimant );
             } catch (TranslationKeyException e) {
                 claimant.sendMessage(TranslatableServerSide.text(claimant, e.getKey()));
@@ -444,7 +479,7 @@ public final class ClaimCommand {
             }
         });
     }
-    public static boolean tryClaimChunkAt(final UUID chunkFor, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) throws TranslationKeyException {
+    public static boolean tryClaimChunkAt(final UUID chunkFor, final boolean verify, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) throws TranslationKeyException {
         boolean success = false;
         int claimed = 0; // Amount of chunks claimed
         
@@ -453,7 +488,7 @@ public final class ClaimCommand {
                 IClaimedChunk chunk = (IClaimedChunk) worldChunk;
                 
                 // Check if it's available
-                chunk.canPlayerClaim(chunkFor);
+                if (verify) chunk.canPlayerClaim(chunkFor);
                 
                 // Update the chunk owner
                 chunk.updatePlayerOwner(chunkFor);
@@ -596,11 +631,11 @@ public final class ClaimCommand {
             // Unclaim EVERY chunk
             claimed.forEachChunk((set) -> {
                 // Get the dimension
-                DimensionType dimension = DimensionType.byRawId(set[0]);
+                DimensionType dimension = DimensionType.byRawId(set.get(0).getInt());
                 ServerWorld world = server.getWorld(dimension);
                 
                 // Unclaim the chunk
-                ClaimCommand.tryUnclaimChunkAt(player.getUuid(), (WorldChunk)world.getChunk( set[1], set[2], ChunkStatus.FULL ));
+                ClaimCommand.tryUnclaimChunkAt(player.getUuid(), (WorldChunk)world.getChunk( set.get(1).getInt(), set.get(2).getInt(), ChunkStatus.FULL ));
             });
         }
         

@@ -35,7 +35,9 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.PlayerPermissions;
 import net.TheElm.project.protections.ranks.PlayerRank;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -112,6 +114,12 @@ public final class RankUtils {
         } catch (FileNotFoundException e) {
             return new PlayerRank[0];
         }
+    }
+    public static boolean hasPermission(@NotNull ServerCommandSource source, String permission) {
+        if (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get())
+            return false;
+        Entity entity = source.getEntity();
+        return ((entity instanceof ServerPlayerEntity) && RankUtils.hasPermission(((ServerPlayerEntity) entity), permission));
     }
     public static boolean hasPermission(@NotNull ServerPlayerEntity player, String permission) {
         boolean result = false;

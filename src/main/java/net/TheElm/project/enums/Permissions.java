@@ -41,22 +41,33 @@ public class Permissions {
     public static final String PLAYER_NICKNAME = addPermission("player.nick", "");
     
     public static final String PLAYER_GAMEMODE_SURVIVAL = addPermission(GameMode.SURVIVAL);
+    public static final String PLAYER_GAMEMODE_SURVIVAL_OTHER = addPermission(GameMode.SURVIVAL, true);
     public static final String PLAYER_GAMEMODE_CREATIVE = addPermission(GameMode.CREATIVE);
+    public static final String PLAYER_GAMEMODE_CREATIVE_OTHER = addPermission(GameMode.CREATIVE, true);
     public static final String PLAYER_GAMEMODE_ADVENTURE = addPermission(GameMode.ADVENTURE);
+    public static final String PLAYER_GAMEMODE_ADVENTURE_OTHER = addPermission(GameMode.ADVENTURE, true);
     public static final String PLAYER_GAMEMODE_SPECTATOR = addPermission(GameMode.SPECTATOR);
+    public static final String PLAYER_GAMEMODE_SPECTATOR_OTHER = addPermission(GameMode.SPECTATOR, true);
     
     public static final String VANILLA_COMMAND_KICK = addPermission("minecraft.command.kick", "");
+    public static final String VANILLA_COMMAND_KICK_EXEMPT = addPermission("minecraft.command.kick.exempt", "");
     public static final String VANILLA_COMMAND_BAN = addPermission("minecraft.command.ban", "");
     public static final String VANILLA_COMMAND_UNBAN = addPermission("minecraft.command.unban", "");
     public static final String VANILLA_COMMAND_WHITELIST = addPermission("minecraft.command.whitelist", "");
+    
+    public static final String CHAT_COMMAND_MUTE = addPermission("minecraft.chat.mute", "");
+    public static final String CHAT_COMMAND_MUTE_EXEMPT = addPermission("minecraft.chat.mute.exempt", "");
     
     public static String addPermission(@NotNull String node, @NotNull String description) {
         PERMISSIONS.put( node, description );
         return node;
     }
     public static String addPermission(@NotNull GameMode mode) {
+        return Permissions.addPermission(mode, false);
+    }
+    public static String addPermission(@NotNull GameMode mode, boolean otherPlayer) {
         String name = mode.getName().toLowerCase();
-        return addPermission("player.gamemode." + name, "Allows players to set their own gamemode to " + name + ".");
+        return addPermission("player.gamemode." + name + (otherPlayer ? ".other" : ""), "Allows players to set their own gamemode to " + name + ".");
     }
     
     public static Stream<String> keys() {
