@@ -169,7 +169,10 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                     MoneyUtils.givePlayerMoney(player, allowance);
                     
                     // Tell them they were awarded money
-                    player.sendMessage(new LiteralText("You were given $").formatted(Formatting.YELLOW).append(new LiteralText(NumberFormat.getInstance().format(allowance)).formatted(Formatting.AQUA, Formatting.BOLD)).append(" for logging in today!"));
+                    player.sendMessage(new LiteralText("You were given $")
+                        .formatted(Formatting.YELLOW)
+                        .append(new LiteralText(NumberFormat.getInstance().format(allowance)).formatted(Formatting.AQUA, Formatting.BOLD))
+                        .append(" for logging in today!"));
                 }
             }
         }

@@ -108,7 +108,7 @@ public abstract class WorldSleep extends World implements SleepingWorld {
             // If currently raining, end
             if (raining || thunder)
                 this.resetWeather();
-            else if (this.random.nextInt(4) <= 0) {
+            else if (this.random.nextInt(40) <= 0) {
                 // Random chance to start raining
                 this.properties.setClearWeatherTime(0);
                 this.properties.setRainTime(IntUtils.random(this.random, 300, 1200) * 20);

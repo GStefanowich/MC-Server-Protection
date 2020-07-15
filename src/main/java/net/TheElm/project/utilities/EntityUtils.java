@@ -48,6 +48,7 @@ import net.minecraft.block.GrindstoneBlock;
 import net.minecraft.block.HopperBlock;
 import net.minecraft.block.LecternBlock;
 import net.minecraft.block.LoomBlock;
+import net.minecraft.block.NoteBlock;
 import net.minecraft.block.ShulkerBoxBlock;
 import net.minecraft.block.SmithingTableBlock;
 import net.minecraft.block.SmokerBlock;
@@ -88,11 +89,14 @@ import net.minecraft.entity.passive.TropicalFishEntity;
 import net.minecraft.entity.passive.TurtleEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.passive.WolfEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.vehicle.ChestMinecartEntity;
 import net.minecraft.entity.vehicle.FurnaceMinecartEntity;
 import net.minecraft.entity.vehicle.HopperMinecartEntity;
 import net.minecraft.entity.vehicle.MinecartEntity;
 import net.minecraft.entity.vehicle.TntMinecartEntity;
+import net.minecraft.network.packet.s2c.play.ContainerSlotUpdateS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -107,6 +111,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.village.VillagerData;
 import net.minecraft.village.VillagerType;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -132,12 +137,16 @@ public final class EntityUtils {
      * Get Entity Sounds
      */
     public static SoundEvent getLockSound(@NotNull Block block) {
-        return EntityUtils.getLockSound(block, null);
+        return EntityUtils.getLockSound(block, null, null);
     }
-    public static SoundEvent getLockSound(@NotNull Block block, @Nullable BlockEntity blockEntity) {
+    public static SoundEvent getLockSound(@NotNull Block block, @Nullable BlockState blockState, @Nullable BlockEntity blockEntity) {
         if (blockEntity != null) {
-            if ( blockEntity instanceof BeehiveBlockEntity)
-                return (((BeehiveBlockEntity)blockEntity).hasNoBees() ? SoundEvents.BLOCK_BEEHIVE_DRIP : SoundEvents.BLOCK_BEEHIVE_WORK );
+            if ( blockEntity instanceof BeehiveBlockEntity) {
+                BeehiveBlockEntity hive = ((BeehiveBlockEntity) blockEntity);
+                if (!hive.hasNoBees())
+                    return SoundEvents.BLOCK_BEEHIVE_WORK;
+                return (blockState != null && (BeehiveBlockEntity.getHoneyLevel(blockState) > 0) ? SoundEvents.BLOCK_BEEHIVE_DRIP : EntityUtils.getDefaultLockSound());
+            }
         }
         if ( block instanceof BarrelBlock )
             return SoundEvents.BLOCK_FENCE_GATE_CLOSE;
@@ -259,6 +268,9 @@ public final class EntityUtils {
             return ClaimPermissions.CRAFTING;
         if ( block instanceof CartographyTableBlock )
             return ClaimPermissions.CRAFTING;
+        // Activation Blocks
+        if ( block instanceof NoteBlock )
+            return ClaimPermissions.BLOCKS;
         // Storage Blocks
         if ( block instanceof BeaconBlock )
             return ClaimPermissions.STORAGE;
@@ -281,8 +293,7 @@ public final class EntityUtils {
     public static boolean isValidShopContainer(BlockEntity block) {
         return (block instanceof ChestBlockEntity || block instanceof BarrelBlockEntity);
     }
-    @Nullable
-    public static ShopSignBlockEntity getAttachedShopSign(World world, BlockPos storagePos) {
+    public static @Nullable ShopSignBlockEntity getAttachedShopSign(World world, BlockPos storagePos) {
         Set<BlockPos> searchForSigns = new HashSet<>(Collections.singletonList(
             storagePos.up()
         ));
@@ -345,23 +356,68 @@ public final class EntityUtils {
     }
     
     /*
+     * Generic Entities
+     */
+    public static @Nullable UUID getUUID(@Nullable Entity entity) {
+        if (entity == null) return null;
+        return entity.getUuid();
+    }
+    
+    /*
+     * Player methods
+     */
+    public static void resendInventory(PlayerEntity player) {
+        if (player instanceof ServerPlayerEntity)
+            EntityUtils.resendInventory((ServerPlayerEntity)player);
+    }
+    public static void resendInventory(ServerPlayerEntity player) {
+        PlayerInventory inventory = player.inventory;
+        int slot = inventory.selectedSlot;
+        player.networkHandler.sendPacket(new ContainerSlotUpdateS2CPacket(-2, slot, inventory.getInvStack(slot)));
+    }
+    
+    /*
      * Get Online Players
      */
-    @Nullable
-    public static ServerPlayerEntity getPlayer(String username) {
+    public static @Nullable ServerPlayerEntity getPlayer(String username) {
         // Get the server
         MinecraftServer server = ServerCore.get();
         
         // If the player is online
         return server.getPlayerManager().getPlayer( username );
     }
-    @Nullable
-    public static ServerPlayerEntity getPlayer(UUID playerId) {
+    public static @Nullable ServerPlayerEntity getPlayer(UUID playerId) {
         // Get the server
         MinecraftServer server = ServerCore.get();
         
         // If the player is online
         return server.getPlayerManager().getPlayer( playerId );
+    }
+    
+    /*
+     * World
+     */
+    public static boolean isInOverworld(PlayerEntity player) {
+        return EntityUtils.isIn(player, DimensionType.OVERWORLD);
+    }
+    public static boolean isNotInOverworld(PlayerEntity player) {
+        return !EntityUtils.isInOverworld(player);
+    }
+    public static boolean isInNether(PlayerEntity player) {
+        return EntityUtils.isIn(player, DimensionType.THE_NETHER);
+    }
+    public static boolean isNotInNether(PlayerEntity player) {
+        return !EntityUtils.isInNether(player);
+    }
+    public static boolean isInTheEnd(PlayerEntity player) {
+        return EntityUtils.isIn(player, DimensionType.THE_END);
+    }
+    public static boolean isNotInTheEnd(PlayerEntity player) {
+        return !EntityUtils.isInTheEnd(player);
+    }
+    private static boolean isIn(PlayerEntity player, DimensionType dimension) {
+        return player.world.getDimension()
+            .getType().equals(dimension);
     }
     
     /*

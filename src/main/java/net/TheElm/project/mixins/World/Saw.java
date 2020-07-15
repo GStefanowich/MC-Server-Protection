@@ -25,12 +25,12 @@
 
 package net.TheElm.project.mixins.World;
 
+import net.TheElm.project.objects.SawDamage;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.StonecutterBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -45,7 +45,7 @@ public abstract class Saw extends Block {
     @Override
     public void onEntityCollision(BlockState blockState, World world, BlockPos blockPos, Entity entity) {
         if (entity instanceof LivingEntity) {
-            entity.damage(DamageSource.GENERIC, 1.0F);
+            entity.damage(SawDamage.SAW_BLADE, 1.0F);
         }
         
         super.onEntityCollision(blockState, world, blockPos, entity);

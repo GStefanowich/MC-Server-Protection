@@ -40,13 +40,13 @@ public final class ConfigOption<T extends Object> extends ConfigBase<T> {
     private JsonSerializer<T> serializer = null;
     
     public ConfigOption(@NotNull String location, @Nullable Function<JsonElement, T> setter) {
-        this( location, null, setter );
+        this(location, null, setter);
     }
     public ConfigOption(@NotNull String location, @Nullable T defaultValue, @Nullable Function<JsonElement, T> setter) {
-        this( location, defaultValue, setter, null );
+        this(location, defaultValue, setter, null);
     }
     public ConfigOption(@NotNull String location, @Nullable T defaultValue, @Nullable Function<JsonElement, T> setter, @Nullable JsonSerializer<T> serializer) {
-        super( location );
+        super(location);
         
         this.value = defaultValue;
         this.setter = setter;
@@ -61,7 +61,7 @@ public final class ConfigOption<T extends Object> extends ConfigBase<T> {
         return this.value;
     }
     
-    public final boolean isSet() {
+    public final boolean isTrue() {
         T val = this.get();
         if (val instanceof Boolean)
             return (Boolean)val;

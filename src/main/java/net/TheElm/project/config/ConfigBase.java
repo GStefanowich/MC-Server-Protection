@@ -26,20 +26,19 @@
 package net.TheElm.project.config;
 
 import com.google.gson.JsonElement;
+import org.jetbrains.annotations.NotNull;
 
 public abstract class ConfigBase<T extends Object> {
     
     private final String path;
     private boolean wasDefined = false;
     
-    protected ConfigBase(String location) {
-        if (location.isEmpty()) throw new RuntimeException("Config Option path should not be empty");
-        
+    protected ConfigBase(@NotNull String location) {
         this.path = location;
     }
     
     public abstract JsonElement getElement();
-    public final String getPath() {
+    public final @NotNull String getPath() {
         return this.path;
     }
     

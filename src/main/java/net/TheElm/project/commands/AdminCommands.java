@@ -33,7 +33,10 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
+import net.TheElm.project.utilities.RankUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.item.ItemStack;
@@ -52,49 +55,44 @@ public final class AdminCommands {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         // Register the FLY command
-        if (SewingMachineConfig.INSTANCE.COMMAND_FLIGHT_OP_LEVEL.get() >= 0) {
-            dispatcher.register(CommandManager.literal("fly")
-                .requires((source -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.COMMAND_FLIGHT_OP_LEVEL.get())))
-                .then( CommandManager.argument( "target", EntityArgumentType.players())
-                    .executes(AdminCommands::targetFlying)
-                )
-                .executes(AdminCommands::selfFlying)
-            );
-            CoreMod.logDebug("- Registered Fly command");
-        }
+        dispatcher.register(CommandManager.literal("fly")
+            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_FLY))
+            .then( CommandManager.argument( "target", EntityArgumentType.players())
+                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_FLY.onOther()))
+                .executes(AdminCommands::targetFlying)
+            )
+            .executes(AdminCommands::selfFlying)
+        );
+        CoreMod.logDebug("- Registered Fly command");
         
         // Register the GOD command
-        if (SewingMachineConfig.INSTANCE.COMMAND_GODMODE_OP_LEVEL.get() >= 0) {
-            dispatcher.register(CommandManager.literal("god")
-                .requires(source -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.COMMAND_GODMODE_OP_LEVEL.get()))
-                .then( CommandManager.argument( "target", EntityArgumentType.players())
-                    .executes(AdminCommands::targetGod)
-                )
-                .executes(AdminCommands::selfGod)
-            );
-            CoreMod.logDebug("- Registered God Mode command");
-        }
+        dispatcher.register(CommandManager.literal("god")
+            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GODMODE))
+            .then( CommandManager.argument( "target", EntityArgumentType.players())
+                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GODMODE.onOther()))
+                .executes(AdminCommands::targetGod)
+            )
+            .executes(AdminCommands::selfGod)
+        );
+        CoreMod.logDebug("- Registered God Mode command");
         
         // Register the HEAL command
-        if (SewingMachineConfig.INSTANCE.COMMAND_HEAL_OP_LEVEL.get() >= 0) {
-            dispatcher.register(CommandManager.literal("heal")
-                .requires(source -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.COMMAND_HEAL_OP_LEVEL.get()))
-                .then( CommandManager.argument( "target", EntityArgumentType.players())
-                    .executes(AdminCommands::targetHeal)
-                )
-                .executes(AdminCommands::selfHeal)
-            );
-            CoreMod.logDebug("- Registered Heal command");
-        }
+        dispatcher.register(CommandManager.literal("heal")
+            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_HEAL))
+            .then( CommandManager.argument( "target", EntityArgumentType.players())
+                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_HEAL.onOther()))
+                .executes(AdminCommands::targetHeal)
+            )
+            .executes(AdminCommands::selfHeal)
+        );
+        CoreMod.logDebug("- Registered Heal command");
         
         // Register the HEAL command
-        if (SewingMachineConfig.INSTANCE.COMMAND_REPAIR_OP_LEVEL.get() >= 0) {
-            dispatcher.register(CommandManager.literal("repair")
-                .requires(source -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.COMMAND_REPAIR_OP_LEVEL.get()))
-                .executes(AdminCommands::selfRepair)
-            );
-            CoreMod.logDebug("- Registered Repair command");
-        }
+        dispatcher.register(CommandManager.literal("repair")
+            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_REPAIR))
+            .executes(AdminCommands::selfRepair)
+        );
+        CoreMod.logDebug("- Registered Repair command");
         
         // Create DEBUG commands
         if (CoreMod.isDebugging()) {

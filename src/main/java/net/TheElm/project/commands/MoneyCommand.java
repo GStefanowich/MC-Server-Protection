@@ -36,6 +36,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.utilities.CommandUtilities;
@@ -92,7 +93,7 @@ public final class MoneyCommand {
             // Admin GIVE money (Adds money)
             .then( CommandManager.literal("give" )
                 // If player is OP
-                .requires((resource) -> resource.hasPermissionLevel( 1 ))
+                .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
                 .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
                     .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
                         .suggests( CommandUtilities::getAllPlayerNames )
@@ -103,7 +104,7 @@ public final class MoneyCommand {
             // Admin TAKES money (Removes money)
             .then( CommandManager.literal( "take" )
                 // If player is OP
-                .requires((resource) -> resource.hasPermissionLevel( 1 ))
+                .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
                 .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
                     .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
                         .suggests( CommandUtilities::getAllPlayerNames )
@@ -114,7 +115,7 @@ public final class MoneyCommand {
             // Admin SET money (Sets amount)
             .then( CommandManager.literal("set" )
                 // If player is OP
-                .requires((resource) -> resource.hasPermissionLevel( 1 ))
+                .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
                 .then( CommandManager.argument( "amount", IntegerArgumentType.integer() )
                     .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
                         .suggests( CommandUtilities::getAllPlayerNames )
@@ -125,7 +126,7 @@ public final class MoneyCommand {
             // Admin RESET money ()
             .then( CommandManager.literal( "reset" )
                 // If player is OP
-                .requires((resource) -> resource.hasPermissionLevel( 1 ))
+                .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
                 .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
                     .suggests( CommandUtilities::getAllPlayerNames )
                     .executes( MoneyCommand::commandAdminReset )

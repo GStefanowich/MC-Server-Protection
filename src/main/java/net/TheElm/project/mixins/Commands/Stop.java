@@ -29,6 +29,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.TheElm.project.ServerCore;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.utilities.EntityUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
@@ -51,7 +52,7 @@ public class Stop {
     @Overwrite
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal( "stop" )
-            .requires((source -> source.hasPermissionLevel(4)))
+            .requires((source -> source.hasPermissionLevel(OpLevels.STOP)))
             .then( CommandManager.argument( "reason", StringArgumentType.greedyString())
                 .executes((context) -> {
                     ServerCommandSource source = context.getSource();

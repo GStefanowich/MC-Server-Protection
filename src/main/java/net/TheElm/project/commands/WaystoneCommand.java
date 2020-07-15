@@ -25,25 +25,39 @@
 
 package net.TheElm.project.commands;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.utilities.CommandUtilities;
 import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.TitleUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.command.arguments.EntityArgumentType;
+import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.Collection;
+
+import static net.TheElm.project.commands.TeleportsCommand.TARGET_NO_WARP;
+
+//import net.TheElm.project.enums.OpLevels;
 
 public class WaystoneCommand {
     
@@ -51,7 +65,7 @@ public class WaystoneCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("waystones")
-            .requires((source) -> source.hasPermissionLevel( 2 ))
+            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING))
             .then( CommandManager.literal("set")
                 .then( CommandManager.argument( "player", EntityArgumentType.player())
                     .executes(WaystoneCommand::setToCurrentLocation)
@@ -65,12 +79,15 @@ public class WaystoneCommand {
             )
             .then(CommandManager.literal("send")
                 .then(CommandManager.argument("players", EntityArgumentType.players())
-                    .requires((source) -> source.hasPermissionLevel(1))
+                    .then(CommandManager.argument("to", GameProfileArgumentType.gameProfile())
+                        .suggests(CommandUtilities::getAllPlayerNames)
+                        .executes(WaystoneCommand::sendPlayersTo)
+                    )
                     .executes(WaystoneCommand::sendHome)
                 )
             )
         );
-        CoreMod.logDebug( "- Registered Waystone command" );
+        CoreMod.logDebug( "- Registered Waystones command" );
     }
     
     private static int setToCurrentLocation(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -142,6 +159,46 @@ public class WaystoneCommand {
         }
         
         return Command.SINGLE_SUCCESS;
+    }
+    private static int sendPlayersTo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get information about the request
+        ServerCommandSource source = context.getSource();
+        MinecraftServer server = source.getMinecraftServer();
+        PlayerManager manager = server.getPlayerManager();
+        
+        // Get information about the teleporting players
+        Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "players");
+        Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "to");
+        
+        // Get information about the target
+        GameProfile target = profiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        ServerPlayerEntity targetPlayer = manager.getPlayer(target.getId());
+        
+        WarpUtils.Warp warp;
+        // If the player to teleport to does not have a warp
+        if ((warp = WarpUtils.getWarp(target.getId())) == null)
+            throw TARGET_NO_WARP.create(source);
+        
+        // Teleport all of the players
+        for (ServerPlayerEntity porter : players) {
+            WarpUtils.teleportPlayer(warp, porter);
+            
+            TeleportsCommand.feedback(porter, target);
+    
+            // Notify the player
+            if (!porter.isSpectator()) {
+                if ((targetPlayer != null) && (!target.getId().equals(porter.getUuid()))) {
+                    TitleUtils.showPlayerAlert(
+                        targetPlayer,
+                        Formatting.YELLOW,
+                        TranslatableServerSide.text(targetPlayer, "warp.notice.player", porter.getDisplayName())
+                    );
+                    targetPlayer.playSound(SoundEvents.UI_TOAST_IN, SoundCategory.MASTER, 1.0f, 1.0f);
+                }
+            }
+        }
+        
+        return players.size();
     }
     
 }

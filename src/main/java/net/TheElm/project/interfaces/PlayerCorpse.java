@@ -31,6 +31,9 @@ import java.util.UUID;
 
 public interface PlayerCorpse {
     
-    void setCorpseData(UUID owner, ListTag inventory);
+    default void setCorpseData(UUID owner, ListTag inventory) {
+        this.setCorpseData(owner, inventory, new ListTag());
+    }
+    void setCorpseData(UUID owner, ListTag inventory, ListTag backpack);
     
 }

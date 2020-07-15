@@ -36,6 +36,7 @@ import net.TheElm.project.protections.logging.BlockEvent;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
+import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.block.AbstractButtonBlock;
@@ -50,11 +51,10 @@ import net.minecraft.block.entity.EnderChestBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.enums.DoorHinge;
 import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.BucketItem;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.network.packet.s2c.play.ContainerSlotUpdateS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -167,7 +167,7 @@ public final class BlockInteraction {
                     }
                     
                     // Play a sound to the player
-                    world.playSound(null, blockPos, EntityUtils.getLockSound(block, blockEntity), SoundCategory.BLOCKS, 0.5f, 1f);
+                    world.playSound(null, blockPos, EntityUtils.getLockSound(block, blockState, blockEntity), SoundCategory.BLOCKS, 0.5f, 1f);
                     
                     // Display that this item can't be opened
                     TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
@@ -181,17 +181,17 @@ public final class BlockInteraction {
         }
         
         // Test if the block can be placed
-        ActionResult placeResult = BlockInteraction.blockPlace( player, world, hand, itemStack, blockHitResult);
+        ActionResult placeResult = BlockInteraction.blockPlace(player, world, hand, itemStack, blockHitResult);
         
         // Adjust the stack size of the players placed block
-        if (placeResult == ActionResult.FAIL) {
-            PlayerInventory inventory = player.inventory;
-            int slot = inventory.selectedSlot;
-            player.networkHandler.sendPacket(new ContainerSlotUpdateS2CPacket(-2, slot, inventory.getInvStack(slot)));
-        }
+        if (placeResult == ActionResult.FAIL)
+            EntityUtils.resendInventory(player);
         return placeResult;
     }
     private static ActionResult blockPlace(ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack, BlockHitResult blockHitResult) {
+        // Get the item being used
+        final Item item = itemStack.getItem();
+        
         // Get where the block is being placed at
         BlockPos blockPos = blockHitResult.getBlockPos();
         
@@ -201,22 +201,22 @@ public final class BlockInteraction {
         Material material = block.getMaterial(blockState);
         
         // Adjust the block offset
-        if (player.isSneaking() || (!material.isReplaceable()) || (itemStack.getItem() instanceof BucketItem))
+        if (player.isSneaking() || ((item instanceof BlockItem) && (!material.isReplaceable())))
             blockPos = blockPos.offset(blockHitResult.getSide());
         
         // Test if allowed
         ActionResult result;
         if (((result = BlockInteraction.canBlockPlace(player, blockPos, blockHitResult)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get()) {
-            if (itemStack.getItem() instanceof BlockItem)
-                EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, ((BlockItem)itemStack.getItem()).getBlock(), blockPos));
+            if (item instanceof BlockItem)
+                EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, ((BlockItem)item).getBlock(), blockPos));
             else
-                CoreMod.logDebug("Player \"placed\" non-block item \"" + itemStack.getItem().getTranslationKey() + "\"");
+                CoreMod.logDebug("Player \"placed\" non-block item \"" + item.getTranslationKey() + "\" at " + MessageUtils.blockPosToString(blockPos));
         }
         return result;
     }
     private static ActionResult canBlockPlace(ServerPlayerEntity player, BlockPos blockPos, BlockHitResult blockHitResult) {
         // Test the players permissions to the chunk
-        if (ChunkUtils.canPlayerBreakInChunk( player, blockPos ))
+        if (ChunkUtils.canPlayerBreakInChunk(player, blockPos))
             return ActionResult.PASS;
         
         // If cannot break, prevent the action

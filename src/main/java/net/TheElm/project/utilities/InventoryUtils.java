@@ -245,9 +245,35 @@ public final class InventoryUtils {
         return success;
     }
     
+    /*
+     * Check if an inventory contains items
+     */
+    public static boolean isInvEmpty(@Nullable Inventory inventory) {
+        return (inventory == null) || inventory.isInvEmpty();
+    }
+    
+    /*
+     * Advanced enchanted books prevent combining
+     */
+    public static boolean areBooksAtMaximum(@NotNull Enchantment enchantment, ItemStack... stacks) {
+        int level = 0;
+        
+        // Loop through all of the items
+        for (ItemStack stack : stacks) {
+            // If an item listed is not a book
+            if (!Items.ENCHANTED_BOOK.equals(stack.getItem()))
+                return false;
+            
+            // Check the book enchantments
+            Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(stack);
+            level += enchantments.getOrDefault(enchantment, 0);
+        }
+        
+        return level > enchantment.getMaximumLevel();
+    }
+    
     public static ItemRarity getItemRarity(ItemStack stack) {
-        int iRarity = 0;
-        boolean isBook = (stack.getItem().equals(Items.ENCHANTED_BOOK));
+        float rarity = 0;
         
         // Get all enchantments
         Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments( stack );
@@ -257,34 +283,50 @@ public final class InventoryUtils {
             // If the enchantment is a curse, the tool is ALWAYS cursed
             if (enchantment.isCursed()) return ItemRarity.CURSED;
             
-            int level = e.getValue();
-            float levelP = (float)level / enchantment.getMaximumLevel();
-            if (enchantment.isTreasure()) levelP += isBook ? 1 : 0.25f;
-            
-            float rarity = (float)( 11 - enchantment.getWeight().getWeight() ) * levelP;
-            iRarity += rarity;
+            // Handle the rarity
+            rarity += InventoryUtils.getEnchantmentRarity(enchantment, e.getValue());
         }
         
+        return InventoryUtils.getItemRarity(
+            rarity,
+            enchantments.size(),
+            (stack.getItem().equals(Items.ENCHANTED_BOOK))
+        );
+    }
+    private static float getEnchantmentRarity(Enchantment enchantment, int level) {
+        int min = (level - enchantment.getMinimumLevel()),
+            max = (enchantment.getMaximumLevel() - enchantment.getMinimumLevel());
+        
+        // Get the percentage to max level
+        float rarity = (max == 0 ? 1 : ((float)min / (float)max));
+        
+        // Increase the total item rarity
+        Enchantment.Weight weight = enchantment.getWeight();
+        return ((float)(10 / weight.getWeight()) * rarity);
+    }
+    private static ItemRarity getItemRarity(final float rarity, final int enchantments, boolean isBook) {
         // Offset the levels by TWO for books
         int o = ( isBook ? 2 : 1 );
         
-        if (iRarity >= (24 / o))
+        // Return the matching rarity
+        if (rarity >= (24f / o))
             return ItemRarity.LEGENDARY;
-        if (iRarity >= (12 / o))
+        if (rarity >= (12f / o))
             return ItemRarity.EPIC;
-        if (iRarity >= (6 / o))
+        if (rarity >= (6f / o))
             return ItemRarity.RARE;
-        if (iRarity >= (3 / o))
+        if (rarity >= (3f / o))
             return ItemRarity.UNCOMMON;
         return ItemRarity.COMMON;
     }
+    
     public enum ItemRarity {
-        CURSED( Formatting.RED ),
-        COMMON( Formatting.GRAY ),
-        UNCOMMON( Formatting.GREEN ),
-        RARE( Formatting.AQUA ),
-        EPIC( Formatting.DARK_PURPLE ),
-        LEGENDARY( Formatting.GOLD );
+        CURSED(Formatting.RED),
+        COMMON(Formatting.GRAY),
+        UNCOMMON(Formatting.GREEN),
+        RARE(Formatting.AQUA),
+        EPIC(Formatting.DARK_PURPLE),
+        LEGENDARY(Formatting.GOLD);
         
         public final Formatting[] formatting;
         

@@ -39,8 +39,10 @@ import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
@@ -255,10 +257,11 @@ public final class NbtUtils {
         return null;
     }
     public static @Nullable WorldPos tagToWorldPos(@Nullable CompoundTag compound) {
-        if (compound != null) {
+        if ((compound != null) && compound.contains("world", NbtType.STRING)) {
+            DimensionType dimension = Registry.DIMENSION_TYPE.get(new Identifier(compound.getString("world")));
             BlockPos blockPos = NbtUtils.tagToBlockPos( compound );
-            if ( blockPos != null && compound.contains("world", NbtType.NUMBER) )
-                return new WorldPos(DimensionType.byRawId( compound.getInt("world") ), blockPos);
+            if ( blockPos != null )
+                return new WorldPos(dimension, blockPos);
         }
         return null;
     }

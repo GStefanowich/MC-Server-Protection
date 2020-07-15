@@ -32,6 +32,7 @@ import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -40,10 +41,23 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerListS2CPacket.Entry.class)
-public class PlayerList {
+public abstract class PlayerList {
     
     @Shadow @Final private GameProfile profile;
     @Shadow @Final private Text displayName;
+    
+    @Shadow
+    public abstract @Nullable Text getDisplayName();
+    
+    @Inject(at = @At("HEAD"), method = "getProfile", cancellable = true)
+    public void onGetProfile(CallbackInfoReturnable<GameProfile> callback) {
+        /*if (SewingMachineConfig.INSTANCE.DO_PLAYER_NICKS.get()) {
+            if (this.displayName != null) {
+                new Exception("Look out for this!").printStackTrace();
+                callback.setReturnValue(new GameProfile(this.profile.getId(), this.displayName.getString()));
+            }
+        }*/
+    }
     
     @Inject(at = @At("RETURN"), method = "getDisplayName", cancellable = true)
     public void getDisplayName(CallbackInfoReturnable<Text> callback) {

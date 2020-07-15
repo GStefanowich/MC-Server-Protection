@@ -32,9 +32,12 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.CommandUtilities;
+import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.PlayerNameUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.WarpUtils;
@@ -42,6 +45,7 @@ import net.TheElm.project.utilities.WarpUtils.Warp;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
@@ -61,70 +65,68 @@ import java.util.Collection;
 import java.util.UUID;
 
 public final class TeleportsCommand {
-    private static final ExceptionTranslatableServerSide PLAYER_NOT_IN_SPAWN = new ExceptionTranslatableServerSide("warp.notice.player.outside_spawn");
-    private static final ExceptionTranslatableServerSide TARGET_NOT_IN_SPAWN = new ExceptionTranslatableServerSide("warp.notice.target.outside_spawn");
-    private static final ExceptionTranslatableServerSide TARGET_NOT_REQUESTING = new ExceptionTranslatableServerSide("warp.notice.no_request");
-    private static final ExceptionTranslatableServerSide TARGET_NO_WARP = new ExceptionTranslatableServerSide("warp.notice.no_warp");
-    private static final ExceptionTranslatableServerSide TARGET_NOT_ONLINE = new ExceptionTranslatableServerSide("warp.notice.offline");
+    public static final ExceptionTranslatableServerSide PLAYER_NOT_IN_SPAWN = new ExceptionTranslatableServerSide("warp.notice.player.outside_spawn");
+    public static final ExceptionTranslatableServerSide TARGET_NOT_IN_SPAWN = new ExceptionTranslatableServerSide("warp.notice.target.outside_spawn");
+    public static final ExceptionTranslatableServerSide TARGET_NOT_REQUESTING = new ExceptionTranslatableServerSide("warp.notice.no_request");
+    public static final ExceptionTranslatableServerSide TARGET_NO_WARP = new ExceptionTranslatableServerSide("warp.notice.no_warp");
+    public static final ExceptionTranslatableServerSide TARGET_NOT_ONLINE = new ExceptionTranslatableServerSide("warp.notice.offline");
     
     private TeleportsCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        if (SewingMachineConfig.INSTANCE.COMMAND_SPAWN_OP_LEVEL.get() >= 0) {
-            dispatcher.register(CommandManager.literal("spawn")
-                .requires((source) -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_SPAWN.get()))
-                .then(CommandManager.argument("player", EntityArgumentType.players())
-                    .executes((context) -> {
-                        // Get location information
-                        ServerCommandSource source = context.getSource();
-                        Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "player");
-                        ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
-                        
-                        for (ServerPlayerEntity player : players) {
-                            WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
-                        }
-                        
-                        Text spawnText = new LiteralText("Spawn").formatted(Formatting.GOLD);
-                        if (players.size() == 1) {
-                            source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", ((Entity) players.iterator().next()).getDisplayName(), spawnText), true);
-                        } else {
-                            source.sendFeedback(new TranslatableText("commands.teleport.success.entity.multiple", players.size(), spawnText), true);
-                        }
-                        
-                        return Command.SINGLE_SUCCESS;
-                    })
-                )
+        dispatcher.register(CommandManager.literal("spawn")
+            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING))
+            .then(CommandManager.argument("player", EntityArgumentType.players())
                 .executes((context) -> {
                     // Get location information
                     ServerCommandSource source = context.getSource();
-                    ServerPlayerEntity player = source.getPlayer();
+                    Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "player");
                     ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
-                    
-                    WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
-                    
-                    source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", player.getDisplayName(), new LiteralText("Spawn").formatted(Formatting.GOLD)), true);
-                    
+                
+                    for (ServerPlayerEntity player : players) {
+                        WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
+                    }
+                
+                    Text spawnText = new LiteralText("Spawn").formatted(Formatting.GOLD);
+                    if (players.size() == 1) {
+                        source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", ((Entity) players.iterator().next()).getDisplayName(), spawnText), true);
+                    } else {
+                        source.sendFeedback(new TranslatableText("commands.teleport.success.entity.multiple", players.size(), spawnText), true);
+                    }
+                
                     return Command.SINGLE_SUCCESS;
                 })
-            );
-            CoreMod.logDebug("- Registered Spawn command");
-        }
+            )
+            .executes((context) -> {
+                // Get location information
+                ServerCommandSource source = context.getSource();
+                ServerPlayerEntity player = source.getPlayer();
+                ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
+            
+                WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
+            
+                source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", player.getDisplayName(), new LiteralText("Spawn").formatted(Formatting.GOLD)), true);
+            
+                return Command.SINGLE_SUCCESS;
+            })
+        );
+        CoreMod.logDebug("- Registered Spawn command");
         
-        if (SewingMachineConfig.INSTANCE.COMMAND_THEEND_OP_LEVEL.get() >= 0) {
-            dispatcher.register(CommandManager.literal("theend")
-                .requires((source -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.COMMAND_THEEND_OP_LEVEL.get())))
-                .executes(context -> {
-                    // Get location information
-                    ServerCommandSource source = context.getSource();
-                    ServerPlayerEntity player = source.getPlayer();
-                    
-                    // Move the player to the end
+        dispatcher.register(CommandManager.literal("theend")
+            .requires((source -> source.hasPermissionLevel(OpLevels.CHEATING)))
+            .executes((context) -> {
+                // Get location information
+                ServerCommandSource source = context.getSource();
+                ServerPlayerEntity player = source.getPlayer();
+                
+                // Move the player to the end
+                if (player.dimension != DimensionType.THE_END)
                     player.changeDimension(DimensionType.THE_END);
-                    
-                    return Command.SINGLE_SUCCESS;
-                })
-            );
-        }
+                else WarpUtils.teleportEntity(DimensionType.THE_END, player);
+                
+                return Command.SINGLE_SUCCESS;
+            })
+        );
         
         dispatcher.register(CommandManager.literal("tpa")
             .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get())
@@ -169,8 +171,7 @@ public final class TeleportsCommand {
         return TeleportsCommand.tpaToPlayer(
             source.getMinecraftServer(),
             porter,
-            porter.getUuid(),
-            porter.getEntityName()
+            porter.getGameProfile()
         );
     }
     private static int tpaCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -179,17 +180,16 @@ public final class TeleportsCommand {
         final ServerPlayerEntity porter = source.getPlayer();
         
         // Get the reference of the player to request a teleport to
-        Collection<GameProfile> argumentType = GameProfileArgumentType.getProfileArgument( context, "player" );
-        GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument( context, "player" );
+        GameProfile target = profiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         return TeleportsCommand.tpaToPlayer(
             source.getMinecraftServer(),
             porter,
-            target.getId(),
-            target.getName()
+            target
         );
     }
-    private static int tpaToPlayer(MinecraftServer server, ServerPlayerEntity porter, UUID target, String name) throws CommandSyntaxException {
+    private static int tpaToPlayer(MinecraftServer server, ServerPlayerEntity porter, GameProfile target) throws CommandSyntaxException {
         final PlayerManager manager = server.getPlayerManager();
         
         // Check if player is within spawn
@@ -198,20 +198,20 @@ public final class TeleportsCommand {
         
         Warp warp;
         // If the player to teleport to does not have a warp
-        if ((warp = WarpUtils.getWarp( target )) == null)
+        if ((warp = WarpUtils.getWarp(target.getId())) == null)
             throw TARGET_NO_WARP.create( porter );
         
-        ServerPlayerEntity targetPlayer = manager.getPlayer( target );
+        ServerPlayerEntity targetPlayer = manager.getPlayer(target.getId());
         
         // Accept the teleport automatically
-        if ( ChunkUtils.canPlayerWarpTo( porter, target ) ) {
-            WarpUtils.teleportPlayer( warp, porter );
+        if ( ChunkUtils.canPlayerWarpTo(porter, target.getId()) ) {
+            WarpUtils.teleportPlayer(warp, porter);
             
-            CoreMod.logInfo(porter.getName().asString() + " was teleported to " + (porter.getUuid().equals(target) ? "their" : name + "'s") + " warp");
+            TeleportsCommand.feedback(porter, target);
             
             // Notify the player
             if (!porter.isSpectator()) {
-                if ((targetPlayer != null) && (!target.equals(porter.getUuid()))) {
+                if ((targetPlayer != null) && (!target.getId().equals(porter.getUuid()))) {
                     TitleUtils.showPlayerAlert(
                         targetPlayer,
                         Formatting.YELLOW,
@@ -226,9 +226,13 @@ public final class TeleportsCommand {
                 throw TeleportsCommand.TARGET_NOT_ONLINE.create( porter );
             
             // Add the player to the list of invitations
-            CoreMod.PLAYER_WARP_INVITES.put(porter, target);
+            CoreMod.PLAYER_WARP_INVITES.put(porter, target.getId());
             
-            CoreMod.logInfo(porter.getName().asString() + " has requested to teleport to " + (porter.getUuid().equals(target) ? "their" : name + "'s") + " warp");
+            porter.sendMessage(new LiteralText("Waiting for ")
+                .formatted(Formatting.YELLOW)
+                .append(targetPlayer.getDisplayName())
+                .append(" to accept your teleport."));
+            CoreMod.logInfo(porter.getName().asString() + " has requested to teleport to " + (porter.getUuid().equals(target.getId()) ? "their" : target.getName() + "'s") + " warp");
             
             // Notify the target
             targetPlayer.sendMessage(porter.getName().formatted(Formatting.AQUA)
@@ -263,7 +267,9 @@ public final class TeleportsCommand {
         Warp warp = WarpUtils.getWarp( target.getUuid() );
         WarpUtils.teleportPlayer( warp, porter );
         
-        CoreMod.logInfo(porter.getName().asString() + " was teleported to " + (porter.getUuid().equals(target.getUuid()) ? "their" : target.getName().asString() + "'s") + " warp");
+        source.sendFeedback(new LiteralText("Teleport request accepted").formatted(Formatting.GREEN), false);
+        
+        TeleportsCommand.feedback(porter, target);
         
         CoreMod.PLAYER_WARP_INVITES.remove( porter );
         return Command.SINGLE_SUCCESS;
@@ -278,11 +284,27 @@ public final class TeleportsCommand {
         
         UUID warpToUUID;
         if ((( warpToUUID = CoreMod.PLAYER_WARP_INVITES.get( porter ) ) == null) || (!target.getUuid().equals( warpToUUID )) )
-            throw TARGET_NOT_REQUESTING.create( target );
+            throw TARGET_NOT_REQUESTING.create(target);
         
+        source.sendFeedback(new LiteralText("Teleport request rejected").formatted(Formatting.RED), false);
         CoreMod.logInfo( porter.getName().asString() + "'s teleport was rejected by " + target.getName().asString() );
         
-        CoreMod.PLAYER_WARP_INVITES.remove( porter );
+        CoreMod.PLAYER_WARP_INVITES.remove(porter);
         return Command.SINGLE_SUCCESS;
     }
+    
+    private static void feedback(PlayerEntity porter, PlayerEntity target) {
+        TeleportsCommand.feedback(porter, target.getGameProfile());
+    }
+    public static void feedback(PlayerEntity porter, GameProfile target) {
+        Text feedback = new LiteralText("")
+            .append(porter.getDisplayName())
+            .append(" was teleported to ");
+        if (porter.getUuid().equals(target.getId())) feedback.append("their");
+        else feedback.append(PlayerNameUtils.fetchPlayerNick(target.getId())).append("'s");
+        feedback.append(" warp.");
+        
+        MessageUtils.consoleToOps(feedback);
+    }
+    
 }

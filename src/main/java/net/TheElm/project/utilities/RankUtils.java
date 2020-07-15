@@ -34,6 +34,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.PlayerPermissions;
+import net.TheElm.project.permissions.PermissionNode;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -115,30 +116,30 @@ public final class RankUtils {
             return new PlayerRank[0];
         }
     }
-    public static boolean hasPermission(@NotNull ServerCommandSource source, String permission) {
-        if (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get())
+    public static boolean hasPermission(@NotNull ServerCommandSource source, @Nullable PermissionNode permission) {
+        if ((!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get()) || (permission == null))
             return false;
         Entity entity = source.getEntity();
         return ((entity instanceof ServerPlayerEntity) && RankUtils.hasPermission(((ServerPlayerEntity) entity), permission));
     }
-    public static boolean hasPermission(@NotNull ServerPlayerEntity player, String permission) {
+    public static boolean hasPermission(@NotNull ServerPlayerEntity player, @NotNull PermissionNode permission) {
         boolean result = false;
         
         PlayerRank[] ranks = RankUtils.getPlayerRanks(player);
         for (int i = (ranks.length - 1); i >= 0; --i) {
             PlayerRank rank = ranks[i];
             
-            if (rank.isAdditive(permission))
+            if (rank.isAdditive(permission.getNode()))
                 result = true;
-            else if (rank.isSubtractive(permission))
+            else if (rank.isSubtractive(permission.getNode()))
                 result = false;
         }
         
         return result;
     }
-    public static boolean hasPermission(@NotNull PlayerEntity player, String permission) {
+    public static boolean hasPermission(@NotNull PlayerEntity player, @NotNull PermissionNode permission) {
         if (!(player instanceof ServerPlayerEntity)) return true;
-        return RankUtils.hasPermission( (ServerPlayerEntity)player, permission );
+        return RankUtils.hasPermission((ServerPlayerEntity)player, permission);
     }
     
     public static boolean reload() {

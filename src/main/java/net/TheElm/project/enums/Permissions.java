@@ -25,55 +25,76 @@
 
 package net.TheElm.project.enums;
 
+import net.TheElm.project.CoreMod;
+import net.TheElm.project.permissions.InflictableNode;
+import net.TheElm.project.permissions.OtherInflictableNode;
+import net.TheElm.project.permissions.PermissionNode;
 import net.minecraft.world.GameMode;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
 public class Permissions {
-    private static final HashMap<String, String> PERMISSIONS = new HashMap<>();
+    private static final Set<PermissionNode> PERMISSIONS = new HashSet<>();
     
-    public static final String ALL_PERMISSIONS = addPermission("*", "");
+    public static final PermissionNode ALL_PERMISSIONS = addInflictable("*", "");
     
-    public static final String PLAYER_NICKNAME = addPermission("player.nick", "");
+    /*
+     * Self-Inflicting player permissions
+     */
     
-    public static final String PLAYER_GAMEMODE_SURVIVAL = addPermission(GameMode.SURVIVAL);
-    public static final String PLAYER_GAMEMODE_SURVIVAL_OTHER = addPermission(GameMode.SURVIVAL, true);
-    public static final String PLAYER_GAMEMODE_CREATIVE = addPermission(GameMode.CREATIVE);
-    public static final String PLAYER_GAMEMODE_CREATIVE_OTHER = addPermission(GameMode.CREATIVE, true);
-    public static final String PLAYER_GAMEMODE_ADVENTURE = addPermission(GameMode.ADVENTURE);
-    public static final String PLAYER_GAMEMODE_ADVENTURE_OTHER = addPermission(GameMode.ADVENTURE, true);
-    public static final String PLAYER_GAMEMODE_SPECTATOR = addPermission(GameMode.SPECTATOR);
-    public static final String PLAYER_GAMEMODE_SPECTATOR_OTHER = addPermission(GameMode.SPECTATOR, true);
+    public static final PermissionNode INTERACT_WORLD = addPermission("interact.world", "");
+    public static final PermissionNode PLAYER_NICKNAME = addPermission("player.nick", "");
     
-    public static final String VANILLA_COMMAND_KICK = addPermission("minecraft.command.kick", "");
-    public static final String VANILLA_COMMAND_KICK_EXEMPT = addPermission("minecraft.command.kick.exempt", "");
-    public static final String VANILLA_COMMAND_BAN = addPermission("minecraft.command.ban", "");
-    public static final String VANILLA_COMMAND_UNBAN = addPermission("minecraft.command.unban", "");
-    public static final String VANILLA_COMMAND_WHITELIST = addPermission("minecraft.command.whitelist", "");
+    public static final OtherInflictableNode PLAYER_GAMEMODE_SURVIVAL = addInflictableOther(GameMode.SURVIVAL);
+    public static final OtherInflictableNode PLAYER_GAMEMODE_CREATIVE = addInflictableOther(GameMode.CREATIVE);
+    public static final OtherInflictableNode PLAYER_GAMEMODE_ADVENTURE = addInflictableOther(GameMode.ADVENTURE);
+    public static final OtherInflictableNode PLAYER_GAMEMODE_SPECTATOR = addInflictableOther(GameMode.SPECTATOR);
     
-    public static final String CHAT_COMMAND_MUTE = addPermission("minecraft.chat.mute", "");
-    public static final String CHAT_COMMAND_MUTE_EXEMPT = addPermission("minecraft.chat.mute.exempt", "");
+    public static final OtherInflictableNode PLAYER_GODMODE = addInflictableOther("player.cheat.god", "");
+    public static final OtherInflictableNode PLAYER_FLY = addInflictableOther("player.cheat.fly", "");
+    public static final OtherInflictableNode PLAYER_HEAL = addInflictableOther("player.cheat.heal", "");
     
-    public static String addPermission(@NotNull String node, @NotNull String description) {
-        PERMISSIONS.put( node, description );
-        return node;
+    public static final InflictableNode PLAYER_REPAIR = addInflictable("player.cheat.repair", "");
+    
+    public static final PermissionNode LOCATE_PLAYERS = addPermission("player.cheat.locate", "");
+    
+    /*
+     * Moderator permissions
+     */
+    
+    public static final InflictableNode VANILLA_COMMAND_KICK = addInflictable("minecraft.command.kick", "");
+    public static final PermissionNode VANILLA_COMMAND_KICK_EXEMPT = addPermission("minecraft.command.kick.exempt", "");
+    public static final InflictableNode VANILLA_COMMAND_BAN = addInflictable("minecraft.command.ban", "");
+    public static final InflictableNode VANILLA_COMMAND_UNBAN = addInflictable("minecraft.command.unban", "");
+    public static final InflictableNode VANILLA_COMMAND_WHITELIST = addInflictable("minecraft.command.whitelist", "");
+    
+    public static final InflictableNode CHAT_COMMAND_MUTE = addInflictable("minecraft.chat.mute", "");
+    public static final PermissionNode CHAT_COMMAND_MUTE_EXEMPT = addPermission("minecraft.chat.mute.exempt", "");
+    
+    public static PermissionNode addPermission(@NotNull String node, @NotNull String description) {
+        return storePermission(new PermissionNode(node, description));
     }
-    public static String addPermission(@NotNull GameMode mode) {
-        return Permissions.addPermission(mode, false);
+    public static InflictableNode addInflictable(@NotNull String node, @NotNull String description) {
+        return storePermission(new InflictableNode(node, description));
     }
-    public static String addPermission(@NotNull GameMode mode, boolean otherPlayer) {
+    public static OtherInflictableNode addInflictableOther(@NotNull String node, @NotNull String description) {
+        return storePermission(new OtherInflictableNode(node, description));
+    }
+    public static OtherInflictableNode addInflictableOther(@NotNull GameMode mode) {
         String name = mode.getName().toLowerCase();
-        return addPermission("player.gamemode." + name + (otherPlayer ? ".other" : ""), "Allows players to set their own gamemode to " + name + ".");
+        return addInflictableOther("player.gamemode." + name, "Allows players to update their gamemode to " + name + ".");
+    }
+    
+    private static <T extends PermissionNode> T storePermission(T permission) {
+        Permissions.PERMISSIONS.add(permission);
+        if (permission.getDescription().isEmpty()) CoreMod.logDebug("Permission \"" + permission.getNode() + "\"'s description is empty.");
+        return permission;
     }
     
     public static Stream<String> keys() {
-        return PERMISSIONS.keySet().stream().sorted();
-    }
-    public static Set<Map.Entry<String, String>> pairs() {
-        return PERMISSIONS.entrySet();
+        return PERMISSIONS.stream().map(PermissionNode::getNode).sorted();
     }
 }

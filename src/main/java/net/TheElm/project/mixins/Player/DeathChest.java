@@ -26,10 +26,13 @@
 package net.TheElm.project.mixins.Player;
 
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.BlockPlaceCallback;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.Nicknamable;
+import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.utilities.DeathChestUtils;
+import net.TheElm.project.utilities.InventoryUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
@@ -43,6 +46,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.RangedWeaponItem;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
@@ -52,6 +56,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -60,10 +65,14 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(PlayerEntity.class)
-public abstract class DeathChest extends LivingEntity implements MoneyHolder {
+public abstract class DeathChest extends LivingEntity implements MoneyHolder, BackpackCarrier {
     
+    // Backpack
+    private PlayerBackpack backpack = null;
+    
+    // Player inventory
     @Shadow public PlayerInventory inventory;
-    @Shadow protected native void vanishCursedItems();
+    @Shadow protected abstract void vanishCursedItems();
     
     protected DeathChest(EntityType<? extends LivingEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
@@ -93,12 +102,12 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
             }
             
             // If the inventory is NOT empty, and we found a valid position for the death chest
-            if ((!this.inventory.isInvEmpty()) && ((chestPos = DeathChestUtils.getChestPosition( this.getEntityWorld(), this.getBlockPos() )) != null)) {
+            if ((!(InventoryUtils.isInvEmpty(this.inventory) && InventoryUtils.isInvEmpty(this.backpack))) && ((chestPos = DeathChestUtils.getChestPosition( this.getEntityWorld(), this.getBlockPos() )) != null)) {
                 // Vanish cursed items
                 this.vanishCursedItems();
                 
                 // If a death chest was successfully spawned
-                if (DeathChestUtils.createDeathChestFor( (PlayerEntity)(LivingEntity)this, chestPos, this.inventory )) {
+                if (DeathChestUtils.createDeathChestFor( (PlayerEntity)(LivingEntity) this, chestPos )) {
                     callback.cancel();
                 }
             }
@@ -130,6 +139,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
                 // If player just entered combat
                 if (this.hitByOtherPlayerAt == null)
                     this.sendMessage(new LiteralText("You are now in combat.").formatted(Formatting.YELLOW));
+                
                 // Set combat time to when hit
                 this.hitByOtherPlayerAt = System.currentTimeMillis();
             }
@@ -162,12 +172,35 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
     public void onSavingData(CompoundTag tag, CallbackInfo callback) {
         // Save the players money
         tag.putInt( MoneyHolder.SAVE_KEY, this.getPlayerWallet() );
+        
+        // Store the players backpack
+        if (this.backpack != null) {
+            tag.putInt("BackpackSize", this.backpack.getRows());
+            tag.put("Backpack", this.backpack.getTags());
+            
+            ListTag pickupTags = this.backpack.getPickupTags();
+            if (!pickupTags.isEmpty())
+                tag.put("BackpackPickup", pickupTags);
+        }
     }
     @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
         // Read the players money
         if (tag.contains( MoneyHolder.SAVE_KEY, NbtType.NUMBER ))
             this.dataTracker.set( MONEY, tag.getInt( MoneyHolder.SAVE_KEY ) );
+    
+        // Read the players backpack
+        if (tag.contains("BackpackSize", NbtType.NUMBER) && tag.contains("Backpack", NbtType.LIST)) {
+            this.backpack = new PlayerBackpack((PlayerEntity)(LivingEntity)this, tag.getInt("BackpackSize"));
+            this.backpack.readTags(tag.getList("Backpack", NbtType.COMPOUND));
+        
+            if (tag.contains("BackpackPickup", NbtType.LIST))
+                this.backpack.readPickupTags(tag.getList("BackpackPickup", NbtType.STRING));
+        } else {
+            int startingBackpack = SewingMachineConfig.INSTANCE.BACKPACK_STARTING_ROWS.get();
+            if ( startingBackpack > 0 )
+                this.backpack = new PlayerBackpack((PlayerEntity)(LivingEntity)this, Math.min(startingBackpack, 6));
+        }
     }
     
     /*
@@ -179,15 +212,35 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder {
     }
     
     /*
+     * Player Backpack
+     */
+    @Override
+    public @Nullable PlayerBackpack getBackpack() {
+        return this.backpack;
+    }
+    @Override
+    public void setBackpack(PlayerBackpack backpack) {
+        this.backpack = backpack;
+    }
+    @Inject(at = @At("TAIL"), method = "vanishCursedItems")
+    public void onVanishCursedItems(CallbackInfo callback) {
+        if (this.backpack == null)
+            return;
+        for (int i = 0; i < this.backpack.getInvSize(); i++) {
+            ItemStack stack = this.backpack.getInvStack(i);
+            if (!stack.isEmpty() && EnchantmentHelper.hasVanishingCurse(stack))
+                this.backpack.removeInvStack(i);
+        }
+    }
+    
+    /*
      * Item placement
      */
     @Inject(at = @At("HEAD"), method = "canPlaceOn", cancellable = true)
     public void checkPlacement(BlockPos blockPos, Direction direction, ItemStack itemStack, CallbackInfoReturnable<Boolean> callback) {
-        if (!this.world.isClient) {
-            ActionResult result = BlockPlaceCallback.EVENT.invoker().interact((ServerPlayerEntity)(LivingEntity)this, world, blockPos, direction, itemStack);
-            if (result != ActionResult.PASS)
-                callback.setReturnValue(result == ActionResult.SUCCESS);
-        }
+        ActionResult result = BlockPlaceCallback.EVENT.invoker().interact((ServerPlayerEntity)(LivingEntity)this, this.world, blockPos, direction, itemStack);
+        if (result != ActionResult.PASS)
+            callback.setReturnValue(result == ActionResult.SUCCESS);
     }
     
 }

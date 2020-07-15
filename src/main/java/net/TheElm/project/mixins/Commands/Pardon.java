@@ -3,6 +3,7 @@ package net.TheElm.project.mixins.Commands;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.command.arguments.GameProfileArgumentType;
@@ -28,7 +29,7 @@ public class Pardon {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("pardon")
             .requires((source) -> source.getMinecraftServer().getPlayerManager().getIpBanList().isEnabled()
-                && (source.hasPermissionLevel(3) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_UNBAN)))
+                && (source.hasPermissionLevel(OpLevels.KICK_BAN_OP) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_UNBAN)))
             .then(CommandManager.argument("targets", GameProfileArgumentType.gameProfile())
                 .suggests((context, suggestionsBuilder) -> CommandSource.suggestMatching(context.getSource().getMinecraftServer().getPlayerManager().getUserBanList().getNames(), suggestionsBuilder))
                 .executes((context) -> Pardon.pardon(context.getSource(), GameProfileArgumentType.getProfileArgument(context, "targets")))

@@ -36,7 +36,7 @@ public interface Claim {
     
     @Nullable
     UUID getOwner();
-    boolean canPlayerDo(@Nullable UUID player, @NotNull ClaimPermissions perm);
+    boolean canPlayerDo(@Nullable UUID player, @Nullable ClaimPermissions perm);
     boolean isSetting(@NotNull ClaimSettings setting);
     
 }

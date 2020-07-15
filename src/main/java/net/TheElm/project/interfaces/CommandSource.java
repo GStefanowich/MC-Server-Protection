@@ -25,8 +25,10 @@
 
 package net.TheElm.project.interfaces;
 
+import net.TheElm.project.permissions.PermissionNode;
+
 public interface CommandSource {
     
-    boolean hasPermission(String node);
+    boolean hasPermission(PermissionNode permission);
     
 }

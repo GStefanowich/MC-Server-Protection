@@ -170,14 +170,13 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         return this;
     }
     
-    public void canPlayerClaim(@NotNull UUID owner) throws TranslationKeyException {
+    public void canPlayerClaim(@NotNull ClaimantPlayer player) throws TranslationKeyException {
         if (this.chunkPlayer != null)
             throw new TranslationKeyException( "claim.chunk.error.claimed" );
-        if (owner.equals(CoreMod.spawnID))
+        if (player.getId().equals(CoreMod.spawnID))
             return;
         // Check claims limit
-        ClaimantPlayer player = ClaimantPlayer.get( owner );
-        if ((SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get() == 0) || (((player.getCount() + 1) > player.getMaxChunkLimit()) && (SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get() > 0)))
+        if (!player.canClaim((WorldChunk)(Chunk) this))
             throw new TranslationKeyException("claim.chunk.error.max");
     }
     
@@ -232,7 +231,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
     }
     
     @Override
-    public boolean canPlayerDo(@Nullable UUID player, @NotNull ClaimPermissions perm) {
+    public boolean canPlayerDo(@Nullable UUID player, @Nullable ClaimPermissions perm) {
         if (this.chunkPlayer == null || (player != null && player.equals(this.chunkPlayer.getId())))
             return true;
         ClaimantTown town;
@@ -240,16 +239,16 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
             return true;
         
         // Get the ranks of the user and the rank required for performing
-        ClaimRanks userRank = this.chunkPlayer.getFriendRank( player );
-        ClaimRanks permReq = this.chunkPlayer.getPermissionRankRequirement( perm );
+        ClaimRanks userRank = this.chunkPlayer.getFriendRank(player);
+        ClaimRanks permReq = this.chunkPlayer.getPermissionRankRequirement(perm);
         
         // Return the test if the user can perform the action (If friend of chunk owner OR if friend of town and chunk owned by town owner)
         return permReq.canPerform( userRank ) || ((town != null) && (this.chunkPlayer.getId().equals( town.getOwner() )) && permReq.canPerform(town.getFriendRank( player )));
     }
     @Override
-    public boolean canPlayerDo(@NotNull BlockPos pos, @Nullable UUID player, @NotNull ClaimPermissions perm) {
-        return this.getClaim( pos )
-            .canPlayerDo( player, perm );
+    public boolean canPlayerDo(@NotNull BlockPos pos, @Nullable UUID player, @Nullable ClaimPermissions perm) {
+        return this.getClaim(pos)
+            .canPlayerDo(player, perm);
     }
     @Override
     public boolean isSetting(@NotNull ClaimSettings setting) {

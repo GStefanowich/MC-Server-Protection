@@ -26,8 +26,10 @@
 package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerCorpse;
+import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.TitleUtils;
@@ -75,6 +77,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     
     private UUID corpsePlayerUUID = null;
     private ListTag corpsePlayerItems = null;
+    private ListTag corpsePlayerBackpack = null;
     
     @Shadow public native boolean shouldShowArms();
     @Shadow private native void setShowArms( boolean show );
@@ -121,10 +124,10 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     @Inject(at = @At("HEAD"), method = "interactAt", cancellable = true)
     public void interactedWith(PlayerEntity player, Vec3d vec3d, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         // Armor Stand is a corpse
-        if ( this.corpsePlayerUUID != null ) {
+        if (this.corpsePlayerUUID != null) {
             // Return the items back to their owner
             if (player.getUuid().equals(this.corpsePlayerUUID)) {
-                this.returnItemsToPlayer( player );
+                this.returnItemsToPlayer(player);
             } else {
                 // Deny if the corpse does not belong to this player
                 callback.setReturnValue(ActionResult.FAIL);
@@ -217,79 +220,99 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     public void onPlayerCollision(PlayerEntity player) {
         // If the corpse belongs to the player
         if ( (this.corpsePlayerUUID != null) && player.getUuid().equals(this.corpsePlayerUUID)) {
-            this.returnItemsToPlayer( player );
+            this.returnItemsToPlayer(player);
             return;
         }
         // Regular collision
-        super.onPlayerCollision( player );
+        super.onPlayerCollision(player);
     }
     
-    public void setCorpseData(UUID owner, ListTag inventory) {
+    @Override
+    public void setCorpseData(UUID owner, ListTag inventory, ListTag backpack) {
         this.corpsePlayerUUID = owner;
         this.corpsePlayerItems = inventory;
+        this.corpsePlayerBackpack = backpack;
     }
     private void giveCorpseItems(final PlayerEntity player) {
         World world = player.world;
-        if ( this.corpsePlayerItems == null )
-            return;
+        Iterator<Tag> items;
         
         // Get all of the items to give back
-        Iterator<Tag> items = this.corpsePlayerItems.iterator();
-        while (items.hasNext()) {
-            // Create the item from the tag
-            ItemStack itemStack = ItemStack.fromTag((CompoundTag) items.next());
-            
-            // Try equipping the item if the slot is available
-            boolean equipped = false;
-            EquipmentSlot slot = null;
-            
-            if (itemStack.getItem() instanceof ArmorItem) {
-                // If armor
-                slot = ((ArmorItem) itemStack.getItem()).getSlotType();
-            } else if (itemStack.getItem().equals(Items.SHIELD)) {
-                // If shield
-                slot = EquipmentSlot.OFFHAND;
+        if (this.corpsePlayerItems != null) {
+            items = this.corpsePlayerItems.iterator();
+            while (items.hasNext()) {
+                // Create the item from the tag
+                ItemStack itemStack = ItemStack.fromTag((CompoundTag) items.next());
+        
+                // Try equipping the item if the slot is available
+                boolean equipped = false;
+                EquipmentSlot slot = null;
+        
+                if (itemStack.getItem() instanceof ArmorItem) {
+                    // If armor
+                    slot = ((ArmorItem) itemStack.getItem()).getSlotType();
+                } else if (itemStack.getItem().equals(Items.SHIELD)) {
+                    // If shield
+                    slot = EquipmentSlot.OFFHAND;
+                }
+        
+                // If slot is set, equip it there (If allowed)
+                if ((slot != null) && player.getEquippedStack(slot).getItem() == Items.AIR) {
+                    player.equipStack(slot, itemStack);
+                    equipped = true;
+                }
+        
+                // Add to the inventory (If not equipped)
+                if (!equipped)
+                    player.inventory.offerOrDrop(world, itemStack);
+        
+                // Remove from the iterator (Tag list)
+                items.remove();
             }
-            
-            // If slot is set, equip it there (If allowed)
-            if ((slot != null) && player.getEquippedStack( slot ).getItem() == Items.AIR) {
-                player.equipStack(slot, itemStack);
-                equipped = true;
-            }
-            
-            // Add to the inventory (If not equipped)
-            if (!equipped)
-                player.inventory.offerOrDrop(world, itemStack);
-            
-            // Remove from the iterator (Tag list)
-            items.remove();
         }
         
-        // Reset the tag list
-        this.corpsePlayerItems = null;
+        // Get all of the backpack items back
+        if (this.corpsePlayerBackpack != null) {
+            items = this.corpsePlayerBackpack.iterator();
+            while (items.hasNext()) {
+                // Create the item from the tag
+                ItemStack itemStack = ItemStack.fromTag((CompoundTag) items.next());
+                PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
+                
+                // Attempt to put items into the backpack
+                if ((backpack == null) || (!backpack.insertStack(itemStack)))
+                    player.inventory.offerOrDrop(world, itemStack);
+                
+                // Remove from the iterator (Tag list)
+                items.remove();
+            }
+        }
     }
     private void returnItemsToPlayer(final PlayerEntity player) {
         // Give the items back to the player
-        this.giveCorpseItems( player );
-        BlockPos blockPos = this.getBlockPos().up();
+        this.giveCorpseItems(player);
         
-        // Play sound
-        player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
-        
-        // Spawn particles
-        ((ServerWorld) this.world).spawnParticles( ParticleTypes.TOTEM_OF_UNDYING,
-            blockPos.getX() + 0.5D,
-            blockPos.getY() + 1.0D,
-            blockPos.getZ() + 0.5D,
-            150,
-            1.0D,
-            0.5D,
-            1.0D,
-            0.3D
-        );
-        
-        // Remove the armor stand
-        this.destroy();
+        if (((this.corpsePlayerItems == null) || this.corpsePlayerItems.isEmpty()) && ((this.corpsePlayerBackpack == null) || this.corpsePlayerBackpack.isEmpty())) {
+            BlockPos blockPos = this.getBlockPos().up();
+            
+            // Play sound
+            player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f);
+            
+            // Spawn particles
+            ((ServerWorld) this.world).spawnParticles(ParticleTypes.TOTEM_OF_UNDYING,
+                blockPos.getX() + 0.5D,
+                blockPos.getY() + 1.0D,
+                blockPos.getZ() + 0.5D,
+                150,
+                1.0D,
+                0.5D,
+                1.0D,
+                0.3D
+            );
+            
+            // Remove the armor stand
+            this.destroy();
+        }
     }
     
     @Inject(at=@At("TAIL"), method = "writeCustomDataToTag")
@@ -297,14 +320,20 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
         // Save the player warp location for restarts
         if ( this.corpsePlayerUUID != null ) {
             tag.putUuid("corpsePlayerUUID", this.corpsePlayerUUID);
-            tag.put("corpsePlayerItems", this.corpsePlayerItems);
+            if ((this.corpsePlayerItems != null) && (!this.corpsePlayerItems.isEmpty()))
+                tag.put("corpsePlayerItems", this.corpsePlayerItems);
+            if ((this.corpsePlayerBackpack != null) && (!this.corpsePlayerBackpack.isEmpty()))
+                tag.put("corpsePlayerBackpack", this.corpsePlayerBackpack);
         }
     }
     @Inject(at=@At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
         if ( tag.containsUuid( "corpsePlayerUUID" ) ) {
             this.corpsePlayerUUID = tag.getUuid("corpsePlayerUUID");
-            this.corpsePlayerItems = tag.getList("corpsePlayerItems", NbtType.COMPOUND);
+            if (tag.contains("corpsePlayerItems", NbtType.LIST))
+                this.corpsePlayerItems = tag.getList("corpsePlayerItems", NbtType.COMPOUND);
+            if (tag.contains("corpsePlayerBackpack", NbtType.LIST))
+                this.corpsePlayerBackpack = tag.getList("corpsePlayerBackpack", NbtType.COMPOUND);
         }
     }
 }

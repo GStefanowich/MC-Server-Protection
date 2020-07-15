@@ -39,11 +39,13 @@ import net.TheElm.project.commands.MoneyCommand;
 import net.TheElm.project.commands.NickNameCommand;
 import net.TheElm.project.commands.PermissionCommand;
 import net.TheElm.project.commands.PlayerSpawnCommand;
+import net.TheElm.project.commands.RideCommand;
 import net.TheElm.project.commands.RulerCommand;
 import net.TheElm.project.commands.SpawnerCommand;
 import net.TheElm.project.commands.TeleportEffectCommand;
 import net.TheElm.project.commands.TeleportsCommand;
 import net.TheElm.project.commands.WaystoneCommand;
+import net.TheElm.project.commands.WhereCommand;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.protections.events.BlockBreak;
@@ -56,6 +58,7 @@ import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.registry.CommandRegistry;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
@@ -80,24 +83,26 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         CommandRegistry COMMANDS = CommandRegistry.INSTANCE;
         
         CoreMod.logInfo( "Registering our commands." );
-        COMMANDS.register(false, AdminCommands::register );
-        COMMANDS.register(false, BackpackCommand::register );
-        COMMANDS.register(false, ChatroomCommands::register );
-        COMMANDS.register(false, ClaimCommand::register );
-        COMMANDS.register(false, GameModesCommand::register );
-        COMMANDS.register(false, HoldingCommand::register );
-        COMMANDS.register(false, LoggingCommand::register );
-        COMMANDS.register(false, MiscCommands::register );
-        COMMANDS.register(false, ModCommands::register );
-        COMMANDS.register(false, ModsCommand::register );
-        COMMANDS.register(false, MoneyCommand::register );
-        COMMANDS.register(false, NickNameCommand::register );
-        COMMANDS.register(false, PermissionCommand::register );
-        COMMANDS.register(false, PlayerSpawnCommand::register );
-        COMMANDS.register(false, RulerCommand::register );
-        COMMANDS.register(false, SpawnerCommand::register );
-        COMMANDS.register(false, TeleportsCommand::register );
-        COMMANDS.register(false, WaystoneCommand::register );
+        COMMANDS.register(false, AdminCommands::register);
+        COMMANDS.register(false, BackpackCommand::register);
+        COMMANDS.register(false, ChatroomCommands::register);
+        COMMANDS.register(false, ClaimCommand::register);
+        COMMANDS.register(false, GameModesCommand::register);
+        COMMANDS.register(false, HoldingCommand::register);
+        COMMANDS.register(false, LoggingCommand::register);
+        COMMANDS.register(false, MiscCommands::register);
+        COMMANDS.register(false, ModCommands::register);
+        COMMANDS.register(false, ModsCommand::register);
+        COMMANDS.register(false, MoneyCommand::register);
+        COMMANDS.register(false, NickNameCommand::register);
+        COMMANDS.register(false, PermissionCommand::register);
+        COMMANDS.register(false, PlayerSpawnCommand::register);
+        COMMANDS.register(false, RideCommand::register);
+        COMMANDS.register(false, RulerCommand::register);
+        COMMANDS.register(false, SpawnerCommand::register);
+        COMMANDS.register(false, TeleportsCommand::register);
+        COMMANDS.register(false, WaystoneCommand::register);
+        COMMANDS.register(false, WhereCommand::register);
         
         // Debug commands
         if ( CoreMod.isDebugging() ) {
@@ -155,17 +160,31 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         return ServerCore.get().getPlayerManager().getPlayer( playerUUID );
     }
     
-    @NotNull
-    public static BlockPos getSpawn() {
+    public static @NotNull BlockPos getSpawn() {
         return ServerCore.getSpawn(DimensionType.OVERWORLD);
     }
-    @NotNull
-    public static BlockPos getSpawn(DimensionType dimension) {
-        LevelProperties properties = ServerCore.getWorld(dimension).getLevelProperties();
-        return new BlockPos(properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ());
+    public static @NotNull BlockPos getSpawn(World world) {
+        // Get the forced position of TheEnd
+        if ((world instanceof ServerWorld) && (world.dimension.getType() == DimensionType.THE_END)) {
+            BlockPos pos = ((ServerWorld)world).getForcedSpawnPoint();
+            // Only if the forced position is set
+            if (pos != null)
+                return pos;
+        }
+        // Get the level properties
+        LevelProperties properties = world.getLevelProperties();
+        
+        // Reset the blockpos using the properties
+        return new BlockPos(
+            properties.getSpawnX(),
+            properties.getSpawnY(),
+            properties.getSpawnZ()
+        );
     }
-    @NotNull
-    public static World getWorld(DimensionType dimension) {
+    public static @NotNull BlockPos getSpawn(DimensionType dimension) {
+        return ServerCore.getSpawn(ServerCore.getWorld(dimension));
+    }
+    public static @NotNull World getWorld(DimensionType dimension) {
         return ServerCore.get().getWorld(dimension);
     }
     

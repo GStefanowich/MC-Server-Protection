@@ -35,6 +35,8 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.RayTraceContext;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class BlockUtils {
     
@@ -66,7 +68,7 @@ public final class BlockUtils {
      * @param permission The permission to test
      * @return Whether sourcePos is allowed to do something to protectedPos
      */
-    public static boolean canBlockModifyBlock(World world, BlockPos protectedPos, BlockPos sourcePos, ClaimPermissions permission) {
+    public static boolean canBlockModifyBlock(@NotNull World world, @NotNull BlockPos protectedPos, @NotNull BlockPos sourcePos, @Nullable ClaimPermissions permission) {
         // Get chunks
         WorldChunk protectedChunk = world.getWorldChunk(protectedPos);
         WorldChunk sourceChunk = world.getWorldChunk(sourcePos);

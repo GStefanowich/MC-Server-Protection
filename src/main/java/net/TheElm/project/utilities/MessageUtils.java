@@ -31,6 +31,10 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.client.options.ChatVisibility;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.MessageType;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.server.MinecraftServer;
@@ -54,8 +58,10 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 public final class MessageUtils {
@@ -146,12 +152,25 @@ public final class MessageUtils {
     }
     public static void sendToAll(final Text text) {
         final MinecraftServer server = ServerCore.get();
+        
         // Log to the server
         server.sendMessage(text);
         
         // Send to the players
         MessageUtils.sendChat(
             server.getPlayerManager().getPlayerList().stream(),
+            text
+        );
+    }
+    public static void sendToAll(final Text text, Predicate<ServerPlayerEntity> predicate) {
+        final MinecraftServer server = ServerCore.get();
+        
+        // Log to the server
+        server.sendMessage(text);
+        
+        // Send to the players
+        MessageUtils.sendChat(
+            server.getPlayerManager().getPlayerList().stream().filter(predicate),
             text
         );
     }
@@ -207,7 +226,7 @@ public final class MessageUtils {
         if (server.getGameRules().getBoolean(GameRules.SEND_COMMAND_FEEDBACK)) {
             Iterator iterator = server.getPlayerManager().getPlayerList().iterator();
             
-            while( iterator.hasNext() ) {
+            while ( iterator.hasNext() ) {
                 ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity)iterator.next();
                 if (server.getPlayerManager().isOperator(serverPlayerEntity.getGameProfile()))
                     serverPlayerEntity.sendMessage(send);
@@ -316,4 +335,37 @@ public final class MessageUtils {
         return style -> style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, text));
     }
     
+    // Item text details
+    public static @NotNull Text detailedItem(ItemStack stack) {
+        Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(stack);
+        Text output = new LiteralText("")
+            .append(detailedItem(stack.getItem()));
+        
+        if (enchantments.size() > 0) {
+            // Add the opening bracket
+            output.append(" (");
+            
+            Iterator<Map.Entry<Enchantment, Integer>> iterator = enchantments.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<Enchantment, Integer> value = iterator.next();
+                
+                // Get enchantment details
+                Enchantment enchantment = value.getKey();
+                int level = value.getValue();
+                
+                // Append onto output
+                output.append(enchantment.getName(level));
+                if (iterator.hasNext())
+                    output.append(", ");
+            }
+            
+            // Add the close bracket
+            output.append(")");
+        }
+        
+        return output;
+    }
+    public static @NotNull Text detailedItem(@NotNull Item item) {
+        return new TranslatableText(item.getTranslationKey());
+    }
 }

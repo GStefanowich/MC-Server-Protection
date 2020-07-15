@@ -92,7 +92,7 @@ public final class BackpackCommand {
             throw PLAYERS_NO_BACKPACK.create( player );
         
         player.openContainer(new SimpleNamedContainerFactory((i, playerInventory, playerEntityx) ->
-            backpack.createContainer(i, playerInventory, backpack),
+            backpack.createContainer(i, playerInventory),
         backpack.getName()));
         
         return Command.SINGLE_SUCCESS;

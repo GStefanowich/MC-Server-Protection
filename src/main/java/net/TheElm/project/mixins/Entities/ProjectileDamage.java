@@ -31,7 +31,7 @@ import net.TheElm.project.interfaces.IClaimedChunk;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -56,11 +56,10 @@ public abstract class ProjectileDamage extends Entity {
     @Shadow
     public abstract byte getPierceLevel();
     
-    @Shadow
-    private SoundEvent sound;
+    @Shadow private SoundEvent sound;
     
-    protected ProjectileDamage(EntityType<? extends ProjectileEntity> entityType_1, World world_1) {
-        super(entityType_1, world_1);
+    protected ProjectileDamage(EntityType<? extends ProjectileEntity> entityType, World world) {
+        super(entityType, world);
     }
     
     @Inject(at = @At("HEAD"), method = "onEntityHit", cancellable = true)
@@ -81,13 +80,13 @@ public abstract class ProjectileDamage extends Entity {
             if ( owner.getUuid().equals( hitEntity.getUuid() ) )
                 return;
             
-            if ( hitEntity instanceof HostileEntity) {
+            if (hitEntity instanceof Monster) {
                 /*
                  * Allow defending from hostiles
                  */
                 return;
                 
-            } if ( hitEntity instanceof ServerPlayerEntity ) {
+            } if (hitEntity instanceof ServerPlayerEntity) {
                 /*
                  * If the hit target is a player, check for PvP
                  */
