@@ -30,15 +30,19 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.TheElm.project.enums.DragonLoot;
+import net.TheElm.project.utilities.BossLootRewards;
 import net.TheElm.project.utilities.EffectUtils;
 import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.command.arguments.ParticleArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.LiteralText;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -46,7 +50,7 @@ import java.util.Collections;
 public class TeleportEffectCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("teleportparticles")
+        dispatcher.register(CommandManager.literal("teleport-particles")
             .then(CommandManager.argument("particle", ParticleArgumentType.particle())
                 .then(CommandManager.argument("target", EntityArgumentType.entities())
                     .then(CommandManager.argument("count", IntegerArgumentType.integer(0, 100))
@@ -56,6 +60,19 @@ public class TeleportEffectCommand {
                 )
                 .executes(TeleportEffectCommand::ExecuteParticle)
             )
+        );
+        
+        dispatcher.register(CommandManager.literal("dragon-loot")
+            .then(CommandManager.argument("amount", IntegerArgumentType.integer(1, 54))
+                .executes((context) -> GiveLootAmount(
+                    context.getSource(),
+                    IntegerArgumentType.getInteger(context, "amount")
+                ))
+            )
+            .executes((context) -> GiveLootAmount(
+                context.getSource(),
+                1
+            ))
         );
     }
     
@@ -87,6 +104,21 @@ public class TeleportEffectCommand {
             else 
                 EffectUtils.particleSwirl(particle, (ServerWorld) entity.getEntityWorld(), entity.getPos(), count);
         }
+        return Command.SINGLE_SUCCESS;
+    }
+    
+    private static int GiveLootAmount(ServerCommandSource source, int count) throws CommandSyntaxException {
+        for (int i = 0; i < count; i++) {
+            ItemStack reward = DragonLoot.createReward();
+            
+            if (reward != null) {
+                if (!BossLootRewards.DRAGON_LOOT.addLoot(source.getPlayer().getUuid(), reward)) {
+                    source.sendError(new LiteralText("Could not add loot reward, chest is full."));
+                    return 0;
+                }
+            }
+        }
+        
         return Command.SINGLE_SUCCESS;
     }
     

@@ -54,7 +54,7 @@ public interface IClaimedChunk extends Chunk {
     default ClaimantPlayer updatePlayerOwner(@Nullable UUID owner) {
         return this.updatePlayerOwner(owner, true);
     }
-    void canPlayerClaim(@NotNull UUID owner) throws TranslationKeyException;
+    void canPlayerClaim(@NotNull ClaimantPlayer player) throws TranslationKeyException;
     
     @Nullable
     UUID getOwner();
@@ -70,7 +70,7 @@ public interface IClaimedChunk extends Chunk {
     }
     Text getOwnerName(@NotNull PlayerEntity zonePlayer, @NotNull BlockPos pos);
     
-    boolean canPlayerDo(@NotNull BlockPos blockPos, @Nullable UUID player, @NotNull ClaimPermissions perm);
+    boolean canPlayerDo(@NotNull BlockPos blockPos, @Nullable UUID player, @Nullable ClaimPermissions perm);
     boolean isSetting(@NotNull BlockPos pos, @NotNull ClaimSettings setting);
     
     /*

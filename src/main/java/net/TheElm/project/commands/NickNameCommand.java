@@ -33,6 +33,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.interfaces.Nicknamable;
@@ -60,7 +61,7 @@ public final class NickNameCommand {
             .requires((source) -> SewingMachineConfig.INSTANCE.DO_PLAYER_NICKS.get())
             .then(CommandManager.literal("reset")
                 .then(CommandManager.argument("target", EntityArgumentType.player())
-                    .requires((source) -> source.hasPermissionLevel(4))
+                    .requires((source) -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP))
                     .executes((context) -> {
                         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "target");
                         return setNickForPlayer(player, null);

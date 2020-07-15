@@ -45,6 +45,7 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.exceptions.TranslationKeyException;
@@ -57,6 +58,7 @@ import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.CasingUtils;
+import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.CommandUtilities;
 import net.TheElm.project.utilities.LegacyConverter;
 import net.TheElm.project.utilities.MessageUtils;
@@ -90,6 +92,8 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
 import java.text.NumberFormat;
@@ -126,7 +130,7 @@ public final class ClaimCommand {
          * Admin Force commands
          */
         dispatcher.register(CommandManager.literal("chunk")
-            .requires((source) -> source.hasPermissionLevel(4))
+            .requires((source) -> source.hasPermissionLevel(OpLevels.STOP))
             .then(CommandManager.literal("set")
                 .then(CommandManager.literal("player")
                     .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
@@ -151,12 +155,12 @@ public final class ClaimCommand {
             // Claim chunk for another player
             .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                 .suggests(CommandUtilities::getAllPlayerNames)
-                .requires((source) -> source.hasPermissionLevel( SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_OTHER.get() ))
+                .requires((source) -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_OTHER.get()))
                 .executes(ClaimCommand::claimChunkOther)
             )
             // Claim chunk for the spawn
             .then(CommandManager.literal( "spawn" )
-                .requires((source) -> source.hasPermissionLevel( SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_SPAWN.get() ))
+                .requires((source) -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_SPAWN.get()))
                 .executes(ClaimCommand::claimChunkSpawn)
             )
             // Claim chunk for players town
@@ -205,7 +209,7 @@ public final class ClaimCommand {
                 .executes(ClaimCommand::invitedListSelf)
             )
             .then(CommandManager.literal("get")
-                .requires((source) -> source.hasPermissionLevel(3))
+                .requires((source) -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP))
                 .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                     .suggests(CommandUtilities::getAllPlayerNames)
                     .executes(ClaimCommand::invitedListOther)
@@ -276,7 +280,7 @@ public final class ClaimCommand {
                 .executes(ClaimCommand::playerPartsTown)
             )
             .then(CommandManager.literal("set")
-                .requires((source) -> source.hasPermissionLevel(4))
+                .requires((source) -> source.hasPermissionLevel(OpLevels.STOP))
                 .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                     .suggests(CommandUtilities::getAllPlayerNames)
                     .then(CommandManager.argument("town", StringArgumentType.greedyString())
@@ -286,7 +290,7 @@ public final class ClaimCommand {
                 )
             )
             .then(CommandManager.literal("villagers")
-                .requires((source) -> source.hasPermissionLevel(4))
+                .requires((source) -> source.hasPermissionLevel(OpLevels.STOP))
                 .then(CommandManager.argument("entities", EntityArgumentType.entities())
                     .then(CommandManager.argument("town", StringArgumentType.greedyString())
                         .suggests(CommandUtilities::getAllTowns)
@@ -452,56 +456,62 @@ public final class ClaimCommand {
     }
     private static int claimChunkSpawn(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the player running the command
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        if (SewingMachineConfig.INSTANCE.LIGHT_UP_SPAWN.get())
+            ChunkUtils.lightChunk(source.getWorld().getWorldChunk(player.getBlockPos()));
         
         // Claim the chunk for spawn
-        return ClaimCommand.claimChunk( CoreMod.spawnID, player );
+        return ClaimCommand.claimChunk(CoreMod.spawnID, player);
     }
-    private static int claimChunk(final UUID chunkFor, final ServerPlayerEntity claimant) throws CommandSyntaxException {
+    private static int claimChunk(@NotNull final UUID chunkFor, @NotNull final ServerPlayerEntity claimant) {
         // Get run from positioning
         BlockPos blockPos = claimant.getBlockPos();
         return ClaimCommand.claimChunkAt(chunkFor, true, claimant, claimant.world.getWorldChunk(blockPos));
     }
-    public static int claimChunkAt(final UUID chunkFor, final boolean verify, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
+    public static int claimChunkAt(@NotNull final UUID chunkFor, final boolean verify, @Nullable final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
         new Thread(ClaimCommand.claimChunkThread( chunkFor, verify, claimant, worldChunks)).start();
         return Command.SINGLE_SUCCESS;
     }
-    private static Runnable claimChunkThread(final UUID chunkFor, final boolean verify, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
+    private static Runnable claimChunkThread(@NotNull final UUID chunkFor, final boolean verify, @Nullable final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
         // Handle the claim in a new thread (Because it could have to load chunks)
         return (() -> {
             try {
                 if (!ClaimCommand.tryClaimChunkAt(chunkFor, verify, claimant, worldChunks))
                     throw CHUNK_ALREADY_OWNED.create( claimant );
             } catch (TranslationKeyException e) {
-                claimant.sendMessage(TranslatableServerSide.text(claimant, e.getKey()));
+                if (claimant != null) claimant.sendMessage(TranslatableServerSide.text(claimant, e.getKey()));
             } catch (CommandSyntaxException e) {
-                claimant.sendMessage(new LiteralText( e.getMessage() ).formatted(Formatting.RED));
+                if (claimant != null) claimant.sendMessage(new LiteralText( e.getMessage() ).formatted(Formatting.RED));
             }
         });
     }
-    public static boolean tryClaimChunkAt(final UUID chunkFor, final boolean verify, final ServerPlayerEntity claimant, final WorldChunk... worldChunks) throws TranslationKeyException {
+    public static boolean tryClaimChunkAt(@NotNull final UUID chunkFor, final boolean verify, @Nullable final ServerPlayerEntity claimant, final WorldChunk... worldChunks) throws TranslationKeyException {
         boolean success = false;
         int claimed = 0; // Amount of chunks claimed
         
         try {
             for (WorldChunk worldChunk : worldChunks) {
+                Claimant claim = ClaimantPlayer.get(chunkFor);
                 IClaimedChunk chunk = (IClaimedChunk) worldChunk;
                 
                 // Check if it's available
-                if (verify) chunk.canPlayerClaim(chunkFor);
+                if (verify) chunk.canPlayerClaim((ClaimantPlayer)claim);
                 
                 // Update the chunk owner
-                chunk.updatePlayerOwner(chunkFor);
+                chunk.updatePlayerOwner(claim.getId());
                 worldChunk.setShouldSave(true);
                 
                 // Log that the chunk was claimed
                 ChunkPos chunkPos = worldChunk.getPos();
-                CoreMod.logInfo(claimant.getName().asString() + " has claimed chunk " + chunkPos.x + ", " + chunkPos.z);
+                if (claimant != null)
+                    CoreMod.logInfo(claimant.getName().asString() + " has claimed chunk " + chunkPos.x + ", " + chunkPos.z);
                 
                 // Save the chunk for the player
-                Claimant claim = ClaimantPlayer.get( chunkFor );
                 claim.addToCount(worldChunk);
                 
+                // Save the chunk for the town
                 if ((claim = ((ClaimantPlayer) claim).getTown()) != null)
                     claim.addToCount(worldChunk);
                 
@@ -511,7 +521,7 @@ public final class ClaimCommand {
             
             return (success = true);
         } finally {
-            if (success || (claimed > 0))
+            if ((claimant != null) && (success || (claimed > 0)))
                 TranslatableServerSide.send( claimant, "claim.chunk.claimed", claimed );
         }
     }
@@ -631,11 +641,13 @@ public final class ClaimCommand {
             // Unclaim EVERY chunk
             claimed.forEachChunk((set) -> {
                 // Get the dimension
-                DimensionType dimension = DimensionType.byRawId(set.get(0).getInt());
-                ServerWorld world = server.getWorld(dimension);
-                
-                // Unclaim the chunk
-                ClaimCommand.tryUnclaimChunkAt(player.getUuid(), (WorldChunk)world.getChunk( set.get(1).getInt(), set.get(2).getInt(), ChunkStatus.FULL ));
+                DimensionType dimension = set.getDimension();
+                if (dimension != null) {
+                    ServerWorld world = server.getWorld(dimension);
+                    
+                    // Unclaim the chunk
+                    ClaimCommand.tryUnclaimChunkAt(player.getUuid(), (WorldChunk) world.getChunk(set.getX(), set.getZ(), ChunkStatus.FULL));
+                }
             });
         }
         

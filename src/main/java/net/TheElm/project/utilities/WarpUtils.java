@@ -180,7 +180,7 @@ public final class WarpUtils {
             return false;
         
         // Claim the defined slices in the name of Spawn
-        ChunkUtils.claimSlices( world, CoreMod.spawnID, this.region.getLeft(), this.region.getRight() );
+        ChunkUtils.claimSlices(world, CoreMod.spawnID, this.region.getLeft(), this.region.getRight());
         
         // Create the structure
         StructureBuilderUtils structure = new StructureBuilderUtils( world, "waystone" );
@@ -196,9 +196,9 @@ public final class WarpUtils {
             new BlockPos( this.createWarpAt.getX() - 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1 )
         };
         for ( BlockPos blockPos : lightBlocks ) {
-            structure.addBlock( blockPos.up( 1 ), air );
-            structure.addBlock( blockPos.up( 2 ), air );
-            structure.addBlock( blockPos, light );
+            structure.addBlock(blockPos.up( 1 ), air);
+            structure.addBlock(blockPos.up( 2 ), air);
+            structure.addBlock(blockPos, light);
         }
         
         // Andesite blocks
@@ -375,7 +375,7 @@ public final class WarpUtils {
             entity = player;
         
         // Spawn the particles (In the entities world)
-        WarpUtils.teleportPoof( bottom);
+        WarpUtils.teleportPoof(bottom);
         
         // Warp anything attached to the player
         WarpUtils.teleportFriendlies(world, player, tpPos);
@@ -455,6 +455,12 @@ public final class WarpUtils {
             entity.onGround = true;
         }
     }
+    public static void teleportEntity(@NotNull final World world, @NotNull Entity entity) {
+        WarpUtils.teleportEntity(world, entity, ServerCore.getSpawn(world));
+    }
+    public static void teleportEntity(@NotNull DimensionType dimension, @NotNull Entity entity) {
+        WarpUtils.teleportEntity(ServerCore.getWorld(dimension), entity);
+    }
     private static void teleportFriendlies(@NotNull final World world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
         BlockPos playerPos = player.getBlockPos();
         int x = playerPos.getX(),
@@ -478,19 +484,9 @@ public final class WarpUtils {
     private static void teleportPoof(final Entity entity) {
         final World world = entity.getEntityWorld();
         BlockPos blockPos = entity.getBlockPos();
-        if (world instanceof ServerWorld) {
+        if ((world instanceof ServerWorld) && (!entity.isSpectator())) {
             world.playSound( null, blockPos, SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.MASTER, 1.0f, 1.0f );
             EffectUtils.particleSwirl(ParticleTypes.WITCH, (ServerWorld) world, entity.getPos(), 10);
-            /*((ServerWorld) world).spawnParticles(ParticleTypes.POOF,
-                player.getX(),
-                player.getY() + 1.0D,
-                player.getZ(),
-                50,
-                0.0D,
-                0.0D,
-                0.0D,
-                0.05D
-            );*/
         }
     }
     public static BlockPos getWorldSpawn(@NotNull final ServerWorld world) {

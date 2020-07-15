@@ -33,11 +33,13 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.NbtNotFoundException;
+import net.TheElm.project.objects.ClaimTag;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -56,9 +58,11 @@ public final class ClaimantPlayer extends Claimant {
         super( ClaimantType.PLAYER, playerUUID );
     }
     
-    public final ClaimRanks getPermissionRankRequirement(@NotNull ClaimPermissions permission) {
-        if ( this.RANK_PERMISSIONS.containsKey( permission ) )
-            return this.RANK_PERMISSIONS.get( permission );
+    public final ClaimRanks getPermissionRankRequirement(@Nullable ClaimPermissions permission) {
+        if (permission == null)
+            return ClaimRanks.ENEMY;
+        if (this.RANK_PERMISSIONS.containsKey(permission))
+            return this.RANK_PERMISSIONS.get(permission);
         return permission.getDefault();
     }
     
@@ -137,6 +141,12 @@ public final class ClaimantPlayer extends Claimant {
     public final int increaseMaxChunkLimit(int by) {
         this.markDirty();
         return (this.additionalClaims += by) + SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get();
+    }
+    public final boolean canClaim(WorldChunk chunk) {
+        // If chunk is already claimed, allow
+        if (this.CLAIMED_CHUNKS.contains(new ClaimTag(chunk)))
+            return true;
+        return (SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get() != 0) && (((this.getCount() + 1) <= this.getMaxChunkLimit()) || (SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get() <= 0));
     }
     
     /* Nbt saving */

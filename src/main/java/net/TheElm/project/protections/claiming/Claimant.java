@@ -29,6 +29,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.objects.ClaimTag;
 import net.TheElm.project.utilities.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -45,8 +46,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -56,7 +59,7 @@ public abstract class Claimant {
     protected final Map<UUID, ClaimRanks> USER_RANKS = Collections.synchronizedMap(new HashMap<>());
     protected final Map<ClaimSettings, Boolean> CHUNK_CLAIM_OPTIONS = Collections.synchronizedMap(new HashMap<>());
     protected final Map<ClaimPermissions, ClaimRanks> RANK_PERMISSIONS = Collections.synchronizedMap(new HashMap<>());
-    protected final Set<IntArrayTag> CLAIMED_CHUNKS = Collections.synchronizedSet(new LinkedHashSet<>());
+    protected final Set<ClaimTag> CLAIMED_CHUNKS = Collections.synchronizedSet(new LinkedHashSet<>());
     
     private boolean dirty = false;
     
@@ -131,35 +134,36 @@ public abstract class Claimant {
     public final ClaimantType getType() {
         return this.type;
     }
+    
     public final void addToCount(WorldChunk... chunks) {
-        for (WorldChunk chunk : chunks) {
-            ChunkPos pos = chunk.getPos();
-            this.CLAIMED_CHUNKS.add(new IntArrayTag(new int[]{
-                chunk.getWorld().dimension.getType().getRawId(),
-                pos.x,
-                pos.z
-            }));
-        }
+        for (WorldChunk chunk : chunks)
+            this.CLAIMED_CHUNKS.add(new ClaimTag(chunk));
         this.markDirty();
     }
     public final void removeFromCount(WorldChunk... chunks) {
         for (WorldChunk chunk : chunks) {
             ChunkPos pos = chunk.getPos();
             this.CLAIMED_CHUNKS.removeIf((array) -> (
-                array.get(0).getInt() == chunk.getWorld().dimension.getType().getRawId()
-                && array.get(1).getInt() == pos.x
-                && array.get(2).getInt() == pos.z
+                Objects.equals(
+                    array.getDimension(),
+                    chunk.getWorld().getDimension().getType()
+                )
+                && array.getX() == pos.x
+                && array.getZ() == pos.z
             ));
         }
         this.markDirty();
     }
+    
     public final int getCount() {
         return this.CLAIMED_CHUNKS.size();
     }
-    public final void forEachChunk(Consumer<IntArrayTag> action) {
-        for (IntArrayTag it : new LinkedHashSet<>(this.CLAIMED_CHUNKS)) {
+    public final void forEachChunk(Consumer<ClaimTag> action) {
+        for (ClaimTag it : new LinkedHashSet<>(this.CLAIMED_CHUNKS))
             action.accept(it);
-        }
+    }
+    public final Iterator<ClaimTag> getChunks() {
+        return this.CLAIMED_CHUNKS.iterator();
     }
     
     /* Nbt saving */
@@ -234,8 +238,17 @@ public abstract class Claimant {
         
         // Get the claim size
         if (tag.contains("landChunks", NbtType.LIST)) {
+            ClaimTag claim;
+            
+            // Get from Int Array
             for (Tag it : tag.getList("landChunks",NbtType.INT_ARRAY)) {
-                this.CLAIMED_CHUNKS.add((IntArrayTag) it);
+                claim = ClaimTag.fromArray((IntArrayTag) it);
+                if (claim != null) this.CLAIMED_CHUNKS.add(claim);
+            }
+            // Get from Compound
+            for (Tag it : tag.getList("landChunks", NbtType.COMPOUND)) {
+                claim = ClaimTag.fromCompound((CompoundTag) it);
+                if (claim != null) this.CLAIMED_CHUNKS.add(claim);
             }
         }
         

@@ -29,6 +29,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.OpLevels;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.command.arguments.EntitySummonArgumentType;
 import net.minecraft.command.suggestion.SuggestionProviders;
@@ -50,7 +51,7 @@ public final class SpawnerCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         if (SewingMachineConfig.INSTANCE.SILK_TOUCH_SPAWNERS.get()) {
             dispatcher.register(CommandManager.literal("spawner")
-                .requires((source -> source.hasPermissionLevel(2)))
+                .requires((source -> source.hasPermissionLevel(OpLevels.CHEATING)))
                 .then(CommandManager.argument("type", EntitySummonArgumentType.entitySummon())
                     .suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
                     .executes((context) -> {

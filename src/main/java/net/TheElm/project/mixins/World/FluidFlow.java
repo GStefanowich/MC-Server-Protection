@@ -65,7 +65,7 @@ public abstract class FluidFlow extends Fluid {
                 return;
             
             // Check that first chunk owner can modify the next chunk
-            if (!((IClaimedChunk) nextChunk).canPlayerDo(flowPos, ((IClaimedChunk) startingChunk).getOwner(), ClaimPermissions.BLOCKS ))
+            if (!((IClaimedChunk) nextChunk).canPlayerDo(flowPos, ((IClaimedChunk) startingChunk).getOwner(), ClaimPermissions.BLOCKS))
                 callback.setReturnValue(false);
         }
     }

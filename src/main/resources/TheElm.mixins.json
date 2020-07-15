@@ -16,12 +16,16 @@
     "Commands.Whisper",
     
     "Blocks.AbstractFurnace",
+    "Blocks.BeeNest",
     "Blocks.HopperBlock",
+    "Blocks.LootChest",
+    "Blocks.LootChestEntity",
     "Blocks.Pistons",
     
     "Items.RepairCost",
     "Items.Shovel",
     "Items.SpawnEggs",
+    "Items.UsableItems",
     
     "Entities.Decorative.CatDye",
     "Entities.Decorative.WolfDye",
@@ -40,6 +44,7 @@
     "Entities.Death",
     
     "Entities.EndCrystal",
+    "Entities.Enderdragon",
     
     "Entities.EndermenPickup",
     "Entities.EndermenPlace",

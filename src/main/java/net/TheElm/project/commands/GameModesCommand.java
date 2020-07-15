@@ -30,6 +30,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.command.arguments.EntityArgumentType;
@@ -46,9 +47,9 @@ public final class GameModesCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register( CommandManager.literal("gms" )
-            .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SURVIVAL))
+            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SURVIVAL))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SURVIVAL_OTHER))
+                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SURVIVAL.onOther()))
                 .executes((context) -> setPlayerGameMode(context, GameMode.SURVIVAL))
             )
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.SURVIVAL ))
@@ -56,9 +57,9 @@ public final class GameModesCommand {
         CoreMod.logDebug( "- Registered GMS command" );
         
         dispatcher.register( CommandManager.literal("gmc" )
-            .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_CREATIVE))
+            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_CREATIVE))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_CREATIVE_OTHER))
+                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_CREATIVE.onOther()))
                 .executes((context) -> setPlayerGameMode(context, GameMode.CREATIVE))
             )
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.CREATIVE ))
@@ -66,9 +67,9 @@ public final class GameModesCommand {
         CoreMod.logDebug( "- Registered GMC command" );
         
         dispatcher.register( CommandManager.literal("gma" )
-            .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_ADVENTURE))
+            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_ADVENTURE))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_ADVENTURE_OTHER))
+                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_ADVENTURE.onOther()))
                 .executes((context) -> setPlayerGameMode(context, GameMode.ADVENTURE))
             )
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.ADVENTURE ))
@@ -76,9 +77,9 @@ public final class GameModesCommand {
         CoreMod.logDebug( "- Registered GMA command" );
         
         dispatcher.register( CommandManager.literal("gmsp" )
-            .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SPECTATOR))
+            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SPECTATOR))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires((source) -> source.hasPermissionLevel( 2 ) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SPECTATOR_OTHER))
+                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GAMEMODE_SPECTATOR.onOther()))
                 .executes((context) -> setPlayerGameMode(context, GameMode.SPECTATOR))
             )
             .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.SPECTATOR ))
@@ -100,7 +101,7 @@ public final class GameModesCommand {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
         Text gmText = new TranslatableText("gameMode." + gameMode.getName());
         
-        source.sendFeedback(new TranslatableText("commands.gamemode.success.other", gmText), true);
+        source.sendFeedback(new TranslatableText("commands.gamemode.success.other", player.getDisplayName(), gmText), true);
         player.setGameMode( gameMode );
         player.sendMessage(new TranslatableText("gameMode.changed", gmText));
         

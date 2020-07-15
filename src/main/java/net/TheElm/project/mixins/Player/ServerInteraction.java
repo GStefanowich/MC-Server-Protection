@@ -27,6 +27,7 @@ package net.TheElm.project.mixins.Player;
 
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.enums.ChatRooms;
+import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.BlockBreakCallback;
 import net.TheElm.project.interfaces.BlockInteractionCallback;
 import net.TheElm.project.interfaces.ItemUseCallback;
@@ -106,7 +107,7 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
     }
     @Override
     public boolean isMuted() {
-        return this.isGlobalMuted;
+        return this.isGlobalMuted && (!RankUtils.hasPermission(this.player, Permissions.CHAT_COMMAND_MUTE_EXEMPT));
     }
     @Override
     public boolean isMuted(GameProfile player) {
@@ -142,9 +143,8 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
     private void beforeItemInteract(final PlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         if (!player.world.isClient) {
             ActionResult result = ItemUseCallback.EVENT.invoker().use((ServerPlayerEntity) player, world, hand, itemStack);
-            if (result != ActionResult.PASS) {
+            if (result != ActionResult.PASS)
                 callback.setReturnValue(result);
-            }
         }
     }
     
@@ -179,7 +179,7 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
             part = half == DoubleBlockHalf.LOWER ? blockPos.up() : blockPos.down();
         }
         
-        if (part != null) this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(world, part));
-        this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(world, blockPos));
+        if (part != null) this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(this.world, part));
+        this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(this.world, blockPos));
     }
 }

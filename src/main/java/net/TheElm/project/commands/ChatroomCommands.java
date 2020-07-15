@@ -33,6 +33,7 @@ import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.enums.ChatRooms;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.utilities.CommandUtilities;
@@ -101,7 +102,7 @@ public final class ChatroomCommands {
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .suggests( CommandUtilities::getOnlinePlayerNames )
                 .then(CommandManager.literal("global")
-                    .requires(( source ) -> SewingMachineConfig.INSTANCE.CHAT_MUTE_OP.get() && (source.hasPermissionLevel(3 ) || RankUtils.hasPermission(source, Permissions.CHAT_COMMAND_MUTE)))
+                    .requires(( source ) -> SewingMachineConfig.INSTANCE.CHAT_MUTE_OP.get() && (source.hasPermissionLevel(OpLevels.KICK_BAN_OP) || RankUtils.hasPermission(source, Permissions.CHAT_COMMAND_MUTE)))
                     .executes(ChatroomCommands::opMute)
                 )
                 .executes(ChatroomCommands::playerMute)

@@ -39,36 +39,41 @@ import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public final class CommandUtilities {
     
-    public static CompletableFuture<Suggestions> getOnlinePlayerNames(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) {
+    public static @NotNull CompletableFuture<Suggestions> getOnlinePlayerNames(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) {
         PlayerManager manager = context.getSource().getMinecraftServer().getPlayerManager();
         return CommandSource.suggestMatching(manager.getPlayerList().stream()
             .map(( player ) -> player.getGameProfile().getName()), builder);
     }
-    public static CompletableFuture<Suggestions> getAllPlayerNames(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
-        Set<String> userNames = new HashSet<>();
+    public static @NotNull CompletableFuture<Suggestions> getAllPlayerNames(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+        // Get the server that the command came from
+        MinecraftServer server = context.getSource()
+            .getMinecraftServer();
         
-        MinecraftServer server = context.getSource().getMinecraftServer();
-        PlayerManager playerManager = server.getPlayerManager();
+        Set<String> userNames = new HashSet<>(CommandUtilities.getOnlinePlayerNames(server));
         
-        userNames.addAll(Arrays.asList( playerManager.getPlayerNames() ) );
-        userNames.addAll(Arrays.asList( playerManager.getWhitelistedNames() ));
+        // Add all users
+        if (!builder.getRemaining().isEmpty())
+            userNames.addAll(CommandUtilities.getWhitelistedNames(server));
         
+        // Return the suggestion handler
         return CommandSource.suggestMatching(
             userNames,
             builder
         );
     }
     
-    public static CompletableFuture<Suggestions> getAllTowns(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+    public static @NotNull CompletableFuture<Suggestions> getAllTowns(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
         Set<String> townNames = new HashSet<>();
     
         Stream<ClaimantTown> towns = CoreMod.getCacheStream(ClaimantTown.class);
@@ -88,6 +93,15 @@ public final class CommandUtilities {
         ServerPlayerEntity player = (ServerPlayerEntity) source;
         ClaimantPlayer claim;
         return (((claim = ((PlayerData)player).getClaim()) != null) && (claim.getTown() != null));
+    }
+    
+    public static @NotNull List<String> getOnlinePlayerNames(@NotNull final MinecraftServer server) {
+        PlayerManager playerManager = server.getPlayerManager();
+        return Arrays.asList(playerManager.getPlayerNames());
+    }
+    public static @NotNull List<String> getWhitelistedNames(@NotNull final MinecraftServer server) {
+        PlayerManager playerManager = server.getPlayerManager();
+        return Arrays.asList(playerManager.getWhitelistedNames());
     }
     
 }

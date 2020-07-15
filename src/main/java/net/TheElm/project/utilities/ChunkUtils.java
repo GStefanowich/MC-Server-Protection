@@ -33,12 +33,17 @@ import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.Claim;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.minecraft.block.AirBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerLightingProvider;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
@@ -59,22 +64,22 @@ public final class ChunkUtils {
     /**
      * Check the database if a user can perform an action within the specified chunk
      */
-    public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
+    public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
         return ChunkUtils.canPlayerDoInChunk( perm, player, player.getEntityWorld().getWorldChunk( blockPos ), blockPos);
     }
-    public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
+    public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // If claims are disabled
-        if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || player.isCreative()) return true;
+        if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || (player != null && player.isCreative())) return true;
         
         // Check if player can do action in chunk
-        return ChunkUtils.canPlayerDoInChunk( perm, player.getUuid(), chunk, blockPos );
+        return ChunkUtils.canPlayerDoInChunk( perm, EntityUtils.getUUID(player), chunk, blockPos );
     }
-    public static boolean canPlayerDoInChunk(@NotNull ClaimPermissions perm, @Nullable UUID playerId, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
+    public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable UUID playerId, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // Return false (Chunks should never BE null, but this is our catch)
         if ( chunk == null ) return false;
         
         // Check if player can do action in chunk
-        return ((IClaimedChunk) chunk).canPlayerDo( blockPos, playerId, perm );
+        return ((IClaimedChunk) chunk).canPlayerDo(blockPos, playerId, perm);
     }
     
     /**
@@ -176,11 +181,11 @@ public final class ChunkUtils {
             return SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get();
         
         // Check our chunk permissions
-        ClaimantPlayer permissions = ClaimantPlayer.get( target );
+        ClaimantPlayer permissions = ClaimantPlayer.get(target);
         
         // Get the ranks of the user and the rank required for performing
-        ClaimRanks userRank = permissions.getFriendRank( player.getUuid() );
-        ClaimRanks permReq = permissions.getPermissionRankRequirement( ClaimPermissions.WARP );
+        ClaimRanks userRank = permissions.getFriendRank(player.getUuid());
+        ClaimRanks permReq = permissions.getPermissionRankRequirement(ClaimPermissions.WARP);
         
         // Return the test if the user can perform the action
         return permReq.canPerform( userRank );
@@ -285,6 +290,41 @@ public final class ChunkUtils {
         return Optional.ofNullable( ((IClaimedChunk)world.getChunk( pos )).getOwner() );
     }
     
+    public static boolean lightChunk(WorldChunk chunk) {
+        if (!(chunk.getLightingProvider() instanceof ServerLightingProvider)) return false;
+        ServerLightingProvider lighting = (ServerLightingProvider) chunk.getLightingProvider();
+        
+        ChunkPos pos = chunk.getPos();
+        
+        // For X
+        for (int x = 0; x < 16; x++) {
+            int xPos = x + pos.getStartX();
+            
+            // For Z
+            for (int z = 0; z < 16; z++) {
+                int zPos = z + pos.getStartZ();
+                
+                // For Y
+                for (int y = chunk.getHeight(); y > 0; y--) {
+                    BlockPos lightPos = new BlockPos(xPos, y, zPos);
+                    BlockState state = chunk.getBlockState(lightPos);
+                    Block block = state.getBlock();
+                    
+                    // Only if is an AIR Block
+                    if (!(block instanceof AirBlock))
+                        continue;
+                    
+                    // TODO: Update the light level
+                    /*int lvl = lighting.get(LightType.BLOCK).getLightLevel(lightPos);
+                    if (lvl > 0)
+                        System.out.println(MessageUtils.blockPosToString(lightPos) + ": " + lvl);*/
+                }
+            }
+        }
+        
+        return true;
+    }
+    
     /*
      * Chunk claim classes
      */
@@ -356,14 +396,14 @@ public final class ChunkUtils {
         }
         
         @Override
-        public boolean canPlayerDo(@Nullable UUID player, @NotNull ClaimPermissions perm) {
+        public boolean canPlayerDo(@Nullable UUID player, @Nullable ClaimPermissions perm) {
             if (player != null && player.equals(this.getOwner()))
                 return true;
             assert this.owner != null;
             
             // Get the ranks of the user and the rank required for performing
-            ClaimRanks userRank = this.owner.getFriendRank( player );
-            ClaimRanks permReq = this.owner.getPermissionRankRequirement( perm );
+            ClaimRanks userRank = this.owner.getFriendRank(player);
+            ClaimRanks permReq = this.owner.getPermissionRankRequirement(perm);
             
             // Return the test if the user can perform the action (If friend of chunk owner OR if friend of town and chunk owned by town owner)
             return permReq.canPerform( userRank );

@@ -27,6 +27,7 @@ package net.TheElm.project.protections.events;
 
 import net.TheElm.project.interfaces.BlockPlaceCallback;
 import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.ItemUtils;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.ActionResult;
@@ -45,8 +46,8 @@ public final class ItemPlace {
         BlockPlaceCallback.EVENT.register(ItemPlace::blockPlace);
     }
     
-    private static ActionResult blockPlace(final ServerPlayerEntity player, final World world, final BlockPos blockPos, final Direction direction, final ItemStack itemStack) {
-        if (!ChunkUtils.canPlayerBreakInChunk( player, blockPos.offset( direction ) ))
+    private static ActionResult blockPlace(final ServerPlayerEntity player, final World world, final BlockPos blockPos, final Direction direction, final ItemStack stack) {
+        if (!ChunkUtils.canPlayerDoInChunk(ItemUtils.getPermission(stack), player, blockPos.offset( direction ) ))
             return ActionResult.FAIL;
         return ActionResult.PASS;
     }

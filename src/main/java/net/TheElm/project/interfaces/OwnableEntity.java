@@ -25,13 +25,13 @@
 
 package net.TheElm.project.interfaces;
 
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
 public interface OwnableEntity {
     
-    @NotNull
+    @Nullable
     UUID getEntityOwner();
     
 }

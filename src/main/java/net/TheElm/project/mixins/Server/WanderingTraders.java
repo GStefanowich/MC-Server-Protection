@@ -123,6 +123,7 @@ public abstract class WanderingTraders extends AbstractTraderEntity {
                 TradeUtils.createSellItem(5, 1, Items.SPRUCE_SAPLING, 8),
                 TradeUtils.createSellItem(5, 1, Items.NAUTILUS_SHELL, 5),
                 /* Spawn Egg Trades */
+                TradeUtils.createSellSpawnEgg(32, Items.BEE_SPAWN_EGG, 5),
                 TradeUtils.createSellSpawnEgg(32, Items.MOOSHROOM_SPAWN_EGG, 5),
                 TradeUtils.createSellSpawnEgg(32, Items.COW_SPAWN_EGG, 5),
                 TradeUtils.createSellSpawnEgg(32, Items.SHEEP_SPAWN_EGG, 5),

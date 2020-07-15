@@ -26,9 +26,12 @@
 package net.TheElm.project.mixins.Player;
 
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.utilities.Assert;
 import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.NbtUtils;
 import net.minecraft.container.AnvilContainer;
+import net.minecraft.container.Property;
+import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
@@ -51,10 +54,14 @@ public class AnvilCost {
     
     @Shadow @Final
     private PlayerEntity player;
+    @Shadow @Final
+    private Inventory inventory;
+    @Shadow @Final
+    private Property levelCost;
     
     @ModifyConstant(method = "updateResult", constant = @Constant(intValue = 40))
     private int anvilMaxLevelOverride(int oldValue) {
-        if (SewingMachineConfig.INSTANCE.ANVIL_DISABLE_COST_LIMIT.isSet())
+        if (SewingMachineConfig.INSTANCE.ANVIL_DISABLE_COST_LIMIT.isTrue())
             return Integer.MAX_VALUE;
         return oldValue;
     }
@@ -79,4 +86,12 @@ public class AnvilCost {
         inventory.setInvStack(slot, item);
     }
     
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/enchantment/Enchantment.getMaximumLevel()I"), method = "updateResult")
+    public int getMaximumLevel(Enchantment enchantment) {
+        ItemStack left = this.inventory.getInvStack(0);
+        ItemStack right = this.inventory.getInvStack(1);
+        if (Assert.ifAny(ItemStack::isEmpty, left, right) || InventoryUtils.areBooksAtMaximum(enchantment, left, right))
+            return enchantment.getMaximumLevel();
+        return 10;
+    }
 }

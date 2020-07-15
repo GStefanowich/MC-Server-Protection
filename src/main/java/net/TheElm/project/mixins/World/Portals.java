@@ -29,6 +29,7 @@ import net.TheElm.project.config.SewingMachineConfig;
 import net.TheElm.project.interfaces.PlayerData;
 import net.minecraft.block.NetherPortalBlock;
 import net.minecraft.block.pattern.BlockPattern;
+import net.minecraft.block.pattern.BlockPattern.TeleportTarget;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.command.CommandOutput;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -40,17 +41,23 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.PortalForcer;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Random;
+
 @Mixin(PortalForcer.class)
 public abstract class Portals implements Nameable, CommandOutput {
     
-    @Nullable @Shadow
-    public native BlockPattern.TeleportTarget getPortal(BlockPos blockPos_1, Vec3d vec3d_1, Direction direction_1, double double_1, double double_2, boolean boolean_1);
+    @Shadow @Final private ServerWorld world;
+    @Shadow @Final private Random random;
+    
+    @Shadow
+    public native @Nullable TeleportTarget getPortal(BlockPos blockPos, Vec3d velocity, Direction direction, double x, double z, boolean isPlayer);
     
     @Inject(at = @At("HEAD"), method = "usePortal", cancellable = true)
     public void onDimensionUpdate(Entity entity, float fl, CallbackInfoReturnable<Boolean> callback) {
@@ -72,7 +79,7 @@ public abstract class Portals implements Nameable, CommandOutput {
             
             // Check for a portal at the block
             BlockPattern.Result pattern = NetherPortalBlock.findPortal(world, lastPos);
-            BlockPattern.TeleportTarget teleportTarget = pattern.getTeleportTarget(dir, lastPos, vec3d.y, entity.getVelocity(), vec3d.x);
+            TeleportTarget teleportTarget = pattern.getTeleportTarget(dir, lastPos, vec3d.y, entity.getVelocity(), vec3d.x);
             if (teleportTarget == null) {
                 if (dimType == DimensionType.OVERWORLD) ((PlayerData) player).setOverworldPortal( null );
                 else if (dimType == DimensionType.THE_NETHER) ((PlayerData) player).setNetherPortal( null );
@@ -90,5 +97,34 @@ public abstract class Portals implements Nameable, CommandOutput {
             callback.setReturnValue( true );
         }
     }
+    
+    // TODO: Search for a portal that has a matching sign on it
+    /*@Inject(at = @At("HEAD"), method = "getPortal", cancellable = true)
+    public void onFindPortal(BlockPos start, Vec3d velocity, Direction direction, double x, double z, boolean isPlayer, CallbackInfoReturnable<TeleportTarget> callback) {
+        PointOfInterestStorage pointOfInterestStorage = this.world.getPointOfInterestStorage();
+        pointOfInterestStorage.method_22439(this.world, start, 128);
+        
+        Stream<PointOfInterest> points = pointOfInterestStorage.method_22383((pointOfInterestType) -> {
+            return pointOfInterestType == PointOfInterestType.NETHER_PORTAL;
+        }, start, 128, PointOfInterestStorage.OccupationStatus.ANY).collect(Collectors.toList()).stream();
+        
+        Optional<PointOfInterest> optional = points.min(Comparator.comparingDouble((ToDoubleFunction<PointOfInterest>) pointOfInterest -> {
+            // F
+            return pointOfInterest.getPos().getSquaredDistance(start);
+        }).thenComparingInt((pointOfInterest) -> {
+            // F
+            return pointOfInterest.getPos().getY();
+        }));
+        
+        Optional<TeleportTarget> target = optional.map((pointOfInterest) -> {
+            BlockPos blockPos = pointOfInterest.getPos();
+            this.world.getChunkManager().addTicket(ChunkTicketType.PORTAL, new ChunkPos(blockPos), 3, blockPos);
+            BlockPattern.Result result = NetherPortalBlock.findPortal(this.world, blockPos);
+            return result.getTeleportTarget(direction, blockPos, z, velocity, x);
+        });
+        
+        // Set the return value if we found one
+        target.ifPresent(callback::setReturnValue);
+    }*/
     
 }

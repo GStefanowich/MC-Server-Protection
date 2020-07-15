@@ -252,17 +252,15 @@ public class PlayerBackpack extends BasicInventory {
         return new LiteralText(this.player.getDisplayName().asString() + "'s Backpack");
     }
     
-    @Nullable
-    public GenericContainer createContainer(int syncId, PlayerInventory playerInventory, PlayerBackpack backpack) {
+    public @Nullable GenericContainer createContainer(int syncId, PlayerInventory playerInventory) {
         int slots = this.getInvSize();
-        ContainerType type = PlayerBackpack.getSizeType( slots );
+        ContainerType type = PlayerBackpack.getSizeType(slots);
         if (type == null)
             return null;
-        return new GenericContainer(type, syncId, playerInventory, backpack, slots / 9);
+        return new GenericContainer(type, syncId, playerInventory, this, slots / 9);
     }
     
-    @Nullable
-    public static ContainerType getSizeType(int slots) {
+    public static @Nullable ContainerType getSizeType(int slots) {
         switch (slots) {
             case 9:
                 return ContainerType.GENERIC_3X3;

@@ -70,9 +70,9 @@
   
   "warp.notice.player.outside_spawn": "Warping is only allowed within spawn.",
   "warp.notice.target.outside_spawn": "That player isn't in spawn.",
-  "warp.notice.no_request": "That player isn't trying to teleport to you.",
+  "warp.notice.no_request": "That player isn't trying to teleport to you. The request may have timed out, or you already accepted the request.",
   "warp.notice.no_warp": "That player doesn't have a warp.",
-  "warp.notice.offline": "That player can't receive your TP request while they're offline.",
+  "warp.notice.offline": "That player can't receive your teleport request while they're offline.",
   "warp.notice.player": "%s teleported to your warp.",
   
   "shop.error.database": "An error occurred while doing that.",
@@ -86,6 +86,11 @@
   
   "backpack.no_downsize": "You cannot buy a backpack smaller than your current backpack.",
   "backpack.need_previous": "You must buy the previous backpack first.",
+  
+  "bee_hive.0": "You listen closely to the hive, you do not hear anything.",
+  "bee_hive.1": "You listen closely to the hive, you softly hear the happy buzzing of bees.",
+  "bee_hive.2": "You listen closely to the hive, you hear the happy buzzing of bees.",
+  "bee_hive.3": "You listen closely to the hive, you loudly hear the happy buzzing of bees.",
   
   "spawn.set.missing_bed": "Spawn position must be set at a bed.",
   

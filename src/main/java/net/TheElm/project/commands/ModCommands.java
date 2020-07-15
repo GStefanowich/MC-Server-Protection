@@ -30,6 +30,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.interfaces.PlayerPermissions;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.server.MinecraftServer;
@@ -48,7 +49,7 @@ public final class ModCommands {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("sewingmachine")
-            .requires((source) -> source.hasPermissionLevel(4))
+            .requires((source) -> source.hasPermissionLevel(OpLevels.STOP))
             .then(CommandManager.literal("reload")
                 .then(CommandManager.literal("config")
                     .executes(ModCommands::ReloadConfig)

@@ -50,7 +50,7 @@ public final class ModsCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("mods")
-            .requires((source -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.COMMAND_MODS_OP_LEVEL.get())))
+            .requires((source -> SewingMachineConfig.INSTANCE.COMMAND_MODS_LIST.get()))
             .executes(ModsCommand::getModList)
         );
         CoreMod.logDebug("- Registered Mods command");
