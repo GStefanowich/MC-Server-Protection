@@ -27,10 +27,10 @@ package net.TheElm.project.protections.events;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.utilities.BlockUtils;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.LogBlock;
 import net.minecraft.block.OreBlock;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -52,10 +52,7 @@ public class BlockEvents {
      * Tree Capacitator
      */
     public static ActionResult eventTreeCapacitator(@NotNull final ServerPlayerEntity player, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace) {
-        BlockState blockState = world.getBlockState( blockPos );
-        Block block = blockState.getBlock();
-        
-        if (!(ChunkUtils.isSetting(ClaimSettings.TREE_CAPACITATE, world, blockPos) && block instanceof LogBlock && player.isSneaking()))
+        if (!(ChunkUtils.isSetting(ClaimSettings.TREE_CAPACITATE, world, blockPos) && BlockUtils.isTreeBlock(world.getBlockState(blockPos)) && player.isSneaking()))
             return ActionResult.PASS;
         
         CoreMod.logInfo("Broke a tree block.");

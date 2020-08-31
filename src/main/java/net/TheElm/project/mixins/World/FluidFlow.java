@@ -25,20 +25,20 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.minecraft.block.BlockState;
-import net.minecraft.fluid.BaseFluid;
+import net.minecraft.fluid.FlowableFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -46,7 +46,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(BaseFluid.class)
+@Mixin(FlowableFluid.class)
 public abstract class FluidFlow extends Fluid {
     
     @Shadow
@@ -70,9 +70,11 @@ public abstract class FluidFlow extends Fluid {
         }
     }
     
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/fluid/BaseFluid.isInfinite()Z"), method = "getUpdatedState")
-    protected boolean onUpdate(BaseFluid fluid, WorldView worldView, BlockPos blockPos, BlockState blockState) {
-        if (SewingMachineConfig.INSTANCE.NETHER_INFINITE_LAVA.get() && worldView.getDimension().getType() == DimensionType.THE_NETHER)
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/fluid/FlowableFluid.isInfinite()Z"), method = "getUpdatedState")
+    protected boolean onUpdate(FlowableFluid fluid, WorldView worldView, BlockPos blockPos, BlockState blockState) {
+        if (SewConfig.get(SewConfig.NETHER_INFINITE_LAVA) // Is ENABLED
+            && (fluid.equals(Fluids.FLOWING_LAVA) || fluid.equals(Fluids.LAVA)) // Is LAVA
+            && worldView.getDimension().isUltrawarm()) // NETHER
             return true;
         return this.isInfinite();
     }

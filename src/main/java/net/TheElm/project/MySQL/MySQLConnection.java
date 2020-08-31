@@ -27,7 +27,7 @@ package net.TheElm.project.MySQL;
 
 import com.mysql.cj.jdbc.MysqlDataSource;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -58,16 +58,16 @@ public class MySQLConnection implements MySQLHost {
         dataSource.setStrictUpdates( true );
         
         // Login information
-        dataSource.setUser(SewingMachineConfig.INSTANCE.DB_USER.get() );
-        dataSource.setPassword(SewingMachineConfig.INSTANCE.DB_PASS.get() );
+        dataSource.setUser(SewConfig.get(SewConfig.DB_USER));
+        dataSource.setPassword(SewConfig.get(SewConfig.DB_PASS));
         
         dataSource.setServerTimezone( "UTC" );
         
         // Database information
-        dataSource.setServerName(SewingMachineConfig.INSTANCE.DB_HOST.get() );
-        dataSource.setPortNumber(SewingMachineConfig.INSTANCE.DB_PORT.get() );
+        dataSource.setServerName(SewConfig.get(SewConfig.DB_HOST));
+        dataSource.setPortNumber(SewConfig.get(SewConfig.DB_PORT));
         
-        dataSource.setDatabaseName(SewingMachineConfig.INSTANCE.DB_NAME.get() );
+        dataSource.setDatabaseName(SewConfig.get(SewConfig.DB_NAME));
         
         CoreMod.logInfo( "Opening our SQL connection" );
         

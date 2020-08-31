@@ -30,6 +30,7 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -40,7 +41,7 @@ public interface PlayerData {
      * Saved warp data
      */
     ServerWorld getWarpWorld();
-    Integer getWarpDimensionId();
+    RegistryKey<World> getWarpDimension();
     BlockPos getWarpPos();
     void setWarpPos(@Nullable BlockPos blockPos);
     void setWarpDimension(World world);

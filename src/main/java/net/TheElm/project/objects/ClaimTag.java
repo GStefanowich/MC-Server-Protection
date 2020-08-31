@@ -25,14 +25,16 @@
 
 package net.TheElm.project.objects;
 
+import net.TheElm.project.utilities.LegacyConverter;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,17 +43,17 @@ public final class ClaimTag extends CompoundTag {
     public ClaimTag() {
         super();
     }
-    public ClaimTag(@NotNull DimensionType dimension, @NotNull ChunkPos chunk) {
+    public ClaimTag(@NotNull World world, @NotNull ChunkPos chunk) {
         super();
         
-        Identifier dimType = Registry.DIMENSION_TYPE.getId(dimension);
+        RegistryKey dimType = world.getRegistryKey();
         if (dimType != null)
             this.putString("dimension", dimType.toString());
         this.putInt("x", chunk.x);
         this.putInt("z", chunk.z);
     }
     public ClaimTag(WorldChunk chunk) {
-        this(chunk.getWorld().dimension.getType(), chunk.getPos());
+        this(chunk.getWorld(), chunk.getPos());
     }
     
     public int getX() {
@@ -61,10 +63,10 @@ public final class ClaimTag extends CompoundTag {
         return this.getInt("z");
     }
     
-    public @Nullable DimensionType getDimension() {
+    public @Nullable RegistryKey<World> getDimension() {
         String dimType = this.getString("dimension");
         if (dimType == null) return null;
-        return Registry.DIMENSION_TYPE.get(new Identifier(dimType));
+        return RegistryKey.of(Registry.DIMENSION, new Identifier(dimType));
     }
     
     public static @Nullable ClaimTag fromCompound(CompoundTag compoundTag) {
@@ -84,11 +86,10 @@ public final class ClaimTag extends CompoundTag {
         int[] array = arrayTag.getIntArray();
         ClaimTag tag = new ClaimTag();
         
-        DimensionType dimType = DimensionType.byRawId(array[0]);
-        Identifier dimId = Registry.DIMENSION_TYPE.getId(dimType);
-        if (dimType == null || dimId == null) return null;
+        RegistryKey<World> world = LegacyConverter.getWorldFromId((byte) array[0]);
+        if (world == null) return null;
         
-        tag.putString("dimension", dimId.toString());
+        tag.putString("dimension", world.toString());
         tag.putInt("x", array[1]);
         tag.putInt("z", array[2]);
         

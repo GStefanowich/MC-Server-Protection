@@ -30,6 +30,7 @@ import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.ShopSignBuilder;
 import net.fabricmc.fabric.api.util.NbtType;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.SignBlockEntity;
@@ -200,7 +201,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     }
     
     @Inject(at = @At("RETURN"), method = "fromTag")
-    public void nbtRead(CompoundTag tag, CallbackInfo callback) {
+    public void nbtRead(BlockState state, CompoundTag tag, CallbackInfo callback) {
         // Shop signs
         if ( tag.containsUuid( "shop_owner" ) && (this.shopSign_Type = ShopSigns.valueOf(this.text[0])) != null) {
             // Get the ITEM for the shop

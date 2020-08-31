@@ -83,7 +83,7 @@ public abstract class EndermenPickup extends Goal implements EndermanGoal {
         boolean bool = blockHitResult.getType() != HitResult.Type.MISS && blockHitResult.getBlockPos().equals(blockPos);
         
         // If the block is able to be held my endermen
-        if (block.matches(BlockTags.ENDERMAN_HOLDABLE) && bool) {
+        if (block.isIn(BlockTags.ENDERMAN_HOLDABLE) && bool) {
             
             // Get the chunk permissions
             WorldChunk chunk = world.getWorldChunk( blockPos );

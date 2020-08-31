@@ -26,13 +26,16 @@
 package net.TheElm.project.utilities;
 
 import com.google.gson.JsonObject;
+import com.mojang.serialization.DataResult;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.objects.WorldPos;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.fabricmc.fabric.api.util.NbtType;
+import net.minecraft.datafixer.NbtOps;
 import net.minecraft.entity.EntityType;
+import net.minecraft.nbt.AbstractNumberTag;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
@@ -43,8 +46,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,8 +68,9 @@ public final class NbtUtils {
     private NbtUtils() {}
     
     public static @NotNull File worldFolder() {
+        // TODO: Verify the world folder name
         return new File(CoreMod.getFabric().getGameDirectory(),
-            ServerCore.get().getLevelName());
+            ServerCore.get().getName());
     }
     
     /*
@@ -241,8 +245,27 @@ public final class NbtUtils {
         return compound;
     }
     private static CompoundTag worldToTag(@NotNull CompoundTag compound, @NotNull World world) {
-        compound.putInt("world", world.getDimension().getType().getRawId());
+        compound.putString("world", NbtUtils.worldToTag(world.getRegistryKey()));
         return compound;
+    }
+    public static String worldToTag(World world) {
+        return NbtUtils.worldToTag(world.getRegistryKey());
+    }
+    public static String worldToTag(RegistryKey<World> world) {
+        return world.getValue().toString();
+    }
+    public static @NotNull World worldFromTag(@Nullable Tag nbt) {
+        return ServerCore.getWorld(NbtUtils.worldRegistryFromTag(nbt));
+    }
+    public static @NotNull RegistryKey<World> worldRegistryFromTag(@Nullable Tag nbt) {
+        if (nbt != null) {
+            if (nbt instanceof AbstractNumberTag)
+                return LegacyConverter.getWorldFromId(((AbstractNumberTag) nbt).getByte());
+            DataResult<RegistryKey<World>> worlds = World.CODEC.parse(NbtOps.INSTANCE, nbt);
+            return worlds.resultOrPartial(CoreMod::logError)
+                .orElse(World.OVERWORLD);
+        }
+        return World.OVERWORLD;
     }
     private static CompoundTag directionToTag(@NotNull CompoundTag compound, @NotNull Direction direction) {
         compound.putInt("direction", direction.getId());
@@ -258,8 +281,8 @@ public final class NbtUtils {
     }
     public static @Nullable WorldPos tagToWorldPos(@Nullable CompoundTag compound) {
         if ((compound != null) && compound.contains("world", NbtType.STRING)) {
-            DimensionType dimension = Registry.DIMENSION_TYPE.get(new Identifier(compound.getString("world")));
-            BlockPos blockPos = NbtUtils.tagToBlockPos( compound );
+            RegistryKey<World> dimension = RegistryKey.of(Registry.DIMENSION, new Identifier(compound.getString("world")));
+            BlockPos blockPos = NbtUtils.tagToBlockPos(compound);
             if ( blockPos != null )
                 return new WorldPos(dimension, blockPos);
         }
@@ -321,7 +344,7 @@ public final class NbtUtils {
                 // Create the display of mobs
                 JsonObject lore = new JsonObject();
                 lore.addProperty("translate", entity.getTranslationKey());
-                lore.addProperty("color", (entity.getCategory().isAnimal() ? Formatting.GOLD : Formatting.RED).getName());
+                lore.addProperty("color", (entity.getSpawnGroup().isAnimal() ? Formatting.GOLD : Formatting.RED).getName());
                 loreTag.add(StringTag.of(lore.toString()));
             }
         }

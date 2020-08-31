@@ -28,8 +28,7 @@ public class Pardon {
     @Overwrite
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("pardon")
-            .requires((source) -> source.getMinecraftServer().getPlayerManager().getIpBanList().isEnabled()
-                && (source.hasPermissionLevel(OpLevels.KICK_BAN_OP) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_UNBAN)))
+            .requires((source) -> (source.hasPermissionLevel(OpLevels.KICK_BAN_OP) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_UNBAN)))
             .then(CommandManager.argument("targets", GameProfileArgumentType.gameProfile())
                 .suggests((context, suggestionsBuilder) -> CommandSource.suggestMatching(context.getSource().getMinecraftServer().getPlayerManager().getUserBanList().getNames(), suggestionsBuilder))
                 .executes((context) -> Pardon.pardon(context.getSource(), GameProfileArgumentType.getProfileArgument(context, "targets")))

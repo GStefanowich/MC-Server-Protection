@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -63,7 +63,7 @@ public abstract class ItemPickup extends Entity {
         if (!this.world.isClient) {
             if ( this.pickupDelay == 0 ) {
                 // Check if the entity is owned by the player (They dropped it)
-                if (player.getUuid().equals( this.thrower ) || player.getUuid().equals( this.owner ) || (player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()))
+                if (player.getUuid().equals( this.thrower ) || player.getUuid().equals( this.owner ) || (player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)))
                     return;
                 
                 // Check if the player can pickup items in the chunk

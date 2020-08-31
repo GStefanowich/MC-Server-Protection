@@ -43,15 +43,19 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,9 +63,9 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 public final class MessageUtils {
@@ -100,7 +104,7 @@ public final class MessageUtils {
     }
     public static boolean sendAsWhisper(@Nullable ServerPlayerEntity sender, @NotNull ServerPlayerEntity target, @NotNull Text text) {
         // Log the the server
-        ServerCore.get().sendMessage(text);
+        ServerCore.get().sendSystemMessage(text, ServerCore.spawnID);
         
         // Send the message to the player (SENDER)
         if ((sender != null) && (!sender.getUuid().equals( target.getUuid() ))) {
@@ -127,7 +131,7 @@ public final class MessageUtils {
     // Send a text blob to a local area
     public static void sendToLocal(final World world, final BlockPos blockPos, Text text) {
         // Log to the server
-        ((ServerWorld) world).getServer().sendMessage(text);
+        ((ServerWorld) world).getServer().sendSystemMessage(text, ServerCore.spawnID);
         
         // Get the players in the area
         BlockPos outerA = new BlockPos(blockPos.getX() + 800, 0, blockPos.getZ() + 800);
@@ -154,7 +158,7 @@ public final class MessageUtils {
         final MinecraftServer server = ServerCore.get();
         
         // Log to the server
-        server.sendMessage(text);
+        server.sendSystemMessage(text, ServerCore.spawnID);
         
         // Send to the players
         MessageUtils.sendChat(
@@ -166,7 +170,7 @@ public final class MessageUtils {
         final MinecraftServer server = ServerCore.get();
         
         // Log to the server
-        server.sendMessage(text);
+        server.sendSystemMessage(text, ServerCore.spawnID);
         
         // Send to the players
         MessageUtils.sendChat(
@@ -189,8 +193,9 @@ public final class MessageUtils {
     }
     public static void sendToTown(final ClaimantTown town, final Text text) {
         final MinecraftServer server = ServerCore.get();
+        
         // Log to the server
-        server.sendMessage(text);
+        server.sendSystemMessage(text, ServerCore.spawnID);
         
         // Send to the players
         MessageUtils.sendChat(
@@ -209,7 +214,7 @@ public final class MessageUtils {
     public static void sendToOps(final int opLevel, final String translationKey, final Object... objects) {
         final MinecraftServer server = ServerCore.get();
         MessageUtils.sendSystem(
-            server.getPlayerManager().getPlayerList().stream().filter((player) -> player.allowsPermissionLevel( opLevel )),
+            server.getPlayerManager().getPlayerList().stream().filter((player) -> player.hasPermissionLevel( opLevel )),
             translationKey,
             objects
         );
@@ -229,44 +234,47 @@ public final class MessageUtils {
             while ( iterator.hasNext() ) {
                 ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity)iterator.next();
                 if (server.getPlayerManager().isOperator(serverPlayerEntity.getGameProfile()))
-                    serverPlayerEntity.sendMessage(send);
+                    serverPlayerEntity.sendMessage(send, MessageType.GAME_INFO, ServerCore.spawnID);
             }
         }
         
         if (server.getGameRules().getBoolean(GameRules.LOG_ADMIN_COMMANDS))
-            server.sendMessage(send);
+            server.sendSystemMessage(send, Util.NIL_UUID);
     }
     
     // Send a translation blob to a stream of players
     private static void sendSystem(final Stream<ServerPlayerEntity> players, final String translationKey, final Object... objects) {
         players.forEach((player) -> player.sendMessage(
-            TranslatableServerSide.text(player, translationKey, objects).formatted(Formatting.YELLOW)
+            TranslatableServerSide.text(player, translationKey, objects).formatted(Formatting.YELLOW),
+            MessageType.SYSTEM,
+            Util.NIL_UUID
         ));
     }
     private static void sendChat(final Stream<ServerPlayerEntity> players, final Text text) {
-        players.forEach((player) -> player.sendChatMessage( text, MessageType.CHAT ));
+        players.forEach((player) -> player.sendMessage( text, MessageType.CHAT, Util.NIL_UUID ));
     }
     
     // Convert a Block Position to a Text component
-    public static Text blockPosToTextComponent(final BlockPos pos) {
-        return MessageUtils.blockPosToTextComponent( pos, ", " );
+    public static MutableText blockPosToTextComponent(final BlockPos pos) {
+        return MessageUtils.blockPosToTextComponent(pos, ", ");
     }
-    public static Text blockPosToTextComponent(final BlockPos pos, final int dimensionId) {
-        Text out = blockPosToTextComponent( pos );
+    public static MutableText blockPosToTextComponent(final BlockPos pos, final Identifier id) {
+        MutableText out = blockPosToTextComponent(pos);
         
         // Get the dimension
-        DimensionType dimension = DimensionType.byRawId( dimensionId );
+        RegistryKey<World> dimension = RegistryKey.of(Registry.DIMENSION, id);
         if (dimension != null) {
+            // TODO: Verify the translation key of the dimension
             out.append(" ")
                 .append(new TranslatableText(dimension.toString()));
         }
         
         return out;
     }
-    public static Text blockPosToTextComponent(final BlockPos pos, final String separator) {
+    public static MutableText blockPosToTextComponent(final BlockPos pos, final String separator) {
         return MessageUtils.dimensionToTextComponent( separator, pos.getX(), pos.getY(), pos.getZ() );
     }
-    public static Text dimensionToTextComponent(final String separator, final int x, final int y, final int z) {
+    public static MutableText dimensionToTextComponent(final String separator, final int x, final int y, final int z) {
         String[] pos = MessageUtils.posToString(x, y, z);
         return new LiteralText("")
             .append(new LiteralText(pos[0]).formatted(Formatting.AQUA))
@@ -276,11 +284,11 @@ public final class MessageUtils {
             .append(new LiteralText(pos[2]).formatted(Formatting.AQUA));
     }
     
-    public static <O> Text listToTextComponent(final Collection<O> list, Function<O, Text> function) {
+    public static <O> MutableText listToTextComponent(final Collection<O> list, Function<O, Text> function) {
         return MessageUtils.listToTextComponent(list, ", ", function);
     }
-    public static <O> Text listToTextComponent(final Collection<O> list, String separator, Function<O, Text> function) {
-        Text base = new LiteralText("");
+    public static <O> MutableText listToTextComponent(final Collection<O> list, String separator, Function<O, Text> function) {
+        MutableText base = new LiteralText("");
         
         Iterator<O> iterator = list.iterator();
         while (iterator.hasNext()) {
@@ -311,34 +319,34 @@ public final class MessageUtils {
     }
     
     // Format a message to chat from a player
-    public static Text formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, String raw) {
+    public static MutableText formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, String raw) {
         return MessageUtils.formatPlayerMessage(player, chatRoom, new LiteralText(raw));
     }
-    public static Text formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, Text text) {
+    public static MutableText formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, Text text) {
         return PlayerNameUtils.getPlayerChatDisplay( player, chatRoom )
             .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
-            .append(text.formatted(chatRoom.getFormatting()));
+            .append(ColorUtils.format(text, chatRoom.getFormatting()));
     }
-    public static Text formatPlayerMessage(ServerCommandSource source, ChatRooms chatRoom, Text text) {
+    public static MutableText formatPlayerMessage(ServerCommandSource source, ChatRooms chatRoom, Text text) {
         if (source.getEntity() instanceof ServerPlayerEntity)
             return MessageUtils.formatPlayerMessage((ServerPlayerEntity) source.getEntity(), chatRoom, text);
         return PlayerNameUtils.getServerChatDisplay( chatRoom )
             .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
-            .append(text.formatted(chatRoom.getFormatting()));
+            .append(ColorUtils.format(text, chatRoom.getFormatting()));
     }
     
     // Text Events
-    public static Consumer<Style> simpleHoverText(String text, Formatting... styled) {
+    public static UnaryOperator<Style> simpleHoverText(String text, Formatting... styled) {
         return MessageUtils.simpleHoverText(new LiteralText(text).formatted(styled));
     }
-    public static Consumer<Style> simpleHoverText(Text text) {
+    public static UnaryOperator<Style> simpleHoverText(Text text) {
         return style -> style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, text));
     }
     
     // Item text details
-    public static @NotNull Text detailedItem(ItemStack stack) {
-        Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(stack);
-        Text output = new LiteralText("")
+    public static @NotNull MutableText detailedItem(ItemStack stack) {
+        Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(stack);
+        MutableText output = new LiteralText("")
             .append(detailedItem(stack.getItem()));
         
         if (enchantments.size() > 0) {
@@ -365,7 +373,7 @@ public final class MessageUtils {
         
         return output;
     }
-    public static @NotNull Text detailedItem(@NotNull Item item) {
+    public static @NotNull MutableText detailedItem(@NotNull Item item) {
         return new TranslatableText(item.getTranslationKey());
     }
 }

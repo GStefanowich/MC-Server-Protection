@@ -63,6 +63,7 @@ import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
+import net.minecraft.entity.mob.PiglinEntity;
 import net.minecraft.entity.passive.CatEntity;
 import net.minecraft.entity.passive.ChickenEntity;
 import net.minecraft.entity.passive.CodEntity;
@@ -90,13 +91,11 @@ import net.minecraft.entity.passive.TurtleEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.passive.WolfEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.entity.vehicle.ChestMinecartEntity;
 import net.minecraft.entity.vehicle.FurnaceMinecartEntity;
 import net.minecraft.entity.vehicle.HopperMinecartEntity;
 import net.minecraft.entity.vehicle.MinecartEntity;
 import net.minecraft.entity.vehicle.TntMinecartEntity;
-import net.minecraft.network.packet.s2c.play.ContainerSlotUpdateS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -108,10 +107,10 @@ import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.village.VillagerData;
 import net.minecraft.village.VillagerType;
 import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -235,6 +234,9 @@ public final class EntityUtils {
             return SoundEvents.ENTITY_SQUID_SQUIRT;
         if (entity instanceof DolphinEntity)
             return SoundEvents.ENTITY_DOLPHIN_AMBIENT;
+        // Nether
+        if (entity instanceof PiglinEntity)
+            return SoundEvents.ENTITY_PIGLIN_AMBIENT;
         return null;
     }
     
@@ -371,9 +373,7 @@ public final class EntityUtils {
             EntityUtils.resendInventory((ServerPlayerEntity)player);
     }
     public static void resendInventory(ServerPlayerEntity player) {
-        PlayerInventory inventory = player.inventory;
-        int slot = inventory.selectedSlot;
-        player.networkHandler.sendPacket(new ContainerSlotUpdateS2CPacket(-2, slot, inventory.getInvStack(slot)));
+        player.updateCursorStack();
     }
     
     /*
@@ -398,26 +398,25 @@ public final class EntityUtils {
      * World
      */
     public static boolean isInOverworld(PlayerEntity player) {
-        return EntityUtils.isIn(player, DimensionType.OVERWORLD);
+        return EntityUtils.isIn(player, World.OVERWORLD);
     }
     public static boolean isNotInOverworld(PlayerEntity player) {
         return !EntityUtils.isInOverworld(player);
     }
     public static boolean isInNether(PlayerEntity player) {
-        return EntityUtils.isIn(player, DimensionType.THE_NETHER);
+        return EntityUtils.isIn(player, World.NETHER);
     }
     public static boolean isNotInNether(PlayerEntity player) {
         return !EntityUtils.isInNether(player);
     }
     public static boolean isInTheEnd(PlayerEntity player) {
-        return EntityUtils.isIn(player, DimensionType.THE_END);
+        return EntityUtils.isIn(player, World.END);
     }
     public static boolean isNotInTheEnd(PlayerEntity player) {
         return !EntityUtils.isInTheEnd(player);
     }
-    private static boolean isIn(PlayerEntity player, DimensionType dimension) {
-        return player.world.getDimension()
-            .getType().equals(dimension);
+    private static boolean isIn(PlayerEntity player, RegistryKey<World> world) {
+        return player.world.getRegistryKey().equals(world);
     }
     
     /*

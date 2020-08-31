@@ -26,6 +26,7 @@
 package net.TheElm.project.utilities;
 
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
@@ -43,12 +44,11 @@ public final class FormattingUtils {
     
     private FormattingUtils() {}
     
-    @Nullable
-    public static Text stringToText(@Nullable String raw) {
+    public static @Nullable Text stringToText(@Nullable String raw) {
         if ((raw == null) || raw.isEmpty())
             return null;
         
-        Text text = null;
+        MutableText text = null;
         Formatting[] formattings = null;
         
         for (String segment : stringToColorSegments( raw )) {
@@ -57,7 +57,7 @@ public final class FormattingUtils {
                 continue;
             }
             
-            Text inside = new LiteralText(segment);
+            MutableText inside = new LiteralText(segment);
             if (formattings != null) {
                 inside.formatted(formattings);
                 formattings = null;
@@ -99,8 +99,7 @@ public final class FormattingUtils {
         }
         return formatting.toArray(new Formatting[0]);
     }
-    @Nullable
-    private static Formatting codeToFormat(String code) {
+    private static @Nullable Formatting codeToFormat(String code) {
         if (code.length() != 2) return null;
         switch (code) {
             case "&0":

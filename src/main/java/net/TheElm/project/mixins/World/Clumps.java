@@ -25,24 +25,15 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.minecraft.enchantment.Enchantment;
-import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.ExperienceOrbEntity;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.Map;
-import java.util.Map.Entry;
 
 @Mixin(ExperienceOrbEntity.class)
 public abstract class Clumps extends Entity {
@@ -85,10 +76,10 @@ public abstract class Clumps extends Entity {
         }
     }
     
-    @Redirect(at = @At(value = "INVOKE", target = "Lnet/minecraft/enchantment/EnchantmentHelper;getRandomEnchantedEquipment(Lnet/minecraft/enchantment/Enchantment;Lnet/minecraft/entity/LivingEntity;)Ljava/util/Map$Entry;"), method = "onPlayerCollision")
-    public Entry<EquipmentSlot, ItemStack> getRandomMendable(Enchantment enchantment, LivingEntity entity) {
+    /*@Redirect(at = @At(value = "INVOKE", target = "Lnet/minecraft/enchantment/EnchantmentHelper;chooseEquipmentWith(Lnet/minecraft/enchantment/Enchantment;Lnet/minecraft/entity/LivingEntity;)Ljava/util/Map$Entry;"), method = "onPlayerCollision")
+    public Entry<EquipmentSlot, ItemStack> getRandomMendable(Enchantment enchantment, PlayerEntity entity) {
         // Get all equipment from the player with the enchantment
-        Map<EquipmentSlot, ItemStack> equipment = enchantment.getEquipment( entity );
+        Map<EquipmentSlot, ItemStack> equipment = enchantment.getEquipment(entity);
         if (equipment.isEmpty())
             return null;
         
@@ -105,6 +96,6 @@ public abstract class Clumps extends Entity {
         }
         
         return slot;
-    } 
+    }*/ 
     
 }

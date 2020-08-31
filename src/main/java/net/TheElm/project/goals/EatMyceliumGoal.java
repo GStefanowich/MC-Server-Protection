@@ -50,7 +50,7 @@ public class EatMyceliumGoal extends Goal {
         if (this.mob.getRandom().nextInt( 50 ) != 0) {
             return false;
         } else {
-            BlockPos blockPos = new BlockPos(this.mob);
+            BlockPos blockPos = this.mob.getBlockPos();
             return this.world.getBlockState(blockPos.down()).getBlock() == Blocks.MYCELIUM;
         }
     }
@@ -76,10 +76,10 @@ public class EatMyceliumGoal extends Goal {
     public void tick() {
         this.timer = Math.max(0, this.timer - 1);
         if (this.timer == 4) {
-            BlockPos blockPos = new BlockPos(this.mob).down();
+            BlockPos blockPos = this.mob.getBlockPos().down();
             if (this.world.getBlockState(blockPos).getBlock() == Blocks.MYCELIUM) {
-                if (this.world.getGameRules().getBoolean(GameRules.MOB_GRIEFING)) {
-                    this.world.playLevelEvent(2001, blockPos, Block.getRawIdFromState(Blocks.MYCELIUM.getDefaultState()));
+                if (this.world.getGameRules().getBoolean(GameRules.DO_MOB_GRIEFING)) {
+                    this.world.syncGlobalEvent(2001, blockPos, Block.getRawIdFromState(Blocks.MYCELIUM.getDefaultState()));
                     this.world.setBlockState(blockPos, Blocks.DIRT.getDefaultState(), 2);
                 }
                 

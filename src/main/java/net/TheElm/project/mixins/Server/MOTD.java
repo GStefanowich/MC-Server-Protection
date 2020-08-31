@@ -31,7 +31,7 @@ import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.SleepUtils;
@@ -41,7 +41,8 @@ import net.minecraft.server.ServerMetadata;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.SaveProperties;
+import net.minecraft.world.World;
 import org.apache.commons.lang3.Validate;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -92,14 +93,17 @@ public abstract class MOTD {
         // Time
         this.motdVariables.put( "time", () -> {
             MinecraftServer server = ServerCore.get();
-            ServerWorld world = server.getWorld(DimensionType.OVERWORLD);
+            ServerWorld world = server.getWorld(World.OVERWORLD);
             if (world == null) return "time";
             return SleepUtils.timeFromMillis(world.getTimeOfDay());
         });
         // Difficulty
         this.motdVariables.put( "difficulty", () -> {
             MinecraftServer server = ServerCore.get();
-            Difficulty difficulty = server.getDefaultDifficulty();
+            SaveProperties properties = server.getSaveProperties();
+            if (properties.isHardcore())
+                return "hardcore";
+            Difficulty difficulty = properties.getDifficulty();
             ServerWorld world = StreamSupport.stream(server.getWorlds().spliterator(), false).findFirst().orElse(null);
             if (world != null)
                 difficulty = world.getLevelProperties().getDifficulty();
@@ -109,7 +113,7 @@ public abstract class MOTD {
         /*
          * Process the randomized server icons
          */
-        for(String iconName : SewingMachineConfig.INSTANCE.SERVER_ICON_LIST.get()) {
+        for( String iconName : SewConfig.get(SewConfig.SERVER_ICON_LIST) ) {
             File iconFile = new File(".", iconName + ".png");
             if (iconFile.isFile()) {
                 ByteBuf byteBuf_1 = Unpooled.buffer();
@@ -133,11 +137,11 @@ public abstract class MOTD {
     @Inject(at = @At("TAIL"), method = "getDescription", cancellable = true)
     public void onGetDescription(CallbackInfoReturnable<Text> callback) {
         // Get MOTDs and if empty, cancel
-        List<String> configMOTD = SewingMachineConfig.INSTANCE.SERVER_MOTD_LIST.get();
+        List<String> configMOTD = SewConfig.get(SewConfig.SERVER_MOTD_LIST);
         if (configMOTD.size() <= 0) return;
         
         // Get the formatted MOTD
-        String raw = descriptionReplaceVariables(SewingMachineConfig.INSTANCE.SERVER_MOTD_LIST.getRandom());
+        String raw = descriptionReplaceVariables(SewConfig.getRandom(SewConfig.SERVER_MOTD_LIST));
         if (raw != null) {
             Text motd = FormattingUtils.stringToText(raw);
             if (motd != null)

@@ -27,6 +27,10 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Material;
+import net.minecraft.block.PillarBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
@@ -58,6 +62,14 @@ public final class BlockUtils {
         );
         
         return world.rayTrace(new RayTraceContext( posVec, traceVec, RayTraceContext.ShapeType.OUTLINE, RayTraceContext.FluidHandling.ANY, entity));
+    }
+    
+    public static boolean isTreeBlock(BlockState blockState) {
+        Block block = blockState.getBlock();
+        if (!(block instanceof PillarBlock))
+            return false;
+        Material material = blockState.getMaterial();
+        return Material.WOOD.equals(material) || Material.NETHER_WOOD.equals(material);
     }
     
     /**

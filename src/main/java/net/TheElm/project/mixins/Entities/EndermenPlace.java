@@ -34,7 +34,7 @@ import net.minecraft.entity.mob.EndermanEntity;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.IWorld;
+import net.minecraft.world.WorldAccess;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
@@ -54,7 +54,7 @@ public abstract class EndermenPlace extends Goal implements EndermanGoal {
     public void tick() {
         // Get endermans information
         Random random = this.enderman.getRandom();
-        IWorld iWorld = this.enderman.world;
+        WorldAccess world = this.enderman.world;
         
         // Get random vector
         int int_1 = MathHelper.floor(this.enderman.getX() - 1.0D + random.nextDouble() * 2.0D);
@@ -63,18 +63,18 @@ public abstract class EndermenPlace extends Goal implements EndermanGoal {
         
         // Get the block position to target
         BlockPos blockPositionPlace = new BlockPos(int_1, int_2, int_3);
-        BlockState blockStatePlace = iWorld.getBlockState(blockPositionPlace);
+        BlockState blockStatePlace = world.getBlockState(blockPositionPlace);
         
         // Get the ground below the target
         BlockPos blockPositionGround = blockPositionPlace.down();
-        BlockState blockStateGround = iWorld.getBlockState(blockPositionGround);
+        BlockState blockStateGround = world.getBlockState(blockPositionGround);
         
         BlockState carriedBlock = this.enderman.getCarriedBlock();
         
-        if (carriedBlock != null && this.method_7033(iWorld, blockPositionPlace, carriedBlock, blockStatePlace, blockStateGround, blockPositionGround)) {
+        if (carriedBlock != null && this.method_7033(world, blockPositionPlace, carriedBlock, blockStatePlace, blockStateGround, blockPositionGround)) {
             
             // Get the chunk permissions
-            WorldChunk chunk = iWorld.getWorld().getWorldChunk( blockPositionPlace );
+            WorldChunk chunk = world.getWorld().getWorldChunk( blockPositionPlace );
             
             // Check if enderman griefing is allowed (Invert because FALSE == NOT ALLOWED)
             if ((chunk != null) && (!((IClaimedChunk) chunk).isSetting( blockPositionPlace, ClaimSettings.ENDERMAN_GRIEFING ))) {
@@ -82,7 +82,7 @@ public abstract class EndermenPlace extends Goal implements EndermanGoal {
                 return;
             }
             
-            iWorld.setBlockState(blockPositionPlace, carriedBlock, 3);
+            world.setBlockState(blockPositionPlace, carriedBlock, 3);
             this.enderman.setCarriedBlock((BlockState)null);
         }
     }

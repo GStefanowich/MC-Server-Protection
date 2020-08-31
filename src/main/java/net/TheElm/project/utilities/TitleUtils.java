@@ -34,6 +34,7 @@ import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
@@ -87,7 +88,7 @@ public final class TitleUtils {
     }
     
     private static Text combineTextChunks(Formatting formatting, Text... text) {
-        Text literalText = new LiteralText("")
+        MutableText literalText = new LiteralText("")
             .formatted(formatting);
         for ( Text t : text ) {
             literalText.append( t );

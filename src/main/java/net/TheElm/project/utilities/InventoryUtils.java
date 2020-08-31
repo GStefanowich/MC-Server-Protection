@@ -80,7 +80,7 @@ public final class InventoryUtils {
         ServerWorld world = player.getServerWorld();
         
         // Check if enough in player inventory
-        if ( required && ( playerInventory.countInInv( item ) < count ) )
+        if ( required && ( playerInventory.count( item ) < count ) )
             return false;
         
         // Get stack size to take from player up to 64
@@ -89,12 +89,12 @@ public final class InventoryUtils {
         boolean success;
         
         // If chest has item on the frame
-        if ( playerInventory.countInInv( item ) > 0) {
-            final int invSize = playerInventory.getInvSize(); // Get the inventory size to iterate over
+        if ( playerInventory.count(item) > 0) {
+            final int invSize = playerInventory.size(); // Get the inventory size to iterate over
             
             // Get stack sizes
             for ( int i = 0; i < invSize; i++ ) {
-                final ItemStack invItem = playerInventory.getInvStack( i );
+                final ItemStack invItem = playerInventory.getStack( i );
                 if ( invItem.getItem().equals( item ) ) {
                     int putable = count - itemStackSize; // The amount of items remaining to take a stack from the player
                     // If stack size is full
@@ -112,14 +112,14 @@ public final class InventoryUtils {
                         
                     } else {
                         // Set the amount to give to the chest
-                        int chestSize = chestInventory.getInvSize();
+                        int chestSize = chestInventory.size();
                         for (int y = 0; y < chestSize; y++) {
                             // If the players stack is empty, break
                             if (invItem.getCount() <= 0)
                                 break;
                             
                             // Get the item from chest Pos Y
-                            final ItemStack chestItemStack = chestInventory.getInvStack(y);
+                            final ItemStack chestItemStack = chestInventory.getStack(y);
                             final Item chestItem = chestItemStack.getItem();
                             
                             // If the slot is AIR or matching type
@@ -130,7 +130,7 @@ public final class InventoryUtils {
                                     final ItemStack clone = invItem.copy();
                                     clone.setCount(put);
                                     
-                                    chestInventory.setInvStack(y, clone);
+                                    chestInventory.setStack(y, clone);
                                 } else {
                                     chestItemStack.setCount(chestItemStack.getCount() + put);
                                     
@@ -169,20 +169,20 @@ public final class InventoryUtils {
      * Transfer items from a chest to the player
      */
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Item item, final int count) {
-        return InventoryUtils.chestToPlayer( player, sourcePos, chestInventory, playerInventory, item, count, false);
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, item, count, false);
     }
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Item item, final int count, final boolean required) {
         // World
         ServerWorld world = player.getServerWorld();
         
         // Check if enough in the chest
-        if (required && (chestInventory != null) && (chestInventory.countInInv( item ) < count))
+        if (required && (chestInventory != null) && (chestInventory.count(item) < count))
             return false;
         
         // Get stack size to give to player up to 64
         int stackSize = 0;
         
-        if ( chestInventory == null) {
+        if ( chestInventory == null ) {
             final int maxStack = item.getMaxCount();
             while ( stackSize < count ) {
                 int giveCount = Collections.min(Arrays.asList( count - stackSize, maxStack ));
@@ -200,12 +200,12 @@ public final class InventoryUtils {
             
         } else {
             // If chest has item on the frame
-            if (chestInventory.countInInv(item) > 0) {
-                final int invSize = chestInventory.getInvSize(); // Get the inventory size to iterate over
+            if (chestInventory.count(item) > 0) {
+                final int invSize = chestInventory.size(); // Get the inventory size to iterate over
                 
                 // Get stack sizes
-                for (int i = 0; i < invSize; i++) {
-                    final ItemStack chestItem = chestInventory.getInvStack(i);
+                for (int i = invSize; i > 0; i--) {
+                    final ItemStack chestItem = chestInventory.getStack(i);
                     if (chestItem.getItem().equals(item)) {
                         int collectible = count - stackSize; // The amount of items remaining to give the player a full stack
                         // If stack size is full
@@ -224,7 +224,7 @@ public final class InventoryUtils {
                             if (!playerInventory.insertStack( clone ))
                                 break;
                         } else {
-                            final ItemStack inInv = playerInventory.getInvStack( slot );
+                            final ItemStack inInv = playerInventory.getStack(slot);
                             int invStackSize = inInv.getCount();
                             collect = Collections.min(Arrays.asList( collect, inInv.getItem().getMaxCount() - invStackSize ));
                             inInv.setCount( invStackSize + collect );
@@ -249,7 +249,7 @@ public final class InventoryUtils {
      * Check if an inventory contains items
      */
     public static boolean isInvEmpty(@Nullable Inventory inventory) {
-        return (inventory == null) || inventory.isInvEmpty();
+        return (inventory == null) || inventory.isEmpty();
     }
     
     /*
@@ -265,18 +265,18 @@ public final class InventoryUtils {
                 return false;
             
             // Check the book enchantments
-            Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(stack);
+            Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(stack);
             level += enchantments.getOrDefault(enchantment, 0);
         }
         
-        return level > enchantment.getMaximumLevel();
+        return level > enchantment.getMaxLevel();
     }
     
     public static ItemRarity getItemRarity(ItemStack stack) {
         float rarity = 0;
         
         // Get all enchantments
-        Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments( stack );
+        Map<Enchantment, Integer> enchantments = EnchantmentHelper.get( stack );
         for ( Map.Entry<Enchantment, Integer> e : enchantments.entrySet() ) {
             Enchantment enchantment = e.getKey();
             
@@ -294,14 +294,14 @@ public final class InventoryUtils {
         );
     }
     private static float getEnchantmentRarity(Enchantment enchantment, int level) {
-        int min = (level - enchantment.getMinimumLevel()),
-            max = (enchantment.getMaximumLevel() - enchantment.getMinimumLevel());
+        int min = (level - enchantment.getMinLevel()),
+            max = (enchantment.getMaxLevel() - enchantment.getMinLevel());
         
         // Get the percentage to max level
         float rarity = (max == 0 ? 1 : ((float)min / (float)max));
         
         // Increase the total item rarity
-        Enchantment.Weight weight = enchantment.getWeight();
+        Enchantment.Rarity weight = enchantment.getRarity();
         return ((float)(10 / weight.getWeight()) * rarity);
     }
     private static ItemRarity getItemRarity(final float rarity, final int enchantments, boolean isBook) {

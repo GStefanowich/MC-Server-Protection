@@ -37,7 +37,9 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntArrayTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.MessageType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.WorldChunk;
@@ -66,7 +68,7 @@ public abstract class Claimant {
     private final ClaimantType type;
     private final UUID id;
     
-    protected Text name = null;
+    protected MutableText name = null;
     
     protected Claimant(ClaimantType type, @NotNull UUID uuid) {
         this.type = type;
@@ -118,17 +120,17 @@ public abstract class Claimant {
     public final UUID getId() {
         return this.id;
     }
-    public abstract Text getName();
-    public final Text getName(PlayerEntity player) {
+    public abstract MutableText getName();
+    public final MutableText getName(PlayerEntity player) {
         return this.getName(player.getUuid());
     }
-    public final Text getName(@NotNull UUID player) {
+    public final MutableText getName(@NotNull UUID player) {
         ClaimRanks playerRank = this.getFriendRank( player );
         return this.getName().formatted( playerRank.getColor() );
     }
     
     /* Send Messages */
-    public abstract void send(Text text);
+    public abstract void send(Text text, MessageType type, UUID from);
     
     /* Town types */
     public final ClaimantType getType() {
@@ -146,7 +148,7 @@ public abstract class Claimant {
             this.CLAIMED_CHUNKS.removeIf((array) -> (
                 Objects.equals(
                     array.getDimension(),
-                    chunk.getWorld().getDimension().getType()
+                    chunk.getWorld().getDimension()
                 )
                 && array.getX() == pos.x
                 && array.getZ() == pos.z

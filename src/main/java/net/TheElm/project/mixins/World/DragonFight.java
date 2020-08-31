@@ -27,7 +27,7 @@ package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.DragonLoot;
 import net.TheElm.project.utilities.BossLootRewards;
 import net.TheElm.project.utilities.EntityUtils;
@@ -46,6 +46,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.gen.feature.EndPortalFeature;
@@ -139,7 +140,7 @@ public abstract class DragonFight {
         
         // Attempt to set the ability to spawn to TRUE
         if ( !this.sewingMachineDragonShouldExist )
-            this.sewingMachineDragonShouldExist = ( players >= SewingMachineConfig.INSTANCE.DRAGON_PLAYERS.get() );
+            this.sewingMachineDragonShouldExist = ( players >= SewConfig.get(SewConfig.DRAGON_PLAYERS) );
         
         // If the ability to spawn is FALSE
         if ( !this.sewingMachineDragonShouldExist ) {
@@ -160,7 +161,7 @@ public abstract class DragonFight {
                 
                 // Show notice to players in The End
                 if ( !this.dragonKilled )
-                    TitleUtils.showPlayerAlert( this.world, new LiteralText( formatter.format(players) + " / " + formatter.format(SewingMachineConfig.INSTANCE.DRAGON_PLAYERS.get()) + " required players to fight the dragon." ));
+                    TitleUtils.showPlayerAlert( this.world, new LiteralText( formatter.format(players) + " / " + formatter.format(SewConfig.get(SewConfig.DRAGON_PLAYERS)) + " required players to fight the dragon." ));
                 
                 this.sewingMachineEndPlayers = players;
             }
@@ -229,8 +230,8 @@ public abstract class DragonFight {
             if (!BossLootRewards.DRAGON_LOOT.addLoot(playerId, DragonLoot.createReward())) {
                 ServerPlayerEntity player = ServerCore.getPlayer(playerId);
                 if (player != null)
-                    player.sendMessage(new LiteralText("You were not rewarded a drop from killing the Ender Dragon, your loot chest is full.")
-                        .formatted(Formatting.RED));
+                    player.sendSystemMessage(new LiteralText("You were not rewarded a drop from killing the Ender Dragon, your loot chest is full.")
+                        .formatted(Formatting.RED), Util.NIL_UUID);
             }
         }
         
@@ -238,7 +239,7 @@ public abstract class DragonFight {
         if ( this.world.getAliveEnderDragons().isEmpty() )
             this.seenPlayers.clear();
         
-        if (SewingMachineConfig.INSTANCE.DRAGON_LOOT_END_ITEMS.get() || SewingMachineConfig.INSTANCE.DRAGON_LOOT_RARE_BOOKS.get()) {
+        if (SewConfig.get(SewConfig.DRAGON_LOOT_END_ITEMS) || SewConfig.get(SewConfig.DRAGON_LOOT_RARE_BOOKS)) {
             BlockPos chestPos = this.world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, EndPortalFeature.ORIGIN);
             this.world.setBlockState(chestPos, Blocks.BLACK_SHULKER_BOX.getDefaultState());
             BlockEntity blockEntity = this.world.getBlockEntity(chestPos);
@@ -246,7 +247,7 @@ public abstract class DragonFight {
                 CompoundTag chestTag = blockEntity.toTag(new CompoundTag());
                 chestTag.putString("BossLootContainer", BossLootRewards.DRAGON_LOOT.toString());
                 
-                blockEntity.fromTag(chestTag);
+                blockEntity.fromTag(Blocks.BLACK_SHULKER_BOX.getDefaultState(), chestTag);
             }
         }
     }
@@ -262,16 +263,16 @@ public abstract class DragonFight {
             // Update the dragons health
             int count = Math.max(this.seenPlayers.size() - 1, 0),
                 baseHealth = 200;
-            float newMax = baseHealth + (count * SewingMachineConfig.INSTANCE.DRAGON_ADDITIONAL_HEALTH.get());
+            float newMax = baseHealth + (count * SewConfig.get(SewConfig.DRAGON_ADDITIONAL_HEALTH));
             
             for (EnderDragonEntity dragon : dragons) {
-                dragon.getMaximumHealth();
+                dragon.getMaxHealth();
                 
-                float currentMax = dragon.getMaximumHealth();
+                float currentMax = dragon.getMaxHealth();
                 if (currentMax != newMax) {
                     float currentHealth = dragon.getHealth();
                     
-                    dragon.getAttributeInstance(EntityAttributes.MAX_HEALTH)
+                    dragon.getAttributeInstance(EntityAttributes.GENERIC_MAX_HEALTH)
                         .setBaseValue(newMax);
                     dragon.setHealth(currentHealth + (newMax - currentMax));
                 }

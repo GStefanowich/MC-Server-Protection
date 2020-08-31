@@ -30,6 +30,7 @@ import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
@@ -61,9 +62,9 @@ public abstract class PlayerList {
     
     @Inject(at = @At("RETURN"), method = "getDisplayName", cancellable = true)
     public void getDisplayName(CallbackInfoReturnable<Text> callback) {
-        Text displayName = (this.displayName == null ?
+        MutableText displayName = (this.displayName == null ?
             new LiteralText(this.profile.getName()).formatted(Formatting.YELLOW)
-            : this.displayName.deepCopy()
+            : this.displayName.copy()
         );
         
         for (PlayerRank rank : RankUtils.getPlayerRanks(this.profile)) {

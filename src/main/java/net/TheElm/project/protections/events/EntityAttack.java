@@ -25,7 +25,7 @@
 
 package net.TheElm.project.protections.events;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.DamageEntityCallback;
 import net.TheElm.project.interfaces.IClaimedChunk;
@@ -41,6 +41,7 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.decoration.ItemFrameEntity;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.entity.mob.PiglinEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.inventory.Inventory;
@@ -87,7 +88,7 @@ public final class EntityAttack {
             final PlayerEntity player = (PlayerEntity) attacker;
             
             // Always allow defending self from hostiles
-            if (target instanceof HostileEntity)
+            if (target instanceof HostileEntity && ((!(target instanceof PiglinEntity)) || (((PiglinEntity)target).getTarget() instanceof PlayerEntity)))
                 return ActionResult.PASS;
             
             // Do special item frame interaction if NOT CROUCHING and HOLDING A TOOL
@@ -126,11 +127,11 @@ public final class EntityAttack {
             }
             
             // If the player is in creative, allow
-            if (player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get())
+            if (player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS))
                 return ActionResult.PASS;
             
             // Get chunk protection
-            WorldChunk chunk = world.getWorldChunk( target.getBlockPos() );
+            WorldChunk chunk = world.getWorldChunk(target.getBlockPos());
             
             // If entity is a player always allow PvP, and always allow defending self from hostiles
             if ((target instanceof PlayerEntity)) {

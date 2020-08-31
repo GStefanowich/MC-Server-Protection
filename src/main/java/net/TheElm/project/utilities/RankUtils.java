@@ -32,7 +32,7 @@ import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.PlayerPermissions;
 import net.TheElm.project.permissions.PermissionNode;
 import net.TheElm.project.protections.ranks.PlayerRank;
@@ -117,7 +117,7 @@ public final class RankUtils {
         }
     }
     public static boolean hasPermission(@NotNull ServerCommandSource source, @Nullable PermissionNode permission) {
-        if ((!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get()) || (permission == null))
+        if ((!SewConfig.get(SewConfig.HANDLE_PERMISSIONS)) || (permission == null))
             return false;
         Entity entity = source.getEntity();
         return ((entity instanceof ServerPlayerEntity) && RankUtils.hasPermission(((ServerPlayerEntity) entity), permission));
@@ -147,7 +147,7 @@ public final class RankUtils {
     }
     public static boolean reload( boolean verbose ) {
         // Check if enabled in the config
-        if (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get())
+        if (!SewConfig.get(SewConfig.HANDLE_PERMISSIONS))
             return false;
         RankUtils.RANKS.clear();
         

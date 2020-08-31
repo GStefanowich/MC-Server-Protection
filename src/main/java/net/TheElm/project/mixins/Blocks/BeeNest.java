@@ -8,10 +8,11 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Util;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -33,12 +34,12 @@ public class BeeNest {
                 int bees = ((BeehiveBlockEntity)hiveEntity).getBeeCount();
                 
                 // Get the translation key for the count of bees
-                Text hiveInfo = TranslatableServerSide.text(player, "bee_hive." + bees);
+                MutableText hiveInfo = TranslatableServerSide.text(player, "bee_hive." + bees);
                 
                 player.playSound(SoundEvents.BLOCK_BEEHIVE_WORK, SoundCategory.MASTER, ((float) bees / 3), 1.0F);
                 
                 // Send the translated text
-                player.sendMessage(hiveInfo.formatted(Formatting.GRAY, Formatting.ITALIC));
+                player.sendSystemMessage(hiveInfo.formatted(Formatting.GRAY, Formatting.ITALIC), Util.NIL_UUID);
                 
                 // Set the use result as a success
                 callback.setReturnValue(ActionResult.SUCCESS);

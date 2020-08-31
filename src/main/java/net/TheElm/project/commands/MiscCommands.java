@@ -31,7 +31,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
@@ -39,6 +39,7 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
@@ -51,7 +52,7 @@ public final class MiscCommands {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("shrug")
-            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_SHRUG.get())
+            .requires((source) -> SewConfig.get(SewConfig.COMMAND_SHRUG))
             .then(CommandManager.argument("message", StringArgumentType.greedyString())
                 .executes(MiscCommands::shrugMessage)
             )
@@ -60,7 +61,7 @@ public final class MiscCommands {
         CoreMod.logDebug("- Registered Nick command");
         
         dispatcher.register(CommandManager.literal("tableflip")
-            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_TABLEFLIP.get())
+            .requires((source) -> SewConfig.get(SewConfig.COMMAND_TABLEFLIP))
             .then(CommandManager.argument("message", StringArgumentType.greedyString())
                 .executes(MiscCommands::flipMessage)
             )
@@ -93,7 +94,7 @@ public final class MiscCommands {
     }
     public static int playerSendsMessageAndData(ServerPlayerEntity player, String message, Text main) {
         // Create the player display for chat
-        Text text = PlayerNameUtils.getPlayerChatDisplay( player, ((PlayerChat) player).getChatRoom() )
+        MutableText text = PlayerNameUtils.getPlayerChatDisplay( player, ((PlayerChat) player).getChatRoom() )
             .append(new LiteralText( ": " ).formatted(Formatting.GRAY));
         
         // Append the users message

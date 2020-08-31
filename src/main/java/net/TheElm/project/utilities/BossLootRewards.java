@@ -54,7 +54,7 @@ public final class BossLootRewards {
         
         // Add new items to the collection
         for (ItemStack item : items) {
-            if (!inventory.add(item).isEmpty())
+            if (!inventory.addStack(item).isEmpty())
                 return false;
             
             MessageUtils.consoleToOps(new LiteralText("Gave new reward ")
@@ -86,9 +86,9 @@ public final class BossLootRewards {
     
     public boolean savePlayerLoot(UUID uuid) {
         LootInventory inventory = this.getPlayerLoot(uuid);
-        if (inventory.isInvEmpty() && this.playerRewards.containsKey(uuid))
+        if (inventory.isEmpty() && this.playerRewards.containsKey(uuid))
             return this.playerRewards.remove(uuid) != null;
-        else if ((!inventory.isInvEmpty()) && (!this.playerRewards.containsKey(uuid)))
+        else if ((!inventory.isEmpty()) && (!this.playerRewards.containsKey(uuid)))
             this.playerRewards.put(uuid, inventory);
         
         // Mark to save loot rewards

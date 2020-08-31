@@ -32,7 +32,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.commands.ArgumentTypes.PermissionArgumentType;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 
@@ -40,7 +40,7 @@ public final class PermissionCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("permissions")
-            .requires((source) -> SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get() && source.hasPermissionLevel( 2 ))
+            .requires((source) -> SewConfig.get(SewConfig.HANDLE_PERMISSIONS) && source.hasPermissionLevel( 2 ))
             .then(CommandManager.literal("help")
                 .then(CommandManager.argument("permission", StringArgumentType.word())
                     .suggests( PermissionArgumentType::suggestsNodes )

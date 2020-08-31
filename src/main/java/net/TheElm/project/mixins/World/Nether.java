@@ -26,11 +26,13 @@
 package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
-import net.minecraft.entity.EntityCategory;
+import net.TheElm.project.config.SewConfig;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.SpawnGroup;
 import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.NetherBiome;
+import net.minecraft.world.biome.NetherWastesBiome;
+import net.minecraft.world.biome.SoulSandValleyBiome;
+import net.minecraft.world.biome.WarpedForestBiome;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -40,7 +42,7 @@ import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
 
-@Mixin(NetherBiome.class)
+@Mixin({ NetherWastesBiome.class, WarpedForestBiome.class, SoulSandValleyBiome.class })
 public abstract class Nether extends Biome {
     
     protected Nether(Settings biome$Settings_1) {
@@ -49,15 +51,15 @@ public abstract class Nether extends Biome {
     
     @Inject(at = @At("RETURN"), method = "<init>*")
     public void addSpawn(CallbackInfo callback) {
-        if (SewingMachineConfig.INSTANCE.PREVENT_NETHER_ENDERMEN.get()) {
+        if (SewConfig.get(SewConfig.PREVENT_NETHER_ENDERMEN)) {
             try {
                 // Get the super
                 Field f = this.getClass().getSuperclass().getDeclaredField(CoreMod.isDebugging() ? "spawns" : "field_9325");
                 f.setAccessible(true);
-                Map<EntityCategory, List<SpawnEntry>> spawns = (Map<EntityCategory, List<SpawnEntry>>) f.get(this);
+                Map<SpawnGroup, List<Biome.SpawnEntry>> spawns = (Map<SpawnGroup, List<Biome.SpawnEntry>>) f.get(this);
                 
                 // If enabled
-                spawns.get(EntityCategory.MONSTER).removeIf(entity -> entity.type.equals(EntityType.ENDERMAN));
+                spawns.get(SpawnGroup.MONSTER).removeIf(entity -> entity.type.equals(EntityType.ENDERMAN));
             } catch (NoSuchFieldException | IllegalAccessException e) {
                 CoreMod.logError( e );
             }

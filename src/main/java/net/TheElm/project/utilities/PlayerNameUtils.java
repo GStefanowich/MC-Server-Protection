@@ -31,7 +31,7 @@ import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.Nicknamable;
@@ -45,9 +45,11 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,29 +65,29 @@ public final class PlayerNameUtils {
     
     private PlayerNameUtils() {}
     
-    public static Text getServerChatDisplay(ChatRooms chatRoom) {
+    public static MutableText getServerChatDisplay(ChatRooms chatRoom) {
         return new LiteralText("[").formatted(chatRoom.getFormatting())
-            .append(PlayerNameUtils.formattedWorld( null ))
+            .append(PlayerNameUtils.formattedWorld((World) null))
             .append("] ")
             .append(new LiteralText("Server").formatted(Formatting.GRAY));
     }
-    public static Text getPlayerChatDisplay(@NotNull ServerPlayerEntity player, ChatRooms chatRoom) {
+    public static MutableText getPlayerChatDisplay(@NotNull ServerPlayerEntity player, ChatRooms chatRoom) {
         return PlayerNameUtils.getPlayerChatDisplay( player, null, chatRoom );
     }
-    public static Text getPlayerChatDisplay(@NotNull ServerPlayerEntity player, @Nullable String prepend, ChatRooms chatRoom, Formatting... playerColors) {
+    public static MutableText getPlayerChatDisplay(@NotNull ServerPlayerEntity player, @Nullable String prepend, ChatRooms chatRoom, Formatting... playerColors) {
         ClaimantPlayer playerPermissions = ((PlayerData) player).getClaim();
-        Text playerDisplay = PlayerNameUtils.getPlayerDisplayName( player );
+        MutableText playerDisplay = PlayerNameUtils.getPlayerDisplayName( player );
         if ( playerColors.length > 0 )
             playerDisplay.formatted( playerColors );
         
         // Add the players world
-        Text format = new LiteralText( "[" ).formatted(chatRoom.getFormatting());
-        if (!chatRoom.equals(ChatRooms.TOWN)) format.append( PlayerNameUtils.formattedWorld( player.dimension ) );
+        MutableText format = new LiteralText( "[" ).formatted(chatRoom.getFormatting());
+        if (!chatRoom.equals(ChatRooms.TOWN)) format.append( PlayerNameUtils.formattedWorld( player.world ) );
         else format.append( formattedChat( chatRoom ) );
         
         ClaimantTown town;
         // If the player is in a town, prepend the town name
-        if (SewingMachineConfig.INSTANCE.CHAT_SHOW_TOWNS.get() && (playerPermissions != null) && ((town = playerPermissions.getTown() ) != null)) {
+        if (SewConfig.get(SewConfig.CHAT_SHOW_TOWNS) && (playerPermissions != null) && ((town = playerPermissions.getTown() ) != null)) {
             // Add the players town
             format.append( "|" )
                 .append( town.getName().formatted(Formatting.DARK_AQUA) )
@@ -108,84 +110,86 @@ public final class PlayerNameUtils {
         // Append the player name and return
         return format.append( playerDisplay );
     }
-    private static Text getPlayerDisplayName(@NotNull ServerPlayerEntity player) {
+    private static MutableText getPlayerDisplayName(@NotNull ServerPlayerEntity player) {
         if (((Nicknamable)player).getPlayerNickname() == null)
-            return PlayerNameUtils.applyPlayerNameStyle( player.getName().formatted(Formatting.GOLD), player );
+            return PlayerNameUtils.applyPlayerNameStyle( ((MutableText)player.getName()).formatted(Formatting.GOLD), player );
         
         return new LiteralText("").append(PlayerNameUtils.applyPlayerNameStyle(
-            player.getDisplayName().deepCopy(),
+            player.getDisplayName().copy(),
             player
         ));
     }
-    private static Text applyPlayerNameStyle(@NotNull Text text, @NotNull ServerPlayerEntity player) {
+    private static MutableText applyPlayerNameStyle(@NotNull MutableText text, @NotNull ServerPlayerEntity player) {
         final String name = player.getGameProfile().getName();
+        
         return text.styled((styler) ->
             styler.setHoverEvent(new HoverEvent( HoverEvent.Action.SHOW_TEXT, new LiteralText( "Name: " ).formatted(Formatting.GRAY).append( new LiteralText( name ).formatted(Formatting.AQUA) ) ))
-                .setClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tell " + name + " "))
+                .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tell " + name + " "))
         );
     }
     
     /*
      * Message Components
      */
-    public static Text formattedWorld(@Nullable DimensionType dimension) {
-        String world = null;
+    public static MutableText formattedWorld(@Nullable World world) {
+        return PlayerNameUtils.formattedWorld(world == null ? null : world.getRegistryKey());
+    }
+    public static MutableText formattedWorld(@Nullable RegistryKey<World> world) {
+        String name = null;
         String ico = null;
         
         Formatting color = Formatting.OBFUSCATED;
-        if (dimension == null) {
-            world = "Server";
+        if (world == null) {
+            name = "Server";
             color = Formatting.WHITE;
             ico = "-";
-        } else if (dimension == DimensionType.OVERWORLD) {
-            world = "Surface";
+        } else if (world == World.OVERWORLD) {
+            name = "Surface";
             color = Formatting.GREEN;
-        } else if (dimension == DimensionType.THE_END) {
-            world = "End";
+        } else if (world == World.END) {
+            name = "End";
             color = Formatting.DARK_GRAY;
-        } else if (dimension == DimensionType.THE_NETHER) {
-            world = "Nether";
+        } else if (world == World.NETHER) {
+            name = "Nether";
             color = Formatting.RED;
         }
         
         if (ico == null)
-            ico = world == null ? "~" : world.substring( 0, 1 );
+            ico = name == null ? "~" : name.substring( 0, 1 );
         
         // Create the text
-        Text text = new LiteralText( ico )
+        MutableText text = new LiteralText( ico )
             .formatted( color );
         
         // Set the hover event
-        if ( world != null ) {
+        if ( name != null ) {
             // Create the hover event
-            final HoverEvent hover = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( world ).formatted(color));
+            final HoverEvent hover = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( name ).formatted(color));
             
-            text.styled((style) -> {
-                style.setHoverEvent( hover );
-            });
+            text.styled((style) -> style.setHoverEvent( hover ));
         }
         return text;
     }
-    public static Text formattedChat(ChatRooms chatRoom) {
+    public static MutableText formattedChat(ChatRooms chatRoom) {
         String name = CasingUtils.Sentence( chatRoom.name() );
         return new LiteralText( name.substring( 0, 1 ) )
             .formatted( Formatting.DARK_GRAY )
             .styled((style -> style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( name ).formatted( Formatting.WHITE )))));
     }
     
-    public static Text fetchPlayerNick(@NotNull UUID uuid) {
-        Text out;
+    public static MutableText fetchPlayerNick(@NotNull UUID uuid) {
+        MutableText out;
         if ((!uuid.equals(CoreMod.spawnID)) && ((out = PlayerNameUtils.getOfflinePlayerNickname( uuid )) != null))
             return out;
         return PlayerNameUtils.fetchPlayerName( uuid );
     }
-    public static Text fetchPlayerName(@NotNull UUID uuid) {
+    public static MutableText fetchPlayerName(@NotNull UUID uuid) {
         // If we're looking up UUID 0, 0 (Spawn) don't try to do a lookup
         if ( uuid.equals( CoreMod.spawnID ) )
-            return new LiteralText(SewingMachineConfig.INSTANCE.NAME_SPAWN.get());
+            return new LiteralText(SewConfig.get(SewConfig.NAME_SPAWN));
         
         // Check if there is an online player with UUID (No unnecessary web calls)
-        Text playerName;
+        MutableText playerName;
         if ((playerName = getOnlinePlayerName(uuid)) != null)
             return playerName;
         
@@ -239,13 +243,12 @@ public final class PlayerNameUtils {
         
         return ( playerName == null ? new LiteralText("Unknown player") : playerName );
     }
-    @Nullable
-    private static Text getOnlinePlayerName(@NotNull UUID uuid) {
+    private static @Nullable MutableText getOnlinePlayerName(@NotNull UUID uuid) {
         MinecraftServer server = ServerCore.get();
         ServerPlayerEntity player;
         if ((player = server.getPlayerManager().getPlayer( uuid )) == null)
             return null;
-        return player.getName();
+        return (MutableText) player.getName();
     }
     private static String getCachedPlayerName(@NotNull UUID uuid) {
         String name = null;
@@ -255,8 +258,7 @@ public final class PlayerNameUtils {
             name = profile.getName();
         return name;
     }
-    @Nullable
-    private static Text getOfflinePlayerNickname(@NotNull UUID uuid) {
+    private static @Nullable MutableText getOfflinePlayerNickname(@NotNull UUID uuid) {
         try {
             CompoundTag tag = NbtUtils.readOfflinePlayerData(uuid);
             if ((tag != null) && tag.contains("PlayerNickname", NbtType.STRING))

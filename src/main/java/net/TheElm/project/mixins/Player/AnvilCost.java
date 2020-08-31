@@ -25,17 +25,20 @@
 
 package net.TheElm.project.mixins.Player;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.utilities.Assert;
 import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.NbtUtils;
-import net.minecraft.container.AnvilContainer;
-import net.minecraft.container.Property;
 import net.minecraft.enchantment.Enchantment;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.screen.AnvilScreenHandler;
+import net.minecraft.screen.ForgingScreenHandler;
+import net.minecraft.screen.Property;
+import net.minecraft.screen.ScreenHandlerContext;
+import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -49,24 +52,24 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.Arrays;
 
-@Mixin(AnvilContainer.class)
-public class AnvilCost {
+@Mixin(AnvilScreenHandler.class)
+public abstract class AnvilCost extends ForgingScreenHandler {
     
-    @Shadow @Final
-    private PlayerEntity player;
-    @Shadow @Final
-    private Inventory inventory;
     @Shadow @Final
     private Property levelCost;
     
+    public AnvilCost(ScreenHandlerType<?> type, int syncId, PlayerInventory playerInventory, ScreenHandlerContext context) {
+        super(type, syncId, playerInventory, context);
+    }
+    
     @ModifyConstant(method = "updateResult", constant = @Constant(intValue = 40))
     private int anvilMaxLevelOverride(int oldValue) {
-        if (SewingMachineConfig.INSTANCE.ANVIL_DISABLE_COST_LIMIT.isTrue())
+        if (SewConfig.isTrue(SewConfig.ANVIL_DISABLE_COST_LIMIT))
             return Integer.MAX_VALUE;
         return oldValue;
     }
     
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/inventory/Inventory.setInvStack(ILnet/minecraft/item/ItemStack;)V"), method = "updateResult")
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/inventory/Inventory.setStack(ILnet/minecraft/item/ItemStack;)V"), method = "updateResult")
     public void onUpdateOutput(Inventory inventory, int slot, ItemStack item) {
         if ((!item.isEmpty()) && item.hasEnchantments()) {
             CompoundTag display = item.getOrCreateSubTag("display");;
@@ -83,15 +86,15 @@ public class AnvilCost {
             display.put("Lore", NbtUtils.toList(Arrays.asList(lore, madeBy), Text.Serializer::toJson));
         }
         
-        inventory.setInvStack(slot, item);
+        inventory.setStack(slot, item);
     }
     
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/enchantment/Enchantment.getMaximumLevel()I"), method = "updateResult")
-    public int getMaximumLevel(Enchantment enchantment) {
-        ItemStack left = this.inventory.getInvStack(0);
-        ItemStack right = this.inventory.getInvStack(1);
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/enchantment/Enchantment.getMaxLevel()I"), method = "updateResult")
+    public int getMaxLevel(Enchantment enchantment) {
+        ItemStack left = this.input.getStack(0);
+        ItemStack right = this.input.getStack(1);
         if (Assert.ifAny(ItemStack::isEmpty, left, right) || InventoryUtils.areBooksAtMaximum(enchantment, left, right))
-            return enchantment.getMaximumLevel();
+            return enchantment.getMaxLevel();
         return 10;
     }
 }

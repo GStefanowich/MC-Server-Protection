@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.PlayerData;
 import net.minecraft.block.NetherPortalBlock;
 import net.minecraft.block.pattern.BlockPattern;
@@ -38,8 +38,9 @@ import net.minecraft.util.Nameable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.PortalForcer;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -67,12 +68,12 @@ public abstract class Portals implements Nameable, CommandOutput {
             ServerPlayerEntity player = (ServerPlayerEntity) entity;
             ServerWorld world = player.getServerWorld();
             
-            DimensionType dimType = world.getDimension().getType();
+            RegistryKey<World> dimType = world.getRegistryKey();
             
             // Search for a saved portal location (In the opposite world) to go to
             BlockPos lastPos = null;
-            if (SewingMachineConfig.INSTANCE.OVERWORLD_PORTAL_LOC.get() && dimType == DimensionType.OVERWORLD) lastPos = ((PlayerData) player).getNetherPortal();
-            else if (SewingMachineConfig.INSTANCE.NETHER_PORTAL_LOC.get() && dimType == DimensionType.THE_NETHER) lastPos = ((PlayerData) player).getOverworldPortal();
+            if (SewConfig.get(SewConfig.OVERWORLD_PORTAL_LOC) && World.OVERWORLD.equals(dimType)) lastPos = ((PlayerData) player).getNetherPortal();
+            else if (SewConfig.get(SewConfig.NETHER_PORTAL_LOC) && World.NETHER.equals(dimType)) lastPos = ((PlayerData) player).getOverworldPortal();
             
             // If not set, let Vanilla take over
             if (lastPos == null) return;
@@ -81,8 +82,8 @@ public abstract class Portals implements Nameable, CommandOutput {
             BlockPattern.Result pattern = NetherPortalBlock.findPortal(world, lastPos);
             TeleportTarget teleportTarget = pattern.getTeleportTarget(dir, lastPos, vec3d.y, entity.getVelocity(), vec3d.x);
             if (teleportTarget == null) {
-                if (dimType == DimensionType.OVERWORLD) ((PlayerData) player).setOverworldPortal( null );
-                else if (dimType == DimensionType.THE_NETHER) ((PlayerData) player).setNetherPortal( null );
+                if (World.OVERWORLD.equals(dimType)) ((PlayerData) player).setOverworldPortal( null );
+                else if (World.NETHER.equals(dimType)) ((PlayerData) player).setNetherPortal( null );
                 
                 return; // If no portal was found, let Vanilla take over
             }

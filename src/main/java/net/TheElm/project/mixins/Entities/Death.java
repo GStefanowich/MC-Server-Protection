@@ -26,11 +26,11 @@
 package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.WarpUtils;
 import net.fabricmc.fabric.api.util.NbtType;
-import net.minecraft.advancement.criterion.Criterions;
+import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
@@ -52,7 +52,6 @@ import net.minecraft.stat.Stats;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -80,7 +79,7 @@ public abstract class Death extends Entity {
     @Inject(at = @At("TAIL"), method = "onDeath")
     public void onDeath(DamageSource damageSource, CallbackInfo callback) {
         // If disabled
-        if (!SewingMachineConfig.INSTANCE.SPAWNER_ABSORB_MOBS.get())
+        if (!SewConfig.get(SewConfig.SPAWNER_ABSORB_MOBS))
             return;
         
         // If not dead or is player
@@ -163,10 +162,10 @@ public abstract class Death extends Entity {
             }
             
             // Check the inventory
-            if (totem == null && (((Entity)this) instanceof ServerPlayerEntity) && SewingMachineConfig.INSTANCE.TOTEM_ANYWHERE.get()) {
+            if (totem == null && (((Entity)this) instanceof ServerPlayerEntity) && SewConfig.get(SewConfig.TOTEM_ANYWHERE)) {
                 ServerPlayerEntity player = (ServerPlayerEntity)(Entity)this;
-                for (int slot = 0; slot < player.inventory.getInvSize(); slot++) {
-                    ItemStack pack = player.inventory.getInvStack(slot);
+                for (int slot = 0; slot < player.inventory.size(); slot++) {
+                    ItemStack pack = player.inventory.getStack(slot);
                     if (pack.getItem() == Items.TOTEM_OF_UNDYING) {
                         totem = pack.copy();
                         pack.decrement(1);
@@ -181,7 +180,7 @@ public abstract class Death extends Entity {
                 if (((Entity)this) instanceof ServerPlayerEntity) {
                     ServerPlayerEntity player = (ServerPlayerEntity)(Entity)this;
                     player.incrementStat(Stats.USED.getOrCreateStat(Items.TOTEM_OF_UNDYING));
-                    Criterions.USED_TOTEM.trigger(player, totem);
+                    Criteria.USED_TOTEM.trigger(player, totem);
                 }
                 
                 // Set the health back
@@ -208,10 +207,10 @@ public abstract class Death extends Entity {
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
     public void onDamage(DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
         // Ignore if running as the client
-        if ((this.world.isClient) || (this.world.getDimension().getType() != DimensionType.THE_END))
+        if ((this.world.isClient) || (this.world.getRegistryKey() != World.END))
             return;
         
-        World overWorld = ServerCore.getWorld(DimensionType.OVERWORLD);
+        World overWorld = ServerCore.getWorld(World.OVERWORLD);
         if (source.isOutOfWorld())
             WarpUtils.teleportEntity(overWorld, this, new BlockPos(this.getX(), 400, this.getZ()));
     }

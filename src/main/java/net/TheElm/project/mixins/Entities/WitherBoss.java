@@ -31,7 +31,6 @@ import net.minecraft.entity.ai.RangedAttackMob;
 import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -50,13 +49,13 @@ public abstract class WitherBoss extends HostileEntity implements RangedAttackMo
         super(entityType_1, world_1);
     }
     
-    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/world/World.playGlobalEvent(ILnet/minecraft/util/math/BlockPos;I)V", shift = At.Shift.BEFORE), method = "mobTick")
+    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/world/World.syncGlobalEvent(ILnet/minecraft/util/math/BlockPos;I)V", shift = At.Shift.BEFORE), method = "mobTick")
     public void overrideWorldSound(CallbackInfo callback) {
-        this.world.playLevelEvent( 1023, new BlockPos(this), 0 );
+        this.world.syncGlobalEvent(1023, this.getBlockPos(), 0);
     }
     
-    @Override @Nullable
-    public UUID getEntityOwner() {
+    @Override
+    public @Nullable UUID getEntityOwner() {
         return this.chunkSpawnedInOwner;
     }
     

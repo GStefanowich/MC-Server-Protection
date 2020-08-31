@@ -51,23 +51,23 @@ public final class ConfigArray<T extends Object> extends ConfigBase<T> {
     }
     
     @Override
-    public JsonElement getElement() {
+    JsonElement getElement() {
         return new GsonBuilder()
             .disableHtmlEscaping().create().toJsonTree(this.value);
     }
-    public List<T> get() {
+    List<T> get() {
         return this.value;
     }
-    public T get(int index) {
+    T get(int index) {
         return this.value.get(index);
     }
-    public T getRandom() {
+    T getRandom() {
         if (this.value.size() == 1)
             return this.get(0);
         return this.get(ThreadLocalRandom.current().nextInt(this.value.size()));
     }
     @Override
-    public void set(JsonElement value) {
+    void set(JsonElement value) {
         // Reset values
         this.value.clear();
         

@@ -25,13 +25,13 @@
 
 package net.TheElm.project.interfaces;
 
-import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
 
 public interface ServerTranslatable {
     
-    @NotNull Text translate(Locale player);
+    @NotNull MutableText translate(Locale player);
     
 }

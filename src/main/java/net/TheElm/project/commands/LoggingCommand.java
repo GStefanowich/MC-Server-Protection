@@ -33,11 +33,12 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.SQLFunction;
 import net.TheElm.project.protections.logging.EventLogger.BlockAction;
 import net.TheElm.project.utilities.CommandUtilities;
 import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.minecraft.command.arguments.BlockPosArgumentType;
 import net.minecraft.command.arguments.DimensionArgumentType;
@@ -46,15 +47,17 @@ import net.minecraft.command.arguments.ItemStackArgumentType;
 import net.minecraft.item.Item;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.HoverEvent.Action;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.ResultSet;
@@ -62,18 +65,16 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.UUID;
-import java.util.function.Consumer;
+import java.util.function.UnaryOperator;
 
 public final class LoggingCommand {
     
     private LoggingCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        SewingMachineConfig CONFIG = SewingMachineConfig.INSTANCE;
-        
-        if (( CONFIG.LOG_CHUNKS_CLAIMED.get() || CONFIG.LOG_CHUNKS_UNCLAIMED.get() ) && ( CONFIG.LOG_BLOCKS_BREAKING.get() || CONFIG.LOG_BLOCKS_PLACING.get() )) {
+        if (( SewConfig.any(SewConfig.LOG_CHUNKS_CLAIMED, SewConfig.LOG_CHUNKS_UNCLAIMED) ) && ( SewConfig.any(SewConfig.LOG_BLOCKS_BREAKING, SewConfig.LOG_BLOCKS_PLACING) )) {
             dispatcher.register(CommandManager.literal("blocklog")
-                .requires((source -> source.hasPermissionLevel(CONFIG.LOG_VIEW_OP_LEVEL.get())))
+                .requires((source -> source.hasPermissionLevel(SewConfig.get(SewConfig.LOG_VIEW_OP_LEVEL))))
                 .then(CommandManager.literal("pos")
                     .then(CommandManager.argument("dimension", DimensionArgumentType.dimension())
                         .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
@@ -124,11 +125,11 @@ public final class LoggingCommand {
         );
     }
     private static int getBlockHistorySize(CommandContext<ServerCommandSource> context, int limit) throws CommandSyntaxException {
-        DimensionType dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
+        ServerWorld world = DimensionArgumentType.getDimensionArgument(context, "dimension");
         BlockPos blockPos = BlockPosArgumentType.getBlockPos(context, "pos");
         
         try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `block`, `updatedEvent`, `updatedBy`, `updatedAt` FROM `logging_Blocks` WHERE `blockWorld` = ? AND `blockX` = ? AND `blockY` = ? AND `blockZ` = ? ORDER BY `updatedAt` DESC" + ( limit > 0 ? " LIMIT ?" : "" ) + ";")
-            .addPrepared(dimension.getRawId())
+            .addPrepared(NbtUtils.worldToTag(world))
             .addPrepared(blockPos.getX())
             .addPrepared(blockPos.getY())
             .addPrepared(blockPos.getZ())) {
@@ -137,12 +138,12 @@ public final class LoggingCommand {
             if (limit > 0) stmt.addPrepared( limit );
             
             // Create the main text object
-            Text heading = new LiteralText("Block History for ")
+            MutableText heading = new LiteralText("Block History for ")
                 .formatted(Formatting.YELLOW)
                 .append(MessageUtils.blockPosToTextComponent( blockPos ));
             
             // Append our results
-            Text text = executeSQLStatement( heading, stmt, (results -> {
+            Text text = executeSQLStatement(heading, stmt, (results -> {
                 // Get the row statement information
                 String blockTranslation = results.getString("block");
                 boolean add = (BlockAction.valueOf(results.getString("updatedEvent")) == BlockAction.PLACE);
@@ -182,13 +183,13 @@ public final class LoggingCommand {
         );
     }
     private static int searchForUsedItems(CommandContext<ServerCommandSource> context, int limit) throws CommandSyntaxException {
-        DimensionType dimension = DimensionArgumentType.getDimensionArgument(context, "dimension");
+        ServerWorld world = DimensionArgumentType.getDimensionArgument(context, "dimension");
         BlockPos centerPos = BlockPosArgumentType.getBlockPos(context, "pos");
         Item item = ItemStackArgumentType.getItemStackArgument(context, "item").getItem();
         String blockTranslation = item.getTranslationKey();
         
         try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `blockX`, `blockY`, `blockZ`, `updatedEvent`, `updatedBy`, `updatedAt` FROM `logging_Blocks` WHERE `blockWorld` = ? AND `block` = ? AND `blockX` >= ? AND `blockX` <= ? AND `blockZ` >= ? AND `blockZ` <= ? ORDER BY `updatedAt` DESC" + ( limit > 0 ? " LIMIT ?" : "" ) + ";")
-            .addPrepared(dimension.getRawId())
+            .addPrepared(NbtUtils.worldToTag(world))
             .addPrepared(blockTranslation)
             .addPrepared(centerPos.getX() - 8)
             .addPrepared(centerPos.getX() + 8)
@@ -199,16 +200,16 @@ public final class LoggingCommand {
             if (limit > 0) stmt.addPrepared( limit );
             
             // Create the output heading
-            Text heading = new LiteralText("Block History of ")
+            MutableText heading = new LiteralText("Block History of ")
                 .formatted(Formatting.YELLOW)
                 .append(new TranslatableText( blockTranslation ));
             
             // Append our results
-            Text text = executeSQLStatement( heading, stmt, (results -> {
+            Text text = executeSQLStatement(heading, stmt, (results -> {
                 // Get the row statement information
                 boolean add = (BlockAction.valueOf(results.getString("updatedEvent")) == BlockAction.PLACE);
                 UUID updatedBy = UUID.fromString(results.getString("updatedBy"));
-                Consumer<Style> hoverEvent = (styler) -> styler.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new LiteralText(updatedBy.toString())));
+                UnaryOperator<Style> hoverEvent = (styler) -> styler.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new LiteralText(updatedBy.toString())));
                 
                 // Add the row text to the main text
                 return new LiteralText("\n" + results.getRow() + ". ")
@@ -256,15 +257,15 @@ public final class LoggingCommand {
             if (limit > 0) stmt.addPrepared( limit );
             
             // Create the output heading
-            Text heading = new LiteralText("Block History for " + player.getName())
+            MutableText heading = new LiteralText("Block History for " + player.getName())
                 .formatted(Formatting.YELLOW);
             
             // Append our results
-            Text text = executeSQLStatement( heading, stmt, (results -> {
+            Text text = executeSQLStatement(heading, stmt, (results) -> {
                 // Get the row statement information
                 String blockTranslation = results.getString("block");
                 boolean add = (BlockAction.valueOf(results.getString("updatedEvent")) == BlockAction.PLACE);
-                Consumer<Style> hoverEvent = (styler) -> styler.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new LiteralText(player.getId().toString())));
+                UnaryOperator<Style> hoverEvent = (style) -> style.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new LiteralText(player.getId().toString())));
                 
                 // Add the row text to the main text
                 return new LiteralText("\n" + results.getRow() + ". ")
@@ -272,10 +273,10 @@ public final class LoggingCommand {
                     .append(" by ")
                     .append(new LiteralText(player.getName()).formatted(Formatting.AQUA).styled(hoverEvent))
                     .append("\n     at ")
-                    .append(MessageUtils.blockPosToTextComponent(new BlockPos(results.getInt("blockX"), results.getInt("blockY"), results.getInt("blockZ")), results.getInt("blockWorld")).formatted(Formatting.GRAY))
+                    .append(MessageUtils.blockPosToTextComponent(new BlockPos(results.getInt("blockX"), results.getInt("blockY"), results.getInt("blockZ")), new Identifier(results.getString("blockWorld"))).formatted(Formatting.GRAY))
                     .append("\n     at ")
                     .append(new LiteralText(results.getTimestamp("updatedAt").toString()).formatted(Formatting.GRAY));
-            }));
+            });
             
             // Send the text to the player
             context.getSource().sendFeedback(text, false);
@@ -289,7 +290,7 @@ public final class LoggingCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static Text executeSQLStatement(@NotNull Text text, @NotNull MySQLStatement stmt, @NotNull SQLFunction<ResultSet, Text> function) throws SQLException {
+    private static Text executeSQLStatement(@NotNull MutableText text, @NotNull MySQLStatement stmt, @NotNull SQLFunction<ResultSet, Text> function) throws SQLException {
         ArrayList<Text> list = new ArrayList<>();
         
         // Execute the statement

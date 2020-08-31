@@ -27,7 +27,7 @@ package net.TheElm.project.mixins.Entities;
 
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.projectile.ArrowEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
+import net.minecraft.entity.projectile.PersistentProjectileEntity;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
@@ -38,16 +38,16 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ArrowEntity.class)
-public abstract class ArrowEffect extends ProjectileEntity {
+public abstract class ArrowEffect extends PersistentProjectileEntity {
     
-    protected ArrowEffect(EntityType<? extends ProjectileEntity> entityType, World world) {
+    protected ArrowEffect(EntityType<? extends PersistentProjectileEntity> entityType, World world) {
         super(entityType, world);
     }
     
     @Inject(at = @At("HEAD"), method = "tick")
     public void onTick(CallbackInfo callback) {
         Vec3d velocity = this.getVelocity();
-        if (this.isOnFire() && (!this.inGround) && (this.world instanceof ServerWorld))
+        if (this.isOnFire() && (!this.onGround) && (this.world instanceof ServerWorld))
             ((ServerWorld)this.world).spawnParticles(
                 ParticleTypes.FLAME,
                 this.getX(),

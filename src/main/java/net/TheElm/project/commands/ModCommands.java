@@ -29,7 +29,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.interfaces.PlayerPermissions;
 import net.TheElm.project.utilities.RankUtils;
@@ -55,7 +55,7 @@ public final class ModCommands {
                     .executes(ModCommands::ReloadConfig)
                 )
                 .then(CommandManager.literal("permissions")
-                    .requires((source) -> SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get())
+                    .requires((source) -> SewConfig.get(SewConfig.HANDLE_PERMISSIONS))
                     .executes(ModCommands::ReloadPermissions)
                 )
             )
@@ -68,7 +68,7 @@ public final class ModCommands {
         ServerCommandSource source = context.getSource();
         try {
             // Reload the config
-            SewingMachineConfig.INSTANCE.reload();
+            SewConfig.reload();
             source.sendFeedback(new LiteralText("Config has been reloaded.").formatted(Formatting.GREEN), true);
             
             // Re-send the command-tree to all players

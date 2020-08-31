@@ -31,19 +31,22 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.ConfigOption;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
+import net.TheElm.project.utilities.ColorUtils;
 import net.TheElm.project.utilities.CommandUtilities;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.GameProfileArgumentType;
+import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
@@ -52,6 +55,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,13 +64,10 @@ import java.util.Collection;
 
 public final class MoneyCommand {
     
-    private static final DynamicCommandExceptionType NOT_ENOUGH_MONEY = new DynamicCommandExceptionType((source) ->
-        new LiteralText("You do not have enough money.")
-    );
-    private static final DynamicCommandExceptionType PLAYER_NOT_FOUND = new DynamicCommandExceptionType((source) ->
-        new LiteralText("Could not find data on that player (Maybe they haven't joined the server?).")
-    );
-    private static final float DEFAULT_STATE = SewingMachineConfig.INSTANCE.STARTING_MONEY.get();
+    private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = TranslatableServerSide.exception("player.money.poor");
+    private static final ExceptionTranslatableServerSide PLAYER_NOT_FOUND = TranslatableServerSide.exception("player.not_found");
+    
+    private static final ConfigOption<Integer> DEFAULT_STATE = SewConfig.STARTING_MONEY;
     
     private MoneyCommand() {}
     
@@ -75,7 +76,7 @@ public final class MoneyCommand {
          * Player Pay
          */
         LiteralCommandNode<ServerCommandSource> pay = dispatcher.register( CommandManager.literal( "pay" )
-            .requires((source) -> SewingMachineConfig.INSTANCE.DO_MONEY.get())
+            .requires((source) -> SewConfig.get(SewConfig.DO_MONEY))
             .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
                 .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
                     .suggests( CommandUtilities::getAllPlayerNames )
@@ -89,7 +90,7 @@ public final class MoneyCommand {
          * Player Money Management
          */
         dispatcher.register( CommandManager.literal("money" )
-            .requires((source) -> SewingMachineConfig.INSTANCE.DO_MONEY.get())
+            .requires((source) -> SewConfig.get(SewConfig.DO_MONEY))
             // Admin GIVE money (Adds money)
             .then( CommandManager.literal("give" )
                 // If player is OP
@@ -180,7 +181,7 @@ public final class MoneyCommand {
                 MoneyCommand.tellPlayersTransaction(null, target, amount);
             }
         } catch (NbtNotFoundException e) {
-            throw PLAYER_NOT_FOUND.create( op );
+            throw PLAYER_NOT_FOUND.create(op);
             
         }
         
@@ -267,16 +268,18 @@ public final class MoneyCommand {
         ServerCommandSource op = context.getSource();
         
         try {
-            MoneyUtils.setPlayerMoney( target.getId(), SewingMachineConfig.INSTANCE.STARTING_MONEY.get() );
+            float startingMoney = SewConfig.get(DEFAULT_STATE);
+            
+            MoneyUtils.setPlayerMoney( target.getId(), SewConfig.get(SewConfig.STARTING_MONEY) );
             op.sendFeedback( new LiteralText( "Set money for " ).formatted(Formatting.YELLOW)
                 .append( new LiteralText( target.getName() ).formatted(Formatting.DARK_PURPLE) )
                 .append( " to " )
-                .append( new LiteralText( "$" + NumberFormat.getInstance().format( DEFAULT_STATE ) ).formatted( DEFAULT_STATE >= 0 ? Formatting.GREEN : Formatting.RED ) )
+                .append( new LiteralText( "$" + NumberFormat.getInstance().format(startingMoney)).formatted( startingMoney >= 0 ? Formatting.GREEN : Formatting.RED ) )
                 .append( "." ),
                 true
             );
         } catch (NbtNotFoundException e) {
-            throw PLAYER_NOT_FOUND.create( op );
+            throw PLAYER_NOT_FOUND.create(op);
         }
         
         return Command.SINGLE_SUCCESS;
@@ -309,10 +312,10 @@ public final class MoneyCommand {
                 MoneyCommand.tellPlayersTransaction( player, target, amount );
             }
         } catch ( NbtNotFoundException e ) {
-            throw PLAYER_NOT_FOUND.create( player );
+            throw PLAYER_NOT_FOUND.create(player);
             
         } catch ( NotEnoughMoneyException e ) {
-            throw NOT_ENOUGH_MONEY.create( player );
+            throw NOT_ENOUGH_MONEY.create(player);
             
         } finally {
             // Refund
@@ -341,15 +344,17 @@ public final class MoneyCommand {
             throw PLAYER_NOT_FOUND.create( player );
         } else {
             // Send the pay request
-            player.sendMessage(new LiteralText("Sent request to ").append(target.getDisplayName().formatted(Formatting.AQUA)).formatted(Formatting.YELLOW));
+            player.sendSystemMessage(new LiteralText("Sent request to ").append(ColorUtils.format(target.getDisplayName(), Formatting.AQUA)).formatted(Formatting.YELLOW), Util.NIL_UUID);
             target.sendMessage(
                 new LiteralText("").formatted(Formatting.YELLOW)
-                    .append(player.getDisplayName().formatted(Formatting.AQUA))
+                    .append(ColorUtils.format(player.getDisplayName(), Formatting.AQUA))
                     .append(" is requesting ")
                     .append(new LiteralText("$" + NumberFormat.getInstance().format(amount)).formatted(Formatting.AQUA))
                     .append(" from you. ")
-                    .append(new LiteralText("Click Here").formatted(Formatting.BLUE, Formatting.BOLD).styled((styler) -> styler.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pay " + amount + " " + player.getName().asString()))))
-                    .append(" to pay.")
+                    .append(new LiteralText("Click Here").formatted(Formatting.BLUE, Formatting.BOLD).styled((style) -> style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pay " + amount + " " + player.getName().asString()))))
+                    .append(" to pay."),
+                MessageType.CHAT,
+                player.getUuid()
             );
         }
         
@@ -365,9 +370,9 @@ public final class MoneyCommand {
         try {
             
             int playerHas = MoneyUtils.getPlayerMoney( player.getUuid() );
-            player.sendMessage(TranslatableServerSide.text( player, "player.money",
+            player.sendSystemMessage(TranslatableServerSide.text( player, "player.money",
                 playerHas
-            ));
+            ), Util.NIL_UUID);
             
         } catch (NbtNotFoundException e) {
             e.printStackTrace();
@@ -397,7 +402,7 @@ public final class MoneyCommand {
                     new LiteralText("You received"),
                     new LiteralText(" $" + NumberFormat.getInstance().format(Math.abs( amount ))).formatted(Formatting.AQUA, Formatting.BOLD),
                     new LiteralText(" from "),
-                    payer.getName().formatted(Formatting.DARK_PURPLE)
+                    ColorUtils.format(payer.getName(), Formatting.DARK_PURPLE)
                 );
             }
         }

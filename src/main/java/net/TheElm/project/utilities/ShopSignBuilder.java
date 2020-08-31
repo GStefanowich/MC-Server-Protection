@@ -26,14 +26,17 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.exceptions.ShopBuilderException;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.network.MessageType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -162,7 +165,11 @@ public final class ShopSignBuilder {
             if (this.signType.formatSign(this, creator))
                 return;
         } catch (ShopBuilderException e) {
-            creator.sendMessage(e.getErrorMessage());
+            creator.sendMessage(
+                e.getErrorMessage(),
+                MessageType.SYSTEM,
+                ServerCore.spawnID
+            );
         }
         this.breakSign();
     }
@@ -219,7 +226,7 @@ public final class ShopSignBuilder {
             return false;
         }
     }
-    public Text textParseOwner(Text text, ServerPlayerEntity player) {
+    public MutableText textParseOwner(Text text, ServerPlayerEntity player) {
         String str = text.getString();
         if ( "server".equalsIgnoreCase( str ) && player.isCreative() ) {
             // Set the owner
@@ -228,7 +235,7 @@ public final class ShopSignBuilder {
         } else {
             // Set the owner
             this.ownerUUID = player.getUuid();
-            return player.getName().formatted(Formatting.DARK_GRAY);
+            return ((MutableText)player.getName()).formatted(Formatting.DARK_GRAY);
         }
     }
     
@@ -251,7 +258,7 @@ public final class ShopSignBuilder {
         return builder;
     }
     private static String createIdentifier(@NotNull final World world, @NotNull final BlockPos blockPos) {
-        return world.getDimension().getType().getRawId() + ":" + blockPos.getX() + "," + blockPos.getZ() + "," + blockPos.getY();
+        return IdUtils.get(world) + ":" + MessageUtils.blockPosToString(blockPos);
     }
     
 }

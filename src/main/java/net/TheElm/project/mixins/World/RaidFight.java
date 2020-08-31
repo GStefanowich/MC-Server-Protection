@@ -1,10 +1,10 @@
 package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.utilities.ChunkUtils;
-import net.minecraft.entity.raid.Raid;
-import net.minecraft.entity.raid.RaidManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.village.raid.Raid;
+import net.minecraft.village.raid.RaidManager;
 import net.minecraft.world.PersistentState;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

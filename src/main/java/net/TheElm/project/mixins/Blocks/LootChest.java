@@ -1,5 +1,6 @@
 package net.TheElm.project.mixins.Blocks;
 
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.interfaces.BossLootableContainer;
 import net.TheElm.project.objects.LootInventory;
 import net.TheElm.project.utilities.BossLootRewards;
@@ -7,8 +8,10 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.ShulkerBoxBlock;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.container.SimpleNamedContainerFactory;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.MessageType;
+import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
@@ -38,13 +41,13 @@ public abstract class LootChest extends BlockWithEntity {
                 if (identifier != null) {
                     BossLootRewards rewards = BossLootRewards.get(identifier);
                     if (rewards == null)
-                        player.sendMessage(new LiteralText("Couldn't find any loot for that boss.").formatted(Formatting.RED));
+                        ((ServerPlayerEntity)player).sendMessage(new LiteralText("Couldn't find any loot for that boss.").formatted(Formatting.RED), MessageType.GAME_INFO, ServerCore.spawnID);
                     else {
                         LootInventory inventory = rewards.getPlayerLoot(player.getUuid());
-                        if (inventory.isInvEmpty())
-                            player.sendMessage(new LiteralText("You don't have any loot from the ").formatted(Formatting.RED).append(rewards.getEntityName()).append("."));
+                        if (inventory.isEmpty())
+                            ((ServerPlayerEntity)player).sendMessage(new LiteralText("You don't have any loot from the ").formatted(Formatting.RED).append(rewards.getEntityName()).append("."), MessageType.GAME_INFO, ServerCore.spawnID);
                         else {
-                            player.openContainer(new SimpleNamedContainerFactory((i, playerInventory, playerEntity) ->
+                            player.openHandledScreen(new SimpleNamedScreenHandlerFactory((i, playerInventory, playerEntity) ->
                                 inventory.createContainer(i, playerInventory),
                             rewards.getContainerName()));
                         }

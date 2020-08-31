@@ -26,7 +26,7 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.PlayerCorpse;
 import net.TheElm.project.objects.PlayerBackpack;
@@ -49,6 +49,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.EulerAngle;
@@ -65,10 +66,10 @@ public final class DeathChestUtils {
     public static @Nullable BlockPos getChestPosition(World world, BlockPos deathPoint) {
         BlockPos out = null;
         
-        int tmp = SewingMachineConfig.INSTANCE.MAX_DEATH_SCAN.get();
+        int tmp = SewConfig.get(SewConfig.MAX_DEATH_SCAN);
         int maxI = 1 + ((tmp * tmp) * 4) + (tmp * 4);
         
-        int upper = Collections.min(Arrays.asList( 256, deathPoint.getY() + SewingMachineConfig.INSTANCE.MAX_DEATH_ELEVATION.get() ));
+        int upper = Collections.min(Arrays.asList( 256, deathPoint.getY() + SewConfig.get(SewConfig.MAX_DEATH_ELEVATION) ));
         for ( int y = deathPoint.getY(); y < upper; y++ ) {
             int x = 0;
             int z = 0;
@@ -191,8 +192,8 @@ public final class DeathChestUtils {
         ListTag backpackTag = new ListTag();
         
         // Iterate inventory items
-        for (int i = 0; i < inventory.getInvSize(); i++) {
-            ItemStack stack = inventory.removeInvStack(i);
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.removeStack(i);
             if (stack.getItem().equals(Items.AIR))
                 continue;
             inventoryTag.add(stack.toTag(new CompoundTag()));
@@ -200,8 +201,8 @@ public final class DeathChestUtils {
         
         // Iterate backpack items
         if (backpack != null) {
-            for (int i = 0; i < backpack.getInvSize(); i++) {
-                ItemStack stack = backpack.removeInvStack(i);
+            for (int i = 0; i < backpack.size(); i++) {
+                ItemStack stack = backpack.removeStack(i);
                 if (stack.getItem().equals(Items.AIR))
                     continue;
                 backpackTag.add(stack.toTag(new CompoundTag()));
@@ -216,9 +217,8 @@ public final class DeathChestUtils {
         );
         
         // Print the death chest coordinates
-        if (SewingMachineConfig.INSTANCE.PRINT_DEATH_CHEST_LOC.get()) {
-            player.sendMessage(TranslatableServerSide.text(player, "player.death_chest.location", new LiteralText(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)));
-        }
+        if (SewConfig.get(SewConfig.PRINT_DEATH_CHEST_LOC))
+            player.sendSystemMessage(TranslatableServerSide.text(player, "player.death_chest.location", new LiteralText(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)), Util.NIL_UUID);
         CoreMod.logInfo( "Death chest for " + playerName + " spawned at " + MessageUtils.blockPosToString( chestPos.offset(Direction.UP, 1) ));
         
         // Add the entity to the world

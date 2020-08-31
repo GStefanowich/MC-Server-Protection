@@ -25,12 +25,14 @@
 
 package net.TheElm.project.mixins.Entities;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.ServerCore;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.VillagerTownie;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.ColorUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.Entity;
@@ -42,6 +44,7 @@ import net.minecraft.entity.passive.PassiveEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.MessageType;
 import net.minecraft.stat.Stats;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
@@ -127,7 +130,7 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
         VillagerEntity child = callback.getReturnValue();
         
         // Give the baby a name
-        if (SewingMachineConfig.INSTANCE.RANDOM_NAME_VILLAGERS.get()) {
+        if (SewConfig.get(SewConfig.RANDOM_NAME_VILLAGERS)) {
             Text name = EntityUtils.Naming.create(child.getRandom(), child.getVillagerData(), 4);
             if (name != null) {
                 /*
@@ -139,7 +142,7 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
         }
         
         // Add the baby to the Town
-        if (SewingMachineConfig.INSTANCE.TOWN_VILLAGERS_INCLUDE.get()) {
+        if (SewConfig.get(SewConfig.TOWN_VILLAGERS_INCLUDE)) {
             BlockPos pos = spouse.getBlockPos();
             ClaimantTown town = ((IClaimedChunk)this.world.getChunk(pos)).getTown();
             if ((town != null) && ((VillagerTownie)child).setTown(town)) {
@@ -148,13 +151,13 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
                      sName = null,
                      bName = null;
                 
-                if (SewingMachineConfig.INSTANCE.RANDOM_NAME_VILLAGERS.get()) {
+                if (SewConfig.get(SewConfig.RANDOM_NAME_VILLAGERS)) {
                     if (this.hasCustomName() && spouse.hasCustomName()) {
-                        pName = this.getDisplayName().formatted(Formatting.WHITE);
-                        sName = spouse.getDisplayName().formatted(Formatting.WHITE);
+                        pName = ColorUtils.format(this.getDisplayName(), Formatting.WHITE);
+                        sName = ColorUtils.format(spouse.getDisplayName(), Formatting.WHITE);
                     }
                     if (child.hasCustomName())
-                        bName = child.getDisplayName().formatted(Formatting.WHITE);
+                        bName = ColorUtils.format(child.getDisplayName(), Formatting.WHITE);
                 }
                 
                 town.send(((pName != null && sName != null && bName != null) ?
@@ -165,7 +168,7 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
                         new LiteralText("A new villager, ").append(bName).append(", has been welcomed into your town.")
                         : new LiteralText("A new villager has been welcomed into your town.")
                     )
-                ).formatted(Formatting.GRAY, Formatting.ITALIC));
+                ).formatted(Formatting.GRAY, Formatting.ITALIC), MessageType.GAME_INFO, ServerCore.spawnID);
             }
         }
     }
@@ -187,7 +190,7 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
     }
     @Inject(at = @At("RETURN"), method = "readCustomDataFromTag")
     public void afterReadingData(CompoundTag tag, CallbackInfo callback) {
-        if ((!this.hasCustomName()) && SewingMachineConfig.INSTANCE.RANDOM_NAME_VILLAGERS.get()) {
+        if ((!this.hasCustomName()) && SewConfig.get(SewConfig.RANDOM_NAME_VILLAGERS)) {
             Text name = EntityUtils.Naming.create(this.random, this.getVillagerData(), 4);
             if (name != null) {
                 /*

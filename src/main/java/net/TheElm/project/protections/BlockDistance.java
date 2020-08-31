@@ -27,7 +27,7 @@ package net.TheElm.project.protections;
 
 import net.TheElm.project.utilities.MessageUtils;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import org.jetbrains.annotations.NotNull;
@@ -67,12 +67,12 @@ public final class BlockDistance {
     }
     
     // Get the dimensions
-    public Text displayDimensions() {
+    public MutableText displayDimensions() {
         return MessageUtils.dimensionToTextComponent("x", Math.max( this.distEastWest, this.distNorthSouth ), Math.min( this.distEastWest, this.distNorthSouth ), this.distUpDown);
     }
     
     // Volume
-    public Text formattedVolume() {
+    public MutableText formattedVolume() {
         return new LiteralText(NumberFormat.getInstance().format(this.volume));
     }
     public int getVolume() {

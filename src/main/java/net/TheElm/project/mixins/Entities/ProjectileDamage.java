@@ -27,39 +27,36 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.interfaces.EntityOwner;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.passive.TameableEntity;
-import net.minecraft.entity.projectile.ProjectileEntity;
+import net.minecraft.entity.projectile.PersistentProjectileEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(ProjectileEntity.class)
-public abstract class ProjectileDamage extends Entity {
-    
-    @Shadow @Nullable
-    public abstract Entity getOwner();
+@Mixin(PersistentProjectileEntity.class)
+public abstract class ProjectileDamage extends Entity implements EntityOwner {
     
     @Shadow
     public abstract byte getPierceLevel();
     
     @Shadow private SoundEvent sound;
     
-    protected ProjectileDamage(EntityType<? extends ProjectileEntity> entityType, World world) {
-        super(entityType, world);
+    public ProjectileDamage(EntityType<?> type, World world) {
+        super(type, world);
     }
     
     @Inject(at = @At("HEAD"), method = "onEntityHit", cancellable = true)

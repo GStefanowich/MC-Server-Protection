@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.utilities.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
@@ -63,7 +63,7 @@ public abstract class MobSpawners extends BlockWithEntity {
     
     @Override
     public void afterBreak(World world, PlayerEntity player, BlockPos blockPos, BlockState blockState, @Nullable BlockEntity blockEntity, ItemStack itemStack) {
-        if (!SewingMachineConfig.INSTANCE.SILK_TOUCH_SPAWNERS.get()) {
+        if (!SewConfig.get(SewConfig.SILK_TOUCH_SPAWNERS)) {
             super.afterBreak(world, player, blockPos, blockState, blockEntity, itemStack);
         } else {
             player.incrementStat(Stats.MINED.getOrCreateStat(this));
@@ -85,7 +85,7 @@ public abstract class MobSpawners extends BlockWithEntity {
                 
                 boolean doDrop = false;
                 
-                int toolDamage = SewingMachineConfig.INSTANCE.SPAWNER_PICKUP_DAMAGE.get();
+                int toolDamage = SewConfig.get(SewConfig.SPAWNER_PICKUP_DAMAGE);
                 if (handItem.isDamageable() && (doDrop = (EnchantmentHelper.getLevel(Enchantments.SILK_TOUCH, handItem) > 0))) {
                     if (!world.isClient()) {
                         // Damage the pickaxe
@@ -158,11 +158,11 @@ public abstract class MobSpawners extends BlockWithEntity {
                 }
                 
                 // Update the tag
-                spawnerTag.getCompound( "SpawnData" ).putString( "id", mob.get(0).asString());
-                spawnerTag.put( "SpawnPotentials", spawnPotentials);
+                spawnerTag.getCompound("SpawnData").putString( "id", mob.get(0).asString());
+                spawnerTag.put("SpawnPotentials", spawnPotentials);
                 
                 // Save to block
-                blockEntity.fromTag( spawnerTag );
+                blockEntity.fromTag(blockState, spawnerTag);
             }
         }
     }

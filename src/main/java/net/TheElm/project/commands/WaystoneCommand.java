@@ -51,13 +51,12 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.Collection;
 
 import static net.TheElm.project.commands.TeleportsCommand.TARGET_NO_WARP;
-
-//import net.TheElm.project.enums.OpLevels;
 
 public class WaystoneCommand {
     
@@ -103,7 +102,7 @@ public class WaystoneCommand {
         ((PlayerData) target).setWarpDimension( source.getWorld() );
         
         source.sendFeedback(new LiteralText("Set ")
-            .append(target.getDisplayName().deepCopy())
+            .append(target.getDisplayName().copy())
             .append("'s waystone to ")
             .append(MessageUtils.blockPosToTextComponent(blockPos))
             .append("."),
@@ -129,7 +128,7 @@ public class WaystoneCommand {
         
         // Send feedback to the source
         source.sendFeedback(new LiteralText("Reset the waystone of ")
-            .append(target.getDisplayName().deepCopy())
+            .append(target.getDisplayName().copy())
             .append("."), true);
         
         // Reset the waystone
@@ -147,9 +146,9 @@ public class WaystoneCommand {
         // Iterate players
         for (ServerPlayerEntity player : players) {
             if (!WarpUtils.hasWarp(player)) {
-                if (source.getEntity() == null) {
-                    player.sendMessage(new LiteralText("You do not have a waystone.").formatted(Formatting.RED));
-                } else if (players.size() == 1)
+                if (source.getEntity() == null)
+                    player.sendSystemMessage(new LiteralText("You do not have a waystone.").formatted(Formatting.RED), Util.NIL_UUID);
+                else if (players.size() == 1)
                     source.sendError(new LiteralText("That player does not have a waystone.").formatted(Formatting.RED));
                 continue;
             }

@@ -30,26 +30,29 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.BlockDistance;
 import net.TheElm.project.utilities.BlockUtils;
 import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Util;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 
 public final class RulerCommand {
     
-    private static final ExceptionTranslatableServerSide BLOCK_NOT_HIT = new ExceptionTranslatableServerSide("ruler.no_block");
+    private static final ExceptionTranslatableServerSide BLOCK_NOT_HIT = TranslatableServerSide.exception("ruler.no_block");
     
     private RulerCommand() {}
     
@@ -83,9 +86,9 @@ public final class RulerCommand {
             playerData.setRulerA( newPos );
             playerData.setRulerB( null );
             
-            player.sendMessage(new LiteralText("First position set to ").formatted(Formatting.YELLOW)
+            player.sendSystemMessage(new LiteralText("First position set to ").formatted(Formatting.YELLOW)
                 .append(MessageUtils.blockPosToTextComponent( newPos ))
-                .append(", run command again at a second position."));
+                .append(", run command again at a second position."), Util.NIL_UUID);
             
         } else {
             // Update ruler position
@@ -98,7 +101,7 @@ public final class RulerCommand {
              */
             BlockDistance region = new BlockDistance( firstPos, newPos );
             
-            Text distance = new LiteralText("Distance: ").formatted(Formatting.YELLOW)
+            MutableText distance = new LiteralText("Distance: ").formatted(Formatting.YELLOW)
                 .append(region.displayDimensions());
             
             // East-West
@@ -122,7 +125,7 @@ public final class RulerCommand {
             if (region.hasDistinctVolume())
                 distance.append("\n").append(region.formattedVolume().formatted(Formatting.AQUA)).append(" block volume");
             
-            player.sendMessage( distance );
+            player.sendSystemMessage(distance, ServerCore.spawnID);
         }
         
         return Command.SINGLE_SUCCESS;

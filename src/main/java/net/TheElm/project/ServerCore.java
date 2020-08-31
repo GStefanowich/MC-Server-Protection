@@ -47,7 +47,7 @@ import net.TheElm.project.commands.TeleportsCommand;
 import net.TheElm.project.commands.WaystoneCommand;
 import net.TheElm.project.commands.WhereCommand;
 import net.TheElm.project.config.ConfigOption;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.protections.events.BlockBreak;
 import net.TheElm.project.protections.events.BlockInteraction;
 import net.TheElm.project.protections.events.EntityAttack;
@@ -55,14 +55,14 @@ import net.TheElm.project.protections.events.ItemPlace;
 import net.TheElm.project.protections.events.ItemUse;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.fabricmc.api.DedicatedServerModInitializer;
-import net.fabricmc.fabric.api.registry.CommandRegistry;
+import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.level.LevelProperties;
+import net.minecraft.world.WorldProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -79,11 +79,34 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     public void onInitializeServer() {
         super.initialize();
         
-        SewingMachineConfig CONFIG = SewingMachineConfig.INSTANCE;
-        CommandRegistry COMMANDS = CommandRegistry.INSTANCE;
+        CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
+            CoreMod.logInfo( "Registering our commands." );
+            AdminCommands.register(dispatcher);
+            BackpackCommand.register(dispatcher);
+            ChatroomCommands.register(dispatcher);
+            ClaimCommand.register(dispatcher);
+            GameModesCommand.register(dispatcher);
+            HoldingCommand.register(dispatcher);
+            LoggingCommand.register(dispatcher);
+            MiscCommands.register(dispatcher);
+            ModCommands.register(dispatcher);
+            ModsCommand.register(dispatcher);
+            MoneyCommand.register(dispatcher);
+            NickNameCommand.register(dispatcher);
+            PermissionCommand.register(dispatcher);
+            PlayerSpawnCommand.register(dispatcher);
+            RideCommand.register(dispatcher);
+            RulerCommand.register(dispatcher);
+            SpawnerCommand.register(dispatcher);
+            TeleportsCommand.register(dispatcher);
+            WaystoneCommand.register(dispatcher);
+            WhereCommand.register(dispatcher);
+            
+            if ( CoreMod.isDebugging() )
+                TeleportEffectCommand.register(dispatcher);
+        });
         
-        CoreMod.logInfo( "Registering our commands." );
-        COMMANDS.register(false, AdminCommands::register);
+        /*COMMANDS.register(false, AdminCommands::register);
         COMMANDS.register(false, BackpackCommand::register);
         COMMANDS.register(false, ChatroomCommands::register);
         COMMANDS.register(false, ClaimCommand::register);
@@ -102,12 +125,12 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         COMMANDS.register(false, SpawnerCommand::register);
         COMMANDS.register(false, TeleportsCommand::register);
         COMMANDS.register(false, WaystoneCommand::register);
-        COMMANDS.register(false, WhereCommand::register);
+        COMMANDS.register(false, WhereCommand::register);*/
         
         // Debug commands
-        if ( CoreMod.isDebugging() ) {
+        /*if ( CoreMod.isDebugging() ) {
             COMMANDS.register(false, TeleportEffectCommand::register);
-        }
+        }*/
         
         // Create registry based listeners
         BlockBreak.init();
@@ -140,8 +163,8 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         
         // Update the mod version in config
         try {
-            CONFIG.CONFIG_VERSION.set(ConfigOption.convertToJSON(CoreMod.getModVersion()));
-            CONFIG.save();
+            SewConfig.set(SewConfig.CONFIG_VERSION, ConfigOption.convertToJSON(CoreMod.getModVersion()));
+            SewConfig.save();
             
             // Alert the mod presence
             CoreMod.logInfo( "Finished loading." );
@@ -161,18 +184,19 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     }
     
     public static @NotNull BlockPos getSpawn() {
-        return ServerCore.getSpawn(DimensionType.OVERWORLD);
+        return ServerCore.getSpawn(World.OVERWORLD);
     }
     public static @NotNull BlockPos getSpawn(World world) {
         // Get the forced position of TheEnd
-        if ((world instanceof ServerWorld) && (world.dimension.getType() == DimensionType.THE_END)) {
-            BlockPos pos = ((ServerWorld)world).getForcedSpawnPoint();
+        if ((world instanceof ServerWorld) && (world.getRegistryKey() == World.END)) {
+            BlockPos pos = ((ServerWorld)world).getSpawnPos();
             // Only if the forced position is set
             if (pos != null)
                 return pos;
         }
+        
         // Get the level properties
-        LevelProperties properties = world.getLevelProperties();
+        WorldProperties properties = world.getLevelProperties();
         
         // Reset the blockpos using the properties
         return new BlockPos(
@@ -181,11 +205,11 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             properties.getSpawnZ()
         );
     }
-    public static @NotNull BlockPos getSpawn(DimensionType dimension) {
-        return ServerCore.getSpawn(ServerCore.getWorld(dimension));
+    public static @NotNull BlockPos getSpawn(RegistryKey<World> world) {
+        return ServerCore.getSpawn(ServerCore.getWorld(world));
     }
-    public static @NotNull World getWorld(DimensionType dimension) {
-        return ServerCore.get().getWorld(dimension);
+    public static @NotNull World getWorld(RegistryKey<World> world) {
+        return ServerCore.get().getWorld(world);
     }
     
 }

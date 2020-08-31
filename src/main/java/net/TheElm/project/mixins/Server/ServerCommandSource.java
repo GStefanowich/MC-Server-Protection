@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.Server;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.CommandSource;
 import net.TheElm.project.permissions.PermissionNode;
 import net.TheElm.project.utilities.RankUtils;
@@ -43,7 +43,7 @@ public abstract class ServerCommandSource implements CommandSource, net.minecraf
     
     @Override
     public boolean hasPermission(PermissionNode permission) {
-        if (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get())
+        if (!SewConfig.get(SewConfig.HANDLE_PERMISSIONS))
             return false;
         Entity entity = this.getEntity();
         return ((entity instanceof ServerPlayerEntity) && RankUtils.hasPermission(((ServerPlayerEntity) entity), permission));

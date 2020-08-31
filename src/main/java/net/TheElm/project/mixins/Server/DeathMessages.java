@@ -1,6 +1,6 @@
 package net.TheElm.project.mixins.Server;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.IntUtils;
 import net.TheElm.project.utilities.MessageUtils;
@@ -8,6 +8,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageTracker;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.spongepowered.asm.mixin.Final;
@@ -29,16 +30,16 @@ public abstract class DeathMessages {
     public void onFetchMessage(CallbackInfoReturnable<Text> callback) {
         if (this.entity instanceof PlayerEntity) {
             long worldDay = IntUtils.timeToDays(this.entity.getEntityWorld());
-            long worldYear = worldDay / SewingMachineConfig.INSTANCE.CALENDAR_DAYS.get();
-            worldDay = worldDay - (worldYear * SewingMachineConfig.INSTANCE.CALENDAR_DAYS.get());
+            long worldYear = worldDay / SewConfig.get(SewConfig.CALENDAR_DAYS);
+            worldDay = worldDay - (worldYear * SewConfig.get(SewConfig.CALENDAR_DAYS));
     
             NumberFormat formatter = NumberFormat.getInstance();
-            String year = CasingUtils.Acronym(SewingMachineConfig.INSTANCE.CALENDAR_YEAR_EPOCH.get(), true);
+            String year = CasingUtils.Acronym(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH), true);
             
-            Text yearText = new LiteralText(formatter.format(worldYear));
+            MutableText yearText = new LiteralText(formatter.format(worldYear));
             if (!year.isEmpty()) {
                 yearText.append(" " + year);
-                yearText.styled(MessageUtils.simpleHoverText(SewingMachineConfig.INSTANCE.CALENDAR_YEAR_EPOCH.get()));
+                yearText.styled(MessageUtils.simpleHoverText(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH)));
             }
             
             Text death = callback.getReturnValue();

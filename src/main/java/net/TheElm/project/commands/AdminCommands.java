@@ -32,7 +32,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.ConfigOption;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
@@ -49,7 +49,7 @@ import java.util.stream.Stream;
 
 public final class AdminCommands {
     
-    private static final ExceptionTranslatableServerSide PLAYERS_NOT_FOUND_EXCEPTION = new ExceptionTranslatableServerSide("player.none_found");
+    private static final ExceptionTranslatableServerSide PLAYERS_NOT_FOUND_EXCEPTION = TranslatableServerSide.exception("player.none_found");
     
     private AdminCommands() {}
     
@@ -99,7 +99,7 @@ public final class AdminCommands {
             dispatcher.register(CommandManager.literal("dragon-players")
                 .then(CommandManager.argument("count", IntegerArgumentType.integer( 0 ))
                     .executes((context) -> {
-                        SewingMachineConfig.INSTANCE.DRAGON_PLAYERS.set(ConfigOption.convertToJSON(
+                        SewConfig.set(SewConfig.DRAGON_PLAYERS, ConfigOption.convertToJSON(
                             IntegerArgumentType.getInteger( context, "count" )
                         ));
                         return Command.SINGLE_SUCCESS;
@@ -189,7 +189,7 @@ public final class AdminCommands {
         boolean alive;
         if (alive = player.isAlive()) {
             // Heal the player
-            player.setHealth(player.getMaximumHealth());
+            player.setHealth(player.getMaxHealth());
             
             // Tell the player
             TranslatableServerSide.send(player, "player.abilities.healed_self");

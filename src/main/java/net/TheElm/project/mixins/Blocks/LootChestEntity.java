@@ -2,6 +2,7 @@ package net.TheElm.project.mixins.Blocks;
 
 import net.TheElm.project.interfaces.BossLootableContainer;
 import net.fabricmc.fabric.api.util.NbtType;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.block.entity.ShulkerBoxBlockEntity;
@@ -30,7 +31,7 @@ public abstract class LootChestEntity extends LootableContainerBlockEntity imple
      */
     
     @Inject(at = @At("TAIL"), method = "fromTag")
-    public void nbtRead(CompoundTag tag, CallbackInfo callback) {
+    public void nbtRead(BlockState state, CompoundTag tag, CallbackInfo callback) {
         this.bossLootLinkedIdentifier = (tag.contains("BossLootContainer", NbtType.STRING) ? new Identifier(tag.getString("BossLootContainer")) : null);
     }
     

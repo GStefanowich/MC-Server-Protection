@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerCorpse;
@@ -92,7 +92,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     /*
      * Armor Stand Modifications
      */
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/block/Block.dropStack(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/item/ItemStack;)V"), method = "method_6924")
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/block/Block.dropStack(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/item/ItemStack;)V"), method = "breakAndDropItem")
     private void onDropSelf(World world, BlockPos blockPos, ItemStack itemStack) {
         boolean showArms = this.shouldShowArms();
         boolean hidePlate = this.shouldHideBasePlate();
@@ -136,7 +136,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
         }
         
         // Player is in creative
-        if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get())
+        if ((player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS))
             || player.isSpectator()
             // If player can loot armor stand
             || ChunkUtils.canPlayerLootChestsInChunk(player, this.getBlockPos()))

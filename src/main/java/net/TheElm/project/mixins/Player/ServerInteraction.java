@@ -43,7 +43,6 @@ import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.TallPlantBlock;
 import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket.Action;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
@@ -140,18 +139,18 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
     }
     
     @Inject(at = @At("HEAD"), method = "interactItem", cancellable = true)
-    private void beforeItemInteract(final PlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
+    private void beforeItemInteract(final ServerPlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         if (!player.world.isClient) {
-            ActionResult result = ItemUseCallback.EVENT.invoker().use((ServerPlayerEntity) player, world, hand, itemStack);
+            ActionResult result = ItemUseCallback.EVENT.invoker().use(player, world, hand, itemStack);
             if (result != ActionResult.PASS)
                 callback.setReturnValue(result);
         }
     }
     
     @Inject(at = @At("HEAD"), method = "interactBlock", cancellable = true)
-    private void beforeBlockInteract(final PlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, final BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> callback) {
+    private void beforeBlockInteract(final ServerPlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, final BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> callback) {
         if (!player.world.isClient) {
-            ActionResult result = BlockInteractionCallback.EVENT.invoker().interact((ServerPlayerEntity)player, world, hand, itemStack, blockHitResult);
+            ActionResult result = BlockInteractionCallback.EVENT.invoker().interact(player, world, hand, itemStack, blockHitResult);
             if (result != ActionResult.PASS) {
                 this.updateNeighboringBlockStates(blockHitResult.getBlockPos());
                 callback.setReturnValue(result);

@@ -91,11 +91,13 @@
     "Server.Books",
     "Server.DeathMessages",
     "Server.Explosions",
+    "Server.LanguagePacket",
     "Server.ServerCommandSource",
     "Server.MOTD",
     "Server.PlayerList",
     "Server.PlayerManager",
     "Server.Save",
+    "Server.SaveFolder",
     "Server.Whitelist",
     "Server.WanderingTraders"
   ],

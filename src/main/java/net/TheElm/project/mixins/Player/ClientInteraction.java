@@ -26,7 +26,7 @@
 package net.TheElm.project.mixins.Player;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.IClaimedChunk;
@@ -56,8 +56,10 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
@@ -121,19 +123,19 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
         CoreMod.PLAYER_LOCATIONS.put( player, null );
         
         // Initialize user claims from database
-        this.playerClaimData = ( SewingMachineConfig.INSTANCE.DO_CLAIMS.get() ? ClaimantPlayer.get( player.getUuid() ) : null );
+        this.playerClaimData = ( SewConfig.get(SewConfig.DO_CLAIMS) ? ClaimantPlayer.get( player.getUuid() ) : null );
         
         // Check if server has been joined before
         if (((PlayerData) player).getFirstJoinAt() == null) {
             // Get starting money
-            int startingMoney = SewingMachineConfig.INSTANCE.STARTING_MONEY.get();
+            int startingMoney = SewConfig.get(SewConfig.STARTING_MONEY);
             
             // Give the player the starting amount
-            if ( SewingMachineConfig.INSTANCE.DO_MONEY.get() && (startingMoney > 0))
+            if ( SewConfig.get(SewConfig.DO_MONEY) && (startingMoney > 0))
                 MoneyUtils.givePlayerMoney( player, startingMoney );
             
             // Give the player the starting items
-            for (Map.Entry<Item, Integer> item : SewingMachineConfig.INSTANCE.STARTING_ITEMS.get().entrySet()) {
+            for (Map.Entry<Item, Integer> item : SewConfig.get(SewConfig.STARTING_ITEMS).entrySet()) {
                 ItemStack stack = new ItemStack( item.getKey() );
                 stack.setCount( item.getValue() );
                 
@@ -141,7 +143,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
             }
             
             // Give the player all of the games recipes
-            if (SewingMachineConfig.INSTANCE.START_WITH_RECIPES.get()) {
+            if (SewConfig.get(SewConfig.START_WITH_RECIPES)) {
                 Collection<Recipe<?>> recipes = server.getRecipeManager().values();
                 this.player.unlockRecipes( recipes );
             }
@@ -150,7 +152,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
             ((PlayerData) player).updateFirstJoin();
         } else {
             Long lastJoin;
-            int allowance = SewingMachineConfig.INSTANCE.DAILY_ALLOWANCE.get();
+            int allowance = SewConfig.get(SewConfig.DAILY_ALLOWANCE);
             
             // If we should give a daily allowance
             if ((allowance > 0) && ((lastJoin = ((PlayerData) player).getLastJoinAt()) != null)) {
@@ -169,10 +171,10 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                     MoneyUtils.givePlayerMoney(player, allowance);
                     
                     // Tell them they were awarded money
-                    player.sendMessage(new LiteralText("You were given $")
+                    player.sendSystemMessage(new LiteralText("You were given $")
                         .formatted(Formatting.YELLOW)
                         .append(new LiteralText(NumberFormat.getInstance().format(allowance)).formatted(Formatting.AQUA, Formatting.BOLD))
-                        .append(" for logging in today!"));
+                        .append(" for logging in today!"), Util.NIL_UUID);
                 }
             }
         }
@@ -206,9 +208,9 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
     }
     
     // Change the chat format
-    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/server/PlayerManager.broadcastChatMessage(Lnet/minecraft/text/Text;Z)V"), method = "onChatMessage", cancellable = true)
+    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/server/PlayerManager.broadcastChatMessage(Lnet/minecraft/text/Text;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"), method = "onGameMessage", cancellable = true)
     public void onChatMessage(ChatMessageC2SPacket chatMessageC2SPacket, CallbackInfo callback) {
-        if (!SewingMachineConfig.INSTANCE.CHAT_MODIFY.get())
+        if (!SewConfig.get(SewConfig.CHAT_MODIFY))
             return;
         
         try {
@@ -219,11 +221,11 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
             ChatRooms room = ((PlayerChat)this.player).getChatRoom();
             
             if ((room != ChatRooms.TOWN) && ((PlayerChat)this.player).isMuted()) {
-                this.player.sendMessage(TranslatableServerSide.text(
+                this.player.sendSystemMessage(TranslatableServerSide.text(
                     this.player,
                     "chat.muted",
                     room
-                ).formatted(Formatting.RED));
+                ).formatted(Formatting.RED), Util.NIL_UUID);
                 return;
             }
             
@@ -239,7 +241,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
     }
     
     public void movedPlayer( final ServerPlayerEntity player ) {
-        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+        if (!SewConfig.get(SewConfig.DO_CLAIMS))
             return;
         
         World world = player.getEntityWorld();
@@ -265,7 +267,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
         UUID locationOwner;
         
         if ( ( local == null ) || ((locationOwner = ((IClaimedChunk) local).getOwner( playerPos )) == null ) ) {
-            Text popupText = ChunkUtils.getPlayerWorldWilderness( player )
+            MutableText popupText = ChunkUtils.getPlayerWorldWilderness( player )
                 .append(
                     new LiteralText( " [" ).formatted(Formatting.RED)
                         .append( TranslatableServerSide.text( player, "claim.chunk.pvp" ) )
@@ -280,8 +282,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
             CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, locationOwner);
             (new Thread(() -> {
                 IClaimedChunk claimedChunk = (IClaimedChunk) local;
-                Text popupText = null;
-                popupText = new LiteralText("Entering ")
+                MutableText popupText = new LiteralText("Entering ")
                     .formatted(Formatting.WHITE);
                 
                 ClaimantPlayer owner  = ClaimantPlayer.get( locationOwner );
