@@ -26,7 +26,7 @@
 package net.TheElm.project.enums;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.BoolEnums;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.Nullable;
@@ -38,25 +38,25 @@ public enum ClaimSettings implements BoolEnums {
     ENDERMAN_GRIEFING( false, true, false ) {
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_GRIEFING_ENDERMAN.get();
+            return SewConfig.get(SewConfig.CLAIM_ALLOW_GRIEFING_ENDERMAN);
         }
     },
     CREEPER_GRIEFING( false, true, false ) {
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_GRIEFING_CREEPER.get();
+            return SewConfig.get(SewConfig.CLAIM_ALLOW_GRIEFING_CREEPER);
         }
     },
     GHAST_GRIEFING( false, true, false ) {
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_GRIEFING_GHAST.get();
+            return SewConfig.get(SewConfig.CLAIM_ALLOW_GRIEFING_GHAST);
         }
     },
     PLAYER_COMBAT( false, true, false ) {
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_PLAYER_COMBAT.get();
+            return SewConfig.get(SewConfig.CLAIM_ALLOW_PLAYER_COMBAT);
         }
     },
     HURT_TAMED( false, false, false ) {
@@ -70,19 +70,19 @@ public enum ClaimSettings implements BoolEnums {
     CROP_AUTOREPLANT( true, false, true ) {
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_CROP_AUTOREPLANT.get();
+            return SewConfig.get(SewConfig.CLAIM_ALLOW_CROP_AUTOREPLANT);
         }
     },
     TREE_CAPACITATE(true, false, false ) {
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_TREE_CAPACITATOR.get();
+            return SewConfig.get(SewConfig.CLAIM_ALLOW_TREE_CAPACITATOR);
         }
     },
     VEIN_MINER( true, false, false ) {
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.CLAIM_ALLOW_VEIN_MINER.get();
+            return SewConfig.get(SewConfig.CLAIM_ALLOW_VEIN_MINER);
         }
     };
     

@@ -31,10 +31,11 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.ColorUtils;
 import net.TheElm.project.utilities.CommandUtilities;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
@@ -46,6 +47,7 @@ import net.minecraft.command.arguments.EntityArgumentType;
 import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
@@ -56,20 +58,22 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.util.Util;
+import net.minecraft.world.World;
 
 import java.util.Collection;
 import java.util.UUID;
 
 public final class TeleportsCommand {
-    public static final ExceptionTranslatableServerSide PLAYER_NOT_IN_SPAWN = new ExceptionTranslatableServerSide("warp.notice.player.outside_spawn");
-    public static final ExceptionTranslatableServerSide TARGET_NOT_IN_SPAWN = new ExceptionTranslatableServerSide("warp.notice.target.outside_spawn");
-    public static final ExceptionTranslatableServerSide TARGET_NOT_REQUESTING = new ExceptionTranslatableServerSide("warp.notice.no_request");
-    public static final ExceptionTranslatableServerSide TARGET_NO_WARP = new ExceptionTranslatableServerSide("warp.notice.no_warp");
-    public static final ExceptionTranslatableServerSide TARGET_NOT_ONLINE = new ExceptionTranslatableServerSide("warp.notice.offline");
+    public static final ExceptionTranslatableServerSide PLAYER_NOT_IN_SPAWN = TranslatableServerSide.exception("warp.notice.player.outside_spawn");
+    public static final ExceptionTranslatableServerSide TARGET_NOT_IN_SPAWN = TranslatableServerSide.exception("warp.notice.target.outside_spawn");
+    public static final ExceptionTranslatableServerSide TARGET_NOT_REQUESTING = TranslatableServerSide.exception("warp.notice.no_request");
+    public static final ExceptionTranslatableServerSide TARGET_NO_WARP = TranslatableServerSide.exception("warp.notice.no_warp");
+    public static final ExceptionTranslatableServerSide TARGET_NOT_ONLINE = TranslatableServerSide.exception("warp.notice.offline");
     
     private TeleportsCommand() {}
     
@@ -81,12 +85,12 @@ public final class TeleportsCommand {
                     // Get location information
                     ServerCommandSource source = context.getSource();
                     Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "player");
-                    ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
-                
+                    ServerWorld world = source.getMinecraftServer().getWorld(World.OVERWORLD);
+                    
                     for (ServerPlayerEntity player : players) {
                         WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
                     }
-                
+                    
                     Text spawnText = new LiteralText("Spawn").formatted(Formatting.GOLD);
                     if (players.size() == 1) {
                         source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", ((Entity) players.iterator().next()).getDisplayName(), spawnText), true);
@@ -101,12 +105,12 @@ public final class TeleportsCommand {
                 // Get location information
                 ServerCommandSource source = context.getSource();
                 ServerPlayerEntity player = source.getPlayer();
-                ServerWorld world = source.getMinecraftServer().getWorld(DimensionType.OVERWORLD);
-            
+                ServerWorld world = source.getMinecraftServer().getWorld(World.OVERWORLD);
+                
                 WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
-            
+                
                 source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", player.getDisplayName(), new LiteralText("Spawn").formatted(Formatting.GOLD)), true);
-            
+                
                 return Command.SINGLE_SUCCESS;
             })
         );
@@ -117,19 +121,20 @@ public final class TeleportsCommand {
             .executes((context) -> {
                 // Get location information
                 ServerCommandSource source = context.getSource();
+                ServerWorld world = source.getWorld();
                 ServerPlayerEntity player = source.getPlayer();
                 
                 // Move the player to the end
-                if (player.dimension != DimensionType.THE_END)
-                    player.changeDimension(DimensionType.THE_END);
-                else WarpUtils.teleportEntity(DimensionType.THE_END, player);
+                if (World.END.equals(world.getRegistryKey()))
+                    player.changeDimension(world);
+                else WarpUtils.teleportEntity(World.END, player);
                 
                 return Command.SINGLE_SUCCESS;
             })
         );
         
         dispatcher.register(CommandManager.literal("tpa")
-            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get())
+            .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                 .suggests(CommandUtilities::getAllPlayerNames)
                 .executes(TeleportsCommand::tpaCommand)
@@ -139,7 +144,7 @@ public final class TeleportsCommand {
         CoreMod.logDebug("- Registered TPA command");
         
         dispatcher.register(CommandManager.literal("tpaccept")
-            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get())
+            .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(WarpUtils::hasWarp)
                 .executes(TeleportsCommand::tpAcceptCommand)
@@ -148,7 +153,7 @@ public final class TeleportsCommand {
         CoreMod.logDebug("- Registered TPAccept command");
         
         dispatcher.register(CommandManager.literal("tpdeny")
-            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get())
+            .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(WarpUtils::hasWarp)
                 .executes(TeleportsCommand::tpDenyCommand)
@@ -157,7 +162,7 @@ public final class TeleportsCommand {
         CoreMod.logDebug("- Registered TPDeny command");
         
         dispatcher.register(CommandManager.literal("home")
-            .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get())
+            .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
             .executes(TeleportsCommand::homeCommand)
         );
         CoreMod.logDebug("- Registered Home command");
@@ -228,22 +233,22 @@ public final class TeleportsCommand {
             // Add the player to the list of invitations
             CoreMod.PLAYER_WARP_INVITES.put(porter, target.getId());
             
-            porter.sendMessage(new LiteralText("Waiting for ")
+            porter.sendSystemMessage(new LiteralText("Waiting for ")
                 .formatted(Formatting.YELLOW)
                 .append(targetPlayer.getDisplayName())
-                .append(" to accept your teleport."));
+                .append(" to accept your teleport."), Util.NIL_UUID);
             CoreMod.logInfo(porter.getName().asString() + " has requested to teleport to " + (porter.getUuid().equals(target.getId()) ? "their" : target.getName() + "'s") + " warp");
             
             // Notify the target
-            targetPlayer.sendMessage(porter.getName().formatted(Formatting.AQUA)
+            targetPlayer.sendMessage(ColorUtils.format(porter.getName(), Formatting.AQUA)
                 .append(new LiteralText(" sent you a TP request, Click ").formatted(Formatting.YELLOW)
                     .append(new LiteralText("here to accept it").formatted(Formatting.GREEN).styled(
-                        (consumer) -> consumer.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tpaccept " + porter.getName().asString()))))
+                        (consumer) -> consumer.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tpaccept " + porter.getName().asString()))))
                     .append(", or ")
                     .append(new LiteralText("here to deny it").formatted(Formatting.RED).styled(
-                        (consumer) -> consumer.setClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tpdeny " + porter.getName().asString()))))
+                        (consumer) -> consumer.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tpdeny " + porter.getName().asString()))))
                     .append(".")
-                ));
+                ), MessageType.CHAT, porter.getUuid());
         }
         return Command.SINGLE_SUCCESS;
     }
@@ -260,7 +265,7 @@ public final class TeleportsCommand {
             throw TARGET_NOT_REQUESTING.create( target );
         
         if (!ChunkUtils.isPlayerWithinSpawn( porter )) {
-            porter.sendMessage(new LiteralText( "Your warp could not be completed, you must be within spawn to warp." ).formatted(Formatting.RED));
+            porter.sendSystemMessage(new LiteralText( "Your warp could not be completed, you must be within spawn to warp." ).formatted(Formatting.RED), Util.NIL_UUID);
             throw TARGET_NOT_IN_SPAWN.create( target );
         }
         
@@ -297,7 +302,7 @@ public final class TeleportsCommand {
         TeleportsCommand.feedback(porter, target.getGameProfile());
     }
     public static void feedback(PlayerEntity porter, GameProfile target) {
-        Text feedback = new LiteralText("")
+        MutableText feedback = new LiteralText("")
             .append(porter.getDisplayName())
             .append(" was teleported to ");
         if (porter.getUuid().equals(target.getId())) feedback.append("their");

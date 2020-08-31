@@ -26,7 +26,7 @@
 package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
@@ -220,7 +220,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
     public Text getOwnerName(@NotNull PlayerEntity zonePlayer, @NotNull BlockPos pos) {
         UUID owner = this.getOwner(pos);
         if ( owner == null )
-            return new LiteralText(SewingMachineConfig.INSTANCE.NAME_WILDERNESS.get())
+            return new LiteralText(SewConfig.get(SewConfig.NAME_WILDERNESS))
                 .formatted(Formatting.GREEN);
         
         // Get the owner of the chunk

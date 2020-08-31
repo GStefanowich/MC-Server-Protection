@@ -27,7 +27,7 @@ package net.TheElm.project.enums;
 
 import net.TheElm.project.interfaces.ServerTranslatable;
 import net.TheElm.project.utilities.TranslatableServerSide;
-import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,7 +46,7 @@ public enum ChatRooms implements ServerTranslatable {
     }
     
     @Override
-    public @NotNull Text translate(@NotNull Locale locale) {
+    public @NotNull MutableText translate(@NotNull Locale locale) {
         return TranslatableServerSide.text(
             locale,
             "chat.room." + this.name().toLowerCase()

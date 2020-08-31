@@ -1,6 +1,6 @@
 package net.TheElm.project.enums;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.objects.WeightedReward;
 import net.TheElm.project.utilities.IntUtils;
 import net.minecraft.enchantment.Enchantment;
@@ -30,7 +30,7 @@ public final class DragonLoot {
         // Clear rewards before adding new ones
         DragonLoot.LOOT_REWARDS.clear();
         
-        if (SewingMachineConfig.INSTANCE.DRAGON_LOOT_END_ITEMS.get()) {
+        if (SewConfig.get(SewConfig.DRAGON_LOOT_END_ITEMS)) {
             DragonLoot.itemReward(2800, Items.ELYTRA);
             DragonLoot.itemReward(250, Items.ELYTRA, (item) -> {
                 CompoundTag nbt = item.getOrCreateTag();
@@ -44,7 +44,7 @@ public final class DragonLoot {
             DragonLoot.itemReward(1400, Items.EXPERIENCE_BOTTLE, (item) -> item.setCount(IntUtils.random(RANDOM, 1, 15)));
         }
         
-        if (SewingMachineConfig.INSTANCE.DRAGON_LOOT_RARE_BOOKS.get()) {
+        if (SewConfig.get(SewConfig.DRAGON_LOOT_RARE_BOOKS)) {
             DragonLoot.bookReward(440, Enchantments.SHARPNESS, 6);
             DragonLoot.bookReward(300, Enchantments.SHARPNESS, 7);
             DragonLoot.bookReward(150, Enchantments.SHARPNESS, 8);
@@ -162,9 +162,9 @@ public final class DragonLoot {
         
         return -1;
     }
-        
+    
     static {
         DragonLoot.initRewards();
-        SewingMachineConfig.INSTANCE.afterReload(DragonLoot::initRewards);
+        SewConfig.afterReload(DragonLoot::initRewards);
     }
 }

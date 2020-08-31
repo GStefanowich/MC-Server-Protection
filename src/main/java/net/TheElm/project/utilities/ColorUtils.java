@@ -26,6 +26,10 @@
 package net.TheElm.project.utilities;
 
 import net.minecraft.block.MaterialColor;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
+import net.minecraft.text.TextColor;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Formatting;
 
@@ -38,6 +42,19 @@ public final class ColorUtils {
     
     private static final Random RANDOM;
     private ColorUtils() {}
+    
+    public static MutableText format(Text text, Formatting... formatting) {
+        if (text instanceof MutableText)
+            return ((MutableText)text).formatted(formatting);
+        return ColorUtils.format(new LiteralText("")
+            .append(text), formatting);
+    }
+    public static MutableText format(Text text, TextColor color) {
+        if (text instanceof MutableText)
+            return ((MutableText)text).styled((style) -> style.withColor(color));
+        return ColorUtils.format(new LiteralText("")
+            .append(text), color);
+    }
     
     private static Color materialToColor(MaterialColor material) {
         return new Color(material.color);
@@ -127,6 +144,19 @@ public final class ColorUtils {
         }
         
         return nearest;
+    }
+    
+    public static TextColor getNearestTextColor(Formatting formatting) {
+        return TextColor.fromFormatting(formatting);
+    }
+    public static TextColor getNearestTextColor(String hex) {
+        return ColorUtils.getNearestTextColor(Color.decode(hex));
+    }
+    public static TextColor getNearestTextColor(float r, float g, float b) {
+        return ColorUtils.getNearestTextColor(new Color(r, g, b));
+    }
+    public static TextColor getNearestTextColor(Color color) {
+        return TextColor.fromRgb(color.getRGB());
     }
     
     public static Formatting getNearestFormatting(DyeColor color) {

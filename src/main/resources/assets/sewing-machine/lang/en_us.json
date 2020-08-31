@@ -34,6 +34,7 @@
   "claim.wilderness.nether": "Barren Wastes",
   
   "player.none_found": "Could not find any players.",
+  "player.not_found": "Could not find that player (Maybe they haven't joined the server?).",
   "player.abilities.flying_self.enabled": "Flying was enabled.",
   "player.abilities.flying_self.disabled": "Flying was disabled.",
   "player.abilities.flying_other.enabled": "Flying was enabled for %s.",
@@ -48,7 +49,11 @@
   "player.abilities.healed_other": "%s was healed.",
   "player.abilities.healed_dead": "%s is dead.",
   
+  "player.equipment.empty_hand": "You don't have anything in that hand.",
+  "player.equipment.empty_slot": "You aren't wearing anything in that slot.",
+  
   "player.money": "Your wallet: $%d",
+  "player.money.poor": "You do not have enough money.",
   "player.death_chest.location": "A new death chest has been spawned at %s.",
   "player.no_backpack": "You do not have a backpack.",
   

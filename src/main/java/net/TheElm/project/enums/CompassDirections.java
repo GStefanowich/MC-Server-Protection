@@ -39,23 +39,23 @@ public enum CompassDirections {
     SPAWN {
         @Override @NotNull
         public BlockPos getPos(ServerPlayerEntity player) {
-            return ServerCore.getSpawn(player.dimension);
+            return ServerCore.getSpawn(player.getServerWorld());
         }
         @Override
         public CompassDirections getNext() { return WARP; }
     },
     WARP {
-        @Override @Nullable
-        public BlockPos getPos(ServerPlayerEntity player) {
+        @Override
+        public @Nullable BlockPos getPos(ServerPlayerEntity player) {
             return ((PlayerData) player).getWarpPos();
         }
         @Override
         public CompassDirections getNext() { return BED; }
     },
     BED {
-        @Override @Nullable
-        public BlockPos getPos(ServerPlayerEntity player) {
-            return SPAWN.getPos( player ).equals(player.getSpawnPosition()) ? null : player.getSpawnPosition();
+        @Override
+        public @Nullable BlockPos getPos(ServerPlayerEntity player) {
+            return SPAWN.getPos(player).equals(player.getSpawnPointPosition()) ? null : player.getSpawnPointPosition();
         }
         @Override
         public CompassDirections getNext() { return SPAWN; }

@@ -27,13 +27,14 @@ package net.TheElm.project.protections.logging;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.utilities.NbtUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.SQLException;
@@ -94,7 +95,7 @@ public final class EventLogger implements Runnable {
         BlockAction action = event.getAction();
         
         // Get the dimension
-        DimensionType dimension = world.dimension.getType();
+        RegistryKey<World> dimension = world.getRegistryKey();
         
         UUID responsible = source instanceof PlayerEntity ? source.getUuid() : ( source instanceof TameableEntity ? ((TameableEntity)source).getOwnerUuid() : null);
         if (responsible == null)
@@ -102,7 +103,7 @@ public final class EventLogger implements Runnable {
         
         // Save the change
         try (MySQLStatement stmt = CoreMod.getSQL().prepare("INSERT INTO `logging_Blocks` ( `blockWorld`, `blockX`, `blockY`, `blockZ`, `block`, `updatedBy`, `updatedEvent`, `updatedAt` ) VALUES ( ?, ?, ?, ?, ?, ?, ?, NOW() );")
-            .addPrepared(dimension.getRawId())
+            .addPrepared(NbtUtils.worldToTag(dimension))
             .addPrepared(blockPos.getX())
             .addPrepared(blockPos.getY())
             .addPrepared(blockPos.getZ())
@@ -136,8 +137,8 @@ public final class EventLogger implements Runnable {
         if (action instanceof BlockEvent) {
             BlockEvent blockAction = (BlockEvent) action;
             if (
-                (blockAction.getAction() == BlockAction.BREAK) && (!SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get())
-                || (blockAction.getAction() == BlockAction.PLACE) && (!SewingMachineConfig.INSTANCE.LOG_BLOCKS_PLACING.get())
+                (blockAction.getAction() == BlockAction.BREAK) && (!SewConfig.get(SewConfig.LOG_BLOCKS_BREAKING))
+                || (blockAction.getAction() == BlockAction.PLACE) && (!SewConfig.get(SewConfig.LOG_BLOCKS_PLACING))
             ) return false;
         }
         // Store the log action
@@ -163,15 +164,15 @@ public final class EventLogger implements Runnable {
     // Log clean
     public static void doCleanup() {
         // Ignore if disabled
-        if (SewingMachineConfig.INSTANCE.LOG_RESET_TIME.get() <= 0)
+        if (SewConfig.get(SewConfig.LOG_RESET_TIME) <= 0)
             return;
-    
-        try (MySQLStatement stmt = CoreMod.getSQL().prepare("DELETE FROM `logging_Blocks` WHERE `updatedAt` <= (NOW() - INTERVAL ? MINUTE)")
-            .addPrepared(SewingMachineConfig.INSTANCE.LOG_RESET_INTERVAL.get().converToMinutes(SewingMachineConfig.INSTANCE.LOG_RESET_TIME.get()))) {
         
+        try (MySQLStatement stmt = CoreMod.getSQL().prepare("DELETE FROM `logging_Blocks` WHERE `updatedAt` <= (NOW() - INTERVAL ? MINUTE)")
+            .addPrepared(SewConfig.get(SewConfig.LOG_RESET_INTERVAL).converToMinutes(SewConfig.get(SewConfig.LOG_RESET_TIME)))) {
+            
             stmt.executeUpdate();
             CoreMod.logInfo( "Database cleanup completed" );
-        
+            
         } catch (SQLException e) {
             CoreMod.logError( e );
         }

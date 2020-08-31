@@ -28,7 +28,7 @@ package net.TheElm.project.protections.claiming;
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
@@ -37,7 +37,9 @@ import net.TheElm.project.objects.ClaimTag;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.MessageType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
@@ -112,21 +114,21 @@ public final class ClaimantPlayer extends Claimant {
     
     /* Nickname Override */
     @Override
-    public final Text getName() {
+    public final MutableText getName() {
         if (this.name == null)
             return (this.name = this.updateName()).copy();
         return this.name.copy();
     }
-    public final Text updateName() {
+    public final MutableText updateName() {
         return PlayerNameUtils.fetchPlayerNick( this.getId() );
     }
     
     /* Send Messages */
     @Override
-    public final void send(Text text) {
+    public final void send(Text text, MessageType type, UUID from) {
         UUID playerId = this.getId();
         ServerPlayerEntity player = ServerCore.getPlayer(playerId);
-        if (player != null) player.sendMessage(text);
+        if (player != null) player.sendMessage(text, type, from);
     }
     
     /* Claimed chunk options */
@@ -136,17 +138,17 @@ public final class ClaimantPlayer extends Claimant {
         return setting.getDefault( this.getId() );
     }
     public final int getMaxChunkLimit() {
-        return this.additionalClaims + SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get();
+        return this.additionalClaims + SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT);
     }
     public final int increaseMaxChunkLimit(int by) {
         this.markDirty();
-        return (this.additionalClaims += by) + SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get();
+        return (this.additionalClaims += by) + SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT);
     }
     public final boolean canClaim(WorldChunk chunk) {
         // If chunk is already claimed, allow
         if (this.CLAIMED_CHUNKS.contains(new ClaimTag(chunk)))
             return true;
-        return (SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get() != 0) && (((this.getCount() + 1) <= this.getMaxChunkLimit()) || (SewingMachineConfig.INSTANCE.PLAYER_CLAIMS_LIMIT.get() <= 0));
+        return (SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT) != 0) && (((this.getCount() + 1) <= this.getMaxChunkLimit()) || (SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT) <= 0));
     }
     
     /* Nbt saving */

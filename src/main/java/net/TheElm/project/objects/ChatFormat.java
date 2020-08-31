@@ -32,10 +32,12 @@ import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.utilities.MessageUtils;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
-import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
@@ -56,38 +58,38 @@ public final class ChatFormat {
         return null;
     }
     
-    private Text worldText(DimensionType dimension, boolean showAsLong) {
+    private Text worldText(RegistryKey<World> dimension, boolean showAsLong) {
         String longKey = null, shortKey = null;
         
         // Set keys based on the world
-        if (DimensionType.OVERWORLD == dimension) {
+        if (World.OVERWORLD.equals(dimension)) {
             longKey = "generator.minecraft.surface";
             shortKey = "S";
-        } else if (DimensionType.THE_NETHER == dimension) {
+        } else if (World.NETHER.equals(dimension)) {
             longKey = "biome.minecraft.nether";
             shortKey = "N";
-        } else if (DimensionType.THE_END == dimension) {
+        } else if (World.END.equals(dimension)) {
             longKey = "biome.minecraft.the_end";
             shortKey = "E";
         }
         
         // Create the text
-        Text longer = ( longKey == null ? new LiteralText("Server") : new TranslatableText( longKey ));
-        Text shorter = new LiteralText( shortKey == null ? "~" : shortKey );
+        MutableText longer = ( longKey == null ? new LiteralText("Server") : new TranslatableText( longKey ));
+        MutableText shorter = new LiteralText( shortKey == null ? "~" : shortKey );
         
         // Create the hover event
-        Formatting formatting = this.worldColor( dimension );
+        Formatting formatting = this.worldColor(dimension);
         
         return ( showAsLong ? longer : shorter )
             .formatted( formatting )
             .styled(MessageUtils.simpleHoverText(longer.formatted( formatting )));
     }
-    private Formatting worldColor(DimensionType dimension) {
-        if (DimensionType.OVERWORLD == dimension)
+    private Formatting worldColor(RegistryKey<World> world) {
+        if (World.OVERWORLD.equals(world))
             return Formatting.GREEN;
-        if (DimensionType.THE_NETHER == dimension)
+        if (World.NETHER.equals(world))
             return Formatting.RED;
-        if (DimensionType.THE_END == dimension)
+        if (World.END.equals(world))
             return Formatting.DARK_GRAY;
         return Formatting.WHITE;
     }

@@ -38,8 +38,8 @@ import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeInputProvider;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.recipe.RecipeUnlocker;
-import net.minecraft.util.DefaultedList;
 import net.minecraft.util.Tickable;
+import net.minecraft.util.collection.DefaultedList;
 import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -153,7 +153,7 @@ public abstract class AbstractFurnace extends LockableContainerBlockEntity imple
         if (updateClient) this.markDirty();
     }
     
-    @Inject(at = @At("TAIL"), method = "setInvStack")
+    @Inject(at = @At("TAIL"), method = "setStack")
     public void onInvUpdate(int pos, ItemStack itemStack, CallbackInfo callback) {
         if (pos == 0) this.isRecipeDirty = true;
     }
@@ -181,7 +181,7 @@ public abstract class AbstractFurnace extends LockableContainerBlockEntity imple
             return true;
         } else if (!outputStack.isItemEqualIgnoreDamage(recipeOutput)) {
             return false;
-        } else if (outputStack.getCount() < this.getInvMaxStackAmount() && outputStack.getCount() < outputStack.getMaxCount()) {
+        } else if (outputStack.getCount() < this.getMaxCountPerStack() && outputStack.getCount() < outputStack.getMaxCount()) {
             return true;
         } else {
             return outputStack.getCount() < recipeOutput.getMaxCount();

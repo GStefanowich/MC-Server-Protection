@@ -61,7 +61,7 @@ public class WeightedReward {
     public String toString() {
         String out = this.reward.toString();
         if (this.reward == Items.ENCHANTED_BOOK) {
-            Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments(this.createItem());
+            Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(this.createItem());
             if (enchantments.size() > 0) {
                 Collection<String> list = new ArrayList<>();
                 for (Map.Entry<Enchantment, Integer> enchantment : enchantments.entrySet()) {

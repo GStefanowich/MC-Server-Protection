@@ -41,7 +41,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.commands.ArgumentTypes.EnumArgumentType;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
@@ -69,6 +69,7 @@ import net.minecraft.command.arguments.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.Whitelist;
@@ -81,6 +82,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.Texts;
 import net.minecraft.text.TranslatableText;
@@ -88,10 +90,10 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.UserCache;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -108,22 +110,22 @@ import java.util.concurrent.CompletableFuture;
 
 public final class ClaimCommand {
     
-    private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = new ExceptionTranslatableServerSide("town.found.poor", 1);
-    private static final ExceptionTranslatableServerSide SELF_RANK_CHANGE = new ExceptionTranslatableServerSide("friends.rank.self");
-    private static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED_BY_PLAYER = new ExceptionTranslatableServerSide("claim.chunk.error.not_players");
-    private static final ExceptionTranslatableServerSide CHUNK_ALREADY_OWNED = new ExceptionTranslatableServerSide("claim.chunk.error.claimed");
-    private static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED = new ExceptionTranslatableServerSide("claim.chunk.error.not_claimed");
-    private static final ExceptionTranslatableServerSide CHUNK_RADIUS_OWNED = new ExceptionTranslatableServerSide("claim.chunk.error.radius_owned", 1 );
+    private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = TranslatableServerSide.exception("town.found.poor", 1);
+    private static final ExceptionTranslatableServerSide SELF_RANK_CHANGE = TranslatableServerSide.exception("friends.rank.self");
+    private static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED_BY_PLAYER = TranslatableServerSide.exception("claim.chunk.error.not_players");
+    private static final ExceptionTranslatableServerSide CHUNK_ALREADY_OWNED = TranslatableServerSide.exception("claim.chunk.error.claimed");
+    private static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED = TranslatableServerSide.exception("claim.chunk.error.not_claimed");
+    private static final ExceptionTranslatableServerSide CHUNK_RADIUS_OWNED = TranslatableServerSide.exception("claim.chunk.error.radius_owned", 1 );
     private static final SimpleCommandExceptionType WHITELIST_FAILED_EXCEPTION = new SimpleCommandExceptionType(new TranslatableText("commands.whitelist.add.failed"));
-    private static final ExceptionTranslatableServerSide TOWN_INVITE_RANK = new ExceptionTranslatableServerSide("town.invite.rank");
-    private static final ExceptionTranslatableServerSide TOWN_INVITE_FAIL = new ExceptionTranslatableServerSide("town.invite.fail");
-    private static final ExceptionTranslatableServerSide TOWN_INVITE_MISSING = new ExceptionTranslatableServerSide("town.invite.missing");
+    private static final ExceptionTranslatableServerSide TOWN_INVITE_RANK = TranslatableServerSide.exception("town.invite.rank");
+    private static final ExceptionTranslatableServerSide TOWN_INVITE_FAIL = TranslatableServerSide.exception("town.invite.fail");
+    private static final ExceptionTranslatableServerSide TOWN_INVITE_MISSING = TranslatableServerSide.exception("town.invite.missing");
     private static final SimpleCommandExceptionType TOWN_NOT_EXISTS = new SimpleCommandExceptionType(new LiteralText("That town does not exist."));
     
     private ClaimCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+        if (!SewConfig.get(SewConfig.DO_CLAIMS))
             return;
         
         /*
@@ -155,12 +157,12 @@ public final class ClaimCommand {
             // Claim chunk for another player
             .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                 .suggests(CommandUtilities::getAllPlayerNames)
-                .requires((source) -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_OTHER.get()))
+                .requires((source) -> source.hasPermissionLevel(SewConfig.get(SewConfig.CLAIM_OP_LEVEL_OTHER)))
                 .executes(ClaimCommand::claimChunkOther)
             )
             // Claim chunk for the spawn
             .then(CommandManager.literal( "spawn" )
-                .requires((source) -> source.hasPermissionLevel(SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_SPAWN.get()))
+                .requires((source) -> source.hasPermissionLevel(SewConfig.get(SewConfig.CLAIM_OP_LEVEL_SPAWN)))
                 .executes(ClaimCommand::claimChunkSpawn)
             )
             // Claim chunk for players town
@@ -182,7 +184,7 @@ public final class ClaimCommand {
                 .executes(ClaimCommand::unclaimAll)
             )
             .then(CommandManager.literal("force")
-                .requires((source -> source.hasPermissionLevel( SewingMachineConfig.INSTANCE.CLAIM_OP_LEVEL_OTHER.get() )))
+                .requires((source -> source.hasPermissionLevel( SewConfig.get(SewConfig.CLAIM_OP_LEVEL_OTHER) )))
                 .executes(ClaimCommand::unclaimChunkOther)
             )
             // Unclaim current chunk
@@ -196,7 +198,7 @@ public final class ClaimCommand {
         LiteralCommandNode<ServerCommandSource> friends = dispatcher.register(CommandManager.literal("friends")
             // Whitelist a friend
             .then(CommandManager.literal( "whitelist" )
-                .requires((context) -> SewingMachineConfig.INSTANCE.FRIEND_WHITELIST.get())
+                .requires((context) -> SewConfig.get(SewConfig.FRIEND_WHITELIST))
                 .then( CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                     .suggests((context, builder) -> {
                         PlayerManager manager = context.getSource().getMinecraftServer().getPlayerManager();
@@ -459,7 +461,7 @@ public final class ClaimCommand {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
-        if (SewingMachineConfig.INSTANCE.LIGHT_UP_SPAWN.get())
+        if (SewConfig.get(SewConfig.LIGHT_UP_SPAWN))
             ChunkUtils.lightChunk(source.getWorld().getWorldChunk(player.getBlockPos()));
         
         // Claim the chunk for spawn
@@ -481,9 +483,17 @@ public final class ClaimCommand {
                 if (!ClaimCommand.tryClaimChunkAt(chunkFor, verify, claimant, worldChunks))
                     throw CHUNK_ALREADY_OWNED.create( claimant );
             } catch (TranslationKeyException e) {
-                if (claimant != null) claimant.sendMessage(TranslatableServerSide.text(claimant, e.getKey()));
+                if (claimant != null) claimant.sendMessage(
+                    TranslatableServerSide.text(claimant, e.getKey()),
+                    MessageType.SYSTEM,
+                    ServerCore.spawnID
+                );
             } catch (CommandSyntaxException e) {
-                if (claimant != null) claimant.sendMessage(new LiteralText( e.getMessage() ).formatted(Formatting.RED));
+                if (claimant != null) claimant.sendMessage(
+                    new LiteralText( e.getMessage() ).formatted(Formatting.RED),
+                    MessageType.SYSTEM,
+                    ServerCore.spawnID
+                );
             }
         });
     }
@@ -641,7 +651,7 @@ public final class ClaimCommand {
             // Unclaim EVERY chunk
             claimed.forEachChunk((set) -> {
                 // Get the dimension
-                DimensionType dimension = set.getDimension();
+                RegistryKey<World> dimension = set.getDimension();
                 if (dimension != null) {
                     ServerWorld world = server.getWorld(dimension);
                     
@@ -702,19 +712,19 @@ public final class ClaimCommand {
         
         // Charge the player money
         try {
-            if ((SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get() > 0) && (!MoneyUtils.takePlayerMoney(founder, SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get())))
-                throw NOT_ENOUGH_MONEY.create(founder, "$" + NumberFormat.getInstance().format(SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get()));
+            if ((SewConfig.get(SewConfig.TOWN_FOUND_COST) > 0) && (!MoneyUtils.takePlayerMoney(founder, SewConfig.get(SewConfig.TOWN_FOUND_COST))))
+                throw NOT_ENOUGH_MONEY.create(founder, "$" + NumberFormat.getInstance().format(SewConfig.get(SewConfig.TOWN_FOUND_COST)));
         } catch (NotEnoughMoneyException e) {
-            throw NOT_ENOUGH_MONEY.create(founder, "$" + NumberFormat.getInstance().format(SewingMachineConfig.INSTANCE.TOWN_FOUND_COST.get()));
+            throw NOT_ENOUGH_MONEY.create(founder, "$" + NumberFormat.getInstance().format(SewConfig.get(SewConfig.TOWN_FOUND_COST)));
         }
         try {
             // Get town information
-            Text townName = new LiteralText(StringArgumentType.getString(context, "name"));
+            MutableText townName = new LiteralText(StringArgumentType.getString(context, "name"));
             ClaimantTown town = ClaimantTown.makeTown(founder, townName);
             
             // Tell all players of the founding
             MessageUtils.sendToAll("town.found",
-                founder.getName().formatted(Formatting.AQUA),
+                ((MutableText)founder.getName()).formatted(Formatting.AQUA),
                 town.getName().formatted(Formatting.AQUA)
             );
             
@@ -743,7 +753,7 @@ public final class ClaimCommand {
         
         // Tell all other players
         MessageUtils.sendToAll( "town.disband",
-            founder.getName().formatted(Formatting.AQUA),
+            ((MutableText)founder.getName()).formatted(Formatting.AQUA),
             claimantTown.getName().formatted(Formatting.AQUA)
         );
         
@@ -882,7 +892,10 @@ public final class ClaimCommand {
         if (added > 0) {
             town.send(new LiteralText("")
                 .append(amount)
-                .append(" villagers have been added to your town."));
+                .append(" villagers have been added to your town."),
+                MessageType.SYSTEM,
+                ServerCore.spawnID
+            );
         }
         
         return added;
@@ -921,7 +934,9 @@ public final class ClaimCommand {
             .append(new LiteralText(CasingUtils.Sentence(permissions.name())).formatted(Formatting.AQUA))
             .append(new LiteralText(" is now limited to ").formatted(Formatting.WHITE))
             .append(new LiteralText(CasingUtils.Sentence(rank.name())).formatted(Formatting.AQUA))
-            .append(new LiteralText(".").formatted(Formatting.WHITE))
+            .append(new LiteralText(".").formatted(Formatting.WHITE)),
+            MessageType.SYSTEM,
+            ServerCore.spawnID
         );
         
         // Return command success
@@ -945,7 +960,9 @@ public final class ClaimCommand {
                 .append(new LiteralText(CasingUtils.Sentence(permissions.name())).formatted(Formatting.AQUA))
                 .append(new LiteralText(" is now limited to ").formatted(Formatting.WHITE))
                 .append(new LiteralText(CasingUtils.Sentence(rank.name())).formatted(Formatting.AQUA))
-                .append(new LiteralText(".").formatted(Formatting.WHITE))
+                .append(new LiteralText(".").formatted(Formatting.WHITE)),
+                MessageType.SYSTEM,
+                ServerCore.spawnID
             );
         }
         
@@ -973,7 +990,9 @@ public final class ClaimCommand {
         player.sendMessage(new LiteralText(CasingUtils.Words(setting.name().replace("_", " "))).formatted(Formatting.AQUA)
             .append(new LiteralText(" is now ").formatted(Formatting.WHITE))
             .append(new LiteralText( enabled ? "Enabled" : "Disabled" ).formatted(setting.getAttributeColor( enabled )))
-            .append(new LiteralText(" in your claimed area.").formatted(Formatting.WHITE))
+            .append(new LiteralText(" in your claimed area.").formatted(Formatting.WHITE)),
+            MessageType.SYSTEM,
+            ServerCore.spawnID
         );
         
         return Command.SINGLE_SUCCESS;
@@ -1006,7 +1025,9 @@ public final class ClaimCommand {
             .append( new LiteralText( friend.getName() ).formatted(Formatting.DARK_PURPLE) )
             .append( new LiteralText(" is now an ") )
             .append( new LiteralText( CasingUtils.Sentence(rank.name()) ).formatted(Formatting.AQUA) )
-            .append( new LiteralText("." ).formatted(Formatting.WHITE) )
+            .append( new LiteralText("." ).formatted(Formatting.WHITE) ),
+            MessageType.SYSTEM,
+            ServerCore.spawnID
         );
         
         // Play a sound to the player
@@ -1016,8 +1037,8 @@ public final class ClaimCommand {
         ServerPlayerEntity friendEntity = ServerCore.getPlayer( friend.getId() );
         if ( friendEntity != null ) {
             // Notify the friend
-            friendEntity.addChatMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
-                .append(player.getName().formatted(Formatting.DARK_PURPLE))
+            friendEntity.sendMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
+                .append(((MutableText)player.getName()).formatted(Formatting.DARK_PURPLE))
                 .append(new LiteralText(" has added you as an ").formatted(Formatting.WHITE))
                 .append(new LiteralText(rank.name()).formatted(Formatting.AQUA))
                 .append(new LiteralText(".").formatted(Formatting.WHITE)), false
@@ -1054,7 +1075,9 @@ public final class ClaimCommand {
             // Attempting to remove the friend
             player.sendMessage( new LiteralText("Player ").formatted(Formatting.WHITE)
                 .append( new LiteralText( friend.getName() ).formatted(Formatting.DARK_PURPLE) )
-                .append( new LiteralText(" removed."))
+                .append( new LiteralText(" removed.")),
+                MessageType.SYSTEM,
+                ServerCore.spawnID
             );
             
             // Play sound to player
@@ -1066,8 +1089,8 @@ public final class ClaimCommand {
             // If the friend is online
             if ( friendEntity != null ) {
                 // Notify the friend
-                friendEntity.addChatMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
-                    .append(player.getName().formatted(Formatting.DARK_PURPLE))
+                friendEntity.sendMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
+                    .append(((MutableText)player.getName()).formatted(Formatting.DARK_PURPLE))
                     .append(new LiteralText(" has removed you.")), false
                 );
                 
@@ -1169,13 +1192,13 @@ public final class ClaimCommand {
         boolean isPlayer = (entity instanceof PlayerEntity && player.getId().equals(entity.getUuid()));
         
         // Output as text
-        Text out = null;
+        MutableText out = null;
         if (invitedBy != null)
             out = new LiteralText("").append(new LiteralText(isPlayer ? "You" : player.getName()).formatted(Formatting.GRAY))
                 .append(" " + ( isPlayer ? "were" : "was" ) + " invited to the server by ").formatted(Formatting.WHITE)
                 .append(new LiteralText(invitedBy.getName()).formatted(claim.getFriendRank(invitedBy.getId()).getColor()));
         
-        Text inv = new LiteralText("").append(new LiteralText(isPlayer ? "You" : player.getName()).formatted(Formatting.GRAY))
+        MutableText inv = new LiteralText("").append(new LiteralText(isPlayer ? "You" : player.getName()).formatted(Formatting.GRAY))
             .append(" invited the following players: ").formatted(Formatting.WHITE)
             .append(MessageUtils.listToTextComponent(invited, (entry) -> {
                 ClaimRanks rank = claim.getFriendRank(((WhitelistedPlayer)entry).getUUID());
@@ -1196,7 +1219,7 @@ public final class ClaimCommand {
     private static int convertFromLegacy(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         if (LegacyConverter.exists())
             return -1;
-        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+        if (!SewConfig.get(SewConfig.DO_CLAIMS))
             return -1;
         
         Thread threadConverter = new Thread(() -> {

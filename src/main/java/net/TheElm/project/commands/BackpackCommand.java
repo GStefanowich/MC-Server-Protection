@@ -29,13 +29,16 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.ServerCore;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.objects.PlayerBackpack;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.arguments.ItemStackArgumentType;
-import net.minecraft.container.SimpleNamedContainerFactory;
 import net.minecraft.item.Item;
+import net.minecraft.network.MessageType;
+import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -45,13 +48,13 @@ import net.minecraft.util.Formatting;
 
 public final class BackpackCommand {
     
-    private static final ExceptionTranslatableServerSide PLAYERS_NO_BACKPACK = new ExceptionTranslatableServerSide("player.no_backpack");
+    private static final ExceptionTranslatableServerSide PLAYERS_NO_BACKPACK = TranslatableServerSide.exception("player.no_backpack");
     
     private BackpackCommand() {}
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("backpack")
-            .requires((context) -> SewingMachineConfig.INSTANCE.ALLOW_BACKPACKS.get())
+            .requires((context) -> SewConfig.get(SewConfig.ALLOW_BACKPACKS))
             .then(CommandManager.literal("pickup")
                 .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
                     .executes(BackpackCommand::AutoPickup)
@@ -78,7 +81,7 @@ public final class BackpackCommand {
         player.sendMessage(new LiteralText( added ?
             "Backpack will now automatically pick up "
             : "Backpack will no longer pick up "
-        ).formatted(Formatting.YELLOW).append(new TranslatableText(item.getTranslationKey()).formatted(Formatting.AQUA)).append("."));
+        ).formatted(Formatting.YELLOW).append(new TranslatableText(item.getTranslationKey()).formatted(Formatting.AQUA)).append("."), MessageType.GAME_INFO, ServerCore.spawnID);
         
         return Command.SINGLE_SUCCESS;
     }
@@ -91,7 +94,7 @@ public final class BackpackCommand {
         if (backpack == null)
             throw PLAYERS_NO_BACKPACK.create( player );
         
-        player.openContainer(new SimpleNamedContainerFactory((i, playerInventory, playerEntityx) ->
+        player.openHandledScreen(new SimpleNamedScreenHandlerFactory((i, playerInventory, playerEntityx) ->
             backpack.createContainer(i, playerInventory),
         backpack.getName()));
         

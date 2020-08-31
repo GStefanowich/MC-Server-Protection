@@ -25,16 +25,18 @@
 
 package net.TheElm.project.commands;
 
-import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
+import net.TheElm.project.utilities.ColorUtils;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.InventoryUtils.ItemRarity;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EquipmentSlot;
@@ -45,6 +47,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
@@ -55,11 +58,14 @@ public final class HoldingCommand {
     
     private HoldingCommand() {}
     
+    private static final ExceptionTranslatableServerSide PLAYER_EMPTY_HAND = TranslatableServerSide.exception("player.equipment.empty_hand");
+    private static final ExceptionTranslatableServerSide PLAYER_EMPTY_SLOT = TranslatableServerSide.exception("player.equipment.empty_slot");
+    
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         // Command to display the object the player is holding
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             dispatcher.register(CommandManager.literal(slot.getName())
-                .requires((source) -> SewingMachineConfig.INSTANCE.COMMAND_EQUIPMENT.get())
+                .requires((source) -> SewConfig.get(SewConfig.COMMAND_EQUIPMENT))
                 .then(CommandManager.argument("message", StringArgumentType.greedyString())
                     .executes((source) -> HoldingCommand.handMessage(source, slot))
                 )
@@ -77,22 +83,21 @@ public final class HoldingCommand {
     }
     private static int holding(CommandContext<ServerCommandSource> context, EquipmentSlot slot, String message) throws CommandSyntaxException {
         // Get player information
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
         
         // Get hand item
         ItemStack stack = player.getEquippedStack( slot );
-        if (stack.isEmpty()) {
-            player.sendMessage(new LiteralText("You don't have any item in that " + ( slot.getType() == EquipmentSlot.Type.HAND ? "hand" : "equipment slot" ) + ".").formatted(Formatting.RED));
-            return Command.SINGLE_SUCCESS;
-        }
+        if (stack.isEmpty())
+            throw (slot.getType() == EquipmentSlot.Type.HAND ? PLAYER_EMPTY_HAND : PLAYER_EMPTY_SLOT).create(source);
         
         Item item = stack.getItem();
         int count = stack.getCount();
         
         // List all enchantments
-        final Map<Enchantment, Integer> enchantments = EnchantmentHelper.getEnchantments( stack );
+        final Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(stack);
         
-        final Text enchantsBuilder = ( stack.hasCustomName() ? stack.getName().formatted(Formatting.AQUA) : new TranslatableText(stack.getTranslationKey()));
+        final MutableText enchantsBuilder = ( stack.hasCustomName() ? ColorUtils.format(stack.getName(), Formatting.AQUA) : new TranslatableText(stack.getTranslationKey()));
         if (!enchantments.isEmpty()) {
             ItemRarity rarity = InventoryUtils.getItemRarity( stack );
             enchantsBuilder.append(new LiteralText(" " + rarity.name()).formatted(rarity.formatting));
@@ -127,7 +132,8 @@ public final class HoldingCommand {
         final Text output = new LiteralText("[" + count + "x ").formatted(enchantments.isEmpty() ? Formatting.GRAY : Formatting.AQUA)
             .styled((style) -> {
                 if (!enchantments.isEmpty())
-                    style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, enchantsBuilder));
+                    return style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, enchantsBuilder));
+                return style;
             })
             .append(new TranslatableText(item.getTranslationKey()))
             .append("]");

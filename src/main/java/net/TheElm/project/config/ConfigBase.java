@@ -37,13 +37,13 @@ public abstract class ConfigBase<T extends Object> {
         this.path = location;
     }
     
-    public abstract JsonElement getElement();
+    abstract JsonElement getElement();
     public final @NotNull String getPath() {
         return this.path;
     }
     
-    public abstract void set( JsonElement value );
-    public final void set( JsonElement value, boolean wasDefined ) {
+    abstract void set( JsonElement value );
+    final void set( JsonElement value, boolean wasDefined ) {
         this.set( value );
         this.wasDefined = wasDefined;
     }

@@ -30,7 +30,7 @@ import net.minecraft.block.Blocks;
 import net.minecraft.block.BubbleColumnBlock;
 import net.minecraft.state.property.Properties;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IWorld;
+import net.minecraft.world.WorldAccess;
 import net.minecraft.world.WorldView;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -42,7 +42,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class BubbleColumns {
     
     @Overwrite
-    public static void update(IWorld world, BlockPos blockPos, boolean pullDownwards) {
+    public static void update(WorldAccess world, BlockPos blockPos, boolean pullDownwards) {
         if (BubbleColumnBlock.isStillWater( world, blockPos ))
             world.setBlockState(blockPos, Blocks.BUBBLE_COLUMN.getDefaultState().with(BubbleColumnBlock.DRAG, pullDownwards), 2);
         else if (isPassableBlock( world, blockPos ) && BubbleColumnBlock.isStillWater( world, blockPos.up() ))
@@ -58,7 +58,7 @@ public class BubbleColumns {
             callback.setReturnValue( true );
     }
     
-    private static boolean isPassableBlock(IWorld world, BlockPos blockPos) {
+    private static boolean isPassableBlock(WorldAccess world, BlockPos blockPos) {
         BlockState blockState = world.getBlockState(blockPos);
         return blockState.contains(Properties.WATERLOGGED) && blockState.get(Properties.WATERLOGGED);
     }

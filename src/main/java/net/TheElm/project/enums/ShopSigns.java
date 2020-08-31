@@ -28,7 +28,8 @@ package net.TheElm.project.enums;
 import com.google.gson.JsonSyntaxException;
 import com.mojang.datafixers.util.Either;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.ServerCore;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.exceptions.ShopBuilderException;
@@ -76,7 +77,6 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -126,7 +126,7 @@ public enum ShopSigns {
             Inventory chestInventory = null;
             
             // If shops disabled
-            if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
+            if ( !SewConfig.get(SewConfig.DO_MONEY) )
                 return Either.right( true );
             
             // These should NOT be null
@@ -147,7 +147,7 @@ public enum ShopSigns {
                     if (ChestBlockEntity.getPlayersLookingInChestCount( player.getEntityWorld(), chest.getPos() ) > 0)
                         return Either.left(TranslatableServerSide.text(player, "shop.error.chest_open"));
                     // If player does not have any of item
-                    if (player.inventory.countInInv(sign.getShopItem()) < sign.getShopItemCount())
+                    if (player.inventory.count(sign.getShopItem()) < sign.getShopItemCount())
                         return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
                 }
                 /*
@@ -203,7 +203,7 @@ public enum ShopSigns {
         }
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.DO_MONEY.get();
+            return SewConfig.get(SewConfig.DO_MONEY);
         }
     },
     /*
@@ -276,7 +276,7 @@ public enum ShopSigns {
                     if (ChestBlockEntity.getPlayersLookingInChestCount(player.getEntityWorld(), chest.getPos()) > 0)
                         return Either.left(TranslatableServerSide.text(player, "shop.error.chest_open"));
                     // If there is not enough of item in chest
-                    if (chest.countInInv(sign.getShopItem()) < sign.getShopItemCount())
+                    if (chest.count(sign.getShopItem()) < sign.getShopItemCount())
                         return Either.left(TranslatableServerSide.text(player, "shop.error.stock_chest", sign.getShopItemDisplay()));
                 }
                 
@@ -332,7 +332,7 @@ public enum ShopSigns {
         }
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.DO_MONEY.get();
+            return SewConfig.get(SewConfig.DO_MONEY);
         }
     },
     /*
@@ -378,7 +378,7 @@ public enum ShopSigns {
             Inventory chestInventory = null;
             
             // If shops disabled
-            if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
+            if ( !SewConfig.get(SewConfig.DO_MONEY) )
                 return Either.right( true );
             
             // Check if the attached chest exists
@@ -400,7 +400,7 @@ public enum ShopSigns {
                     if (ChestBlockEntity.getPlayersLookingInChestCount(player.getEntityWorld(), chest.getPos()) > 0)
                         return Either.left(new LiteralText("Cannot do that while chest is open."));
                     // If there is not enough of item in chest
-                    if (chest.countInInv(sign.getShopItem()) < sign.getShopItemCount()) {
+                    if (chest.count(sign.getShopItem()) < sign.getShopItemCount()) {
                         return Either.left(new LiteralText("Chest is out of " + sign.getShopItemDisplay() + "."));
                     }
                 }
@@ -420,7 +420,7 @@ public enum ShopSigns {
         }
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.DO_MONEY.get();
+            return SewConfig.get(SewConfig.DO_MONEY);
         }
     },
     /*
@@ -445,19 +445,19 @@ public enum ShopSigns {
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
             // If shops disabled
-            if ( !SewingMachineConfig.INSTANCE.DO_MONEY.get() )
+            if ( !SewConfig.get(SewConfig.DO_MONEY) )
                 return Either.right( true );
             
             long playerHas = MoneyUtils.getPlayerMoney( player );
             player.sendMessage(TranslatableServerSide.text( player, "player.money",
                 playerHas
-            ));
+            ), MessageType.SYSTEM, ServerCore.spawnID);
             
             return Either.right( true );
         }
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.DO_MONEY.get();
+            return SewConfig.get(SewConfig.DO_MONEY);
         }
     },
     /*
@@ -501,7 +501,7 @@ public enum ShopSigns {
         }
         @Override
         public boolean isEnabled() {
-            return SewingMachineConfig.INSTANCE.WARP_MAX_DISTANCE.get() > 0;
+            return SewConfig.get(SewConfig.WARP_MAX_DISTANCE) > 0;
         }
         private boolean generateNewWarp(final ServerPlayerEntity player) {
             // Create a new warp point asynchronously
@@ -510,14 +510,14 @@ public enum ShopSigns {
                 final MinecraftServer server;
                 if ((server = player.getServer()) == null)
                     return;
-                final ServerWorld world = server.getWorld(DimensionType.OVERWORLD);
-                final BlockPos spawnPos = WarpUtils.getWorldSpawn( world );
+                final ServerWorld world = server.getWorld(World.OVERWORLD);
+                final BlockPos spawnPos = WarpUtils.getWorldSpawn(world);
                 
                 // Tell the player
-                player.sendChatMessage(TranslatableServerSide.text(
+                player.sendMessage(TranslatableServerSide.text(
                     player,
                     "warp.random.search"
-                ), MessageType.CHAT);
+                ), MessageType.SYSTEM, ServerCore.spawnID);
                 
                 // Create warp
                 WarpUtils newWarp = new WarpUtils( player, spawnPos );
@@ -529,10 +529,10 @@ public enum ShopSigns {
                 int distance = warpToPos.getManhattanDistance(spawnPos);
                 
                 // Build the return warp
-                player.sendChatMessage(TranslatableServerSide.text(
+                player.sendMessage(TranslatableServerSide.text(
                     player,
                     "warp.random.build"
-                ), MessageType.CHAT);
+                ), MessageType.SYSTEM, ServerCore.spawnID);
                 
                 // Teleport the player
                 BlockPos safeTeleportPos = newWarp.getSafeTeleportPos(world);
@@ -542,11 +542,11 @@ public enum ShopSigns {
                 newWarp.save(world, safeTeleportPos, player);
                 
                 // Notify the player of their new location
-                player.sendChatMessage(TranslatableServerSide.text(
+                player.sendMessage(TranslatableServerSide.text(
                     player,
                     "warp.random.teleported",
                     distance
-                ), MessageType.CHAT);
+                ), MessageType.SYSTEM, ServerCore.spawnID);
             }).start();
             return true;
         }
@@ -569,7 +569,7 @@ public enum ShopSigns {
                 throw new ShopBuilderException(new LiteralText("Can't place waystones on the border of a chunk."));*/
             
             // Set the signs price
-            Text priceText = new LiteralText("$" + SewingMachineConfig.INSTANCE.WARP_WAYSTONE_COST.get()).formatted(Formatting.DARK_BLUE);
+            Text priceText = new LiteralText("$" + SewConfig.get(SewConfig.WARP_WAYSTONE_COST)).formatted(Formatting.DARK_BLUE);
             signBuilder.textMatchPrice(priceText);
             
             // Set the text for the sign
@@ -584,7 +584,7 @@ public enum ShopSigns {
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
             try {
-                if (!MoneyUtils.takePlayerMoney(player, SewingMachineConfig.INSTANCE.WARP_WAYSTONE_COST.get()))
+                if (!MoneyUtils.takePlayerMoney(player, SewConfig.get(SewConfig.WARP_WAYSTONE_COST)))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                 
                 if (!ChunkUtils.canPlayerBreakInChunk( player, signPos ))
@@ -594,10 +594,14 @@ public enum ShopSigns {
                     WarpUtils warp = new WarpUtils( player, signPos.down() );
                     if (!warp.build(player, player.getServerWorld())) {
                         // Notify the player
-                        player.sendMessage(new LiteralText("Can't build that here").formatted(Formatting.RED));
+                        player.sendMessage(
+                            new LiteralText("Can't build that here").formatted(Formatting.RED),
+                            MessageType.SYSTEM,
+                            ServerCore.spawnID
+                        );
                         
                         // Refund the player
-                        MoneyUtils.givePlayerMoney(player, SewingMachineConfig.INSTANCE.WARP_WAYSTONE_COST.get());
+                        MoneyUtils.givePlayerMoney(player, SewConfig.get(SewConfig.WARP_WAYSTONE_COST));
                         
                         // Cancel the build
                         return;
@@ -667,8 +671,8 @@ public enum ShopSigns {
                     ((PlayerData) creator).setRulerB( null );
                     
                     // Validate the minimum and maximum widths
-                    int maxWidth = SewingMachineConfig.INSTANCE.MAXIMUM_REGION_WIDTH.get();
-                    int minWidth = SewingMachineConfig.INSTANCE.MINIMUM_REGION_WIDTH.get();
+                    int maxWidth = SewConfig.get(SewConfig.MAXIMUM_REGION_WIDTH);
+                    int minWidth = SewConfig.get(SewConfig.MINIMUM_REGION_WIDTH);
                     
                     // Check the size of the region
                     if ((maxWidth > 0) && ((region.getNorthSouth() > maxWidth) || (region.getEastWest() > maxWidth)))
@@ -698,7 +702,7 @@ public enum ShopSigns {
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
             // If shops disabled
-            if (!(SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.DO_CLAIMS.get()))
+            if (!(SewConfig.get(SewConfig.DO_MONEY) && SewConfig.get(SewConfig.DO_CLAIMS)))
                 return Either.right( true );
             
             if ((sign.getFirstPos() == null) || (sign.getSecondPos() == null))
@@ -710,7 +714,7 @@ public enum ShopSigns {
         }
         @Override
         public boolean isEnabled() {
-            return (SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.DO_CLAIMS.get());
+            return (SewConfig.get(SewConfig.DO_MONEY) && SewConfig.get(SewConfig.DO_CLAIMS));
         }
     },
     /*
@@ -761,7 +765,7 @@ public enum ShopSigns {
                 if (!MoneyUtils.takePlayerMoney(player, sign.getShopItemPrice()))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                 
-                if ((SewingMachineConfig.INSTANCE.PLAYER_CLAIM_BUY_LIMIT.get() > 0) && ((claim.getMaxChunkLimit() + sign.getShopItemCount()) > SewingMachineConfig.INSTANCE.PLAYER_CLAIM_BUY_LIMIT.get()))
+                if ((SewConfig.get(SewConfig.PLAYER_CLAIM_BUY_LIMIT) > 0) && ((claim.getMaxChunkLimit() + sign.getShopItemCount()) > SewConfig.get(SewConfig.PLAYER_CLAIM_BUY_LIMIT)))
                     return Either.left(new TranslatableText("Can't buy any more of that."));
                 
                 // Increase the players chunk count
@@ -777,14 +781,16 @@ public enum ShopSigns {
             player.sendMessage(new LiteralText("Chunks claimed ").formatted(Formatting.YELLOW)
                 .append(new LiteralText(NumberFormat.getInstance().format( claim.getCount() )).formatted(Formatting.AQUA))
                 .append(" / ")
-                .append(new LiteralText(NumberFormat.getInstance().format( claim.getMaxChunkLimit() )).formatted(Formatting.AQUA))
+                .append(new LiteralText(NumberFormat.getInstance().format( claim.getMaxChunkLimit() )).formatted(Formatting.AQUA)),
+                MessageType.SYSTEM,
+                ServerCore.spawnID
             );
             
             return Either.right( true );
         }
         @Override
         public boolean isEnabled() {
-            return (SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.DO_CLAIMS.get() && (SewingMachineConfig.INSTANCE.PLAYER_CLAIM_BUY_LIMIT.get() != 0));
+            return (SewConfig.get(SewConfig.DO_MONEY) && SewConfig.get(SewConfig.DO_CLAIMS) && (SewConfig.get(SewConfig.PLAYER_CLAIM_BUY_LIMIT) != 0));
         }
     },
     /*
@@ -894,7 +900,7 @@ public enum ShopSigns {
                     return Either.left(TranslatableServerSide.text(player, "backpack.no_downsize"));
                 
                 // If backpacks must be purchased in order
-                if ( SewingMachineConfig.INSTANCE.BACKPACK_SEQUENTIAL.get() ) {
+                if ( SewConfig.get(SewConfig.BACKPACK_SEQUENTIAL) ) {
                     int currentRows = ( backpack == null ? 0 : backpack.getRows() );
                     if ((newPackRows - 1) > currentRows)
                         return Either.left(TranslatableServerSide.text(player, "backpack.need_previous"));
@@ -910,7 +916,9 @@ public enum ShopSigns {
                 ));
                 
                 player.sendMessage(new LiteralText("Backpack size is now ").formatted(Formatting.YELLOW)
-                    .append(new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() )).formatted(Formatting.AQUA))
+                    .append(new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() )).formatted(Formatting.AQUA)),
+                    MessageType.SYSTEM,
+                    ServerCore.spawnID
                 );
                 
                 // Log the transaction
@@ -924,7 +932,7 @@ public enum ShopSigns {
         }
         @Override
         public boolean isEnabled() {
-            return (SewingMachineConfig.INSTANCE.DO_MONEY.get() && SewingMachineConfig.INSTANCE.ALLOW_BACKPACKS.get());
+            return (SewConfig.get(SewConfig.DO_MONEY) && SewConfig.get(SewConfig.ALLOW_BACKPACKS));
         }
     };
     

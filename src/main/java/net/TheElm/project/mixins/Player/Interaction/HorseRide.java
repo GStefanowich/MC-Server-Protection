@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.utilities.ChunkUtils;
@@ -57,7 +57,7 @@ public abstract class HorseRide extends HorseBaseEntity {
     @Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
     private void tryHorseMount(PlayerEntity player, Hand hand, CallbackInfoReturnable<Boolean> callback) {
         // If the player is in creative, allow
-        if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || player.isSpectator())
+        if ((player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
             return;
         
         // If player owns the horse, allow

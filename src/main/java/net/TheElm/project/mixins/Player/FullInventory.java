@@ -51,7 +51,7 @@ public abstract class FullInventory implements Inventory, Nameable {
     @Inject(at = @At("HEAD"), method = "insertStack", cancellable = true)
     public void onInsertStack(ItemStack itemStack, CallbackInfoReturnable<Boolean> callback) {
         PlayerBackpack backpack = ((BackpackCarrier)this.player).getBackpack();
-        if ((backpack != null) && backpack.shouldAutoPickup(itemStack) && backpack.insertStack( itemStack ) && itemStack.isEmpty())
+        if ((backpack != null) && backpack.shouldAutoPickup(itemStack) && backpack.insertStack(itemStack) && itemStack.isEmpty())
             callback.setReturnValue( true );
     }
     

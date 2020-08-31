@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.CampfireBlock;
 import net.minecraft.block.entity.BlockEntity;
@@ -50,7 +50,7 @@ public abstract class Campfires extends BlockEntity implements Clearable, Tickab
     
     @Inject(at = @At("TAIL"), method = "tick")
     public void onTick(CallbackInfo callback) {
-        if ((!this.world.isClient) && SewingMachineConfig.INSTANCE.EXTINGUISH_CAMPFIRES.get()) {
+        if ((!this.world.isClient) && SewConfig.get(SewConfig.EXTINGUISH_CAMPFIRES)) {
             BlockState blockState = this.getCachedState();
             boolean isLit = blockState.get(CampfireBlock.LIT);
             // If RAINING, currently LIT, is in a raining BIOME, and VISIBLE TO SKY

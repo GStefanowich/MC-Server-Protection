@@ -34,8 +34,7 @@ public class Ban {
     @Overwrite
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("ban")
-            .requires((source) -> source.getMinecraftServer().getPlayerManager().getUserBanList().isEnabled()
-                && source.hasPermissionLevel(OpLevels.KICK_BAN_OP) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_BAN))
+            .requires((source) -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_BAN))
             .then(CommandManager.argument("targets", GameProfileArgumentType.gameProfile())
                 .then(CommandManager.argument("reason", MessageArgumentType.message())
                     .executes((context) -> Ban.ban(context.getSource(), GameProfileArgumentType.getProfileArgument(context, "targets"), MessageArgumentType.getMessage(context, "reason")))

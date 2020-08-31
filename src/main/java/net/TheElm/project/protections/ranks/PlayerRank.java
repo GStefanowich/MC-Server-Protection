@@ -52,13 +52,11 @@ public final class PlayerRank implements Comparable<PlayerRank> {
     /*
      * Display
      */
-    @NotNull
-    public String getIdentifier() {
+    public @NotNull String getIdentifier() {
         return this.iden;
     }
-    @Nullable
-    public Text getDisplay() {
-        return this.display == null ? null : this.display.deepCopy();
+    public @Nullable Text getDisplay() {
+        return this.display == null ? null : this.display.copy();
     }
     
     /*

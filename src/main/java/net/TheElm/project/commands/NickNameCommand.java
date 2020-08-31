@@ -32,7 +32,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
@@ -58,7 +58,7 @@ public final class NickNameCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("nick")
-            .requires((source) -> SewingMachineConfig.INSTANCE.DO_PLAYER_NICKS.get())
+            .requires((source) -> SewConfig.get(SewConfig.DO_PLAYER_NICKS))
             .then(CommandManager.literal("reset")
                 .then(CommandManager.argument("target", EntityArgumentType.player())
                     .requires((source) -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP))
@@ -73,7 +73,7 @@ public final class NickNameCommand {
                 })
             )
             .then(CommandManager.argument("nick", StringArgumentType.string())
-                .requires((source) -> (!SewingMachineConfig.INSTANCE.HANDLE_PERMISSIONS.get()) || RankUtils.hasPermission(source, Permissions.PLAYER_NICKNAME))
+                .requires((source) -> (!SewConfig.get(SewConfig.HANDLE_PERMISSIONS)) || RankUtils.hasPermission(source, Permissions.PLAYER_NICKNAME))
                 .then(CommandManager.argument("color", ColorArgumentType.color())
                     .executes(NickNameCommand::commandNickSetColored)
                 )
@@ -86,9 +86,9 @@ public final class NickNameCommand {
     private static int commandNickSet(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
         
-        if (SewingMachineConfig.INSTANCE.NICKNAME_COST.get() > 0) {
+        if (SewConfig.get(SewConfig.NICKNAME_COST) > 0) {
             try {
-                if (!MoneyUtils.takePlayerMoney(player, SewingMachineConfig.INSTANCE.NICKNAME_COST.get()))
+                if (!MoneyUtils.takePlayerMoney(player, SewConfig.get(SewConfig.NICKNAME_COST)))
                     return Command.SINGLE_SUCCESS;
             } catch (NotEnoughMoneyException e) {
                 return Command.SINGLE_SUCCESS;

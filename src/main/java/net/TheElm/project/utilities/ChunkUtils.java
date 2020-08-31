@@ -26,7 +26,7 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
@@ -40,13 +40,12 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerLightingProvider;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -69,7 +68,7 @@ public final class ChunkUtils {
     }
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // If claims are disabled
-        if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || (player != null && player.isCreative())) return true;
+        if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (player != null && player.isCreative())) return true;
         
         // Check if player can do action in chunk
         return ChunkUtils.canPlayerDoInChunk( perm, EntityUtils.getUUID(player), chunk, blockPos );
@@ -177,8 +176,8 @@ public final class ChunkUtils {
      * @return If the player is a high enough rank to teleport to the target
      */
     public static boolean canPlayerWarpTo(PlayerEntity player, UUID target) {
-        if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || (SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get() && (player.isCreative() || player.isSpectator())))
-            return SewingMachineConfig.INSTANCE.COMMAND_WARP_TPA.get();
+        if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator())))
+            return SewConfig.get(SewConfig.COMMAND_WARP_TPA);
         
         // Check our chunk permissions
         ClaimantPlayer permissions = ClaimantPlayer.get(target);
@@ -267,10 +266,10 @@ public final class ChunkUtils {
         return CoreMod.PLAYER_LOCATIONS.get( player );
     }
     public static boolean isPlayerWithinSpawn(@NotNull final ServerPlayerEntity player) {
-        if (!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
+        if (!SewConfig.get(SewConfig.DO_CLAIMS))
             return true;
         // If player is in creative/spectator, or is within Spawn
-        return (SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get() && (player.isCreative() || player.isSpectator()))
+        return (SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
             || CoreMod.spawnID.equals(ChunkUtils.getPlayerLocation( player ));
     }
     public static int getPositionWithinChunk(BlockPos blockPos) {
@@ -278,10 +277,10 @@ public final class ChunkUtils {
         return (chunkIndex |= (blockPos.getZ() & 0xF) << 4);
     }
     
-    public static Text getPlayerWorldWilderness(@NotNull final PlayerEntity player) {
-        if (player.getEntityWorld().dimension.getType() == DimensionType.THE_END)
+    public static MutableText getPlayerWorldWilderness(@NotNull final PlayerEntity player) {
+        if (World.END.equals(player.getEntityWorld().getRegistryKey()))
             return TranslatableServerSide.text(player, "claim.wilderness.end").formatted(Formatting.BLACK);
-        if (player.getEntityWorld().dimension.getType() == DimensionType.THE_NETHER)
+        if (World.NETHER.equals(player.getEntityWorld().getRegistryKey()))
             return TranslatableServerSide.text(player, "claim.wilderness.nether").formatted(Formatting.LIGHT_PURPLE);
         return TranslatableServerSide.text( player, "claim.wilderness.general" ).formatted(Formatting.GREEN);
     }

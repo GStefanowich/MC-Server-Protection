@@ -25,6 +25,7 @@
 
 package net.TheElm.project.exceptions;
 
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
@@ -32,7 +33,7 @@ public final class ShopBuilderException extends Exception {
     
     private final Text message;
     
-    public ShopBuilderException(Text message) {
+    public ShopBuilderException(MutableText message) {
         this.message = (message.formatted(Formatting.RED));
     }
     

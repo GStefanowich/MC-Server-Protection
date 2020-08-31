@@ -26,7 +26,7 @@
 package net.TheElm.project.protections.events;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.BlockBreakCallback;
 import net.TheElm.project.interfaces.BlockBreakEventCallback;
@@ -98,7 +98,7 @@ public final class BlockBreak {
      */
     private static ActionResult blockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         ActionResult result;
-        if (((result = BlockBreak.canBlockBreak( entity, world, hand, blockPos, blockFace, action)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get() && (action == Action.STOP_DESTROY_BLOCK))
+        if (((result = BlockBreak.canBlockBreak( entity, world, hand, blockPos, blockFace, action)) != ActionResult.FAIL) && SewConfig.get(SewConfig.LOG_BLOCKS_BREAKING) && (action == Action.STOP_DESTROY_BLOCK))
             BlockBreak.onSucceedBreak( entity, world, hand, blockPos, blockFace );
         return result;
     }
@@ -121,7 +121,7 @@ public final class BlockBreak {
             ServerPlayerEntity player = (ServerPlayerEntity) entity;
             
             // If player is in creative
-            if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || (action == Action.ABORT_DESTROY_BLOCK))
+            if ((player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)) || (action == Action.ABORT_DESTROY_BLOCK))
                 return ActionResult.PASS;
             
             BlockState blockState = world.getBlockState(blockPos);
@@ -242,7 +242,7 @@ public final class BlockBreak {
              * Get the owner of the projectile
              */
             return BlockBreak.canBlockBreak(
-                ((ExplosiveProjectileEntity)entity).owner,
+                ((ExplosiveProjectileEntity)entity).getOwner(),
                 world,
                 hand,
                 blockPos,

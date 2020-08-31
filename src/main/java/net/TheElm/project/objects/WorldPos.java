@@ -32,16 +32,16 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPointer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.WorldPosition;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 
 public class WorldPos implements BlockPointer, WorldPosition {
     
-    private final DimensionType dimensionType;
+    private final RegistryKey<World> dimensionType;
     private final BlockPos blockPos;
     
-    public WorldPos(@NotNull DimensionType dimensionType, @NotNull BlockPos blockPos) {
+    public WorldPos(@NotNull RegistryKey<World> dimensionType, @NotNull BlockPos blockPos) {
         this.dimensionType = dimensionType;
         this.blockPos = blockPos;
     }
@@ -79,6 +79,6 @@ public class WorldPos implements BlockPointer, WorldPosition {
     @Override
     public World getWorld() {
         MinecraftServer server = ServerCore.get();
-        return server.getWorld( this.dimensionType );
+        return server.getWorld(this.dimensionType);
     }
 }

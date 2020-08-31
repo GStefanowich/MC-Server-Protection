@@ -28,14 +28,16 @@ package net.TheElm.project.mixins.Player;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.commands.PlayerSpawnCommand;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.interfaces.LanguageEntity;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.interfaces.PlayerChat;
@@ -44,6 +46,7 @@ import net.TheElm.project.interfaces.PlayerPermissions;
 import net.TheElm.project.interfaces.PlayerServerLanguage;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.ranks.PlayerRank;
+import net.TheElm.project.utilities.ColorUtils;
 import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.TheElm.project.utilities.SleepUtils;
@@ -55,6 +58,8 @@ import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.MessageType;
+import net.minecraft.network.packet.c2s.play.ClientSettingsC2SPacket;
 import net.minecraft.network.packet.s2c.play.PlayerSpawnPositionS2CPacket;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -67,8 +72,8 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Unit;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -85,12 +90,14 @@ import java.util.Locale;
 import java.util.Set;
 
 @Mixin(ServerPlayerEntity.class)
-public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerPermissions, PlayerServerLanguage, Nicknamable, PlayerChat {
+public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerPermissions, PlayerServerLanguage, Nicknamable, PlayerChat, LanguageEntity {
     
     @Shadow public ServerPlayerInteractionManager interactionManager;
     @Shadow public ServerPlayNetworkHandler networkHandler;
-    @Shadow private String clientLanguage;
     @Shadow private boolean notInAnyWorld;
+    
+    // Client language
+    private Locale clientLanguage = Locale.ENGLISH;
     
     // Health bar
     private int healthTick = 0;
@@ -102,7 +109,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     private Long lastJoinedAt = null;
     
     // Warps
-    private Integer warpDimension = null;
+    private RegistryKey<World> warpDimension = null;
     private BlockPos warpPos = null;
     
     // Nickname
@@ -115,10 +122,6 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     // Compass
     private CompassDirections compassDirections = CompassDirections.SPAWN;
     
-    public WorldInteraction(World world_1, GameProfile gameProfile_1) {
-        super(world_1, gameProfile_1);
-    }
-    
     @Inject(at = @At("RETURN"), method = "<init>*")
     public void onInitialize(CallbackInfo callback) {
         // Set the player to "adventure"-like if they are not allowed to modify the world
@@ -127,6 +130,10 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             this.abilities.invulnerable = true;
             this.sendAbilitiesUpdate();
         }
+    }
+    
+    public WorldInteraction(World world, BlockPos blockPos, GameProfile gameProfile) {
+        super(world, blockPos, gameProfile);
     }
     
     /*
@@ -201,7 +208,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     private void updateHealthBar() {
         // Get the health percentage
-        float percentage = this.getHealth() / this.getMaximumHealth();
+        float percentage = this.getHealth() / this.getMaxHealth();
         
         if (percentage != this.getHealthBar().getPercent()) {
             // Update the bar
@@ -216,13 +223,12 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             );
         }
     }
-    @NotNull
-    public ServerBossBar getHealthBar() {
+    public @NotNull ServerBossBar getHealthBar() {
         if (this.healthBar != null)
             return this.healthBar;
         // Create the health bar
         return (this.healthBar = new ServerBossBar(
-            new LiteralText("Player ").append(this.getDisplayName().formatted(Formatting.AQUA)).formatted(Formatting.WHITE),
+            new LiteralText("Player ").append(ColorUtils.format(this.getDisplayName(), Formatting.AQUA)).formatted(Formatting.WHITE),
             BossBar.Color.RED,
             BossBar.Style.NOTCHED_10
         ));
@@ -272,16 +278,17 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
      * Warping
      */
     
-    public @Nullable Integer getWarpDimensionId() {
+    public @Nullable RegistryKey<World> getWarpDimension() {
         if (this.getWarpPos() == null)
             return null;
         if (this.warpDimension == null)
-            this.warpDimension = 0;
+            this.warpDimension = World.OVERWORLD;
         return this.warpDimension;
     }
     @Override
     public @Nullable ServerWorld getWarpWorld() {
-        return this.getServer().getWorld(DimensionType.byRawId( this.warpDimension ));
+        return this.getServer()
+            .getWorld(this.warpDimension);
     }
     @Override
     public @Nullable BlockPos getWarpPos() {
@@ -295,7 +302,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     @Override
     public void setWarpDimension(@NotNull World world) {
-        this.warpDimension = world.dimension.getType().getRawId();
+        this.warpDimension = world.getRegistryKey();
     }
     
     /*
@@ -317,9 +324,11 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     
     @Inject(at = @At("HEAD"), method = "changeDimension")
-    public void onChangeDimension(DimensionType dimensionType, CallbackInfoReturnable<Entity> callback) {
-        if (SewingMachineConfig.INSTANCE.OVERWORLD_PORTAL_LOC.get() && dimensionType == DimensionType.OVERWORLD) this.setNetherPortal(this.getBlockPos());
-        else if (SewingMachineConfig.INSTANCE.NETHER_PORTAL_LOC.get() && dimensionType == DimensionType.THE_NETHER) this.setOverworldPortal(this.getBlockPos());
+    public void onChangeDimension(ServerWorld targetWorld, CallbackInfoReturnable<Entity> callback) {
+        RegistryKey<World> dimension = this.world.getRegistryKey();
+        
+        if (SewConfig.get(SewConfig.OVERWORLD_PORTAL_LOC) && dimension.equals(World.OVERWORLD)) this.setNetherPortal(this.getBlockPos());
+        else if (SewConfig.get(SewConfig.NETHER_PORTAL_LOC) && dimension.equals(World.NETHER)) this.setOverworldPortal(this.getBlockPos());
     }
     
     /*
@@ -328,7 +337,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     
     @Inject(at = @At("RETURN"), method = "trySleep")
     public void onBedEntered(final BlockPos blockPos, final CallbackInfoReturnable<Either<PlayerEntity.SleepFailureReason, Unit>> callback) {
-        if (!SewingMachineConfig.INSTANCE.DO_SLEEP_VOTE.get())
+        if (!SewConfig.get(SewConfig.DO_SLEEP_VOTE))
             return;
         
         // If player is unable to sleep, ignore
@@ -338,40 +347,39 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         SleepUtils.entityBedToggle( this, this.isSleeping(), false );
     }
     
-    @Override
-    public void setPlayerSpawn(final BlockPos blockPos, final boolean overrideGlobal, final boolean showPlayerMessage) {
+    @Inject(at = @At("HEAD"), method = "setSpawnPoint", cancellable = true)
+    public void onSetSpawnPoint(final RegistryKey<World> dimension, @Nullable final BlockPos blockPos, final boolean overrideGlobal, final boolean showPlayerMessage, CallbackInfo callback) {
         ServerPlayerEntity player = ((ServerPlayerEntity)(LivingEntity) this);
+        
         // If the bed the player slept in is different 
-        if ((!overrideGlobal) && (!blockPos.equals(player.getSpawnPosition()))) {
-            // Don't show the command message again if the player clicked it
-            if ( PlayerSpawnCommand.commandRanUUIDs.remove( player.getUuid() ) ) {
-                super.setPlayerSpawn(blockPos, overrideGlobal, showPlayerMessage);
-                return;
-            }
+        if (dimension.equals(World.OVERWORLD) && (!overrideGlobal) && (!blockPos.equals(player.getSpawnPointPosition()))) {
             
-            if (player.getSpawnPosition() != null) {
+            // Verify that the player wants to update their spawn
+            if ((!PlayerSpawnCommand.commandRanUUIDs.remove(player.getUuid())) && (player.getSpawnPointPosition() != null)) {
                 // Let the player move their spawn
-                player.sendMessage( new LiteralText( "You have an existing bed spawnpoint. To move your spawnpoint to this bed " ).formatted(Formatting.YELLOW)
+                player.sendMessage( new LiteralText("You have an existing bed spawnpoint. To move your spawnpoint to this bed ").formatted(Formatting.YELLOW)
                     .append( new LiteralText( "click here" )
                         // Format clickable
                         .formatted(Formatting.RED, Formatting.BOLD)
+                        
                         // Add the click command
-                        .styled((style) -> style.setClickEvent(new ClickEvent( ClickEvent.Action.RUN_COMMAND, "/" + PlayerSpawnCommand.commandName + " " + blockPos.getX() + " " + blockPos.getY() + " " + blockPos.getZ() )))
-                    )
-                    .append( "." )
+                        .styled((style) -> style.withClickEvent(new ClickEvent( ClickEvent.Action.RUN_COMMAND, "/" + PlayerSpawnCommand.commandName + " " + blockPos.getX() + " " + blockPos.getY() + " " + blockPos.getZ() )))
+                    ).append( "." ),
+                    MessageType.SYSTEM,
+                    ServerCore.spawnID
                 );
                 
+                callback.cancel();
                 return;
             }
             
             CoreMod.logInfo("Player " + this.getName().asString() + " spawn updated to X " + blockPos.getX() + ", Z " + blockPos.getZ() + ", Y " + blockPos.getY());
         }
-        super.setPlayerSpawn(blockPos, overrideGlobal, showPlayerMessage);
     }
     
     @Inject(at = @At("RETURN"), method = "wakeUp")
     public void onBedEjected(final boolean sleepTimer, final boolean leftBed, final CallbackInfo callback) {
-        if (!SewingMachineConfig.INSTANCE.DO_SLEEP_VOTE.get())
+        if (!SewConfig.get(SewConfig.DO_SLEEP_VOTE))
             return;
         
         // If player woke up naturally, ignore.
@@ -385,8 +393,13 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Connected players language
      */
+    @Override
     public Locale getClientLanguage() {
-        return Locale.forLanguageTag( this.clientLanguage );
+        return this.clientLanguage;
+    }
+    @Inject(at = @At("HEAD"), method = "setClientSettings")
+    private void onClientSettings(ClientSettingsC2SPacket packet, CallbackInfo callback) {
+        this.clientLanguage = ((LanguageEntity)packet).getClientLanguage();
     }
     
     /*
@@ -395,11 +408,11 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
     public void onSavingData(CompoundTag tag, CallbackInfo callback) {
         // Save the player warp location for restarts
-        if (( this.warpPos != null ) && ( this.getWarpDimensionId() != null )) {
+        if (( this.warpPos != null ) && ( this.getWarpDimension() != null )) {
             tag.putInt("playerWarpX", this.warpPos.getX());
             tag.putInt("playerWarpY", this.warpPos.getY());
             tag.putInt("playerWarpZ", this.warpPos.getZ());
-            tag.putInt("playerWarpD", this.getWarpDimensionId());
+            tag.putString("playerWarpD", NbtUtils.worldToTag(this.getWarpDimension()));
         }
         
         // Store the players nickname
@@ -434,7 +447,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
                 tag.getInt("playerWarpZ")
             );
             if ( tag.contains( "playerWarpD" ) )
-                this.warpDimension = tag.getInt("playerWarpD");
+                this.warpDimension = NbtUtils.worldRegistryFromTag(tag.get("playerWarpD"));
         }
         
         // Get the nickname
@@ -465,7 +478,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     public void onCopyData(ServerPlayerEntity player, boolean alive, CallbackInfo callback) {
         // Copy the players warp over
         this.warpPos = ((PlayerData) player).getWarpPos();
-        this.warpDimension = ((PlayerData) player).getWarpDimensionId();
+        this.warpDimension = ((PlayerData) player).getWarpDimension();
         
         // Copy the players nick over
         this.playerNickname = ((Nicknamable) player).getPlayerNickname();
@@ -504,9 +517,9 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     public Text getPlayerNickname() {
         if (this.playerNickname == null)
             return null;
-        return this.playerNickname.deepCopy();
+        return this.playerNickname.copy();
     }
-    @Inject(at = @At("HEAD"), method = "method_14206", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "getPlayerListName", cancellable = true)
     public void getServerlistDisplayName(CallbackInfoReturnable<Text> callback) {
         callback.setReturnValue(((Nicknamable) this).getPlayerNickname());
     }
@@ -514,8 +527,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Chat Rooms (Handled cross dimension)
      */
-    @Override @NotNull
-    public ChatRooms getChatRoom() {
+    @Override
+    public @NotNull ChatRooms getChatRoom() {
         return ((PlayerChat)this.interactionManager).getChatRoom();
     }
     @Override

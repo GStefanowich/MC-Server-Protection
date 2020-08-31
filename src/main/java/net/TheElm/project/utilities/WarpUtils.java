@@ -27,7 +27,7 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerData;
@@ -56,9 +56,9 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
-import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.level.LevelProperties;
+import net.minecraft.world.WorldProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,7 +109,7 @@ public final class WarpUtils {
         BlockPos tpPos;
         
         int count = 1;
-        int maxHeight = ( world.dimension.hasVisibleSky() ? 256 : this.createWarpAt.getY() + 10 );
+        int maxHeight = ( world.getDimension().hasSkyLight() ? 256 : this.createWarpAt.getY() + 10 );
         boolean negX = false;
         boolean negZ = false;
         
@@ -138,8 +138,8 @@ public final class WarpUtils {
     
     private static int getRandom( int position ) {
         int random = ThreadLocalRandom.current().nextInt(
-            position - SewingMachineConfig.INSTANCE.WARP_MAX_DISTANCE.get(),
-            position + SewingMachineConfig.INSTANCE.WARP_MAX_DISTANCE.get()
+            position - SewConfig.get(SewConfig.WARP_MAX_DISTANCE),
+            position + SewConfig.get(SewConfig.WARP_MAX_DISTANCE)
         );
         return ( 16 * Math.round(random >> 4) ) + 8;
     }
@@ -157,7 +157,7 @@ public final class WarpUtils {
             
             pos = pos.down();
             blockState = world.getBlockState( pos );
-        } while ( blockState.isAir() || blockState.getMaterial().isReplaceable() || ( mustBeUnowned && ( blockState.getMaterial() == Material.SNOW || blockState.getMaterial() == Material.PLANT )));
+        } while ( blockState.isAir() || blockState.getMaterial().isReplaceable() || ( mustBeUnowned && ( blockState.getMaterial() == Material.SNOW_LAYER || blockState.getMaterial() == Material.PLANT )));
         
         Material material = blockState.getMaterial();
         
@@ -167,7 +167,7 @@ public final class WarpUtils {
             && ( material != Material.FIRE )
             && ( material != Material.LEAVES )
             && ( material != Material.ICE )
-            && ( material != Material.PACKED_ICE )
+            && ( material != Material.DENSE_ICE )
             && ( world.getBlockState( pos.up() ).isAir() ) ? pos : null;
     }
     
@@ -327,9 +327,8 @@ public final class WarpUtils {
             
             // Read the player warp location after restarting
             if (playerNBT.contains("playerWarpX") && playerNBT.contains("playerWarpY") && playerNBT.contains("playerWarpZ")) {
-                int warpDimension = (playerNBT.contains("playerWarpD") ? playerNBT.getInt("playerWarpD") : 0);
                 warp = new Warp(
-                    server.getWorld(DimensionType.byRawId(warpDimension)),
+                    server.getWorld(NbtUtils.worldRegistryFromTag(playerNBT.get("playerWarpD"))),
                     new BlockPos(
                         playerNBT.getInt("playerWarpX"),
                         playerNBT.getInt("playerWarpY"),
@@ -406,7 +405,7 @@ public final class WarpUtils {
             z = tpPos.getZ() + 0.5D;
         
         // Set the teleport ticket
-        ((ServerWorld) world).getChunkManager().addTicket(ChunkTicketType.POST_TELEPORT, chunkPos, 1, entity.getEntityId());
+        ((ServerWorld) world).getChunkManager().addTicket(ChunkTicketType.field_19347, chunkPos, 1, entity.getEntityId());
         
         if (entity instanceof ServerPlayerEntity) {
             ServerPlayerEntity player = (ServerPlayerEntity)entity;
@@ -433,7 +432,6 @@ public final class WarpUtils {
                 entity.setHeadYaw( i );
             } else {
                 entity.detach();
-                entity.dimension = world.dimension.getType();
                 Entity copyFrom = entity;
                 entity = entity.getType().create( world );
                 
@@ -452,13 +450,13 @@ public final class WarpUtils {
         // Change the entity to not falling
         if (!(entity instanceof LivingEntity) || !((LivingEntity)entity).isFallFlying()) {
             entity.setVelocity(entity.getVelocity().multiply(1.0D, 0.0D, 1.0D));
-            entity.onGround = true;
+            entity.setOnGround(true);
         }
     }
     public static void teleportEntity(@NotNull final World world, @NotNull Entity entity) {
         WarpUtils.teleportEntity(world, entity, ServerCore.getSpawn(world));
     }
-    public static void teleportEntity(@NotNull DimensionType dimension, @NotNull Entity entity) {
+    public static void teleportEntity(@NotNull RegistryKey<World> dimension, @NotNull Entity entity) {
         WarpUtils.teleportEntity(ServerCore.getWorld(dimension), entity);
     }
     private static void teleportFriendlies(@NotNull final World world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
@@ -490,8 +488,8 @@ public final class WarpUtils {
         }
     }
     public static BlockPos getWorldSpawn(@NotNull final ServerWorld world) {
-        LevelProperties properties = world.getLevelProperties();
-        return new BlockPos( properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ() );
+        WorldProperties properties = world.getLevelProperties();
+        return new BlockPos(properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ());
     }
     
     public static class Warp {

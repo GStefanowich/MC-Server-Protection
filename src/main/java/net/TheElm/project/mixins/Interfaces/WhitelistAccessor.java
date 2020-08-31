@@ -6,6 +6,6 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 
 @Mixin(ServerConfigEntry.class)
 public interface WhitelistAccessor<T> {
-    @Accessor("object")
+    @Accessor("key")
     T getObject();
 }

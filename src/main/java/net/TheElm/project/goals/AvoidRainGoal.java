@@ -26,7 +26,7 @@
 package net.TheElm.project.goals;
 
 import net.minecraft.entity.ai.goal.Goal;
-import net.minecraft.entity.mob.MobEntityWithAi;
+import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -38,7 +38,7 @@ import java.util.Random;
 
 public class AvoidRainGoal extends Goal {
     // Mob information
-    protected final MobEntityWithAi mob;
+    protected final PathAwareEntity mob;
     private final World world;
     
     // Get the position to move toward
@@ -46,7 +46,7 @@ public class AvoidRainGoal extends Goal {
     private double targetY;
     private double targetZ;
     
-    public AvoidRainGoal(MobEntityWithAi mob) {
+    public AvoidRainGoal(PathAwareEntity mob) {
         this.mob = mob;
         this.world = mob.world;
     }
@@ -61,7 +61,7 @@ public class AvoidRainGoal extends Goal {
             return false;
         Box box = this.mob.getBoundingBox();
         // If mob isn't visible to the sky
-        if (!this.world.isSkyVisible(new BlockPos(this.mob.getX(), Math.min( box.y1, box.y2 ), this.mob.getZ())))
+        if (!this.world.isSkyVisible(new BlockPos(this.mob.getX(), box.minY, this.mob.getZ())))
             return false;
         // Don't ALWAYS do it (Save the CPU!)
         if (this.mob.getRandom().nextInt(120) != 0)
@@ -90,12 +90,12 @@ public class AvoidRainGoal extends Goal {
     private Vec3d locateCover() {
         Random rand = this.mob.getRandom();
         Box box = this.mob.getBoundingBox();
-        BlockPos blockPos = new BlockPos(this.mob.getX(), Math.min( box.y1, box.y2 ), this.mob.getZ());
+        BlockPos blockPos = new BlockPos(this.mob.getX(), box.minY, this.mob.getZ());
         
         for( int i = 0; i < 10; ++i ) {
             BlockPos goalPos = blockPos.add( rand.nextInt(20) - 10, rand.nextInt(6) - 3, rand.nextInt(20) - 10 );
             if (!this.world.isSkyVisible(goalPos) && (!this.world.isWater(goalPos)) && this.mob.getPathfindingFavor(goalPos) < 0.0F) {
-                return new Vec3d((double)goalPos.getX(), (double)goalPos.getY(), (double)goalPos.getZ());
+                return new Vec3d(goalPos.getX(), goalPos.getY(), goalPos.getZ());
             }
         }
         

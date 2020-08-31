@@ -42,11 +42,11 @@ import java.util.Map;
 public class Shovel {
     
     @Shadow @Final
-    protected static Map<Block, BlockState> PATH_BLOCKSTATES;
+    protected static Map<Block, BlockState> PATH_STATES;
     
     @Inject(at = @At("RETURN"), method = "<init> *")
     public void shovelConstructor(CallbackInfo callback) {
-        PATH_BLOCKSTATES.put(Blocks.DIRT, Blocks.GRASS_PATH.getDefaultState());
+        PATH_STATES.put(Blocks.DIRT, Blocks.GRASS_PATH.getDefaultState());
     }
     
 }

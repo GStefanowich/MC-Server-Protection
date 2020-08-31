@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.Player;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.BlockPlaceCallback;
 import net.TheElm.project.interfaces.MoneyHolder;
@@ -52,6 +52,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameRules;
@@ -83,7 +84,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
      */
     @Inject(at = @At("HEAD"), method = "dropInventory", cancellable = true)
     public void onInventoryDrop(CallbackInfo callback) {
-        if (!SewingMachineConfig.INSTANCE.DO_DEATH_CHESTS.get())
+        if (!SewConfig.get(SewConfig.DO_DEATH_CHESTS))
             return;
         
         // Only do if we're not keeping the inventory, and the player is actually dead! (Death Chest!)
@@ -91,13 +92,15 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
             BlockPos chestPos;
             
             // Check if player is in combat
-            if (SewingMachineConfig.INSTANCE.PVP_DISABLE_DEATH_CHEST.get() && (this.hitByOtherPlayerAt != null)) {
+            if (SewConfig.get(SewConfig.PVP_DISABLE_DEATH_CHEST) && (this.hitByOtherPlayerAt != null)) {
                 // Tell the player that they didn't get a death chest
-                this.sendMessage(new LiteralText("A death chest was not generated because you died in combat.").formatted(Formatting.RED));
+                this.sendSystemMessage(
+                    new LiteralText("A death chest was not generated because you died in combat.").formatted(Formatting.RED),
+                    Util.NIL_UUID
+                );
                 
                 // Reset the hit by time
                 this.hitByOtherPlayerAt = null;
-                
                 return;
             }
             
@@ -107,9 +110,8 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
                 this.vanishCursedItems();
                 
                 // If a death chest was successfully spawned
-                if (DeathChestUtils.createDeathChestFor( (PlayerEntity)(LivingEntity) this, chestPos )) {
+                if (DeathChestUtils.createDeathChestFor( (PlayerEntity)(LivingEntity) this, chestPos ))
                     callback.cancel();
-                }
             }
         }
     }
@@ -123,11 +125,14 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
     @Inject(at = @At("TAIL"), method = "tick")
     public void onTick(CallbackInfo callback) {
         if ((!this.world.isClient) && ((Entity) this) instanceof ServerPlayerEntity) {
-            if (this.hitByOtherPlayerAt != null && (this.hitByOtherPlayerAt < System.currentTimeMillis() - (SewingMachineConfig.INSTANCE.PVP_COMBAT_SECONDS.get() * 1000))) {
+            if (this.hitByOtherPlayerAt != null && (this.hitByOtherPlayerAt < System.currentTimeMillis() - (SewConfig.get(SewConfig.PVP_COMBAT_SECONDS) * 1000))) {
                 // Remove player from combat
                 this.hitByOtherPlayerAt = null;
                 
-                this.sendMessage(new LiteralText("You are no longer in combat.").formatted(Formatting.YELLOW));
+                this.sendSystemMessage(
+                    new LiteralText("You are no longer in combat.").formatted(Formatting.YELLOW),
+                    Util.NIL_UUID
+                );
             }
         }
     }
@@ -138,7 +143,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
             if (source.getAttacker() instanceof PlayerEntity && callback.getReturnValue()) {
                 // If player just entered combat
                 if (this.hitByOtherPlayerAt == null)
-                    this.sendMessage(new LiteralText("You are now in combat.").formatted(Formatting.YELLOW));
+                    this.sendSystemMessage(new LiteralText("You are now in combat.").formatted(Formatting.YELLOW), Util.NIL_UUID);
                 
                 // Set combat time to when hit
                 this.hitByOtherPlayerAt = System.currentTimeMillis();
@@ -166,7 +171,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
      */
     @Inject(at = @At("RETURN"), method = "initDataTracker")
     public void onInitDataTracking(CallbackInfo callback) {
-        this.dataTracker.startTracking( MONEY, SewingMachineConfig.INSTANCE.STARTING_MONEY.get() );
+        this.dataTracker.startTracking( MONEY, SewConfig.get(SewConfig.STARTING_MONEY) );
     }
     @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
     public void onSavingData(CompoundTag tag, CallbackInfo callback) {
@@ -197,7 +202,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
             if (tag.contains("BackpackPickup", NbtType.LIST))
                 this.backpack.readPickupTags(tag.getList("BackpackPickup", NbtType.STRING));
         } else {
-            int startingBackpack = SewingMachineConfig.INSTANCE.BACKPACK_STARTING_ROWS.get();
+            int startingBackpack = SewConfig.get(SewConfig.BACKPACK_STARTING_ROWS);
             if ( startingBackpack > 0 )
                 this.backpack = new PlayerBackpack((PlayerEntity)(LivingEntity)this, Math.min(startingBackpack, 6));
         }
@@ -226,10 +231,10 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
     public void onVanishCursedItems(CallbackInfo callback) {
         if (this.backpack == null)
             return;
-        for (int i = 0; i < this.backpack.getInvSize(); i++) {
-            ItemStack stack = this.backpack.getInvStack(i);
+        for (int i = 0; i < this.backpack.size(); i++) {
+            ItemStack stack = this.backpack.getStack(i);
             if (!stack.isEmpty() && EnchantmentHelper.hasVanishingCurse(stack))
-                this.backpack.removeInvStack(i);
+                this.backpack.removeStack(i);
         }
     }
     

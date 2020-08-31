@@ -26,7 +26,7 @@
 package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.ConstructableEntity;
 import net.TheElm.project.interfaces.SleepingWorld;
 import net.TheElm.project.utilities.CasingUtils;
@@ -42,12 +42,14 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.profiler.Profiler;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.GameRules;
+import net.minecraft.world.MutableWorldProperties;
+import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.ChunkManager;
-import net.minecraft.world.dimension.Dimension;
 import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.level.LevelProperties;
+import net.minecraft.world.level.ServerWorldProperties;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -60,31 +62,34 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 @Mixin(ServerWorld.class)
-public abstract class WorldSleep extends World implements SleepingWorld {
+public abstract class WorldSleep extends World implements SleepingWorld, ServerWorldAccess {
     
     // Shadows from ServerWorld
-    @Shadow private List<ServerPlayerEntity> players;
+    @Shadow @Final private List<ServerPlayerEntity> players;
+    @Shadow @Final private ServerWorldProperties worldProperties;
     @Shadow private boolean allPlayersSleeping;
-    @Shadow private native void resetWeather();
     
-    protected WorldSleep(LevelProperties levelProperties_1, DimensionType dimensionType_1, BiFunction<World, Dimension, ChunkManager> biFunction_1, Profiler profiler_1, boolean boolean_1) {
-        super(levelProperties_1, dimensionType_1, biFunction_1, profiler_1, boolean_1);
+    protected WorldSleep(MutableWorldProperties mutableWorldProperties, RegistryKey<World> registryKey, RegistryKey<DimensionType> registryKey2, DimensionType dimensionType, Supplier<Profiler> profiler, boolean bl, boolean bl2, long l) {
+        super(mutableWorldProperties, registryKey, registryKey2, dimensionType, profiler, bl, bl2, l);
     }
+    
+    @Shadow private native void resetWeather();
+    @Shadow public native void setTimeOfDay(long timeOfDay);
     
     @Inject(at = @At("HEAD"), method = "tick")
     public void onTick(BooleanSupplier booleanSupplier, CallbackInfo callback) {
         // If Naturally Sleeping, Disabled, or Not enough Percentage
         int sleepingPercentage;
-        if ( (!this.getDimension().canPlayersSleep()) // If non-sleeping dimension (End/Nether)
+        if ( (!this.getDimension().isBedWorking())
                 || ( this.players.size() <= 0 ) // If nobody is online
                 //|| this.allPlayersSleeping // If everyone is already sleeping (Vanilla default)
-                || (!SewingMachineConfig.INSTANCE.DO_SLEEP_VOTE.get()) // If sleep voting is disabled
-                || ( SewingMachineConfig.INSTANCE.SLEEP_PERCENT.get() <= 0 ) // If the required sleeping percentage is 0 (disabled)
-                || ((sleepingPercentage = SleepUtils.getSleepingPercentage( this )) < SewingMachineConfig.INSTANCE.SLEEP_PERCENT.get() )
+                || (!SewConfig.get(SewConfig.DO_SLEEP_VOTE)) // If sleep voting is disabled
+                || ( SewConfig.get(SewConfig.SLEEP_PERCENT) <= 0 ) // If the required sleeping percentage is 0 (disabled)
+                || ((sleepingPercentage = SleepUtils.getSleepingPercentage( this )) < SewConfig.get(SewConfig.SLEEP_PERCENT) )
         ) return;
         
         this.allPlayersSleeping = false;
@@ -110,20 +115,20 @@ public abstract class WorldSleep extends World implements SleepingWorld {
                 this.resetWeather();
             else if (this.random.nextInt(40) <= 0) {
                 // Random chance to start raining
-                this.properties.setClearWeatherTime(0);
-                this.properties.setRainTime(IntUtils.random(this.random, 300, 1200) * 20);
-                this.properties.setRaining(true);
-                this.properties.setThunderTime(0);
-                this.properties.setThundering(false);
+                this.worldProperties.setClearWeatherTime(0);
+                this.worldProperties.setRainTime(IntUtils.random(this.random, 300, 1200) * 20);
+                this.worldProperties.setRaining(true);
+                this.worldProperties.setThunderTime(0);
+                this.worldProperties.setThundering(false);
             }
         }
         
         long worldDay = IntUtils.timeToDays(this);
-        long worldYear = worldDay / SewingMachineConfig.INSTANCE.CALENDAR_DAYS.get();
-        worldDay = worldDay - (worldYear * SewingMachineConfig.INSTANCE.CALENDAR_DAYS.get());
+        long worldYear = worldDay / SewConfig.get(SewConfig.CALENDAR_DAYS);
+        worldDay = worldDay - (worldYear * SewConfig.get(SewConfig.CALENDAR_DAYS));
         
         NumberFormat formatter = NumberFormat.getInstance();
-        String year = CasingUtils.Acronym(SewingMachineConfig.INSTANCE.CALENDAR_YEAR_EPOCH.get(), true);
+        String year = CasingUtils.Acronym(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH), true);
         TitleUtils.showPlayerAlert((ServerWorld)(World) this,
             new LiteralText("Rise and shine! Day ")
                 .append(formatter.format( worldDay ))

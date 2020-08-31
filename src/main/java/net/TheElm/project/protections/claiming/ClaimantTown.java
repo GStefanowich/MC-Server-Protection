@@ -27,7 +27,7 @@ package net.TheElm.project.protections.claiming;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.PlayerData;
@@ -36,8 +36,10 @@ import net.TheElm.project.utilities.TownNameUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.MessageType;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,7 +57,7 @@ public final class ClaimantTown extends Claimant {
     protected ClaimantTown(@NotNull UUID townId) {
         super(ClaimantType.TOWN, townId);
     }
-    protected ClaimantTown(@NotNull UUID townId, @NotNull Text townName) {
+    protected ClaimantTown(@NotNull UUID townId, @NotNull MutableText townName) {
         this( townId );
         this.name = townName;
     }
@@ -76,13 +78,13 @@ public final class ClaimantTown extends Claimant {
     }
     public final int getResidentCount() {
         return this.getFriends().size()
-            + (SewingMachineConfig.INSTANCE.TOWN_VILLAGERS_INCLUDE.get()
-                && SewingMachineConfig.INSTANCE.TOWN_VILLAGERS_VALUE.get() > 0 ? this.getVillagers().size() / SewingMachineConfig.INSTANCE.TOWN_VILLAGERS_VALUE.get() : 0);
+            + (SewConfig.get(SewConfig.TOWN_VILLAGERS_INCLUDE)
+                && SewConfig.get(SewConfig.TOWN_VILLAGERS_VALUE) > 0 ? this.getVillagers().size() / SewConfig.get(SewConfig.TOWN_VILLAGERS_VALUE) : 0);
     }
     
     @Override
-    public Text getName() {
-        return this.name.deepCopy();
+    public MutableText getName() {
+        return this.name.copy();
     }
     
     /* Villager Options */
@@ -133,10 +135,10 @@ public final class ClaimantTown extends Claimant {
     
     /* Send Messages */
     @Override
-    public final void send(Text text) {
+    public final void send(Text text, MessageType type, UUID from) {
         this.getFriends().forEach((uuid) -> {
             ServerPlayerEntity player = ServerCore.getPlayer(uuid);
-            if (player != null) player.sendMessage(text);
+            if (player != null) player.sendMessage(text, type, from);
         });
     }
     
@@ -202,7 +204,7 @@ public final class ClaimantTown extends Claimant {
         ClaimantTown town;
         
         // If claims are disabled
-        if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) || (townId == null))
+        if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (townId == null))
             return null;
         
         NbtUtils.assertExists( ClaimantType.TOWN, townId );
@@ -214,7 +216,7 @@ public final class ClaimantTown extends Claimant {
         // Return the town object
         return new ClaimantTown( townId );
     }
-    public static ClaimantTown makeTown(@NotNull ServerPlayerEntity founder, @NotNull Text townName) {
+    public static ClaimantTown makeTown(@NotNull ServerPlayerEntity founder, @NotNull MutableText townName) {
         // Generate a random UUID
         UUID townUUID;
         do {
@@ -222,9 +224,9 @@ public final class ClaimantTown extends Claimant {
         } while (NbtUtils.exists( ClaimantType.TOWN, townUUID ));
         return ClaimantTown.makeTown( townUUID, founder.getUuid(), townName );
     }
-    public static ClaimantTown makeTown(@NotNull UUID townUUID, @NotNull UUID founder, @NotNull Text townName) {
+    public static ClaimantTown makeTown(@NotNull UUID townUUID, @NotNull UUID founder, @NotNull MutableText townName) {
         // Create our town
-        ClaimantTown town = new ClaimantTown( townUUID, townName );
+        ClaimantTown town = new ClaimantTown(townUUID, townName);
     
         // Save the town
         town.setOwner( founder );

@@ -29,7 +29,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
@@ -43,7 +43,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 
@@ -65,13 +65,13 @@ public final class WhereCommand {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
         BlockPos pos = player.getBlockPos();
         
-        Text feedback = new LiteralText("")
+        MutableText feedback = new LiteralText("")
             .formatted(Formatting.YELLOW)
             .append(player.getDisplayName())
             .append(" is currently at ")
             .append(MessageUtils.blockPosToTextComponent(pos));
         
-        if (SewingMachineConfig.INSTANCE.DO_CLAIMS.get()) {
+        if (SewConfig.get(SewConfig.DO_CLAIMS)) {
             Entity commandSource = source.getEntity();
             
             ServerWorld world = source.getWorld();

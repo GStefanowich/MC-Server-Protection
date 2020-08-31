@@ -39,6 +39,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
+import net.minecraft.util.Util;
 import net.minecraft.world.GameMode;
 
 public final class GameModesCommand {
@@ -102,8 +103,8 @@ public final class GameModesCommand {
         Text gmText = new TranslatableText("gameMode." + gameMode.getName());
         
         source.sendFeedback(new TranslatableText("commands.gamemode.success.other", player.getDisplayName(), gmText), true);
-        player.setGameMode( gameMode );
-        player.sendMessage(new TranslatableText("gameMode.changed", gmText));
+        player.setGameMode(gameMode);
+        player.sendSystemMessage(new TranslatableText("gameMode.changed", gmText), Util.NIL_UUID);
         
         return Command.SINGLE_SUCCESS;
     }

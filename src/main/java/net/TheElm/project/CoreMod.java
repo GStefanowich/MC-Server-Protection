@@ -30,7 +30,7 @@ import net.TheElm.project.MySQL.MySQLConnection;
 import net.TheElm.project.MySQL.MySQLHost;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.MySQL.MySQLite;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
@@ -43,6 +43,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -82,7 +83,7 @@ public abstract class CoreMod {
         if ( MySQL == null ) {
             synchronized ( CoreMod.class ) {
                 if ( MySQL == null )
-                    MySQL = ( SewingMachineConfig.INSTANCE.DB_LITE.get() ?
+                    MySQL = ( SewConfig.get(SewConfig.DB_LITE) ?
                         new MySQLite() : new MySQLConnection()
                     );
             }
@@ -180,11 +181,10 @@ public abstract class CoreMod {
      * Configurations
      */
     protected static boolean initDB() throws SQLException {
-        SewingMachineConfig CONFIG = SewingMachineConfig.INSTANCE;
         ArrayList<String> tables = new ArrayList<>();
         ArrayList<String> alters = new ArrayList<>();
         
-        if (( CONFIG.LOG_CHUNKS_CLAIMED.get() || CONFIG.LOG_CHUNKS_UNCLAIMED.get() ) && ( CONFIG.LOG_BLOCKS_BREAKING.get() || CONFIG.LOG_BLOCKS_PLACING.get() )) {
+        if (( SewConfig.get(SewConfig.LOG_CHUNKS_CLAIMED) || SewConfig.get(SewConfig.LOG_CHUNKS_UNCLAIMED) ) && ( SewConfig.get(SewConfig.LOG_BLOCKS_BREAKING) || SewConfig.get(SewConfig.LOG_BLOCKS_PLACING) )) {
             String blockUpdateEnums = getDatabaseReadyEnumerators( EventLogger.BlockAction.class );
             
             tables.add(
@@ -270,7 +270,7 @@ public abstract class CoreMod {
      */
     public static final String logPrefix = "[SEW] ";
     public static void logInfo(@Nullable Text message ) {
-        Text out = new LiteralText(logPrefix);
+        MutableText out = new LiteralText(logPrefix);
         if (message == null) out.append("NULL");
         else out.append(message);
         logger.info(out.getString());
@@ -302,6 +302,9 @@ public abstract class CoreMod {
     }
     public static void logError( String message, Throwable error ) {
         logger.error( logPrefix + message, error );
+    }
+    public static void logError(@Nullable Object message ) {
+        CoreMod.logError( message == null ? "NULL" : message.toString() );
     }
     
 }

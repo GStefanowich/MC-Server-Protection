@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
@@ -55,7 +55,7 @@ public abstract class MinecartRide extends AbstractMinecartEntity {
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     private void tryMinecartEnter(PlayerEntity player, Hand hand, CallbackInfoReturnable<Boolean> callback) {
         // Player is in creative
-        if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || player.isSpectator())
+        if ((player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
             return;
         
         // If player can enter Minecart

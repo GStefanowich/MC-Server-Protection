@@ -25,11 +25,13 @@
 
 package net.TheElm.project.utilities;
 
+import com.mojang.serialization.DataResult;
+import com.mojang.serialization.Dynamic;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.ConfigOption;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
@@ -38,11 +40,15 @@ import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.minecraft.datafixer.NbtOps;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.IntTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
@@ -99,12 +105,12 @@ public final class LegacyConverter implements AutoCloseable {
             try (MySQLStatement stmt = CoreMod.getSQL().prepare("SELECT `townId`, `townOwner`, `townName` FROM `chunk_Towns`;")) {
                 try (ResultSet rs = stmt.executeStatement()) {
                     while (rs.next()) {
-                        Text townName = new LiteralText(rs.getString("townName"));
+                        MutableText townName = new LiteralText(rs.getString("townName"));
                         UUID townUUID = UUID.fromString(rs.getString("townId"));
                         UUID ownerUUID = UUID.fromString(rs.getString("townOwner"));
                         
                         // Make a NEW town
-                        ClaimantTown town = ClaimantTown.makeTown( townUUID, ownerUUID, townName );
+                        ClaimantTown town = ClaimantTown.makeTown(townUUID, ownerUUID, townName);
                         
                         // Store the town for later user
                         this.modTownData.put(townUUID, town);
@@ -226,12 +232,8 @@ public final class LegacyConverter implements AutoCloseable {
             try (ResultSet rs = stmt.executeStatement()){
                 while (rs.next()) {
                     // Get the dimension
-                    int dimId = rs.getInt("chunkWorld");
-                    DimensionType dimension = DimensionType.byRawId(dimId);
-                    if (dimension == null) {
-                        CoreMod.logError("Failed to import chunks from world " + dimId + ". World type no longer exists?");
-                        continue;
-                    }
+                    byte dimId = (byte) rs.getInt("chunkWorld");
+                    RegistryKey<World> dimension = LegacyConverter.getWorldFromId(dimId);
                     
                     // Get the world based on ID
                     ServerWorld world = server.getWorld(dimension);
@@ -336,14 +338,12 @@ public final class LegacyConverter implements AutoCloseable {
     /*
      * Mod NBT Data
      */
-    @NotNull
-    private ClaimantPlayer getPlayerDat(UUID playerUUID) {
+    private @NotNull ClaimantPlayer getPlayerDat(UUID playerUUID) {
         if (!this.modPlayerData.containsKey(playerUUID))
             this.modPlayerData.put(playerUUID, ClaimantPlayer.get(playerUUID));
         return this.modPlayerData.get(playerUUID);
     }
-    @Nullable
-    private ClaimantTown getTownDat(UUID townUUID) {
+    private @Nullable ClaimantTown getTownDat(UUID townUUID) {
         if (!this.modTownData.containsKey(townUUID))
             return null;
         return this.modTownData.get(townUUID);
@@ -364,8 +364,7 @@ public final class LegacyConverter implements AutoCloseable {
     /*
      * Static GETTERs
      */
-    @Nullable
-    public static LegacyConverter create() {
+    public static @Nullable LegacyConverter create() {
         if ( LegacyConverter.INSTANCE != null ) return null;
         synchronized ( LegacyConverter.class ) {
             if ( LegacyConverter.INSTANCE != null ) return null;
@@ -380,14 +379,14 @@ public final class LegacyConverter implements AutoCloseable {
         return LegacyConverter.RUNNING;
     }
     public static boolean isLegacy() {
-        ConfigOption<String> version = SewingMachineConfig.INSTANCE.CONFIG_VERSION;
-        boolean isLegacy = (SewingMachineConfig.INSTANCE.preExisting() && (!version.wasUserDefined()));
+        ConfigOption<String> version = SewConfig.CONFIG_VERSION;
+        boolean isLegacy = (SewConfig.preExisting() && (!version.wasUserDefined()));
         
         // Check if our version is considered legacy
         if (isLegacy)
             return true;
         
-        String versionString = version.get();
+        String versionString = SewConfig.get(version);
         switch (versionString) {
             case "1.0.0":
             case "1.0.1":
@@ -399,6 +398,14 @@ public final class LegacyConverter implements AutoCloseable {
             default:
                 return false;
         }
+    }
+    
+    public static @NotNull RegistryKey<World> getWorldFromId(int id) {
+        return LegacyConverter.getWorldFromId(IntTag.of(id));
+    }
+    public static @NotNull RegistryKey<World> getWorldFromId(IntTag id) {
+        DataResult<RegistryKey<World>> worlds = DimensionType.method_28521(new Dynamic<>(NbtOps.INSTANCE, id));
+        return worlds.resultOrPartial(CoreMod::logError).orElse(World.OVERWORLD);
     }
     
 }

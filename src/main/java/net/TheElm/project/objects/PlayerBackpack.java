@@ -25,16 +25,16 @@
 
 package net.TheElm.project.objects;
 
-import net.minecraft.container.ContainerType;
-import net.minecraft.container.GenericContainer;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.BasicInventory;
+import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
+import net.minecraft.screen.GenericContainerScreenHandler;
+import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
@@ -50,7 +50,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.HashSet;
 import java.util.Set;
 
-public class PlayerBackpack extends BasicInventory {
+public class PlayerBackpack extends SimpleInventory {
     
     private final Set<Identifier> autopickup = new HashSet<>();
     private final int rows;
@@ -86,32 +86,30 @@ public class PlayerBackpack extends BasicInventory {
         if (itemStack.isEmpty())
             return false;
         try {
+            // Damaged items must be in their own slot
             if (itemStack.isDamaged()) {
-                if (slot == -1) {
+                // Search for a slot
+                if (slot == -1)
                     slot = this.getEmptySlot();
-                }
                 
-                if (slot >= 0) {
-                    this.setInvStack(slot, itemStack.copy());
-                    this.getInvStack(slot).setCooldown(5);
-                    itemStack.setCount(0);
-                    return true;
-                } else {
+                // If a slot is not found, fail
+                if (slot < 0)
                     return false;
-                }
+                
+                this.setStack(slot, itemStack.copy());
+                this.getStack(slot).setCooldown(5);
+                itemStack.decrement(1);
+                return true;
             }
             
             int remainingStack;
             do {
                 remainingStack = itemStack.getCount();
-                if (slot == -1) {
-                    itemStack.setCount(this.addStack(itemStack));
-                } else {
-                    itemStack.setCount(this.addStack(slot, itemStack));
-                }
+                if (slot == -1) itemStack.setCount(this.insertFrom(itemStack));
+                else itemStack.setCount(this.insertFrom(slot, itemStack));
             } while( !itemStack.isEmpty() && itemStack.getCount() < remainingStack );
             
-            return itemStack.getCount() < remainingStack;
+            return itemStack.getCount() <= remainingStack;
         } catch (Throwable var6) {
             CrashReport crashReport = CrashReport.create(var6, "Adding item to inventory");
             CrashReportSection crashReportSection = crashReport.addElement("Item being added");
@@ -122,63 +120,74 @@ public class PlayerBackpack extends BasicInventory {
         }
     }
     
-    private int addStack(ItemStack itemStack) {
-        int i = this.getOccupiedSlotWithRoomForStack(itemStack);
-        if (i == -1) {
+    /**
+     * Transfer items from the stack provided into the inventory
+     * @param extStack The stack to take items from
+     * @return The amount of items remaining in the extStack
+     */
+    private int insertFrom(ItemStack extStack) {
+        int i = this.getOccupiedSlotWithRoomForStack(extStack);
+        if (i == -1)
             i = this.getEmptySlot();
-        }
         
-        return i == -1 ? itemStack.getCount() : this.addStack(i, itemStack);
+        return i == -1 ? extStack.getCount() : this.insertFrom(i, extStack);
     }
-    private int addStack(int slot, ItemStack itemStack) {
-        Item item = itemStack.getItem();
-        int j = itemStack.getCount();
-        ItemStack itemStack2 = this.getInvStack(slot);
-        if (itemStack2.isEmpty()) {
-            itemStack2 = new ItemStack(item, 0);
-            if (itemStack.hasTag()) {
-                itemStack2.setTag(itemStack.getTag().copy());
+    
+    /**
+     * Transfer items from the stack provided into a slot in the inventory
+     * @param slot The slot to insert items into
+     * @param extStack The stack to take items from
+     * @return The amount of items remaining in the extStack
+     */
+    private int insertFrom(int slot, ItemStack extStack) {
+        Item item = extStack.getItem();
+        int j = extStack.getCount();
+        ItemStack invStack = this.getStack(slot);
+        if (invStack.isEmpty()) {
+            invStack = new ItemStack(item, 0);
+            if (extStack.hasTag()) {
+                invStack.setTag(extStack.getOrCreateTag().copy());
             }
             
-            this.setInvStack(slot, itemStack2);
+            this.setStack(slot, invStack);
         }
         
         int k = j;
-        if (j > itemStack2.getMaxCount() - itemStack2.getCount()) {
-            k = itemStack2.getMaxCount() - itemStack2.getCount();
+        if (j > invStack.getMaxCount() - invStack.getCount()) {
+            k = invStack.getMaxCount() - invStack.getCount();
         }
         
-        if (k > this.getInvMaxStackAmount() - itemStack2.getCount()) {
-            k = this.getInvMaxStackAmount() - itemStack2.getCount();
+        if (k > this.getMaxCountPerStack() - invStack.getCount()) {
+            k = this.getMaxCountPerStack() - invStack.getCount();
         }
         
         if (k == 0) {
             return j;
         } else {
             j -= k;
-            itemStack2.increment(k);
-            itemStack2.setCooldown(5);
+            invStack.increment(k);
+            invStack.setCooldown(5);
             return j;
         }
     }
     
     private boolean canStackAddMore(ItemStack mainStack, ItemStack otherStack) {
-        return !mainStack.isEmpty() && this.areItemsEqual(mainStack, otherStack) && mainStack.isStackable() && mainStack.getCount() < mainStack.getMaxCount() && mainStack.getCount() < this.getInvMaxStackAmount();
+        return !mainStack.isEmpty() && this.areItemsEqual(mainStack, otherStack) && mainStack.isStackable() && mainStack.getCount() < mainStack.getMaxCount() && mainStack.getCount() < this.getMaxCountPerStack();
     }
     private boolean areItemsEqual(ItemStack mainStack, ItemStack otherStack) {
         return mainStack.getItem() == otherStack.getItem() && ItemStack.areTagsEqual(mainStack, otherStack);
     }
     
     public int getEmptySlot() {
-        for(int i = 0; i < this.getInvSize(); ++i)
-            if (this.getInvStack(i).isEmpty())
+        for(int i = 0; i < this.size(); ++i)
+            if (this.getStack(i).isEmpty())
                 return i;
         
         return -1;
     }
     public int getOccupiedSlotWithRoomForStack(ItemStack itemStack) {
-        for(int slot = 0; slot < this.getInvSize(); ++slot) {
-            if (this.canStackAddMore(this.getInvStack(slot), itemStack)) {
+        for(int slot = 0; slot < this.size(); ++slot) {
+            if (this.canStackAddMore(this.getStack(slot), itemStack)) {
                 return slot;
             }
         }
@@ -190,23 +199,23 @@ public class PlayerBackpack extends BasicInventory {
      * Backpack Items as NBT
      */
     public void readTags(ListTag listTag) {
-        for(int slot = 0; slot < this.getInvSize(); ++slot) {
-            this.setInvStack(slot, ItemStack.EMPTY);
+        for(int slot = 0; slot < this.size(); ++slot) {
+            this.setStack(slot, ItemStack.EMPTY);
         }
         
         for(int itemCount = 0; itemCount < listTag.size(); ++itemCount) {
             CompoundTag compoundTag = listTag.getCompound(itemCount);
             int slot = compoundTag.getByte("Slot") & 255;
-            if (slot >= 0 && slot < this.getInvSize()) {
-                this.setInvStack(slot, ItemStack.fromTag(compoundTag));
+            if (slot >= 0 && slot < this.size()) {
+                this.setStack(slot, ItemStack.fromTag(compoundTag));
             }
         }
     }
     public ListTag getTags() {
         ListTag listTag = new ListTag();
         
-        for(int slot = 0; slot < this.getInvSize(); ++slot) {
-            ItemStack itemStack = this.getInvStack(slot);
+        for(int slot = 0; slot < this.size(); ++slot) {
+            ItemStack itemStack = this.getStack(slot);
             if (!itemStack.isEmpty()) {
                 CompoundTag compoundTag = new CompoundTag();
                 compoundTag.putByte("Slot", (byte)slot);
@@ -252,28 +261,28 @@ public class PlayerBackpack extends BasicInventory {
         return new LiteralText(this.player.getDisplayName().asString() + "'s Backpack");
     }
     
-    public @Nullable GenericContainer createContainer(int syncId, PlayerInventory playerInventory) {
-        int slots = this.getInvSize();
-        ContainerType type = PlayerBackpack.getSizeType(slots);
+    public @Nullable GenericContainerScreenHandler createContainer(int syncId, PlayerInventory playerInventory) {
+        int slots = this.size();
+        ScreenHandlerType type = PlayerBackpack.getSizeType(slots);
         if (type == null)
             return null;
-        return new GenericContainer(type, syncId, playerInventory, this, slots / 9);
+        return new GenericContainerScreenHandler(type, syncId, playerInventory, this, slots / 9);
     }
     
-    public static @Nullable ContainerType getSizeType(int slots) {
+    public static @Nullable ScreenHandlerType getSizeType(int slots) {
         switch (slots) {
             case 9:
-                return ContainerType.GENERIC_3X3;
+                return ScreenHandlerType.GENERIC_3X3;
             case 18:
-                return ContainerType.GENERIC_9X2;
+                return ScreenHandlerType.GENERIC_9X2;
             case 27:
-                return ContainerType.GENERIC_9X3;
+                return ScreenHandlerType.GENERIC_9X3;
             case 36:
-                return ContainerType.GENERIC_9X4;
+                return ScreenHandlerType.GENERIC_9X4;
             case 45:
-                return ContainerType.GENERIC_9X5;
+                return ScreenHandlerType.GENERIC_9X5;
             case 54:
-                return ContainerType.GENERIC_9X6;
+                return ScreenHandlerType.GENERIC_9X6;
         }
         return null;
     }
@@ -292,17 +301,19 @@ public class PlayerBackpack extends BasicInventory {
     }
     
     @Override
-    public void onInvOpen(PlayerEntity player) {
+    public void onOpen(PlayerEntity player) {
         // Play sound
         player.playSound(SoundEvents.UI_TOAST_OUT, SoundCategory.BLOCKS, 0.5f, 1.0f);
+        
         // Parent method
-        super.onInvOpen(player);
+        super.onOpen(player);
     }
     @Override
-    public void onInvClose(PlayerEntity player) {
+    public void onClose(PlayerEntity player) {
         // Play sound
         player.playSound(SoundEvents.UI_TOAST_IN, SoundCategory.BLOCKS, 0.5f, 1.0f);
+        
         // Parent method
-        super.onInvClose(player);
+        super.onClose(player);
     }
 }

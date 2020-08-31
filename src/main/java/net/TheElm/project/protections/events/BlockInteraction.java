@@ -26,7 +26,7 @@
 package net.TheElm.project.protections.events;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.BlockInteractionCallback;
@@ -114,8 +114,8 @@ public final class BlockInteraction {
         if ( block instanceof AbstractButtonBlock || block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock) {
             WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk( blockPos );
             
-            if ((!SewingMachineConfig.INSTANCE.DO_CLAIMS.get())
-                || (SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get() && player.isCreative())
+            if ((!SewConfig.get(SewConfig.DO_CLAIMS))
+                || (SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
                 || ChunkUtils.canPlayerToggleDoor( player, claimedChunkInfo, blockPos ))
             {
                 // Toggle double doors
@@ -136,7 +136,7 @@ public final class BlockInteraction {
                         if ( doorIsOpen == otherIsOpen ) {
                             // Toggle the doors
                             world.setBlockState(otherDoorPos, otherDoorState.with(DoorBlock.OPEN, !doorIsOpen), 10);
-                            world.playLevelEvent(player, otherIsOpen ? 1006 : 1012, otherDoorPos, 0 );
+                            world.syncWorldEvent(player, otherIsOpen ? 1006 : 1012, otherDoorPos, 0);
                         }
                     }
                 }
@@ -149,7 +149,7 @@ public final class BlockInteraction {
         }
         
         // If claiming is enabled, check the players permission
-        if (!(player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) && (SewingMachineConfig.INSTANCE.DO_CLAIMS.get())) {
+        if (!(player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)) && (SewConfig.get(SewConfig.DO_CLAIMS))) {
             // If the block is something that can be accessed (Like a chest)
             if ( (!player.isSneaking() || (!(itemStack.getItem() instanceof BlockItem || itemStack.getItem() instanceof BucketItem))) ) {
                 if ( player.isSpectator() || (blockEntity instanceof EnderChestBlockEntity))
@@ -197,8 +197,7 @@ public final class BlockInteraction {
         
         // Get the block material
         BlockState blockState = world.getBlockState( blockPos );
-        Block block = blockState.getBlock();
-        Material material = block.getMaterial(blockState);
+        Material material = blockState.getMaterial();
         
         // Adjust the block offset
         if (player.isSneaking() || ((item instanceof BlockItem) && (!material.isReplaceable())))
@@ -206,7 +205,7 @@ public final class BlockInteraction {
         
         // Test if allowed
         ActionResult result;
-        if (((result = BlockInteraction.canBlockPlace(player, blockPos, blockHitResult)) != ActionResult.FAIL) && SewingMachineConfig.INSTANCE.LOG_BLOCKS_BREAKING.get()) {
+        if (((result = BlockInteraction.canBlockPlace(player, blockPos, blockHitResult)) != ActionResult.FAIL) && SewConfig.get(SewConfig.LOG_BLOCKS_BREAKING)) {
             if (item instanceof BlockItem)
                 EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, ((BlockItem)item).getBlock(), blockPos));
             else

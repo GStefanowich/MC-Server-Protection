@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
-import net.TheElm.project.config.SewingMachineConfig;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -78,7 +78,7 @@ public abstract class TamedLead extends LivingEntity {
         ServerPlayerEntity player = (ServerPlayerEntity) entity;
         
         // If player is in creative mode, bypass permissions
-        if ((player.isCreative() && SewingMachineConfig.INSTANCE.CLAIM_CREATIVE_BYPASS.get()) || player.isSpectator())
+        if ((player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
             return;
         
         // If player is the owner of the entity

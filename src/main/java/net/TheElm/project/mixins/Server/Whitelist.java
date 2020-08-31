@@ -29,7 +29,7 @@ public abstract class Whitelist extends ServerConfigEntry<GameProfile> implement
             this.invitedBy = UUID.fromString(json.get("invitedBy").getAsString());
     }
     
-    @Inject(at = @At("TAIL"), method = "serialize")
+    @Inject(at = @At("TAIL"), method = "fromJson")
     public void onSerialize(JsonObject json, CallbackInfo callback) {
         if (invitedBy != null)
             json.addProperty("invitedBy",this.invitedBy.toString());

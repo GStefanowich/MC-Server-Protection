@@ -50,7 +50,7 @@ public class Whisper {
     @Overwrite
     private static int execute(ServerCommandSource source, Collection<ServerPlayerEntity> targets, Text message) {
         for (ServerPlayerEntity target : targets) {
-            MessageUtils.sendAsWhisper( source, target, MessageUtils.formatPlayerMessage(source, ChatRooms.WHISPER, message));
+            MessageUtils.sendAsWhisper(source, target, MessageUtils.formatPlayerMessage(source, ChatRooms.WHISPER, message));
         }
         
         return targets.size();

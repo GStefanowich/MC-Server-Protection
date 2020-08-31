@@ -33,19 +33,19 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Function;
 
-public final class ConfigOption<T extends Object> extends ConfigBase<T> {
+public class ConfigOption<T extends Object> extends ConfigBase<T> {
     
-    private final Function<JsonElement, T> setter;
-    private T value;
-    private JsonSerializer<T> serializer = null;
+    private final @NotNull Function<JsonElement, T> setter;
+    private @Nullable T value;
+    private @Nullable JsonSerializer<T> serializer;
     
-    public ConfigOption(@NotNull String location, @Nullable Function<JsonElement, T> setter) {
+    public ConfigOption(@NotNull String location, @NotNull Function<JsonElement, T> setter) {
         this(location, null, setter);
     }
-    public ConfigOption(@NotNull String location, @Nullable T defaultValue, @Nullable Function<JsonElement, T> setter) {
+    public ConfigOption(@NotNull String location, @Nullable T defaultValue, @NotNull Function<JsonElement, T> setter) {
         this(location, defaultValue, setter, null);
     }
-    public ConfigOption(@NotNull String location, @Nullable T defaultValue, @Nullable Function<JsonElement, T> setter, @Nullable JsonSerializer<T> serializer) {
+    public ConfigOption(@NotNull String location, @Nullable T defaultValue, @NotNull Function<JsonElement, T> setter, @Nullable JsonSerializer<T> serializer) {
         super(location);
         
         this.value = defaultValue;
@@ -54,24 +54,15 @@ public final class ConfigOption<T extends Object> extends ConfigBase<T> {
     }
     
     @Override
-    public final void set( JsonElement value ) {
+    final void set( JsonElement value ) {
         this.value = ( value == null ? null : this.setter.apply( value ) );
     }
-    public final T get() {
+    final T get() {
         return this.value;
     }
     
-    public final boolean isTrue() {
-        T val = this.get();
-        if (val instanceof Boolean)
-            return (Boolean)val;
-        if (val instanceof Number)
-            return ((Number)val).longValue() >= 0;
-        return val != null;
-    }
-    
     @Override
-    public final JsonElement getElement() {
+    final JsonElement getElement() {
         return ConfigOption.convertToJSON( this.value, this.serializer );
     }
     
