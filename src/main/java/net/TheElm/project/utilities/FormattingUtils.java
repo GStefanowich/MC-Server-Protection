@@ -72,6 +72,10 @@ public final class FormattingUtils {
         return text;
     }
     
+    public static @NotNull MutableText deepCopy(@NotNull final Text text) {
+        return text.copy().setStyle(text.getStyle());
+    }
+    
     private static String[] stringToColorSegments(@NotNull String raw) {
         List<String> segments = new ArrayList<>();
         Matcher matches = Pattern.compile(regex.pattern() + '+').matcher(raw);
@@ -91,7 +95,7 @@ public final class FormattingUtils {
         return segments.toArray(new String[0]);
     }
     
-    private static Formatting[] codeGroupToFormat(String codes) {
+    private static @NotNull Formatting[] codeGroupToFormat(String codes) {
         List<Formatting> formatting = new ArrayList<>();
         Matcher matches = regex.matcher(codes);
         while (matches.find()) {
@@ -151,7 +155,7 @@ public final class FormattingUtils {
     }
     
     public static String number(Number number) {
-        return NumberFormat.getInstance().format( number );
+        return NumberFormat.getInstance().format(number);
     }
     
 }

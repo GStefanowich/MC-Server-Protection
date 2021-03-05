@@ -23,18 +23,30 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.config.defaults;
+package net.TheElm.project.commands.ArgumentTypes;
 
-import com.google.gson.JsonElement;
-import net.TheElm.project.config.ConfigOption;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import net.TheElm.project.enums.Permissions;
+import net.TheElm.project.utilities.ColorUtils;
+import net.TheElm.project.utilities.RankUtils;
+import net.minecraft.command.CommandSource;
 
-public final class ConfigBoolean extends ConfigOption<Boolean> {
-    public ConfigBoolean(@NotNull String location) {
-        super(location, JsonElement::getAsBoolean);
+import java.util.concurrent.CompletableFuture;
+
+public class ArgumentSuggestions {
+    
+    public static <S> CompletableFuture<Suggestions> suggestNodes(CommandContext<S> context, SuggestionsBuilder builder) {
+        return CommandSource.suggestMatching(Permissions.keys(), builder);
     }
-    public ConfigBoolean(@NotNull String location, @Nullable Boolean defaultValue) {
-        super(location, defaultValue, JsonElement::getAsBoolean);
+    
+    public static <S> CompletableFuture<Suggestions> suggestRanks(CommandContext<S> context, SuggestionsBuilder builder) {
+        return CommandSource.suggestMatching(RankUtils.getRanks(), builder);
     }
+    
+    public static <S> CompletableFuture<Suggestions> suggestColors(CommandContext<S> context, SuggestionsBuilder builder) {
+        return CommandSource.suggestMatching(ColorUtils.getSuggestedNames(), builder);
+    }
+    
 }

@@ -28,25 +28,28 @@ package net.TheElm.project.mixins.Server;
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.utilities.IntUtils;
 import net.TheElm.project.utilities.TradeUtils;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.passive.AbstractTraderEntity;
+import net.minecraft.entity.passive.MerchantEntity;
 import net.minecraft.entity.passive.WanderingTraderEntity;
 import net.minecraft.item.Items;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.village.TradeOffer;
+import net.minecraft.village.TradeOfferList;
 import net.minecraft.village.TradeOffers;
-import net.minecraft.village.TraderOfferList;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(WanderingTraderEntity.class)
-public abstract class WanderingTraders extends AbstractTraderEntity {
+public abstract class WanderingTraders extends MerchantEntity {
     
-    public WanderingTraders(EntityType<? extends AbstractTraderEntity> entityType_1, World world_1) {
+    public WanderingTraders(EntityType<? extends MerchantEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
     }
     
@@ -54,25 +57,40 @@ public abstract class WanderingTraders extends AbstractTraderEntity {
         return new Int2ObjectOpenHashMap<>( immutableMap_1 );
     }
     
+    /*
+     * Created customized traders for the trader
+     */
     @Inject(at = @At("HEAD"), method = "fillRecipes", cancellable = true)
     protected void fillRecipes(CallbackInfo callback) {
-        TradeOffers.Factory[] mainFactory = WANDERING_TRADER_TRADES.get(1);
-        TradeOffers.Factory[] rareFactory = WANDERING_TRADER_TRADES.get(2);
-        if (mainFactory != null && rareFactory != null) {
-            // Fill trades from the mainFactory
-            TraderOfferList tradeOffers = this.getOffers();
-            this.fillRecipesFromPool(tradeOffers, mainFactory, IntUtils.random(this.random, 4, 12));
-            
-            // Get one random trade from the rare factory
-            int randomTrade = this.random.nextInt(rareFactory.length);
-            TradeOffers.Factory factory = rareFactory[randomTrade];
-            
-            // Create a trade using the factory
-            TradeOffer tradeOffer = factory.create(this, this.random);
-            if (tradeOffer != null)
-                tradeOffers.add(tradeOffer);
+        // If replacing wandering trader trades with better items is enabled
+        if (SewConfig.isTrue(SewConfig.IMPROVED_WANDERING_TRADER)) {
+            TradeOffers.Factory[] mainFactory = WANDERING_TRADER_TRADES.get(1);
+            TradeOffers.Factory[] rareFactory = WANDERING_TRADER_TRADES.get(2);
+            if (mainFactory != null && rareFactory != null) {
+                // Fill trades from the mainFactory
+                TradeOfferList tradeOffers = this.getOffers();
+                this.fillRecipesFromPool(tradeOffers, mainFactory, IntUtils.random(this.random, 4, 12));
+        
+                // Get one random trade from the rare factory
+                int randomTrade = this.random.nextInt(rareFactory.length);
+                TradeOffers.Factory factory = rareFactory[randomTrade];
+        
+                // Create a trade using the factory
+                TradeOffer tradeOffer = factory.create(this, this.random);
+                if (tradeOffer != null)
+                    tradeOffers.add(tradeOffer);
+            }
+            callback.cancel();
         }
-        callback.cancel();
+    }
+    
+    /*
+     * Change the wander target of the Trader to be their home
+     */
+    @Inject(at = @At("HEAD"), method = "getWanderTarget", cancellable = true)
+    protected void onGetHomePosition(CallbackInfoReturnable<BlockPos> callback) {
+        if (SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN) && SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD).equals(this.world.getRegistryKey()))
+            callback.setReturnValue(SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN_POS));
     }
     
     private static final Int2ObjectMap<TradeOffers.Factory[]> WANDERING_TRADER_TRADES = copyToFastUtilMap(
@@ -153,6 +171,7 @@ public abstract class WanderingTraders extends AbstractTraderEntity {
                 TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_STRAD, 1),
                 TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_WAIT, 1),
                 TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_WARD, 1),
+                TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_PIGSTEP, 1),
                 
                 TradeUtils.createSellItem(14, 1, Items.NAME_TAG, 5),
                 TradeUtils.createSellItem(2, 3, Items.LEAD, 5),
@@ -176,6 +195,7 @@ public abstract class WanderingTraders extends AbstractTraderEntity {
                 TradeUtils.createSellItem(8, 1, Items.GLOBE_BANNER_PATTERN, 1),
                 TradeUtils.createSellItem(8, 1, Items.MOJANG_BANNER_PATTERN, 1),
                 TradeUtils.createSellItem(8, 1, Items.SKULL_BANNER_PATTERN, 1),
+                TradeUtils.createSellItem(8, 1, Items.PIGLIN_BANNER_PATTERN, 1),
                 
                 TradeUtils.createSellItem(2, Items.EMERALD, 7, Items.LEATHER, 1, Items.LEATHER_HORSE_ARMOR, 3),
                 TradeUtils.createSellItem(2, Items.EMERALD, 7, Items.IRON_INGOT, 1, Items.IRON_HORSE_ARMOR, 3),
@@ -197,6 +217,9 @@ public abstract class WanderingTraders extends AbstractTraderEntity {
                 TradeUtils.createSellItem(3, 1, Items.EXPERIENCE_BOTTLE, 32),
                 TradeUtils.createSellItem(54, 2, Items.SHULKER_SHELL, 6),
                 TradeUtils.createSellItem(9, Items.EMERALD_BLOCK, 1, Items.HEART_OF_THE_SEA, 1, Items.TRIDENT, 1),
+                TradeUtils.createSellItem(1, Items.NETHER_STAR, 1, Items.TRIDENT, 1),
+                TradeUtils.createSellItem(1, Items.NETHER_STAR, 1, Items.TOTEM_OF_UNDYING, 1),
+                TradeUtils.createSellItem(1, Items.TOTEM_OF_UNDYING, 1, Items.NETHER_STAR, 1),
                 TradeUtils.createSellItem(50, 1, Items.TOTEM_OF_UNDYING, 2),
                 TradeUtils.createSellItem(16, Items.EMERALD, 1, Items.GOLDEN_APPLE, 1, Items.ENCHANTED_GOLDEN_APPLE, 1),
                 /* Spawn more wandering traders */

@@ -31,6 +31,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
@@ -43,8 +44,8 @@ import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.WarpUtils;
 import net.TheElm.project.utilities.WarpUtils.Warp;
-import net.minecraft.command.arguments.EntityArgumentType;
-import net.minecraft.command.arguments.GameProfileArgumentType;
+import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.MessageType;
@@ -64,8 +65,10 @@ import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.UUID;
 
 public final class TeleportsCommand {
@@ -85,7 +88,7 @@ public final class TeleportsCommand {
                     // Get location information
                     ServerCommandSource source = context.getSource();
                     Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "player");
-                    ServerWorld world = source.getMinecraftServer().getWorld(World.OVERWORLD);
+                    ServerWorld world = source.getMinecraftServer().getWorld(ServerCore.defaultWorldKey());
                     
                     for (ServerPlayerEntity player : players) {
                         WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
@@ -105,7 +108,7 @@ public final class TeleportsCommand {
                 // Get location information
                 ServerCommandSource source = context.getSource();
                 ServerPlayerEntity player = source.getPlayer();
-                ServerWorld world = source.getMinecraftServer().getWorld(World.OVERWORLD);
+                ServerWorld world = source.getMinecraftServer().getWorld(ServerCore.defaultWorldKey());
                 
                 WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
                 
@@ -118,18 +121,13 @@ public final class TeleportsCommand {
         
         dispatcher.register(CommandManager.literal("theend")
             .requires((source -> source.hasPermissionLevel(OpLevels.CHEATING)))
+            .then(CommandManager.argument("players", EntityArgumentType.entities())
+                .executes((context) -> TeleportsCommand.sendEntitiesToEnd(EntityArgumentType.getEntities(context, "players")))
+            )
             .executes((context) -> {
                 // Get location information
                 ServerCommandSource source = context.getSource();
-                ServerWorld world = source.getWorld();
-                ServerPlayerEntity player = source.getPlayer();
-                
-                // Move the player to the end
-                if (World.END.equals(world.getRegistryKey()))
-                    player.changeDimension(world);
-                else WarpUtils.teleportEntity(World.END, player);
-                
-                return Command.SINGLE_SUCCESS;
+                return TeleportsCommand.sendEntitiesToEnd(Collections.singleton(source.getPlayer()));
             })
         );
         
@@ -168,7 +166,7 @@ public final class TeleportsCommand {
         CoreMod.logDebug("- Registered Home command");
     }
     
-    private static int homeCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int homeCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get players info
         final ServerCommandSource source = context.getSource();
         final ServerPlayerEntity porter = source.getPlayer();
@@ -179,7 +177,7 @@ public final class TeleportsCommand {
             porter.getGameProfile()
         );
     }
-    private static int tpaCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int tpaCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get players info
         final ServerCommandSource source = context.getSource();
         final ServerPlayerEntity porter = source.getPlayer();
@@ -194,7 +192,7 @@ public final class TeleportsCommand {
             target
         );
     }
-    private static int tpaToPlayer(MinecraftServer server, ServerPlayerEntity porter, GameProfile target) throws CommandSyntaxException {
+    private static int tpaToPlayer(@NotNull MinecraftServer server, @NotNull ServerPlayerEntity porter, @NotNull GameProfile target) throws CommandSyntaxException {
         final PlayerManager manager = server.getPlayerManager();
         
         // Check if player is within spawn
@@ -252,7 +250,7 @@ public final class TeleportsCommand {
         }
         return Command.SINGLE_SUCCESS;
     }
-    private static int tpAcceptCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int tpAcceptCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get players info
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity target = source.getPlayer();
@@ -279,7 +277,7 @@ public final class TeleportsCommand {
         CoreMod.PLAYER_WARP_INVITES.remove( porter );
         return Command.SINGLE_SUCCESS;
     }
-    private static int tpDenyCommand(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int tpDenyCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get players info
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity target = source.getPlayer();
@@ -298,10 +296,17 @@ public final class TeleportsCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static void feedback(PlayerEntity porter, PlayerEntity target) {
+    private static int sendEntitiesToEnd(@NotNull Collection<? extends Entity> entities) throws CommandSyntaxException {
+        // Move the player to the end
+        for (Entity entity : entities)
+            WarpUtils.teleportEntity(World.END, entity);
+        return Command.SINGLE_SUCCESS;
+    }
+    
+    private static void feedback(@NotNull PlayerEntity porter, @NotNull PlayerEntity target) {
         TeleportsCommand.feedback(porter, target.getGameProfile());
     }
-    public static void feedback(PlayerEntity porter, GameProfile target) {
+    public static void feedback(@NotNull PlayerEntity porter, @NotNull GameProfile target) {
         MutableText feedback = new LiteralText("")
             .append(porter.getDisplayName())
             .append(" was teleported to ");

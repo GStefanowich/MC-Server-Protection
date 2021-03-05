@@ -72,7 +72,7 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
     }
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
-    public void onPlayerInteract(final PlayerEntity player, final Hand hand, final CallbackInfoReturnable<Boolean> callback) {
+    public void onPlayerInteract(final PlayerEntity player, final Hand hand, final CallbackInfoReturnable<ActionResult> callback) {
         ItemFrameEntity entity = (ItemFrameEntity)(AbstractDecorationEntity) this;
         
         // Do special item frame interaction if NOT CROUCHING and HOLDING A TOOL
@@ -91,7 +91,7 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
             if ( containerBlock instanceof ChestBlock || containerBlock instanceof BarrelBlock ) {
                 // Check chunk permissions
                 if (!ChunkUtils.canPlayerLootChestsInChunk(player, containerPos)) {
-                    callback.setReturnValue(false);
+                    callback.setReturnValue(ActionResult.SUCCESS);
                     return;
                 }
                 
@@ -101,14 +101,14 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
                     int putStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
                     
                     InventoryUtils.playerToChest((ServerPlayerEntity) player, itemFrame.getBlockPos(), player.inventory, chestInventory, itemStack.getItem(), putStackSize);
-                    callback.setReturnValue(false);
+                    callback.setReturnValue(ActionResult.SUCCESS);
                 }
             }
         }
         
         // If player should be able to interact with the item frame
         if (!ChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos()))
-            callback.setReturnValue(false);
+            callback.setReturnValue(ActionResult.SUCCESS);
     }
     
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)

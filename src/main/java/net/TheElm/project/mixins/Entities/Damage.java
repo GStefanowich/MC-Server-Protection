@@ -51,8 +51,8 @@ public abstract class Damage extends Entity {
     }
     
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
-    public void damage(DamageSource damageSource, float damage, CallbackInfoReturnable<Boolean> callback) {
-        ActionResult result = DamageEntityCallback.EVENT.invoker().interact(this, this.getEntityWorld(), damageSource, 0.0f);
+    public void onDamage(DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
+        ActionResult result = DamageEntityCallback.EVENT.invoker().interact(this, this.getEntityWorld(), source, damage);
         if (result != ActionResult.PASS)
             callback.setReturnValue(result == ActionResult.SUCCESS);
     }

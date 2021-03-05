@@ -33,7 +33,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.command.arguments.EntityArgumentType;
+import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;

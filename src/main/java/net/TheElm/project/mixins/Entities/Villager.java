@@ -39,12 +39,13 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.InteractionObserver;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.passive.AbstractTraderEntity;
+import net.minecraft.entity.passive.MerchantEntity;
 import net.minecraft.entity.passive.PassiveEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.MessageType;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.stat.Stats;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
@@ -64,13 +65,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.UUID;
 
 @Mixin(VillagerEntity.class)
-public abstract class Villager extends AbstractTraderEntity implements InteractionObserver, VillagerDataContainer, VillagerTownie {
+public abstract class Villager extends MerchantEntity implements InteractionObserver, VillagerDataContainer, VillagerTownie {
     
     // TODO: Attempt saving the town UUID as a Memory, not directly as a property
     /*private static final MemoryModuleType<UUID> TOWN;*/
     private UUID town = null;
     
-    public Villager(EntityType<? extends AbstractTraderEntity> entityType_1, World world_1) {
+    public Villager(EntityType<? extends MerchantEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
     }
     
@@ -126,7 +127,7 @@ public abstract class Villager extends AbstractTraderEntity implements Interacti
     }
     
     @Inject(at = @At("RETURN"), method = "createChild")
-    public void onBirth(PassiveEntity spouse, CallbackInfoReturnable<VillagerEntity> callback) {
+    public void onBirth(ServerWorld world, PassiveEntity spouse, CallbackInfoReturnable<VillagerEntity> callback) {
         VillagerEntity child = callback.getReturnValue();
         
         // Give the baby a name

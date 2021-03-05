@@ -38,6 +38,7 @@ import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
@@ -58,7 +59,7 @@ public final class ChatFormat {
         return null;
     }
     
-    private Text worldText(RegistryKey<World> dimension, boolean showAsLong) {
+    private Text worldText(@NotNull RegistryKey<World> dimension, boolean showAsLong) {
         String longKey = null, shortKey = null;
         
         // Set keys based on the world
@@ -81,10 +82,10 @@ public final class ChatFormat {
         Formatting formatting = this.worldColor(dimension);
         
         return ( showAsLong ? longer : shorter )
-            .formatted( formatting )
+            .formatted(formatting)
             .styled(MessageUtils.simpleHoverText(longer.formatted( formatting )));
     }
-    private Formatting worldColor(RegistryKey<World> world) {
+    private Formatting worldColor(@NotNull RegistryKey<World> world) {
         if (World.OVERWORLD.equals(world))
             return Formatting.GREEN;
         if (World.NETHER.equals(world))
@@ -99,13 +100,13 @@ public final class ChatFormat {
         return this.raw;
     }
     
-    public static ChatFormat parse(String string) {
-        return new ChatFormat( string );
+    public static @NotNull ChatFormat parse(@NotNull String string) {
+        return new ChatFormat(string);
     }
-    public static ChatFormat parse(JsonElement config) {
+    public static @NotNull ChatFormat parse(@NotNull JsonElement config) {
         return ChatFormat.parse(config.getAsString());
     }
-    public static JsonElement serializer(ChatFormat src, Type type, JsonSerializationContext context) {
-        return context.serialize( src.toString() );
+    public static JsonElement serializer(@NotNull ChatFormat src, Type type, @NotNull JsonSerializationContext context) {
+        return context.serialize(src.toString());
     }
 }

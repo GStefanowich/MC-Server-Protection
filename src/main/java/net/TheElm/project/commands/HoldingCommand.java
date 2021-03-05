@@ -32,10 +32,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
-import net.TheElm.project.utilities.ColorUtils;
-import net.TheElm.project.utilities.FormattingUtils;
-import net.TheElm.project.utilities.InventoryUtils;
-import net.TheElm.project.utilities.InventoryUtils.ItemRarity;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -47,10 +43,10 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
@@ -75,19 +71,19 @@ public final class HoldingCommand {
         CoreMod.logDebug("- Registered Equipment command");
     }
     
-    private static int slot(CommandContext<ServerCommandSource> context, EquipmentSlot slot) throws CommandSyntaxException {
+    private static int slot(@NotNull CommandContext<ServerCommandSource> context, @NotNull EquipmentSlot slot) throws CommandSyntaxException {
         return HoldingCommand.holding( context, slot,"" );
     }
-    private static int handMessage(CommandContext<ServerCommandSource> context, EquipmentSlot slot) throws CommandSyntaxException {
+    private static int handMessage(@NotNull CommandContext<ServerCommandSource> context, @NotNull EquipmentSlot slot) throws CommandSyntaxException {
         return HoldingCommand.holding( context, slot, StringArgumentType.getString(context, "message") );
     }
-    private static int holding(CommandContext<ServerCommandSource> context, EquipmentSlot slot, String message) throws CommandSyntaxException {
+    private static int holding(@NotNull CommandContext<ServerCommandSource> context, @NotNull EquipmentSlot slot, String message) throws CommandSyntaxException {
         // Get player information
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
         // Get hand item
-        ItemStack stack = player.getEquippedStack( slot );
+        ItemStack stack = player.getEquippedStack(slot);
         if (stack.isEmpty())
             throw (slot.getType() == EquipmentSlot.Type.HAND ? PLAYER_EMPTY_HAND : PLAYER_EMPTY_SLOT).create(source);
         
@@ -96,43 +92,10 @@ public final class HoldingCommand {
         
         // List all enchantments
         final Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(stack);
-        
-        final MutableText enchantsBuilder = ( stack.hasCustomName() ? ColorUtils.format(stack.getName(), Formatting.AQUA) : new TranslatableText(stack.getTranslationKey()));
-        if (!enchantments.isEmpty()) {
-            ItemRarity rarity = InventoryUtils.getItemRarity( stack );
-            enchantsBuilder.append(new LiteralText(" " + rarity.name()).formatted(rarity.formatting));
-            
-            // Append all translations to the hovertext
-            for ( Map.Entry<Enchantment, Integer> enchantment : enchantments.entrySet() ) {
-                Enchantment enchant = enchantment.getKey();
-                Integer level = enchantment.getValue();
-                
-                enchantsBuilder.append( "\n" )
-                    .append(enchant.getName( level ));
-            }
-        }
-        
-        if (item.isDamageable()) {
-            enchantsBuilder.append("\n")
-                // Get the items durability
-                .append(( stack.isDamageable() ?
-                    new TranslatableText("item.durability",
-                        FormattingUtils.number(stack.getMaxDamage() - stack.getDamage()),
-                        FormattingUtils.number(stack.getMaxDamage())
-                    )
-                    : new TranslatableText("item.unbreakable")
-                ))
-                .append("\n")
-                // Get the repair cost
-                .append(new TranslatableText("container.repair.cost",
-                    FormattingUtils.number( stack.getRepairCost() )
-                ));
-        }
-        
         final Text output = new LiteralText("[" + count + "x ").formatted(enchantments.isEmpty() ? Formatting.GRAY : Formatting.AQUA)
             .styled((style) -> {
                 if (!enchantments.isEmpty())
-                    return style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, enchantsBuilder));
+                    return style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_ITEM, new HoverEvent.ItemStackContent(stack)));
                 return style;
             })
             .append(new TranslatableText(item.getTranslationKey()))

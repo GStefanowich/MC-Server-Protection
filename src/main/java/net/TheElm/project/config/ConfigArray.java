@@ -83,4 +83,16 @@ public final class ConfigArray<T extends Object> extends ConfigBase<T> {
         this.value.add(this.setter.apply( value ));
     }
     
+    public static ConfigArray<Integer> jInt(@NotNull String location) {
+        return new ConfigArray<>(location, JsonElement::getAsInt);
+    }
+    public static ConfigArray<Long> jLong(@NotNull String location) {
+        return new ConfigArray<>(location, JsonElement::getAsLong);
+    }
+    public static ConfigArray<Boolean> jBool(@NotNull String location) {
+        return new ConfigArray<>(location, JsonElement::getAsBoolean);
+    }
+    public static ConfigArray<String> jString(@NotNull String location) {
+        return new ConfigArray<>(location, JsonElement::getAsString);
+    }
 }

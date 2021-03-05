@@ -94,8 +94,11 @@ public final class ShopSignBuilder {
         return this.sign;
     }
     
-    public Identifier getItem() {
+    public Identifier getItemIdentifier() {
         return this.tradeItemIdentifier;
+    }
+    public Item getItem() {
+        return Registry.ITEM.get(this.getItemIdentifier());
     }
     public UUID shopOwner() {
         return this.ownerUUID;
@@ -203,7 +206,7 @@ public final class ShopSignBuilder {
                 return false;
             }
             
-            return (this.tradeItem = Registry.ITEM.get(this.tradeItemIdentifier)) != Items.AIR;
+            return (this.tradeItem = this.getItem()) != Items.AIR;
         }
     }
     public boolean textMatchCount(Text text) {
@@ -258,7 +261,7 @@ public final class ShopSignBuilder {
         return builder;
     }
     private static String createIdentifier(@NotNull final World world, @NotNull final BlockPos blockPos) {
-        return IdUtils.get(world) + ":" + MessageUtils.blockPosToString(blockPos);
+        return IdUtils.get(world) + ":" + MessageUtils.xyzToString(blockPos);
     }
     
 }

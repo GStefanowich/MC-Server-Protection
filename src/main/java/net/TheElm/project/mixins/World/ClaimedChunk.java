@@ -26,7 +26,6 @@
 package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
@@ -39,14 +38,11 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.ChunkUtils.ClaimSlice;
 import net.TheElm.project.utilities.ChunkUtils.InnerClaim;
+import net.TheElm.project.utilities.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -120,18 +116,18 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
     @Override
     public void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo, boolean fresh) {
         // If heights are invalid
-        if (World.isHeightInvalid( yFrom ) || World.isHeightInvalid( yTo ))
+        if (World.isOutOfBuildLimitVertically(yFrom) || World.isOutOfBuildLimitVertically(yTo))
             return;
         
         ClaimSlice slice;
         if ((slice = this.claimSlices[slicePos]) == null)
-            slice = (this.claimSlices[slicePos] = new ClaimSlice());
+            slice = (this.claimSlices[slicePos] = new ClaimSlice(slicePos));
         
         // Get upper and lower positioning
-        int yMax = Math.max( yFrom, yTo );
-        int yMin = Math.min( yFrom, yTo );
+        int yMax = Math.max(yFrom, yTo);
+        int yMin = Math.min(yFrom, yTo);
         
-        slice.set(new InnerClaim(owner, yMax, yMin));
+        slice.insert(owner, yMax, yMin);
         
         // Make sure the chunk gets saved
         if ( fresh )
@@ -170,14 +166,17 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         return this;
     }
     
-    public void canPlayerClaim(@NotNull ClaimantPlayer player) throws TranslationKeyException {
-        if (this.chunkPlayer != null)
-            throw new TranslationKeyException( "claim.chunk.error.claimed" );
-        if (player.getId().equals(CoreMod.spawnID))
-            return;
-        // Check claims limit
-        if (!player.canClaim((WorldChunk)(Chunk) this))
+    public boolean canPlayerClaim(@NotNull ClaimantPlayer player, boolean stopIfClaimed) throws TranslationKeyException {
+        // If the chunk is owned, return false
+        if (this.chunkPlayer != null) {
+            if (stopIfClaimed)
+                throw new TranslationKeyException("claim.chunk.error.claimed");
+            return false;
+        }
+        // Check claims limit (If the player is spawn, always allow)
+        if (!player.getId().equals(CoreMod.spawnID) && !player.canClaim((WorldChunk)(Chunk) this))
             throw new TranslationKeyException("claim.chunk.error.max");
+        return true;
     }
     
     public @Nullable UUID getOwner() {
@@ -214,20 +213,6 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
                 return this.loadTownReference(playerTown);
         }
         return (this.chunkTown == null ? null : this.chunkTown.get());
-    }
-    
-    @Override
-    public Text getOwnerName(@NotNull PlayerEntity zonePlayer, @NotNull BlockPos pos) {
-        UUID owner = this.getOwner(pos);
-        if ( owner == null )
-            return new LiteralText(SewConfig.get(SewConfig.NAME_WILDERNESS))
-                .formatted(Formatting.GREEN);
-        
-        // Get the owner of the chunk
-        ClaimantPlayer chunkPlayer = ClaimantPlayer.get(owner);
-        
-        // Get the owners name (Colored using the relation to the zonePlayer)
-        return chunkPlayer.getName( zonePlayer.getUuid() );
     }
     
     @Override
@@ -318,7 +303,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
             int i = sliceTag.getInt("i");
             
             for (Tag claimTag : claimsTag) {
-                UUID owner = ((CompoundTag) claimTag).getUuid("owner");
+                UUID owner = NbtUtils.getUUID((CompoundTag) claimTag,"owner");
                 int upper = ((CompoundTag) claimTag).getInt("upper");
                 int lower = ((CompoundTag) claimTag).getInt("lower");
                 

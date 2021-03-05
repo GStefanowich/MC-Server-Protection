@@ -37,8 +37,12 @@ import net.minecraft.item.MusicDiscItem;
 import net.minecraft.item.ToolItem;
 import net.minecraft.item.WritableBookItem;
 import net.minecraft.item.WrittenBookItem;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Arrays;
 
 public final class ItemUtils {
     private ItemUtils() {}
@@ -64,5 +68,20 @@ public final class ItemUtils {
         if (item instanceof LeadItem)
             return ClaimPermissions.CREATURES;
         return ClaimPermissions.BLOCKS;
+    }
+    
+    public static void setLore(@NotNull Item item, @NotNull Text ...text) {
+        ItemUtils.setLore(item, 1, text);
+    }
+    public static void setLore(@NotNull Item item, int size, Text ...text) {
+        ItemUtils.setLore(new ItemStack(item, size), text);
+    }
+    public static void setLore(@NotNull ItemStack stack, @NotNull Text ...text) {
+        CompoundTag display = stack.getOrCreateSubTag("display");
+        display.put(
+            "Lore",
+            NbtUtils.toList(Arrays.asList(text),
+            Text.Serializer::toJson)
+        );
     }
 }

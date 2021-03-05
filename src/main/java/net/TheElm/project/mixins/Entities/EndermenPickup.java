@@ -41,18 +41,19 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.world.RayTraceContext;
+import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.Random;
 
-@Mixin(targets = "net/minecraft/entity/mob/EndermanEntity$PickUpBlockGoal")
+@Mixin(targets = "net/minecraft/entity/mob/EndermanEntity$PickUpBlockGoal", priority = 10000)
 public abstract class EndermenPickup extends Goal implements EndermanGoal {
     
-    @Shadow
+    @Shadow @Final
     private EndermanEntity enderman;
     
     @Override
@@ -78,7 +79,7 @@ public abstract class EndermenPickup extends Goal implements EndermanGoal {
         Vec3d vec3d_2 = new Vec3d((double) int_1 + 0.5D, (double) int_2 + 0.5D, (double) int_3 + 0.5D);
         
         // Attack the block
-        BlockHitResult blockHitResult = world.rayTrace(new RayTraceContext(vec3d_1, vec3d_2, RayTraceContext.ShapeType.COLLIDER, RayTraceContext.FluidHandling.NONE, this.enderman));
+        BlockHitResult blockHitResult = world.raycast(new RaycastContext(vec3d_1, vec3d_2, RaycastContext.ShapeType.COLLIDER, RaycastContext.FluidHandling.NONE, this.enderman));
         
         boolean bool = blockHitResult.getType() != HitResult.Type.MISS && blockHitResult.getBlockPos().equals(blockPos);
         

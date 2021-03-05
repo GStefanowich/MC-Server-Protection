@@ -25,23 +25,13 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
 import net.minecraft.block.BubbleColumnBlock;
-import net.minecraft.state.property.Properties;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.WorldAccess;
-import net.minecraft.world.WorldView;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(BubbleColumnBlock.class)
 public class BubbleColumns {
     
-    @Overwrite
+    /*@Overwrite
     public static void update(WorldAccess world, BlockPos blockPos, boolean pullDownwards) {
         if (BubbleColumnBlock.isStillWater( world, blockPos ))
             world.setBlockState(blockPos, Blocks.BUBBLE_COLUMN.getDefaultState().with(BubbleColumnBlock.DRAG, pullDownwards), 2);
@@ -61,6 +51,6 @@ public class BubbleColumns {
     private static boolean isPassableBlock(WorldAccess world, BlockPos blockPos) {
         BlockState blockState = world.getBlockState(blockPos);
         return blockState.contains(Properties.WATERLOGGED) && blockState.get(Properties.WATERLOGGED);
-    }
+    }*/
     
 }

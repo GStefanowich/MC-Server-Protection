@@ -48,7 +48,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.Packet;
 import net.minecraft.network.listener.ServerPlayPacketListener;
-import net.minecraft.network.packet.c2s.play.ChatMessageC2SPacket;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
 import net.minecraft.recipe.Recipe;
@@ -120,10 +119,10 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
     @Inject(at = @At("RETURN"), method = "<init>")
     public void onPlayerConnect(MinecraftServer server, ClientConnection client, ServerPlayerEntity player, CallbackInfo callback) {
         // Set the players position as in the wilderness
-        CoreMod.PLAYER_LOCATIONS.put( player, null );
+        CoreMod.PLAYER_LOCATIONS.put(player, null);
         
         // Initialize user claims from database
-        this.playerClaimData = ( SewConfig.get(SewConfig.DO_CLAIMS) ? ClaimantPlayer.get( player.getUuid() ) : null );
+        this.playerClaimData = ( SewConfig.get(SewConfig.DO_CLAIMS) ? ClaimantPlayer.get(player) : null );
         
         // Check if server has been joined before
         if (((PlayerData) player).getFirstJoinAt() == null) {
@@ -136,16 +135,16 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
             
             // Give the player the starting items
             for (Map.Entry<Item, Integer> item : SewConfig.get(SewConfig.STARTING_ITEMS).entrySet()) {
-                ItemStack stack = new ItemStack( item.getKey() );
-                stack.setCount( item.getValue() );
+                ItemStack stack = new ItemStack(item.getKey());
+                stack.setCount(item.getValue());
                 
-                player.inventory.offerOrDrop( player.world, stack );
+                player.inventory.offerOrDrop(player.world, stack);
             }
             
             // Give the player all of the games recipes
             if (SewConfig.get(SewConfig.START_WITH_RECIPES)) {
                 Collection<Recipe<?>> recipes = server.getRecipeManager().values();
-                this.player.unlockRecipes( recipes );
+                this.player.unlockRecipes(recipes);
             }
             
             // Set first join for later referencing
@@ -208,14 +207,14 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
     }
     
     // Change the chat format
-    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/server/PlayerManager.broadcastChatMessage(Lnet/minecraft/text/Text;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"), method = "onGameMessage", cancellable = true)
-    public void onChatMessage(ChatMessageC2SPacket chatMessageC2SPacket, CallbackInfo callback) {
+    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/server/PlayerManager.broadcastChatMessage(Lnet/minecraft/text/Text;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"), method = "method_31286", cancellable = true)
+    public void onChatMessage(String string, CallbackInfo callback) {
         if (!SewConfig.get(SewConfig.CHAT_MODIFY))
             return;
         
         try {
             // Parse the users message
-            String rawString = StringUtils.normalizeSpace(chatMessageC2SPacket.getChatMessage());
+            String rawString = StringUtils.normalizeSpace(string);
             
             // The chatroom to send the message in
             ChatRooms room = ((PlayerChat)this.player).getChatRoom();
@@ -230,7 +229,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
             }
             
             // Create a chat message
-            Text chatText = MessageUtils.formatPlayerMessage( this.player, room, rawString );
+            Text chatText = MessageUtils.formatPlayerMessage(this.player, room, rawString);
             
             // Send the new chat message to the currently selected chat room
             MessageUtils.sendTo(room, this.player, chatText);

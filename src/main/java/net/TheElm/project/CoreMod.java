@@ -36,7 +36,8 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.LegacyConverter;
-import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.loader.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.client.MinecraftClient;
@@ -45,6 +46,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -143,8 +145,15 @@ public abstract class CoreMod {
         return out.stream();
     }
     
+    /*
+     * Mod Assets
+     */
+    public static @NotNull Identifier modIdentifier(@NotNull String key) {
+        return new Identifier(CoreMod.MOD_ID + ":" + key);
+    }
+    
     public void initialize() {
-        CoreMod.logInfo( "Sewing Machine utilities mod is starting." );
+        CoreMod.logInfo("Sewing Machine utilities mod is starting.");
     }
     
     /*
@@ -158,23 +167,28 @@ public abstract class CoreMod {
             return Either.right((MinecraftClient) instance);
         throw new RuntimeException("Could not access game instance.");
     }
-    public static FabricLoader getFabric() {
-        return FabricLoader.getInstance();
+    public static @NotNull FabricLoader getFabric() {
+        return (FabricLoader) net.fabricmc.loader.api.FabricLoader.getInstance();
     }
-    public static ModContainer getMod() {
-        return CoreMod.getFabric().getModContainer(CoreMod.MOD_ID).orElseThrow(RuntimeException::new);
+    public static @NotNull ModContainer getMod() {
+        return CoreMod.getFabric()
+            .getModContainer(CoreMod.MOD_ID)
+            .orElseThrow(RuntimeException::new);
     }
-    public static ModMetadata getModMetaData() {
+    public static @NotNull ModMetadata getModMetaData() {
         return CoreMod.getMod().getMetadata();
     }
-    public static String getModVersion() {
+    public static @NotNull String getModVersion() {
         return CoreMod.getModMetaData().getVersion().getFriendlyString();
     }
     public static boolean isDebugging() {
         return CoreMod.getFabric().isDevelopmentEnvironment();
     }
+    public static boolean isClient() {
+        return CoreMod.getFabric().getEnvironmentType() == EnvType.CLIENT;
+    }
     public static boolean isServer() {
-        return getGameInstance().left().isPresent();
+        return CoreMod.getFabric().getEnvironmentType() == EnvType.SERVER;
     }
     
     /*

@@ -44,6 +44,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
@@ -126,7 +127,8 @@ public abstract class MobSpawners extends BlockWithEntity {
                     }
                     
                     // Drop the XP
-                    if (xpGive > 0) this.dropExperience(world, blockPos, xpGive);
+                    if (xpGive > 0 && world instanceof ServerWorld)
+                        this.dropExperience((ServerWorld) world, blockPos, xpGive);
                 }
             }
         }

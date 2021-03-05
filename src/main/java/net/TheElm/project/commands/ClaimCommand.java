@@ -60,27 +60,32 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.CommandUtilities;
+import net.TheElm.project.utilities.EffectUtils;
 import net.TheElm.project.utilities.LegacyConverter;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
-import net.minecraft.command.arguments.EntityArgumentType;
-import net.minecraft.command.arguments.GameProfileArgumentType;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.argument.BlockPosArgumentType;
+import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.ai.pathing.Path;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.MessageType;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.Whitelist;
 import net.minecraft.server.WhitelistEntry;
 import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.ClickEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -92,6 +97,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
+import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
@@ -110,6 +116,8 @@ import java.util.concurrent.CompletableFuture;
 
 public final class ClaimCommand {
     
+    private static final WorldChunk[] EMPTY_CHUNKS = new WorldChunk[0];
+    
     private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = TranslatableServerSide.exception("town.found.poor", 1);
     private static final ExceptionTranslatableServerSide SELF_RANK_CHANGE = TranslatableServerSide.exception("friends.rank.self");
     private static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED_BY_PLAYER = TranslatableServerSide.exception("claim.chunk.error.not_players");
@@ -121,6 +129,8 @@ public final class ClaimCommand {
     private static final ExceptionTranslatableServerSide TOWN_INVITE_FAIL = TranslatableServerSide.exception("town.invite.fail");
     private static final ExceptionTranslatableServerSide TOWN_INVITE_MISSING = TranslatableServerSide.exception("town.invite.missing");
     private static final SimpleCommandExceptionType TOWN_NOT_EXISTS = new SimpleCommandExceptionType(new LiteralText("That town does not exist."));
+    private static final ExceptionTranslatableServerSide PLAYER_NOT_FRIENDS = TranslatableServerSide.exception("friends.not_friends");
+    private static final ExceptionTranslatableServerSide PLAYER_DIFFERENT_WORLD = TranslatableServerSide.exception("player.target.different_world");
     
     private ClaimCommand() {}
     
@@ -149,24 +159,41 @@ public final class ClaimCommand {
         /*
          * Claim Command
          */
-        LiteralCommandNode<ServerCommandSource> claim = dispatcher.register( CommandManager.literal("claim" )
+        LiteralCommandNode<ServerCommandSource> claim = dispatcher.register(CommandManager.literal("claim")
             // Claim a chunk radius
-            .then(CommandManager.argument( "radius", IntegerArgumentType.integer( 1, 4 ))
+            .then(CommandManager.argument("radius", IntegerArgumentType.integer(1, 4))
                 .executes(ClaimCommand::claimChunkSelfRadius)
+            )
+            // Claim a region
+            .then(CommandManager.literal("region")
+                .requires((source) -> source.hasPermissionLevel(SewConfig.get(SewConfig.CLAIM_OP_LEVEL_OTHER)))
+                .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
+                    .then(CommandManager.argument("from", BlockPosArgumentType.blockPos())
+                        .then(CommandManager.argument("to", BlockPosArgumentType.blockPos())
+                            .executes(ClaimCommand::claimRegionAt)
+                        )
+                    )
+                )
             )
             // Claim chunk for another player
             .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                 .suggests(CommandUtilities::getAllPlayerNames)
                 .requires((source) -> source.hasPermissionLevel(SewConfig.get(SewConfig.CLAIM_OP_LEVEL_OTHER)))
+                .then(CommandManager.argument("radius", IntegerArgumentType.integer(1, 4))
+                    .executes(ClaimCommand::claimChunkOtherRadius)
+                )
                 .executes(ClaimCommand::claimChunkOther)
             )
             // Claim chunk for the spawn
-            .then(CommandManager.literal( "spawn" )
+            .then(CommandManager.literal("spawn")
                 .requires((source) -> source.hasPermissionLevel(SewConfig.get(SewConfig.CLAIM_OP_LEVEL_SPAWN)))
+                .then(CommandManager.argument("radius", IntegerArgumentType.integer(1, 4))
+                    .executes(ClaimCommand::claimChunkSpawnRadius)
+                )
                 .executes(ClaimCommand::claimChunkSpawn)
             )
             // Claim chunk for players town
-            .then(CommandManager.literal("town" )
+            .then(CommandManager.literal("town")
                 .requires(CommandUtilities::playerIsInTown)
                 .executes(ClaimCommand::claimChunkTown)
             )
@@ -183,6 +210,16 @@ public final class ClaimCommand {
             .then(CommandManager.literal("all")
                 .executes(ClaimCommand::unclaimAll)
             )
+            // Unclaim a region
+            .then(CommandManager.literal("region")
+                .requires((source) -> source.hasPermissionLevel(SewConfig.get(SewConfig.CLAIM_OP_LEVEL_OTHER)))
+                .then(CommandManager.argument("from", BlockPosArgumentType.blockPos())
+                    .then(CommandManager.argument("to", BlockPosArgumentType.blockPos())
+                        .executes(ClaimCommand::unclaimRegionAt)
+                    )
+                )
+            )
+            // Force remove a claim
             .then(CommandManager.literal("force")
                 .requires((source -> source.hasPermissionLevel( SewConfig.get(SewConfig.CLAIM_OP_LEVEL_OTHER) )))
                 .executes(ClaimCommand::unclaimChunkOther)
@@ -197,19 +234,28 @@ public final class ClaimCommand {
          */
         LiteralCommandNode<ServerCommandSource> friends = dispatcher.register(CommandManager.literal("friends")
             // Whitelist a friend
-            .then(CommandManager.literal( "whitelist" )
+            .then(CommandManager.literal("whitelist")
                 .requires((context) -> SewConfig.get(SewConfig.FRIEND_WHITELIST))
                 .then( CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                     .suggests((context, builder) -> {
                         PlayerManager manager = context.getSource().getMinecraftServer().getPlayerManager();
                         return CommandSource.suggestMatching(manager.getPlayerList().stream()
-                            .filter(( player ) -> !manager.getWhitelist().isAllowed( player.getGameProfile() ))
+                            .filter(( player ) -> !manager.getWhitelist().isAllowed(player.getGameProfile()))
                             .map(( player ) -> player.getGameProfile().getName()), builder);
                     })
                     .executes(ClaimCommand::inviteFriend)
                 )
                 .executes(ClaimCommand::invitedListSelf)
             )
+            // Locate friends using pathing
+            .then(CommandManager.literal("locate")
+                .then(CommandManager.argument("friend", EntityArgumentType.player())
+                    .suggests(CommandUtilities::getFriendPlayerNames)
+                    .executes(ClaimCommand::findFriend)
+                )
+                .executes(ClaimCommand::stopFindingPos)
+            )
+            // Get Whitelisted friends
             .then(CommandManager.literal("get")
                 .requires((source) -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP))
                 .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
@@ -219,8 +265,8 @@ public final class ClaimCommand {
             )
             // Set a friends rank
             .then(CommandManager.literal("set")
-                .then(CommandManager.argument( "rank", StringArgumentType.word())
-                    .suggests(EnumArgumentType.enumerate( ClaimRanks.class ))
+                .then(CommandManager.argument("rank", StringArgumentType.word())
+                    .suggests(EnumArgumentType.enumerate(ClaimRanks.class))
                     .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtilities::getAllPlayerNames)
                         .executes(ClaimCommand::addRank)
@@ -234,6 +280,7 @@ public final class ClaimCommand {
                     .executes(ClaimCommand::remRank)
                 )
             )
+            // List all friends
             .executes(ClaimCommand::listFriends)
         );
         CoreMod.logDebug( "- Registered Friends command" );
@@ -242,7 +289,7 @@ public final class ClaimCommand {
          * Register the town command
          */
         LiteralCommandNode<ServerCommandSource> towns = dispatcher.register( CommandManager.literal( "town" )
-            .then(CommandManager.literal("new" )
+            .then(CommandManager.literal("new")
                 .requires(ClaimCommand::sourceNotMayor)
                 .then( CommandManager.argument("name", StringArgumentType.greedyString())
                     .executes(ClaimCommand::townFound)
@@ -308,41 +355,41 @@ public final class ClaimCommand {
          */
         
         // The main command
-        LiteralCommandNode<ServerCommandSource> protection = dispatcher.register( CommandManager.literal("protection" )
+        LiteralCommandNode<ServerCommandSource> protection = dispatcher.register(CommandManager.literal("protection")
             // Claim a chunk
-            .then( claim )
+            .then(claim)
             
             // Unclaim a chunk
-            .then( unclaim )
+            .then(unclaim)
             
             // Towns
-            .then( towns )
+            .then(towns)
             
             // Update claim permissions
-            .then( CommandManager.literal("permissions")
-                .then( CommandManager.argument( "permission", StringArgumentType.word())
-                    .suggests( EnumArgumentType.enumerate( ClaimPermissions.class ) )
-                    .then( CommandManager.argument( "rank", StringArgumentType.word())
-                        .suggests( EnumArgumentType.enumerate( ClaimRanks.class ) )
-                        .executes( ClaimCommand::updateSetting )
+            .then(CommandManager.literal("permissions")
+                .then(CommandManager.argument("permission", StringArgumentType.word())
+                    .suggests(EnumArgumentType.enumerate(ClaimPermissions.class))
+                    .then(CommandManager.argument("rank", StringArgumentType.word())
+                        .suggests(EnumArgumentType.enumerate(ClaimRanks.class))
+                        .executes(ClaimCommand::updateSetting)
                     )
                 )
-                .then( CommandManager.literal("*")
-                    .then( CommandManager.argument( "rank", StringArgumentType.word())
-                        .suggests(EnumArgumentType.enumerate(ClaimRanks.class ))
+                .then(CommandManager.literal("*")
+                    .then(CommandManager.argument( "rank", StringArgumentType.word())
+                        .suggests(EnumArgumentType.enumerate(ClaimRanks.class))
                         .executes(ClaimCommand::updateSettings)
                     )
                 )
             )
             
             // Update friends
-            .then( friends )
+            .then(friends)
             
             // Chunk settings
             .then(CommandManager.literal("settings")
-                .then(CommandManager.argument( "setting", StringArgumentType.word())
-                    .suggests(EnumArgumentType.enumerate( ClaimSettings.class ))
-                    .then(CommandManager.argument( "bool", BoolArgumentType.bool())
+                .then(CommandManager.argument("setting", StringArgumentType.word())
+                    .suggests(EnumArgumentType.enumerate(ClaimSettings.class))
+                    .then(CommandManager.argument("bool", BoolArgumentType.bool())
                         .executes(ClaimCommand::updateBoolean)
                     )
                 )
@@ -350,18 +397,19 @@ public final class ClaimCommand {
             
             // Import from older version
             .then(CommandManager.literal("legacy-import")
-                .requires((source -> source.hasPermissionLevel( 4 ) && LegacyConverter.isLegacy()))
+                .requires((source -> source.hasPermissionLevel(4) && LegacyConverter.isLegacy()))
                 .executes(ClaimCommand::convertFromLegacy )
             )
         );
         
-        CoreMod.logDebug( "- Registered Protection command" );
+        CoreMod.logDebug("- Registered Protection command");
     }
     
     /*
      * Set data for a chunk
      */
-    private static int rawSetChunkPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    
+    private static int rawSetChunkPlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         Collection<GameProfile> targets = GameProfileArgumentType.getProfileArgument(context, "target");
         
@@ -370,7 +418,7 @@ public final class ClaimCommand {
             return ClaimCommand.claimChunkAt(target.getId(), false, player, player.world.getWorldChunk(player.getBlockPos()));
         return 0;
     }
-    private static int rawSetChunkTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int rawSetChunkTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         
         return Command.SINGLE_SUCCESS;
     }
@@ -378,50 +426,21 @@ public final class ClaimCommand {
     /*
      * Claim a chunk
      */
-    private static int claimChunkSelf(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    
+    private static int claimChunkSelf(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the player running the command
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         // Claim the chunk for own player
         return ClaimCommand.claimChunk(player.getUuid(), player);
     }
-    private static int claimChunkSelfRadius(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        // Get the player running the command
-        ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
-        World world = source.getWorld();
-        
-        // Get the players positioning
-        BlockPos blockPos = player.getBlockPos();
-        
-        List<WorldChunk> chunksToClaim = new ArrayList<>();
-        // Check the radius that the player wants to claim
-        final int radius = IntegerArgumentType.getInteger(context, "radius");
-        IClaimedChunk[] claimedChunks = IClaimedChunk.getOwnedAround(player.getServerWorld(), player.getBlockPos(), radius);
-        for (IClaimedChunk claimedChunk : claimedChunks) {
-            if (!player.getUuid().equals(claimedChunk.getOwner( blockPos )))
-                throw CHUNK_RADIUS_OWNED.create(player, claimedChunk.getOwnerName(player));
-        }
-        
-        int chunkX = blockPos.getX() >> 4;
-        int chunkZ = blockPos.getZ() >> 4;
-        
-        // For the X axis
-        for (int x = chunkX - radius; x <= chunkX + radius; x++) {
-            // For the Z axis
-            for (int z = chunkZ - radius; z <= chunkZ + radius; z++) {
-                // Create the chunk position
-                WorldChunk worldChunk = world.getWorldChunk(new BlockPos(x << 4, 0, z << 4));
-                // Add if not already claimed
-                if (!player.getUuid().equals(((IClaimedChunk) worldChunk).getOwner( blockPos )))
-                    chunksToClaim.add(worldChunk);
-            }
-        }
-        
-        // Claim all chunks
-        return ClaimCommand.claimChunkAt(player.getUuid(), true, player, chunksToClaim.toArray(new WorldChunk[0]));
+    private static int claimChunkSelfRadius(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return ClaimCommand.claimChunkRadius(
+            null,
+            context
+        );
     }
-    private static int claimChunkTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int claimChunkTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         ServerWorld world = player.getServerWorld();
@@ -444,44 +463,104 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int claimChunkOther(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int claimChunkTownRadius(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return 0;
+    }
+    private static int claimChunkOther(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the player running the command
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
         // Get the target player
-        Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument( context, "target" );
-        GameProfile targetPlayer = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context, "target");
+        GameProfile targetPlayer = gameProfiles.stream().findAny()
+            .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Claim the chunk for other player
         return ClaimCommand.claimChunk( targetPlayer.getId(), player );
     }
-    private static int claimChunkSpawn(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int claimChunkOtherRadius(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get the target player
+        Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context, "target");
+        GameProfile targetPlayer = gameProfiles.stream().findAny()
+            .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        
+        return ClaimCommand.claimChunkRadius(
+            targetPlayer.getId(),
+            context
+        );
+    }
+    private static int claimChunkSpawn(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the player running the command
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
-        
-        if (SewConfig.get(SewConfig.LIGHT_UP_SPAWN))
-            ChunkUtils.lightChunk(source.getWorld().getWorldChunk(player.getBlockPos()));
         
         // Claim the chunk for spawn
-        return ClaimCommand.claimChunk(CoreMod.spawnID, player);
+        return ClaimCommand.claimChunk(
+            CoreMod.spawnID,
+            source.getPlayer()
+        );
+    }
+    private static int claimChunkSpawnRadius(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return ClaimCommand.claimChunkRadius(
+            CoreMod.spawnID,
+            context
+        );
     }
     private static int claimChunk(@NotNull final UUID chunkFor, @NotNull final ServerPlayerEntity claimant) {
         // Get run from positioning
         BlockPos blockPos = claimant.getBlockPos();
         return ClaimCommand.claimChunkAt(chunkFor, true, claimant, claimant.world.getWorldChunk(blockPos));
     }
+    private static int claimChunkRadius(@Nullable UUID chunkFor, @NotNull final CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get the player running the command
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        World world = source.getWorld();
+        
+        // Claiming chunks for self player
+        if (chunkFor == null)
+            chunkFor = player.getUuid();
+        
+        // Get the players positioning
+        BlockPos blockPos = player.getBlockPos();
+        List<WorldChunk> chunksToClaim = new ArrayList<>();
+        
+        // Check the radius that the player wants to claim
+        final int radius = IntegerArgumentType.getInteger(context, "radius");
+        IClaimedChunk[] claimedChunks = IClaimedChunk.getOwnedAround(player.getServerWorld(), player.getBlockPos(), radius);
+        for (IClaimedChunk claimedChunk : claimedChunks) {
+            if (!chunkFor.equals(claimedChunk.getOwner(blockPos)))
+                throw CHUNK_RADIUS_OWNED.create(player, claimedChunk.getOwnerName(player));
+        }
+        
+        int chunkX = blockPos.getX() >> 4;
+        int chunkZ = blockPos.getZ() >> 4;
+        
+        // For the X axis
+        for (int x = chunkX - radius; x <= chunkX + radius; x++) {
+            // For the Z axis
+            for (int z = chunkZ - radius; z <= chunkZ + radius; z++) {
+                // Create the chunk position
+                WorldChunk worldChunk = world.getWorldChunk(new BlockPos(x << 4, 0, z << 4));
+                // Add if not already claimed
+                if (!player.getUuid().equals(((IClaimedChunk) worldChunk).getOwner(blockPos)))
+                    chunksToClaim.add(worldChunk);
+            }
+        }
+        
+        // Claim all chunks
+        return ClaimCommand.claimChunkAt(chunkFor, true, player, chunksToClaim.toArray(ClaimCommand.EMPTY_CHUNKS));
+    }
     public static int claimChunkAt(@NotNull final UUID chunkFor, final boolean verify, @Nullable final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
-        new Thread(ClaimCommand.claimChunkThread( chunkFor, verify, claimant, worldChunks)).start();
+        new Thread(ClaimCommand.claimChunkThread(chunkFor, verify, claimant, worldChunks)).start();
         return Command.SINGLE_SUCCESS;
     }
-    private static Runnable claimChunkThread(@NotNull final UUID chunkFor, final boolean verify, @Nullable final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
+    private static @NotNull Runnable claimChunkThread(@NotNull final UUID chunkFor, final boolean verify, @Nullable final ServerPlayerEntity claimant, final WorldChunk... worldChunks) {
         // Handle the claim in a new thread (Because it could have to load chunks)
         return (() -> {
             try {
                 if (!ClaimCommand.tryClaimChunkAt(chunkFor, verify, claimant, worldChunks))
-                    throw CHUNK_ALREADY_OWNED.create( claimant );
+                    throw CHUNK_ALREADY_OWNED.create(claimant);
             } catch (TranslationKeyException e) {
                 if (claimant != null) claimant.sendMessage(
                     TranslatableServerSide.text(claimant, e.getKey()),
@@ -497,26 +576,33 @@ public final class ClaimCommand {
             }
         });
     }
-    public static boolean tryClaimChunkAt(@NotNull final UUID chunkFor, final boolean verify, @Nullable final ServerPlayerEntity claimant, final WorldChunk... worldChunks) throws TranslationKeyException {
+    public static boolean tryClaimChunkAt(@NotNull final UUID chunkFor, final boolean verify, @Nullable final ServerPlayerEntity claimant, @NotNull final WorldChunk... worldChunks) throws TranslationKeyException {
         boolean success = false;
         int claimed = 0; // Amount of chunks claimed
         
         try {
             for (WorldChunk worldChunk : worldChunks) {
+                WorldBorder border = worldChunk.getWorld()
+                    .getWorldBorder();
+    
+                ChunkPos chunkPos = worldChunk.getPos();
+                if (!border.contains(chunkPos))
+                    continue;
+                
                 Claimant claim = ClaimantPlayer.get(chunkFor);
                 IClaimedChunk chunk = (IClaimedChunk) worldChunk;
                 
                 // Check if it's available
-                if (verify) chunk.canPlayerClaim((ClaimantPlayer)claim);
+                if (verify && !chunk.canPlayerClaim((ClaimantPlayer) claim, worldChunks.length <= 1))
+                    continue;
                 
                 // Update the chunk owner
                 chunk.updatePlayerOwner(claim.getId());
                 worldChunk.setShouldSave(true);
                 
                 // Log that the chunk was claimed
-                ChunkPos chunkPos = worldChunk.getPos();
                 if (claimant != null)
-                    CoreMod.logInfo(claimant.getName().asString() + " has claimed chunk " + chunkPos.x + ", " + chunkPos.z);
+                    CoreMod.logInfo(claimant.getName().asString() + " has claimed chunk " + MessageUtils.xzToString(chunkPos));
                 
                 // Save the chunk for the player
                 claim.addToCount(worldChunk);
@@ -524,19 +610,24 @@ public final class ClaimCommand {
                 // Save the chunk for the town
                 if ((claim = ((ClaimantPlayer) claim).getTown()) != null)
                     claim.addToCount(worldChunk);
-                
                 // Increase our counter
                 ++claimed;
             }
             
             return (success = true);
+        } catch (Exception e) {
+            if (e instanceof TranslationKeyException)
+                throw e;
+            CoreMod.logError(e);
+            
+            return false;
         } finally {
             if ((claimant != null) && (success || (claimed > 0)))
-                TranslatableServerSide.send( claimant, "claim.chunk.claimed", claimed );
+                TranslatableServerSide.send(claimant, "claim.chunk.claimed", claimed);
         }
     }
     
-    private static int unclaimChunk(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int unclaimChunk(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         // Get run from positioning
@@ -562,7 +653,7 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int unclaimChunkTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int unclaimChunkTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         ServerWorld world = player.getServerWorld();
@@ -587,7 +678,7 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int unclaimChunkOther(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int unclaimChunkOther(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
 
@@ -615,11 +706,11 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    public static boolean tryUnclaimChunkAt(final UUID chunkFor, final PlayerEntity claimant, final BlockPos blockPos) {
+    public static boolean tryUnclaimChunkAt(final UUID chunkFor, @NotNull final PlayerEntity claimant, final BlockPos blockPos) {
         World world = claimant.getEntityWorld();
         return ClaimCommand.tryUnclaimChunkAt( chunkFor, world.getWorldChunk( blockPos ));
     }
-    private static boolean tryUnclaimChunkAt(final UUID chunkFor, final WorldChunk chunk) {
+    private static boolean tryUnclaimChunkAt(@NotNull final UUID chunkFor, final WorldChunk chunk) {
         if ( !chunkFor.equals( ((IClaimedChunk) chunk).getOwner() ) )
             return false;
         
@@ -637,7 +728,7 @@ public final class ClaimCommand {
         
         return true;
     }
-    private static int unclaimAll(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int unclaimAll(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         final ServerCommandSource source = context.getSource();
         final ServerPlayerEntity player = source.getPlayer();
         final MinecraftServer server = source.getMinecraftServer();
@@ -664,10 +755,43 @@ public final class ClaimCommand {
         return Command.SINGLE_SUCCESS;
     }
     
+    private static int claimRegionAt(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        
+        try {
+            BlockPos start = BlockPosArgumentType.getBlockPos(context, "from");
+            BlockPos end = BlockPosArgumentType.getBlockPos(context, "to");
+            
+            // Get information about the target
+            Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "target");
+            GameProfile target = profiles.stream().findAny()
+                .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+            
+            // Claim the defined slices
+            ChunkUtils.claimSlices(source.getWorld(), target.getId(), start, end);
+        } catch (Exception e) {
+            CoreMod.logError(e);
+        }
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int unclaimRegionAt(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        
+        BlockPos start = BlockPosArgumentType.getBlockPos(context, "from");
+        BlockPos end = BlockPosArgumentType.getBlockPos(context, "to");
+        
+        // Unclaim the defined slices
+        ChunkUtils.unclaimSlices(source.getWorld(), start, end);
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    
     /*
      * Town Options
      */
-    private static boolean sourceIsMayor(final ServerCommandSource source) {
+    
+    private static boolean sourceIsMayor(@NotNull final ServerCommandSource source) {
         try {
             return ClaimCommand.sourceIsMayor( source.getPlayer() );
         } catch (CommandSyntaxException e) {
@@ -675,7 +799,7 @@ public final class ClaimCommand {
         }
         return false;
     }
-    public static boolean sourceIsMayor(final ServerPlayerEntity player) {
+    public static boolean sourceIsMayor(@NotNull final ServerPlayerEntity player) {
         ClaimantPlayer claim = ((PlayerData) player).getClaim();
         ClaimantTown town;
         
@@ -685,10 +809,10 @@ public final class ClaimCommand {
         
         return false;
     }
-    private static boolean sourceNotMayor(final ServerCommandSource source) {
+    private static boolean sourceNotMayor(@NotNull final ServerCommandSource source) {
         return !ClaimCommand.sourceIsMayor( source );
     }
-    public static boolean sourceInTown(final ServerCommandSource source) {
+    public static boolean sourceInTown(@NotNull final ServerCommandSource source) {
         try {
             return ClaimCommand.sourceInTown( source.getPlayer() );
         } catch (CommandSyntaxException e) {
@@ -696,15 +820,15 @@ public final class ClaimCommand {
         }
         return false;
     }
-    private static boolean sourceInTown(final ServerPlayerEntity player) {
+    private static boolean sourceInTown(@NotNull final ServerPlayerEntity player) {
         ClaimantPlayer claim = ((PlayerData) player).getClaim();
         return ((claim != null) && claim.getTown() != null);
     }
-    public static boolean sourceNotInTown(final ServerCommandSource source) {
+    public static boolean sourceNotInTown(@NotNull final ServerCommandSource source) {
         return !ClaimCommand.sourceInTown( source );
     }
     
-    private static int townFound(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int townFound(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get player information
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getMinecraftServer();
@@ -735,7 +859,7 @@ public final class ClaimCommand {
         }
         return Command.SINGLE_SUCCESS;
     }
-    private static int townDisband(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int townDisband(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get player information
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getMinecraftServer();
@@ -762,7 +886,7 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int townInvite(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int townInvite(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         ClaimantPlayer claimant = ((PlayerData) player).getClaim();
@@ -786,7 +910,7 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int townGiveChunk(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int townGiveChunk(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
@@ -805,7 +929,7 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int playerJoinsTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int playerJoinsTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getMinecraftServer();
         ServerPlayerEntity player = source.getPlayer();
@@ -830,7 +954,7 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int playerPartsTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int playerPartsTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getMinecraftServer();
         ServerPlayerEntity player = source.getPlayer();
@@ -848,7 +972,7 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int adminSetPlayerTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int adminSetPlayerTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context,"target");
@@ -866,7 +990,7 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int adminSetEntityTown(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int adminSetEntityTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         
         Collection<? extends Entity> entities = EntityArgumentType.getEntities(context, "entities");
@@ -900,7 +1024,7 @@ public final class ClaimCommand {
         
         return added;
     }
-    private static CompletableFuture<Suggestions> listTownInvites(CommandContext<ServerCommandSource> context, SuggestionsBuilder suggestionsBuilder) throws CommandSyntaxException {
+    private static CompletableFuture<Suggestions> listTownInvites(@NotNull CommandContext<ServerCommandSource> context, SuggestionsBuilder suggestionsBuilder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         ClaimantPlayer claimant = ((PlayerData) player).getClaim();
@@ -917,7 +1041,8 @@ public final class ClaimCommand {
     /*
      * Update Chunk settings
      */
-    private static int updateSetting(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    
+    private static int updateSetting(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get enums
         ClaimPermissions permissions = EnumArgumentType.getEnum( ClaimPermissions.class, StringArgumentType.getString( context, "permission" ) );
         ClaimRanks rank = EnumArgumentType.getEnum( ClaimRanks.class, StringArgumentType.getString( context, "rank" ) );
@@ -942,7 +1067,7 @@ public final class ClaimCommand {
         // Return command success
         return Command.SINGLE_SUCCESS;
     }
-    private static int updateSettings(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int updateSettings(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get enums
         ClaimRanks rank = EnumArgumentType.getEnum(ClaimRanks.class, StringArgumentType.getString(context, "rank"));
         
@@ -969,7 +1094,7 @@ public final class ClaimCommand {
         // Return command success
         return Command.SINGLE_SUCCESS;
     }
-    private static int updateBoolean(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int updateBoolean(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get enums
         ClaimSettings setting = EnumArgumentType.getEnum( ClaimSettings.class, StringArgumentType.getString( context, "setting" ) );
         boolean enabled = BoolArgumentType.getBool( context, "bool" );
@@ -1001,7 +1126,8 @@ public final class ClaimCommand {
     /*
      * Adding/Removing users from friends
      */
-    private static int addRank(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    
+    private static int addRank(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the targeted rank
         ClaimRanks rank = EnumArgumentType.getEnum( ClaimRanks.class, StringArgumentType.getString( context,"rank" ) );
         
@@ -1050,11 +1176,12 @@ public final class ClaimCommand {
         // Return command success
         return Command.SINGLE_SUCCESS;
     }
-    private static int remRank(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int remRank(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the player
         ServerPlayerEntity player = context.getSource().getPlayer();
-        Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument( context, "friend" );
-        GameProfile friend = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context, "friend");
+        GameProfile friend = gameProfiles.stream().findAny()
+            .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Player tries changing their own rank
         if ( player.getUuid().equals( friend.getId() ) )
@@ -1074,7 +1201,7 @@ public final class ClaimCommand {
             
             // Attempting to remove the friend
             player.sendMessage( new LiteralText("Player ").formatted(Formatting.WHITE)
-                .append( new LiteralText( friend.getName() ).formatted(Formatting.DARK_PURPLE) )
+                .append( new LiteralText(friend.getName()).formatted(Formatting.DARK_PURPLE) )
                 .append( new LiteralText(" removed.")),
                 MessageType.SYSTEM,
                 ServerCore.spawnID
@@ -1104,14 +1231,37 @@ public final class ClaimCommand {
         // Return command success
         return Command.SINGLE_SUCCESS;
     }
-    private static int listFriends(CommandContext<ServerCommandSource> context) {
+    private static int listFriends(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return Command.SINGLE_SUCCESS;
+    }
+    private static int findFriend(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity friend = EntityArgumentType.getPlayer(context, "friend");
+        ClaimantPlayer friendData = ClaimantPlayer.get(friend);
+        if (!friendData.isFriend(player.getUuid()))
+            throw ClaimCommand.PLAYER_NOT_FRIENDS.create(player);
+        if (player.world != friend.world)
+            throw ClaimCommand.PLAYER_DIFFERENT_WORLD.create(player);
+        return ClaimCommand.findFriend(player, friend);
+    }
+    private static int findFriend(@NotNull ServerPlayerEntity player, @NotNull ServerPlayerEntity target) {
+        Path navigator = ((PlayerData)player).findPathTo(target, 3);
+        if (navigator != null)
+            EffectUtils.summonBreadcrumbs(ParticleTypes.FALLING_OBSIDIAN_TEAR, player, navigator);
+        else CoreMod.logInfo("Could not find path.");
+        return navigator == null ? 0 : 1;
+    }
+    private static int stopFindingPos(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        return ClaimCommand.findFriend(source.getPlayer(), source.getPlayer());
     }
     
     /*
      * Let players add friends to the whitelist
      */
-    private static int inviteFriend(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    
+    private static int inviteFriend(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         Whitelist whitelist = source.getMinecraftServer().getPlayerManager().getWhitelist();
         int count = 0;
@@ -1145,7 +1295,7 @@ public final class ClaimCommand {
             return count;
         }
     }
-    private static int invitedListSelf(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int invitedListSelf(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get command context information
         ServerCommandSource source = context.getSource();
         
@@ -1154,7 +1304,7 @@ public final class ClaimCommand {
             source.getPlayer().getGameProfile()
         );
     }
-    private static int invitedListOther(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int invitedListOther(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get command context information
         ServerCommandSource source = context.getSource();
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
@@ -1168,7 +1318,7 @@ public final class ClaimCommand {
         
         return 0;
     }
-    private static int invitedList(ServerCommandSource source, GameProfile player) throws CommandSyntaxException {
+    private static int invitedList(@NotNull ServerCommandSource source, @NotNull GameProfile player) throws CommandSyntaxException {
         // Get information about the server
         MinecraftServer server = source.getMinecraftServer();
         UserCache cache = server.getUserCache();
@@ -1182,6 +1332,8 @@ public final class ClaimCommand {
         
         // Loop the whitelist
         for (WhitelistEntry entry : whitelist.values()) {
+            if (entry == null)
+                continue;
             if (player.getId().equals(((WhitelistedPlayer)entry).getUUID()))
                 invitedBy = cache.getByUuid(((WhitelistedPlayer)entry).getInvitedBy());
             else if (player.getId().equals(((WhitelistedPlayer) entry).getInvitedBy()))
@@ -1196,14 +1348,14 @@ public final class ClaimCommand {
         if (invitedBy != null)
             out = new LiteralText("").append(new LiteralText(isPlayer ? "You" : player.getName()).formatted(Formatting.GRAY))
                 .append(" " + ( isPlayer ? "were" : "was" ) + " invited to the server by ").formatted(Formatting.WHITE)
-                .append(new LiteralText(invitedBy.getName()).formatted(claim.getFriendRank(invitedBy.getId()).getColor()));
+                .append(ClaimCommand.inviteeFormattedName(source, claim, invitedBy.getName(), invitedBy.getId()));
         
-        MutableText inv = new LiteralText("").append(new LiteralText(isPlayer ? "You" : player.getName()).formatted(Formatting.GRAY))
-            .append(" invited the following players: ").formatted(Formatting.WHITE)
-            .append(MessageUtils.listToTextComponent(invited, (entry) -> {
-                ClaimRanks rank = claim.getFriendRank(((WhitelistedPlayer)entry).getUUID());
-                return new LiteralText(((WhitelistedPlayer)entry).getName()).formatted(rank.getColor());
-            }));
+        MutableText inv = new LiteralText("").formatted(Formatting.WHITE)
+            .append(new LiteralText(isPlayer ? "You" : player.getName()).formatted(Formatting.GRAY))
+            .append(" invited the following players [")
+            .append(MessageUtils.formatNumber(invited.size()))
+            .append("]: ")
+            .append(MessageUtils.listToTextComponent(invited, (entry) -> ClaimCommand.inviteeFormattedName(source, claim, ((WhitelistedPlayer)entry).getName(), ((WhitelistedPlayer)entry).getUUID())));
         
         if (out == null) out = inv;
         else out.append("\n").append(inv);
@@ -1212,11 +1364,21 @@ public final class ClaimCommand {
         
         return Command.SINGLE_SUCCESS;
     }
+    private static Text inviteeFormattedName(@NotNull ServerCommandSource source, @NotNull ClaimantPlayer claim, @NotNull String name, @NotNull UUID uuid) {
+        return new LiteralText(name).styled((style) -> {
+            if (source.hasPermissionLevel(OpLevels.CHEATING)) {
+                ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friends get " + name);
+                style = style.withClickEvent(click);
+            }
+            return style.withFormatting(claim.getFriendRank(uuid).getColor());
+        });
+    }
     
     /*
      * Convert from legacy database version
      */
-    private static int convertFromLegacy(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    
+    private static int convertFromLegacy(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         if (LegacyConverter.exists())
             return -1;
         if (!SewConfig.get(SewConfig.DO_CLAIMS))
@@ -1236,6 +1398,7 @@ public final class ClaimCommand {
     /*
      * Notify players of chunk claim changes
      */
+    
     public static void notifyChangedClaimed(final UUID chunkOwner) {
         CoreMod.PLAYER_LOCATIONS.entrySet().stream().filter((entry) -> chunkOwner.equals(entry.getValue())).forEach((entry) -> {
             ServerPlayerEntity notifyPlayer = entry.getKey();

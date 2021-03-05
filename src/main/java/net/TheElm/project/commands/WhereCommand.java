@@ -29,13 +29,14 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.command.arguments.EntityArgumentType;
+import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.CommandManager;
@@ -58,6 +59,7 @@ public final class WhereCommand {
                 .executes(WhereCommand::locatePlayer)
             )
         );
+        CoreMod.logDebug("- Registered Where command");
     }
     
     private static int locatePlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -69,7 +71,9 @@ public final class WhereCommand {
             .formatted(Formatting.YELLOW)
             .append(player.getDisplayName())
             .append(" is currently at ")
-            .append(MessageUtils.blockPosToTextComponent(pos));
+            .append(MessageUtils.xyzToText(pos))
+            .append(" in ")
+            .append(new LiteralText(player.getServerWorld().getRegistryKey().getValue().toString()).formatted(Formatting.AQUA));
         
         if (SewConfig.get(SewConfig.DO_CLAIMS)) {
             Entity commandSource = source.getEntity();

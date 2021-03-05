@@ -33,10 +33,10 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.minecraft.command.CommandSource;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
-import net.minecraft.server.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
@@ -50,12 +50,12 @@ import java.util.stream.Stream;
 
 public final class CommandUtilities {
     
-    public static @NotNull CompletableFuture<Suggestions> getOnlinePlayerNames(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) {
+    public static @NotNull CompletableFuture<Suggestions> getOnlinePlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) {
         PlayerManager manager = context.getSource().getMinecraftServer().getPlayerManager();
         return CommandSource.suggestMatching(manager.getPlayerList().stream()
             .map(( player ) -> player.getGameProfile().getName()), builder);
     }
-    public static @NotNull CompletableFuture<Suggestions> getAllPlayerNames(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+    public static @NotNull CompletableFuture<Suggestions> getAllPlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         // Get the server that the command came from
         MinecraftServer server = context.getSource()
             .getMinecraftServer();
@@ -72,6 +72,13 @@ public final class CommandUtilities {
             builder
         );
     }
+    public static @NotNull CompletableFuture<Suggestions> getFriendPlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        return CommandSource.suggestMatching(
+            CommandUtilities.getFriendPlayerNames(source.getMinecraftServer(), source.getPlayer()),
+            builder
+        );
+    }
     
     public static @NotNull CompletableFuture<Suggestions> getAllTowns(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
         Set<String> townNames = new HashSet<>();
@@ -85,7 +92,7 @@ public final class CommandUtilities {
         );
     }
     
-    public static boolean playerIsInTown(ServerCommandSource serverCommandSource) {
+    public static boolean playerIsInTown(@NotNull ServerCommandSource serverCommandSource) {
         Entity source = serverCommandSource.getEntity();
         if (!( source instanceof ServerPlayerEntity ))
             return false;
@@ -102,6 +109,15 @@ public final class CommandUtilities {
     public static @NotNull List<String> getWhitelistedNames(@NotNull final MinecraftServer server) {
         PlayerManager playerManager = server.getPlayerManager();
         return Arrays.asList(playerManager.getWhitelistedNames());
+    }
+    public static @NotNull Stream<String> getFriendPlayerNames(@NotNull final MinecraftServer server, @NotNull final ServerPlayerEntity player) {
+        ClaimantPlayer claimant = ClaimantPlayer.get(player);
+        PlayerManager playerManager = server.getPlayerManager();
+        
+        return playerManager.getPlayerList().stream()
+            .filter(entity -> claimant.isFriend(entity.getUuid()))
+            .map(entity -> entity.getName()
+                .asString());
     }
     
 }

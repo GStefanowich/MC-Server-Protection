@@ -27,45 +27,42 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimSettings;
-import net.TheElm.project.interfaces.EntityOwner;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.passive.TameableEntity;
+import net.minecraft.entity.projectile.ArrowEntity;
 import net.minecraft.entity.projectile.PersistentProjectileEntity;
+import net.minecraft.entity.projectile.SpectralArrowEntity;
+import net.minecraft.entity.projectile.TridentEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(PersistentProjectileEntity.class)
-public abstract class ProjectileDamage extends Entity implements EntityOwner {
+@Mixin({ArrowEntity.class, TridentEntity.class, SpectralArrowEntity.class})
+public abstract class ProjectileDamage extends PersistentProjectileEntity {
     
-    @Shadow
-    public abstract byte getPierceLevel();
-    
-    @Shadow private SoundEvent sound;
-    
-    public ProjectileDamage(EntityType<?> type, World world) {
-        super(type, world);
+    protected ProjectileDamage(EntityType<? extends PersistentProjectileEntity> entityType, World world) {
+        super(entityType, world);
     }
     
-    @Inject(at = @At("HEAD"), method = "onEntityHit", cancellable = true)
-    protected void onHitTarget(EntityHitResult entityHitResult, CallbackInfo callback) {
+    @Override
+    protected void onEntityHit(EntityHitResult entityHitResult) {
+        if (this.entityHitShouldApplyDamage(entityHitResult))
+            super.onEntityHit(entityHitResult);
+    }
+    
+    private boolean entityHitShouldApplyDamage(EntityHitResult entityHitResult) {
         Entity hitEntity = entityHitResult.getEntity();
         
         // Ignore if arrow came from a non-player
         if ( this.getOwner() == null )
-            return;
+            return true;
         
         // Get the chunk that the player was harmed in
         WorldChunk chunk = hitEntity.getEntityWorld().getWorldChunk( hitEntity.getBlockPos() );
@@ -75,13 +72,13 @@ public abstract class ProjectileDamage extends Entity implements EntityOwner {
             
             // If player hurt themselves
             if ( owner.getUuid().equals( hitEntity.getUuid() ) )
-                return;
+                return true;
             
             if (hitEntity instanceof Monster) {
                 /*
                  * Allow defending from hostiles
                  */
-                return;
+                return true;
                 
             } if (hitEntity instanceof ServerPlayerEntity) {
                 /*
@@ -90,7 +87,7 @@ public abstract class ProjectileDamage extends Entity implements EntityOwner {
                 
                 // If PvP is enabled, allow
                 if ( chunkInfo.isSetting(hitEntity.getBlockPos(), ClaimSettings.PLAYER_COMBAT) )
-                    return;
+                    return true;
                 
             } else {
                 /*
@@ -103,16 +100,16 @@ public abstract class ProjectileDamage extends Entity implements EntityOwner {
                     
                     // Player can hit their owned tamed
                     if (owner.getUuid().equals(pet.getOwnerUuid()))
-                        return;
+                        return true;
                     
                     // If pet is currently targeting something (attacking)
                     LivingEntity petAttacking = ((TameableEntity) hitEntity).getTarget();
                     if (petAttacking instanceof TameableEntity || petAttacking instanceof ServerPlayerEntity)
-                        return;
+                        return true;
                     
                     // If player is allowed to harm tamed creatures
                     if (chunkInfo.isSetting(hitEntity.getBlockPos(), ClaimSettings.HURT_TAMED) )
-                        return;
+                        return true;
                     
                 } else {
                     /*
@@ -121,12 +118,12 @@ public abstract class ProjectileDamage extends Entity implements EntityOwner {
                     
                     // If player is allowed to harm creatures
                     if (chunkInfo.canPlayerDo(new BlockPos(entityHitResult.getPos()), owner.getUuid(), ClaimPermissions.CREATURES))
-                        return;
+                        return true;
                 }
             }
             
             // Play a sound
-            hitEntity.playSound( this.sound, 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
+            hitEntity.playSound(this.getSound(), 1.0F, 1.2F / (this.random.nextFloat() * 0.2F + 0.9F));
             
             // If piercing is 0, delete arrow
             if (this.getPierceLevel() <= 0) {
@@ -134,9 +131,10 @@ public abstract class ProjectileDamage extends Entity implements EntityOwner {
             }
             
             // Cancel damaging effects
-            callback.cancel();
-            
+            return false;
         }
+        
+        return true;
     }
     
 }

@@ -37,7 +37,7 @@ import net.TheElm.project.protections.BlockDistance;
 import net.TheElm.project.utilities.BlockUtils;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
-import net.minecraft.command.arguments.BlockPosArgumentType;
+import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -87,7 +87,7 @@ public final class RulerCommand {
             playerData.setRulerB( null );
             
             player.sendSystemMessage(new LiteralText("First position set to ").formatted(Formatting.YELLOW)
-                .append(MessageUtils.blockPosToTextComponent( newPos ))
+                .append(MessageUtils.xyzToText( newPos ))
                 .append(", run command again at a second position."), Util.NIL_UUID);
             
         } else {

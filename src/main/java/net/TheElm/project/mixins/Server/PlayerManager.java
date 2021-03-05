@@ -26,15 +26,23 @@
 package net.TheElm.project.mixins.Server;
 
 import com.mojang.authlib.GameProfile;
+import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.utilities.DimensionUtils;
 import net.TheElm.project.utilities.LegacyConverter;
 import net.TheElm.project.utilities.TeamUtils;
 import net.minecraft.network.ClientConnection;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -43,6 +51,9 @@ import java.net.SocketAddress;
 @Mixin(net.minecraft.server.PlayerManager.class)
 public class PlayerManager {
     
+    /**
+     * Prevent players from joining the server if an update is running
+     */
     @Inject(at = @At("HEAD"), method = "checkCanJoin", cancellable = true)
     public void onConnect(SocketAddress socket, GameProfile gameProfile, CallbackInfoReturnable<Text> callback) {
         // Check if the LegacyConverter is running
@@ -55,4 +66,51 @@ public class PlayerManager {
         TeamUtils.applyTeams( player );
     }
     
+    @Inject(at = @At("HEAD"), method = "setMainWorld", cancellable = true)
+    public void onSetMainWorld(ServerWorld world, CallbackInfo callback) {
+        if (!SewConfig.get(SewConfig.WORLD_SPECIFIC_WORLD_BORDER))
+            return;
+        DimensionUtils.addWorldBorderListener(world);
+        callback.cancel();
+    }
+    
+    @Inject(at = @At("TAIL"), method = "sendWorldInfo")
+    public void onSendWorldInfo(ServerPlayerEntity player, ServerWorld world, CallbackInfo callback) {
+        player.sendAbilitiesUpdate();
+    }
+    
+    /**
+     * Send the player the data about the world THEY ARE IN, not THE MAIN WORLD
+     */
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/MinecraftServer.getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "sendWorldInfo")
+    public ServerWorld onSendPlayerWorldData(@NotNull MinecraftServer server, ServerPlayerEntity player, ServerWorld world) {
+        return world;
+    }
+    
+    /**
+     * Override the "Default World" when players are created
+     * @param server The server
+     * @param profile Game profile
+     * @return The default world
+     */
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/MinecraftServer.getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "createPlayer")
+    public ServerWorld getFirstDefaultWorld(@NotNull MinecraftServer server, @NotNull GameProfile profile) {
+        return server.getWorld(SewConfig.get(SewConfig.DEFAULT_WORLD));
+    }
+    
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/MinecraftServer.getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "respawnPlayer")
+    public ServerWorld getRespawnDefaultWorld(@NotNull MinecraftServer server, @NotNull ServerPlayerEntity player, boolean alive) {
+        return server.getWorld(SewConfig.get(SewConfig.DEFAULT_WORLD));
+    }
+    
+    /**
+     * Override the "Default Starting World" where players spawn at
+     * @param connection The connection
+     * @param player The player
+     * @return Return the default world
+     */
+    @Redirect(at = @At(value = "FIELD", target = "net/minecraft/world/World.OVERWORLD:Lnet/minecraft/util/registry/RegistryKey;"), method = "onPlayerConnect")
+    public RegistryKey<World> onPlayerConnect(@NotNull ClientConnection connection, @NotNull ServerPlayerEntity player) {
+        return SewConfig.get(SewConfig.DEFAULT_WORLD);
+    }
 }

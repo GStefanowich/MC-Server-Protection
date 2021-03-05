@@ -45,7 +45,7 @@ import net.TheElm.project.utilities.CommandUtilities;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
-import net.minecraft.command.arguments.GameProfileArgumentType;
+import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;

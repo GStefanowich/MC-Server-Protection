@@ -27,7 +27,10 @@ package net.TheElm.project;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Objects;
 
 public final class ClientCore extends CoreMod implements ClientModInitializer {
     
@@ -41,7 +44,13 @@ public final class ClientCore extends CoreMod implements ClientModInitializer {
     
     @NotNull
     public static MinecraftClient get() {
-        return CoreMod.getGameInstance().right().orElseThrow(() -> new RuntimeException("Called Client object from illegal position."));
+        return CoreMod.getGameInstance()
+            .right()
+            .orElseThrow(() -> new RuntimeException("Called Client object from illegal position."));
+    }
+    @NotNull
+    public static MinecraftServer getServer() {
+        return Objects.requireNonNull(ClientCore.get().getServer());
     }
     
 }

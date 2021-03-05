@@ -26,6 +26,7 @@
 package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.utilities.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -76,16 +77,16 @@ public class ChunkSaving {
     @Inject(at = @At("RETURN"), method = "writeEntities")
     private static void loadSewingOwner(CompoundTag levelTag, WorldChunk chunk, CallbackInfo callback) {
         // Update the chunks player-owner
-        if ( levelTag.containsUuid(sewingMachineSerializationPlayer) )
-            ((IClaimedChunk) chunk).updatePlayerOwner(levelTag.getUuid(sewingMachineSerializationPlayer), false);
+        if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationPlayer) )
+            ((IClaimedChunk) chunk).updatePlayerOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationPlayer), false);
         
         // Load the inner claims
         if (levelTag.contains(sewingMachineSerializationSlices, NbtType.LIST))
             ((IClaimedChunk) chunk).deserializeSlices(levelTag.getList(sewingMachineSerializationSlices, NbtType.COMPOUND));
         
         // Update the chunks town
-        if ( levelTag.containsUuid(sewingMachineSerializationTown) )
-            ((IClaimedChunk) chunk).updateTownOwner(levelTag.getUuid(sewingMachineSerializationTown), false);
+        if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationTown) )
+            ((IClaimedChunk) chunk).updateTownOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationTown), false);
     }
     
 }

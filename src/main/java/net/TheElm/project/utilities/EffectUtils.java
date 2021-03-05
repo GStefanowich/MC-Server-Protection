@@ -26,17 +26,23 @@
 package net.TheElm.project.utilities;
 
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.ai.pathing.Path;
+import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.particle.ParticleEffect;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import org.jetbrains.annotations.NotNull;
 
 public final class EffectUtils {
+    
     private EffectUtils() {}
     
-    public static <T extends ParticleEffect> void particleSwirl(final T particle, final LivingEntity mob) {
+    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final LivingEntity mob) {
         EffectUtils.particleSwirl( particle, mob, 1 );
     }
-    public static <T extends ParticleEffect> void particleSwirl(final T particle, final LivingEntity mob, final int count) {
+    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final LivingEntity mob, final int count) {
         if (mob.world.isClient)
             return;
         new Thread(() -> {
@@ -69,10 +75,10 @@ public final class EffectUtils {
         }).start();
     }
     
-    public static <T extends ParticleEffect> void particleSwirl(final T particle, final ServerWorld world, final Vec3d mobPos) {
+    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final ServerWorld world, final Vec3d mobPos) {
         EffectUtils.particleSwirl(particle, world, mobPos, 1);
     }
-    public static <T extends ParticleEffect> void particleSwirl(final T particle, final ServerWorld world, final Vec3d mobPos, final int count) {
+    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final ServerWorld world, final Vec3d mobPos, final int count) {
         new Thread(() -> {
             try {
                 int counter = 0;
@@ -100,7 +106,7 @@ public final class EffectUtils {
         }).start();
     }
     
-    private static <T extends ParticleEffect> void summonSwirl(final T particle, final ServerWorld world, final Vec3d mobPos, final Vec3d velocity, final double height, final double theta, final double step, final float radius, final int count) {
+    private static <T extends ParticleEffect> void summonSwirl(@NotNull final T particle, @NotNull final ServerWorld world, @NotNull final Vec3d mobPos, @NotNull final Vec3d velocity, final double height, final double theta, final double step, final float radius, final int count) {
         double speed = 0D;
         Vec3d pos;
         
@@ -144,6 +150,24 @@ public final class EffectUtils {
             velocity.getZ(),
             speed
         );
+    }
+    
+    public static <T extends ParticleEffect> void summonBreadcrumbs(@NotNull final T particle, @NotNull final ServerPlayerEntity player, @NotNull Path path) {
+        for (int i = 0; i < path.getLength(); i++) {
+            BlockPos navPos = path.method_31031(i);
+            player.networkHandler.sendPacket(new ParticleS2CPacket(
+                particle,
+                false,
+                navPos.getX(),
+                navPos.getY() - 0.5D,
+                navPos.getZ(),
+                1.0F,
+                0.5F,
+                1.0F,
+                0.0F,
+                10
+            ));
+        }
     }
     
 }

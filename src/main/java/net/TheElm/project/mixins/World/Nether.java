@@ -25,45 +25,24 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.TheElm.project.CoreMod;
-import net.TheElm.project.config.SewConfig;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.SpawnGroup;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.NetherWastesBiome;
-import net.minecraft.world.biome.SoulSandValleyBiome;
-import net.minecraft.world.biome.WarpedForestBiome;
+import net.minecraft.world.biome.DefaultBiomeCreator;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Map;
-
-@Mixin({ NetherWastesBiome.class, WarpedForestBiome.class, SoulSandValleyBiome.class })
-public abstract class Nether extends Biome {
+@Mixin(DefaultBiomeCreator.class)
+public class Nether {
     
-    protected Nether(Settings biome$Settings_1) {
-        super(biome$Settings_1);
-    }
-    
-    @Inject(at = @At("RETURN"), method = "<init>*")
-    public void addSpawn(CallbackInfo callback) {
+    /*@Inject(at = @At("RETURN"), method = {"createNetherWastes", "createSoulSandValley", "createBasaltDeltas", "createCrimsonForest", "createWarpedForest"})
+    private static void addSpawn(CallbackInfoReturnable<Biome> callback) {
         if (SewConfig.get(SewConfig.PREVENT_NETHER_ENDERMEN)) {
-            try {
-                // Get the super
-                Field f = this.getClass().getSuperclass().getDeclaredField(CoreMod.isDebugging() ? "spawns" : "field_9325");
-                f.setAccessible(true);
-                Map<SpawnGroup, List<Biome.SpawnEntry>> spawns = (Map<SpawnGroup, List<Biome.SpawnEntry>>) f.get(this);
+            // Get the super
+            Biome biome = callback.getReturnValue();
+            if (biome != null) {
+                SpawnSettings settings = biome.getSpawnSettings();
                 
                 // If enabled
-                spawns.get(SpawnGroup.MONSTER).removeIf(entity -> entity.type.equals(EntityType.ENDERMAN));
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                CoreMod.logError( e );
+                settings.getSpawnEntry(SpawnGroup.MONSTER).removeIf(entity -> entity.type.equals(EntityType.ENDERMAN));
             }
         }
-    }
+    }*/
     
 }

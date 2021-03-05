@@ -33,27 +33,34 @@ import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.objects.WorldPos;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.fabricmc.fabric.api.util.NbtType;
-import net.minecraft.datafixer.NbtOps;
 import net.minecraft.entity.EntityType;
 import net.minecraft.nbt.AbstractNumberTag;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
+import net.minecraft.util.WorldSavePath;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.GameMode;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldProperties;
+import net.minecraft.world.border.WorldBorder;
+import net.minecraft.world.dimension.DimensionType;
+import net.minecraft.world.level.ServerWorldProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -67,27 +74,34 @@ public final class NbtUtils {
     
     private NbtUtils() {}
     
-    public static @NotNull File worldFolder() {
-        // TODO: Verify the world folder name
-        return new File(CoreMod.getFabric().getGameDirectory(),
-            ServerCore.get().getName());
+    public static @NotNull File levelNameFolder() {
+        return Paths.get(ServerCore.get().getSaveProperties().getLevelName()).toFile();
+    }
+    public static @NotNull File worldSaveFolder(@NotNull RegistryKey<World> world) {
+        return DimensionType.getSaveDirectory(world, NbtUtils.levelNameFolder());
+    }
+    public static @NotNull File worldSaveFile(@NotNull RegistryKey<World> world) {
+        return new File(NbtUtils.worldSaveFolder(world), WorldSavePath.LEVEL_DAT.getRelativePath());
+    }
+    public static @NotNull File playerDataFile(@NotNull UUID uuid) {
+        return Paths.get(
+            NbtUtils.levelNameFolder().getAbsolutePath(),
+            WorldSavePath.PLAYERDATA.getRelativePath(),
+            uuid.toString() + ".dat"
+        ).toFile();
     }
     
     /*
      * Player Data
      */
-    public static CompoundTag readOfflinePlayerData(UUID uuid) throws NbtNotFoundException {
+    public static CompoundTag readOfflinePlayerData(@NotNull UUID uuid) throws NbtNotFoundException {
         return NbtUtils.readOfflinePlayerData(uuid, false);
     }
-    public static CompoundTag readOfflinePlayerData(UUID uuid, boolean locking) throws NbtNotFoundException {
-        File file = Paths.get(
-            worldFolder().getAbsolutePath(),
-            "playerdata",
-            uuid.toString() + ".dat"
-        ).toFile();
+    public static CompoundTag readOfflinePlayerData(@NotNull UUID uuid, boolean locking) throws NbtNotFoundException {
+        File file = NbtUtils.playerDataFile(uuid);
         
         if (!file.exists()) {
-            CoreMod.logError( "Cannot read offline player data \"" + uuid.toString() + "\"; Path does not exist. Never joined the server?" );
+            CoreMod.logError("Cannot read offline player data \"" + uuid.toString() + "\"; Path (" + file.getAbsolutePath() + ") does not exist. Never joined the server?");
             throw new NbtNotFoundException( uuid );
         }
         
@@ -103,62 +117,38 @@ public final class NbtUtils {
         throw new NbtNotFoundException( uuid );
     }
     public static boolean writeOfflinePlayerData(UUID uuid, CompoundTag tag) {
-        return NbtUtils.writeOfflinePlayerData( uuid, tag, true );
-    }
-    public static boolean writeOfflinePlayerData(UUID uuid, CompoundTag tag, boolean locking) {
-        File file = Paths.get(
-            worldFolder().getAbsolutePath(),
-            "playerdata",
-            uuid.toString() + ".dat"
-        ).toFile();
-        
-        try {
-            if ((!file.exists()) && (!file.createNewFile())) {
-                CoreMod.logError( "Cannot write player data \"" + uuid.toString() + "\"; Failed to create new player file. Check write permissions?" );
-                return false;
-            }
-            
-            try (FileOutputStream stream = new FileOutputStream(file)) {
-                // Lock the file
-                if (locking) stream.getChannel().lock();
-                // Write to the file
-                NbtIo.writeCompressed(tag, stream);
-                return true;
-            }
-        } catch (IOException e) {
-            CoreMod.logError( e );
-        }
-        
-        return false;
+        return NbtUtils.writeBackupAndMove(
+            NbtUtils.playerDataFile(uuid),
+            tag
+        );
     }
     
     /*
      * Claims
      */
-    public static @NotNull CompoundTag readClaimData(Claimant.ClaimantType type, UUID uuid) {
+    public static @NotNull CompoundTag readClaimData(@NotNull Claimant.ClaimantType type, @NotNull UUID uuid) {
         File file = Paths.get(
-            worldFolder().getAbsolutePath(),
+            NbtUtils.levelNameFolder().getAbsolutePath(),
             "sewing-machine",
             type.name().toLowerCase() + "_" + uuid.toString() + ".dat"
         ).toFile();
         
         if (!file.exists())
-            return emptyTag( type, uuid );
+            return NbtUtils.emptyTag(type, uuid);
         
         try (FileInputStream stream = new FileInputStream( file )) {
-            
-            return NbtIo.readCompressed( stream );
+            return NbtIo.readCompressed(stream);
             
         } catch (IOException e) {
             CoreMod.logError( "Error reading " + type.name() + " " + uuid );
             CoreMod.logError( e );
         }
         
-        return emptyTag( type, uuid );
+        return NbtUtils.emptyTag(type, uuid);
     }
     public static boolean writeClaimData(@NotNull Claimant claimant) {
         File folder = new File(
-            worldFolder(),
+            NbtUtils.levelNameFolder(),
             "sewing-machine"
         );
         
@@ -171,23 +161,127 @@ public final class NbtUtils {
             claimant.getType().name().toLowerCase() + "_" + claimant.getId().toString() + ".dat"
         );
         
-        try (FileOutputStream stream = new FileOutputStream(file)) {
-            // Create an empty tag
-            CompoundTag write = emptyTag( claimant.getType(), claimant.getId() );
-            
-            // Write the save data
-            claimant.writeCustomDataToTag( write );
-            
-            // Don't write an empty file
-            if (write.isEmpty())
-                return true;
-            
-            // Save to file
-            NbtIo.writeCompressed( write, stream );
+        // Create an empty tag
+        CompoundTag write = NbtUtils.emptyTag(claimant.getType(), claimant.getId());
+        
+        // Write the save data
+        claimant.writeCustomDataToTag(write);
+        
+        // Don't write an empty file
+        return write.isEmpty() || NbtUtils.writeBackupAndMove(file, write);
+    }
+    
+    /*
+     * Additional World DAT
+     */
+    public static boolean readWorldDat(@NotNull ServerWorld world, @NotNull ServerWorldProperties properties) {
+        File file = NbtUtils.worldSaveFile(world.getRegistryKey());
+        
+        if (!file.exists())
+            return false;
+        
+        try (FileInputStream stream = new FileInputStream(file)) {
+            NbtUtils.applyWorldDatFromTag(world, NbtIo.readCompressed(stream), properties);
             return true;
             
         } catch (IOException e) {
             CoreMod.logError( e );
+        }
+        
+        return false;
+    }
+    private static void applyWorldDatFromTag(@NotNull ServerWorld world, @NotNull CompoundTag tag, @NotNull ServerWorldProperties properties) {
+        CompoundTag data = tag.getCompound("Data");
+        
+        properties.setGameMode(GameMode.byId(data.getInt("GameType")));
+        properties.setClearWeatherTime(data.getInt("clearWeatherTime"));
+        properties.setRainTime(data.getInt("rainTime"));
+        properties.setThunderTime(data.getInt("thunderTime"));
+        
+        properties.setSpawnX(data.getInt("SpawnX"));
+        properties.setSpawnY(data.getInt("SpawnY"));
+        properties.setSpawnZ(data.getInt("SpawnZ"));
+        properties.setSpawnAngle(data.getFloat("SpawnAngle"));
+        
+        properties.setTimeOfDay(data.getLong("DayTime"));
+        properties.setRaining(data.getBoolean("raining"));
+        properties.setThundering(data.getBoolean("thundering"));
+        
+        WorldBorder border = world.getWorldBorder();
+        border.setCenter(
+            data.getDouble("BorderCenterX"),
+            data.getDouble("BorderCenterZ")
+        );
+        border.setSize(data.getDouble("BorderSize"));
+        border.interpolateSize(
+            data.getDouble("BorderSize"),
+            data.getDouble("BorderSizeLerpTarget"),
+            data.getLong("BorderSizeLerpTime")
+        );
+        border.setBuffer(data.getDouble("BorderSafeZone"));
+        border.setDamagePerBlock(data.getDouble("BorderDamagePerBlock"));
+        border.setWarningBlocks(data.getInt("BorderWarningBlocks"));
+        border.setWarningTime(data.getInt("BorderWarningTime"));
+    }
+    public static boolean writeWorldDat(@NotNull ServerWorld world, @NotNull WorldProperties properties) {
+        return NbtUtils.writeBackupAndMove(
+            NbtUtils.worldSaveFile(world.getRegistryKey()),
+            NbtUtils.writeWorldDatToTag(world, properties)
+        );
+    }
+    private static @NotNull CompoundTag writeWorldDatToTag(@NotNull ServerWorld world, @NotNull WorldProperties properties) {
+        CompoundTag data = new CompoundTag();
+        
+        if (properties instanceof ServerWorldProperties) {
+            ServerWorldProperties serverProperties = (ServerWorldProperties)properties;
+            
+            data.putInt("GameType", serverProperties.getGameMode().getId());
+            data.putInt("clearWeatherTime", serverProperties.getClearWeatherTime());
+            data.putInt("rainTime", serverProperties.getRainTime());
+            data.putInt("thunderTime", serverProperties.getThunderTime());
+        }
+        
+        data.putInt("SpawnX", properties.getSpawnX());
+        data.putInt("SpawnY", properties.getSpawnY());
+        data.putInt("SpawnZ", properties.getSpawnZ());
+        data.putFloat("SpawnAngle", properties.getSpawnAngle());
+        
+        data.putLong("DayTime", properties.getTimeOfDay());
+        data.putLong("LastPlayed", Util.getEpochTimeMs());
+        data.putBoolean("raining", properties.isRaining());
+        data.putBoolean("thundering", properties.isThundering());
+        
+        WorldBorder border = world.getWorldBorder();
+        border.write().toTag(data);
+        
+        data.put("GameRules", properties.getGameRules().toNbt());
+        
+        CompoundTag out = new CompoundTag();
+        out.put("Data", data);
+        return out;
+    }
+    
+    private static boolean writeBackupAndMove(@NotNull File file, @NotNull CompoundTag tag) {
+        String fileName = file.getName();
+        int indexOf = fileName.indexOf('.');
+        if (indexOf < 0)
+            return false;
+        try {
+            String path = file.getAbsolutePath();
+            File directory = new File(path.substring(0, path.length() - fileName.length()));
+    
+            String filePrefix = fileName.substring(0, indexOf);
+            String fileType = fileName.substring(indexOf);
+            
+            File tmp = File.createTempFile(fileType, filePrefix, directory);
+            NbtIo.writeCompressed(tag, tmp);
+            File backup = new File(directory, fileName + "_old");
+            File newF = new File(directory, fileName);
+            
+            Util.backupAndReplace(newF, tmp, backup);
+            return true;
+        } catch (IOException e) {
+            CoreMod.logError(e);
         }
         
         return false;
@@ -197,16 +291,16 @@ public final class NbtUtils {
         if (!NbtUtils.exists(type, uuid))
             throw new NbtNotFoundException( uuid );
     }
-    public static boolean exists(Claimant.ClaimantType type, UUID uuid) {
+    public static boolean exists(@NotNull Claimant.ClaimantType type, @NotNull UUID uuid) {
         File file = Paths.get(
-            worldFolder().getAbsolutePath(),
+            NbtUtils.levelNameFolder().getAbsolutePath(),
             "sewing-machine",
             type.name().toLowerCase() + "_" + uuid.toString() + ".dat"
         ).toFile();
         
         return file.exists();
     }
-    private static CompoundTag emptyTag(Claimant.ClaimantType type, UUID uuid) {
+    private static @NotNull CompoundTag emptyTag(@NotNull Claimant.ClaimantType type, UUID uuid) {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", type.name());
         tag.putUuid("iden", uuid);
@@ -216,19 +310,19 @@ public final class NbtUtils {
     /*
      * Simplifications
      */
-    public static CompoundTag blockPosToTag(@NotNull BlockPos blockPos) {
+    public static @NotNull CompoundTag blockPosToTag(@NotNull BlockPos blockPos) {
         return NbtUtils.blockPosToTag(null, blockPos, null);
     }
-    public static CompoundTag blockPosToTag(@NotNull WorldPos blockPointer) {
+    public static @NotNull CompoundTag blockPosToTag(@NotNull WorldPos blockPointer) {
         return NbtUtils.blockPosToTag(blockPointer, null);
     }
-    public static CompoundTag blockPosToTag(@NotNull WorldPos blockPointer, @Nullable Direction direction) {
+    public static @NotNull CompoundTag blockPosToTag(@NotNull WorldPos blockPointer, @Nullable Direction direction) {
         return NbtUtils.blockPosToTag(blockPointer.getWorld(), blockPointer.getBlockPos(), direction);
     }
-    public static CompoundTag blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos) {
+    public static @NotNull CompoundTag blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos) {
         return NbtUtils.blockPosToTag(world, blockPos, null);
     }
-    public static CompoundTag blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos, @Nullable Direction direction) {
+    public static @NotNull CompoundTag blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos, @Nullable Direction direction) {
         CompoundTag compound = new CompoundTag();
         if (world != null)
             NbtUtils.worldToTag(compound, world);
@@ -238,20 +332,20 @@ public final class NbtUtils {
             NbtUtils.directionToTag(compound, direction);
         return compound;
     }
-    private static CompoundTag blockPosToTag(@NotNull CompoundTag compound, @NotNull BlockPos blockPos) {
+    private static @NotNull CompoundTag blockPosToTag(@NotNull CompoundTag compound, @NotNull BlockPos blockPos) {
         compound.putInt("x", blockPos.getX());
         compound.putInt("y", blockPos.getY());
         compound.putInt("z", blockPos.getZ());
         return compound;
     }
-    private static CompoundTag worldToTag(@NotNull CompoundTag compound, @NotNull World world) {
-        compound.putString("world", NbtUtils.worldToTag(world.getRegistryKey()));
+    private static @NotNull CompoundTag worldToTag(@NotNull CompoundTag compound, @NotNull World world) {
+        compound.putString("world", NbtUtils.worldToTag(world));
         return compound;
     }
-    public static String worldToTag(World world) {
+    public static String worldToTag(@NotNull World world) {
         return NbtUtils.worldToTag(world.getRegistryKey());
     }
-    public static String worldToTag(RegistryKey<World> world) {
+    public static String worldToTag(@NotNull RegistryKey<World> world) {
         return world.getValue().toString();
     }
     public static @NotNull World worldFromTag(@Nullable Tag nbt) {
@@ -267,7 +361,7 @@ public final class NbtUtils {
         }
         return World.OVERWORLD;
     }
-    private static CompoundTag directionToTag(@NotNull CompoundTag compound, @NotNull Direction direction) {
+    private static @NotNull CompoundTag directionToTag(@NotNull CompoundTag compound, @NotNull Direction direction) {
         compound.putInt("direction", direction.getId());
         return compound;
     }
@@ -313,12 +407,34 @@ public final class NbtUtils {
         return collection;
     }
     
+    public static boolean hasUUID(@Nullable CompoundTag tag, @NotNull String key) {
+        if (tag == null)
+            return false;
+        return (tag.contains(key + "Most", NbtType.LONG) && tag.contains(key + "Least", NbtType.LONG)) || tag.contains(key, NbtType.INT_ARRAY);
+    }
+    public static @Nullable UUID getUUID(@Nullable CompoundTag tag, @NotNull String key) {
+        if (tag != null) {
+            // Check for old 64-bit ints
+            final String kMost = key + "Most";
+            final String kLeast = key + "Least";
+            if (tag.contains(kMost, NbtType.LONG) && tag.contains(kLeast, NbtType.LONG)) {
+                long most = tag.getLong(kMost);
+                long least = tag.getLong(kLeast);
+                return new UUID(most, least);
+            }
+            // Get 32-bit int array
+            if (tag.contains(key, NbtType.INT_ARRAY))
+                return tag.getUuid(key);
+        }
+        return null;
+    }
+    
     /*
      * File Erasure
      */
     public static boolean delete(Claimant claimant) {
         File file = Paths.get(
-            worldFolder().getAbsolutePath(),
+            NbtUtils.levelNameFolder().getAbsolutePath(),
             "sewing-machine",
             claimant.getType().name().toLowerCase() + "_" + claimant.getId().toString() + ".dat"
         ).toFile();

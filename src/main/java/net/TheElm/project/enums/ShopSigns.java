@@ -38,6 +38,7 @@ import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.objects.PlayerBackpack;
+import net.TheElm.project.objects.ShopStats;
 import net.TheElm.project.protections.BlockDistance;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
@@ -45,6 +46,7 @@ import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.GuideUtils;
 import net.TheElm.project.utilities.InventoryUtils;
+import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.ShopSignBuilder;
 import net.TheElm.project.utilities.TitleUtils;
@@ -59,6 +61,7 @@ import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.inventory.Inventory;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
@@ -69,12 +72,12 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
@@ -88,7 +91,7 @@ public enum ShopSigns {
     /*
      * Chest is BUYING
      */
-    SELL( Formatting.DARK_RED ) {
+    SELL(Formatting.DARK_RED) {
         @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign( signBuilder, creator);
@@ -106,7 +109,7 @@ public enum ShopSigns {
             // Second row Count - Item Name
             signBuilder.getSign().setTextOnRow(1,
                 new LiteralText(signBuilder.itemSize() + " ").formatted(Formatting.BLACK)
-                    .append(new TranslatableText(Registry.ITEM.get(signBuilder.getItem()).getTranslationKey()).formatted(Formatting.DARK_AQUA))
+                    .append(new TranslatableText(signBuilder.getItem().getTranslationKey()).formatted(Formatting.DARK_AQUA))
             );
             // Third Row - Price
             signBuilder.getSign().setTextOnRow(2,
@@ -117,20 +120,22 @@ public enum ShopSigns {
             signBuilder.getSign().setTextOnRow(3,
                 signBuilder.textParseOwner(signBuilder.getLines()[3], creator).formatted(Formatting.DARK_GRAY)
             );
-            
+    
+            ShopSigns.printCompletedSign(creator, signBuilder, SewConfig.get(SewConfig.SERVER_SALES_TAX));
             return true;
         }
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
             LootableContainerBlockEntity chest = null;
             Inventory chestInventory = null;
+            Item item;
             
             // If shops disabled
             if ( !SewConfig.get(SewConfig.DO_MONEY) )
                 return Either.right( true );
             
             // These should NOT be null
-            if ((sign.getShopItem() == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null) || (sign.getShopItemDisplay() == null))
+            if (((item = sign.getShopItem()) == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null) || (sign.getShopItemDisplay() == null))
                 return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
             
             // Check if the attached chest exists
@@ -147,7 +152,7 @@ public enum ShopSigns {
                     if (ChestBlockEntity.getPlayersLookingInChestCount( player.getEntityWorld(), chest.getPos() ) > 0)
                         return Either.left(TranslatableServerSide.text(player, "shop.error.chest_open"));
                     // If player does not have any of item
-                    if (player.inventory.count(sign.getShopItem()) < sign.getShopItemCount())
+                    if (player.inventory.count(item) < sign.getShopItemCount())
                         return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
                 }
                 /*
@@ -159,11 +164,10 @@ public enum ShopSigns {
                         return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
                     
                     // Put players item into chest
-                    if (!InventoryUtils.playerToChest( player, signPos, player.inventory, chestInventory, sign.getShopItem(), sign.getShopItemCount(), true )) {
+                    if (!InventoryUtils.playerToChest( player, signPos, player.inventory, chestInventory, item, sign.getShopItemCount(), true )) {
                         // Refund the shopkeeper
-                        if (!(sign.getShopOwner().equals(CoreMod.spawnID))) {
+                        if (!(sign.getShopOwner().equals(CoreMod.spawnID)))
                             MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
-                        }
                         
                         // Error message
                         return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
@@ -181,13 +185,14 @@ public enum ShopSigns {
                         Formatting.YELLOW,
                         new LiteralText("You sold "),
                         new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
-                        new TranslatableText(sign.getShopItem().getTranslationKey()).formatted(Formatting.AQUA),
+                        new TranslatableText(item.getTranslationKey()).formatted(Formatting.AQUA),
                         new LiteralText(" to "),
                         permissions.getName().formatted(Formatting.AQUA)
                     );
                     
                     // Log the event
-                    CoreMod.logInfo( player.getName().asString() + " sold " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay().asString() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " to " + permissions.getName().asString() );
+                    CoreMod.logInfo( player.getName().asString() + " sold " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemIdentifier() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " to " + permissions.getName().asString() );
+                    player.increaseStat(ShopStats.SHOP_TYPE_SOLD.getOrCreateStat(item), sign.getShopItemCount());
                     
                     return Either.right( true );
                     
@@ -203,13 +208,13 @@ public enum ShopSigns {
         }
         @Override
         public boolean isEnabled() {
-            return SewConfig.get(SewConfig.DO_MONEY);
+            return SewConfig.get(SewConfig.DO_MONEY) && SewConfig.get(SewConfig.SHOP_SIGNS);
         }
     },
     /*
      * Chest is SELLING
      */
-    BUY( Formatting.DARK_BLUE ) {
+    BUY(Formatting.DARK_BLUE) {
         @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign( signBuilder, creator);
@@ -234,7 +239,7 @@ public enum ShopSigns {
             // Second row Count - Item Name
             sign.setTextOnRow(1,
                 new LiteralText(signBuilder.itemSize() + " ").formatted(Formatting.BLACK)
-                    .append(new TranslatableText(Registry.ITEM.get(signBuilder.getItem()).getTranslationKey()).formatted(Formatting.DARK_AQUA))
+                    .append(new TranslatableText(signBuilder.getItem().getTranslationKey()).formatted(Formatting.DARK_AQUA))
             );
             // Third Row - Price
             sign.setTextOnRow(2,
@@ -246,12 +251,14 @@ public enum ShopSigns {
                 signBuilder.textParseOwner(signBuilder.getLines()[3], creator).formatted(Formatting.DARK_GRAY)
             );
             
+            ShopSigns.printCompletedSign(creator, signBuilder, SewConfig.get(SewConfig.SERVER_SALES_TAX));
             return true;
         }
         @Override
         public Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign) {
             LootableContainerBlockEntity chest = null;
             Inventory chestInventory = null;
+            Item item;
             
             // If shops disabled
             if ( !this.isEnabled() )
@@ -263,7 +270,7 @@ public enum ShopSigns {
                     return Either.left(TranslatableServerSide.text(player, "shop.error.self_buy"));
                 
                 // These should NOT be null
-                if ((sign.getShopItem() == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null) || (sign.getShopItemDisplay() == null))
+                if (((item = sign.getShopItem()) == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null) || (sign.getShopItemDisplay() == null))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
                 
                 /*
@@ -276,7 +283,7 @@ public enum ShopSigns {
                     if (ChestBlockEntity.getPlayersLookingInChestCount(player.getEntityWorld(), chest.getPos()) > 0)
                         return Either.left(TranslatableServerSide.text(player, "shop.error.chest_open"));
                     // If there is not enough of item in chest
-                    if (chest.count(sign.getShopItem()) < sign.getShopItemCount())
+                    if (chest.count(item) < sign.getShopItemCount())
                         return Either.left(TranslatableServerSide.text(player, "shop.error.stock_chest", sign.getShopItemDisplay()));
                 }
                 
@@ -286,7 +293,7 @@ public enum ShopSigns {
                         return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                     
                     // Give item to player from chest
-                    if (!InventoryUtils.chestToPlayer( player, signPos, chestInventory, player.inventory, sign.getShopItem(), sign.getShopItemCount(), true )) {
+                    if (!InventoryUtils.chestToPlayer( player, signPos, chestInventory, player.inventory, item, sign.getShopItemCount(), true )) {
                         // Refund the player
                         MoneyUtils.givePlayerMoney(player, sign.getShopItemPrice());
                         
@@ -314,13 +321,14 @@ public enum ShopSigns {
                         Formatting.YELLOW,
                         new LiteralText("You bought "),
                         new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
-                        new TranslatableText(sign.getShopItem().getTranslationKey()).formatted(Formatting.AQUA),
+                        new TranslatableText(item.getTranslationKey()).formatted(Formatting.AQUA),
                         new LiteralText(" from "),
                         permissions.getName().formatted(Formatting.AQUA)
                     );
                     
                     // Log the event
-                    CoreMod.logInfo( player.getName().asString() + " bought " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay().asString() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " from " + permissions.getName().asString() );
+                    CoreMod.logInfo( player.getName().asString() + " bought " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemIdentifier() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " from " + permissions.getName().asString() );
+                    player.increaseStat(ShopStats.SHOP_TYPE_BOUGHT.getOrCreateStat(item), sign.getShopItemCount());
                     
                     return Either.right( true );
                     
@@ -332,13 +340,13 @@ public enum ShopSigns {
         }
         @Override
         public boolean isEnabled() {
-            return SewConfig.get(SewConfig.DO_MONEY);
+            return SewConfig.get(SewConfig.DO_MONEY) && SewConfig.get(SewConfig.SHOP_SIGNS);
         }
     },
     /*
      * Chest is FREE
      */
-    FREE( Formatting.DARK_BLUE ) {
+    FREE(Formatting.DARK_BLUE) {
         @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign( signBuilder, creator);
@@ -356,7 +364,7 @@ public enum ShopSigns {
             // Second row Count - Item Name
             signBuilder.getSign().setTextOnRow(1,
                 new LiteralText(signBuilder.itemSize() + " ").formatted(Formatting.BLACK)
-                    .append(new TranslatableText(Registry.ITEM.get(signBuilder.getItem()).getTranslationKey()).formatted(Formatting.DARK_AQUA))
+                    .append(new TranslatableText(signBuilder.getItem().getTranslationKey()).formatted(Formatting.DARK_AQUA))
             );
             // Third Row - Price
             signBuilder.getSign().setTextOnRow(2,
@@ -420,13 +428,13 @@ public enum ShopSigns {
         }
         @Override
         public boolean isEnabled() {
-            return SewConfig.get(SewConfig.DO_MONEY);
+            return SewConfig.get(SewConfig.DO_MONEY) && SewConfig.get(SewConfig.SHOP_SIGNS);
         }
     },
     /*
      * Check player balance
      */
-    BALANCE( Formatting.GOLD ) {
+    BALANCE(Formatting.GOLD) {
         @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign(signBuilder, creator);
@@ -463,7 +471,7 @@ public enum ShopSigns {
     /*
      * Teleport the player to a random location around the map
      */
-    WARP( Formatting.DARK_PURPLE ) {
+    WARP(Formatting.DARK_PURPLE) {
         @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign(signBuilder, creator);
@@ -495,7 +503,7 @@ public enum ShopSigns {
                 return Either.right(this.generateNewWarp(player));
             } else {
                 // Warp the player to their home
-                WarpUtils.teleportPlayer( warp.world, player, warp.warpPos );
+                WarpUtils.teleportPlayer(warp.world, player, warp.warpPos);
             }
             return Either.right( true );
         }
@@ -510,7 +518,9 @@ public enum ShopSigns {
                 final MinecraftServer server;
                 if ((server = player.getServer()) == null)
                     return;
-                final ServerWorld world = server.getWorld(World.OVERWORLD);
+                final ServerWorld world = server.getWorld(SewConfig.get(SewConfig.WARP_DIMENSION));
+                if (world == null)
+                    return;
                 final BlockPos spawnPos = WarpUtils.getWorldSpawn(world);
                 
                 // Tell the player
@@ -520,7 +530,7 @@ public enum ShopSigns {
                 ), MessageType.SYSTEM, ServerCore.spawnID);
                 
                 // Create warp
-                WarpUtils newWarp = new WarpUtils( player, spawnPos );
+                WarpUtils newWarp = new WarpUtils(player, spawnPos);
                 BlockPos warpToPos;
                 
                 while (((warpToPos = newWarp.getWarpPositionIn(world)) == null) || (!newWarp.build(player, world)));
@@ -542,11 +552,17 @@ public enum ShopSigns {
                 newWarp.save(world, safeTeleportPos, player);
                 
                 // Notify the player of their new location
-                player.sendMessage(TranslatableServerSide.text(
-                    player,
-                    "warp.random.teleported",
-                    distance
-                ), MessageType.SYSTEM, ServerCore.spawnID);
+                if ((!SewConfig.get(SewConfig.WORLD_SPECIFIC_SPAWN)) || SewConfig.equals(SewConfig.WARP_DIMENSION, SewConfig.DEFAULT_WORLD))
+                    player.sendMessage(TranslatableServerSide.text(
+                        player,
+                        "warp.random.teleported",
+                        distance
+                    ), MessageType.SYSTEM, ServerCore.spawnID);
+                else
+                    player.sendMessage(TranslatableServerSide.text(
+                        player,
+                        "warp.random.teleported_world"
+                    ), MessageType.SYSTEM, ServerCore.spawnID);
             }).start();
             return true;
         }
@@ -554,7 +570,7 @@ public enum ShopSigns {
     /*
      * Move the players warp
      */
-    WAYSTONE( Formatting.DARK_PURPLE ) {
+    WAYSTONE(Formatting.DARK_PURPLE) {
         @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign(signBuilder, creator);
@@ -606,7 +622,8 @@ public enum ShopSigns {
                         // Cancel the build
                         return;
                     }
-                    warp.save(player.getServerWorld(), warp.getSafeTeleportPos( player.getEntityWorld() ), player);
+                    
+                    warp.save(player.getServerWorld(), warp.getSafeTeleportPos(player.getServerWorld()), player);
                 })).start();
                 return Either.right( true );
                 
@@ -618,7 +635,7 @@ public enum ShopSigns {
     /*
      * Allow players to sell chunks/region in their towns
      */
-    DEED( Formatting.DARK_GRAY ) {
+    DEED(Formatting.DARK_GRAY) {
         @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign(signBuilder, creator);
@@ -720,7 +737,7 @@ public enum ShopSigns {
     /*
      * Allow players to buy chunk claims
      */
-    PLOTS( Formatting.GREEN ) {
+    PLOTS(Formatting.GREEN) {
         @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign(signBuilder, creator);
@@ -796,7 +813,7 @@ public enum ShopSigns {
     /*
      * Player guide books
      */
-    GUIDES( Formatting.DARK_GREEN ) {
+    GUIDES(Formatting.DARK_GREEN) {
         @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign(signBuilder, creator);
@@ -848,7 +865,7 @@ public enum ShopSigns {
     /*
      * Player backpacks
      */
-    BACKPACK( Formatting.YELLOW ) {
+    BACKPACK(Formatting.YELLOW) {
         @Override
         public boolean formatSign(final ShopSignBuilder signBuilder, final ServerPlayerEntity creator) throws ShopBuilderException {
             super.formatSign(signBuilder, creator);
@@ -987,6 +1004,50 @@ public enum ShopSigns {
             }
         }
         return null;
+    }
+    
+    public static int printCompletedSign(final ServerPlayerEntity player, final ShopSignBuilder signBuilder, final int serverTaxPerc) {
+        int returnVal = signBuilder.shopPrice();
+        MutableText output = new LiteralText("Created new shop for ").formatted(Formatting.YELLOW)
+            .append(MessageUtils.formatNumber(signBuilder.itemSize()))
+            .append(" ")
+            .append(MessageUtils.formatObject(signBuilder.getItem()));
+        
+        // Try getting the located town
+        ServerWorld world = player.getServerWorld();
+        ClaimantTown town = ((IClaimedChunk)world.getChunk(signBuilder.getSign().getPos()))
+            .getTown();
+        int townTaxVal = (town == null ? 0 : signBuilder.shopPrice() * (town.getTaxRate() / 100));
+        int serverTaxVal = signBuilder.shopPrice() * (serverTaxPerc / 100);
+        
+        if (serverTaxVal > 0) {
+            output.append("\n| Server tax is ")
+                .append(MessageUtils.formatNumber(serverTaxPerc))
+                .append("% ($")
+                .append(MessageUtils.formatNumber(serverTaxVal))
+                .append(")");
+            returnVal -= serverTaxVal;
+        } else if (serverTaxPerc > 0) {
+            output.append("\n| Server taxes do not apply.");
+        }
+        
+        if (townTaxVal > 0) {
+            output.append("\n| Server tax is ")
+                .append(MessageUtils.formatNumber(0))
+                .append("% ($")
+                .append(MessageUtils.formatNumber(townTaxVal))
+                .append(")");
+            returnVal -= townTaxVal;
+        } else if (serverTaxVal > 0) {
+            output.append("\n| Town taxes do not apply.");
+        }
+        
+        output.append("\n| Recipient gets $")
+            .append(MessageUtils.formatNumber(returnVal))
+            .append((serverTaxVal > 0 || townTaxVal > 0) ? " after taxes." : ".");
+        
+        player.sendMessage(output, false);
+        return returnVal;
     }
     
     public abstract Either<Text, Boolean> onInteract(final ServerPlayerEntity player, final BlockPos signPos, final ShopSignBlockEntity sign);

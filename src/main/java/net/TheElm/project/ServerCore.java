@@ -46,6 +46,7 @@ import net.TheElm.project.commands.TeleportEffectCommand;
 import net.TheElm.project.commands.TeleportsCommand;
 import net.TheElm.project.commands.WaystoneCommand;
 import net.TheElm.project.commands.WhereCommand;
+import net.TheElm.project.commands.WorldCommand;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.protections.events.BlockBreak;
@@ -57,6 +58,8 @@ import net.TheElm.project.protections.logging.EventLogger;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.dedicated.MinecraftDedicatedServer;
+import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -68,6 +71,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Optional;
 import java.util.UUID;
 
 public final class ServerCore extends CoreMod implements DedicatedServerModInitializer {
@@ -101,6 +105,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             TeleportsCommand.register(dispatcher);
             WaystoneCommand.register(dispatcher);
             WhereCommand.register(dispatcher);
+            WorldCommand.register(dispatcher);
             
             if ( CoreMod.isDebugging() )
                 TeleportEffectCommand.register(dispatcher);
@@ -173,22 +178,28 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         }
     }
     
-    @NotNull
-    public static MinecraftServer get() {
-        return CoreMod.getGameInstance().left().orElseThrow(() -> new RuntimeException("Called Client object from illegal position."));
+    public static @NotNull MinecraftServer get() {
+        return CoreMod.getGameInstance()
+            .left()
+            .orElseGet(ClientCore::getServer);
     }
-    
-    @Nullable
-    public static ServerPlayerEntity getPlayer(UUID playerUUID) {
+    public static @Nullable ServerPlayerEntity getPlayer(UUID playerUUID) {
         return ServerCore.get().getPlayerManager().getPlayer( playerUUID );
     }
     
+    public static @NotNull RegistryKey<World> defaultWorldKey() {
+        return SewConfig.get(SewConfig.DEFAULT_WORLD);
+    }
+    public static @NotNull ServerWorld defaultWorld() {
+        return ServerCore.getWorld(ServerCore.defaultWorldKey());
+    }
+    
     public static @NotNull BlockPos getSpawn() {
-        return ServerCore.getSpawn(World.OVERWORLD);
+        return ServerCore.getSpawn(ServerCore.defaultWorld());
     }
     public static @NotNull BlockPos getSpawn(World world) {
         // Get the forced position of TheEnd
-        if ((world instanceof ServerWorld) && (world.getRegistryKey() == World.END)) {
+        if ((world instanceof ServerWorld) && (world.getRegistryKey() == World.END) && (!SewConfig.get(SewConfig.WORLD_SPECIFIC_SPAWN))) {
             BlockPos pos = ((ServerWorld)world).getSpawnPos();
             // Only if the forced position is set
             if (pos != null)
@@ -208,8 +219,21 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     public static @NotNull BlockPos getSpawn(RegistryKey<World> world) {
         return ServerCore.getSpawn(ServerCore.getWorld(world));
     }
-    public static @NotNull World getWorld(RegistryKey<World> world) {
-        return ServerCore.get().getWorld(world);
+    public static @NotNull ServerWorld getWorld(RegistryKey<World> key) {
+        return ServerCore.getWorld(ServerCore.get(), key);
+    }
+    public static @NotNull ServerWorld getWorld(MinecraftServer server, RegistryKey<World> key) {
+        Optional<ServerWorld> world = Optional.ofNullable(server.getWorld(key));
+        if (!world.isPresent())
+            world = Optional.ofNullable(server.getWorld(World.OVERWORLD));
+        return world.orElseThrow(NullPointerException::new);
+    }
+    
+    public static boolean isIntegratedServer() {
+        return ServerCore.get() instanceof IntegratedServer;
+    }
+    public static boolean isDedicatedServer() {
+        return ServerCore.get() instanceof MinecraftDedicatedServer;
     }
     
 }

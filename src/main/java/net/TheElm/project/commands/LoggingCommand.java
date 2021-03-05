@@ -40,10 +40,10 @@ import net.TheElm.project.utilities.CommandUtilities;
 import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
-import net.minecraft.command.arguments.BlockPosArgumentType;
-import net.minecraft.command.arguments.DimensionArgumentType;
-import net.minecraft.command.arguments.GameProfileArgumentType;
-import net.minecraft.command.arguments.ItemStackArgumentType;
+import net.minecraft.command.argument.BlockPosArgumentType;
+import net.minecraft.command.argument.DimensionArgumentType;
+import net.minecraft.command.argument.GameProfileArgumentType;
+import net.minecraft.command.argument.ItemStackArgumentType;
 import net.minecraft.item.Item;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -140,7 +140,7 @@ public final class LoggingCommand {
             // Create the main text object
             MutableText heading = new LiteralText("Block History for ")
                 .formatted(Formatting.YELLOW)
-                .append(MessageUtils.blockPosToTextComponent( blockPos ));
+                .append(MessageUtils.xyzToText( blockPos ));
             
             // Append our results
             Text text = executeSQLStatement(heading, stmt, (results -> {
@@ -209,7 +209,7 @@ public final class LoggingCommand {
                 // Get the row statement information
                 boolean add = (BlockAction.valueOf(results.getString("updatedEvent")) == BlockAction.PLACE);
                 UUID updatedBy = UUID.fromString(results.getString("updatedBy"));
-                UnaryOperator<Style> hoverEvent = (styler) -> styler.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new LiteralText(updatedBy.toString())));
+                UnaryOperator<Style> hoverEvent = (styler) -> styler.withHoverEvent(new HoverEvent(Action.SHOW_TEXT, new LiteralText(updatedBy.toString())));
                 
                 // Add the row text to the main text
                 return new LiteralText("\n" + results.getRow() + ". ")
@@ -217,7 +217,7 @@ public final class LoggingCommand {
                     .append(" by ")
                     .append(PlayerNameUtils.fetchPlayerName(updatedBy).formatted(Formatting.AQUA).styled(hoverEvent))
                     .append("\n     at ")
-                    .append(MessageUtils.blockPosToTextComponent(new BlockPos(results.getInt("blockX"), results.getInt("blockY"), results.getInt("blockZ"))).formatted(Formatting.GRAY))
+                    .append(MessageUtils.xyzToText(new BlockPos(results.getInt("blockX"), results.getInt("blockY"), results.getInt("blockZ"))).formatted(Formatting.GRAY))
                     .append("\n     at ")
                     .append(new LiteralText(results.getTimestamp("updatedAt").toString()).formatted(Formatting.GRAY));
             }));
@@ -265,7 +265,7 @@ public final class LoggingCommand {
                 // Get the row statement information
                 String blockTranslation = results.getString("block");
                 boolean add = (BlockAction.valueOf(results.getString("updatedEvent")) == BlockAction.PLACE);
-                UnaryOperator<Style> hoverEvent = (style) -> style.setHoverEvent(new HoverEvent(Action.SHOW_TEXT, new LiteralText(player.getId().toString())));
+                UnaryOperator<Style> hoverEvent = (style) -> style.withHoverEvent(new HoverEvent(Action.SHOW_TEXT, new LiteralText(player.getId().toString())));
                 
                 // Add the row text to the main text
                 return new LiteralText("\n" + results.getRow() + ". ")
@@ -273,7 +273,7 @@ public final class LoggingCommand {
                     .append(" by ")
                     .append(new LiteralText(player.getName()).formatted(Formatting.AQUA).styled(hoverEvent))
                     .append("\n     at ")
-                    .append(MessageUtils.blockPosToTextComponent(new BlockPos(results.getInt("blockX"), results.getInt("blockY"), results.getInt("blockZ")), new Identifier(results.getString("blockWorld"))).formatted(Formatting.GRAY))
+                    .append(MessageUtils.xyzToText(new BlockPos(results.getInt("blockX"), results.getInt("blockY"), results.getInt("blockZ")), new Identifier(results.getString("blockWorld"))).formatted(Formatting.GRAY))
                     .append("\n     at ")
                     .append(new LiteralText(results.getTimestamp("updatedAt").toString()).formatted(Formatting.GRAY));
             });

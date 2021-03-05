@@ -205,7 +205,7 @@ public final class InventoryUtils {
                 
                 // Get stack sizes
                 for (int i = invSize; i > 0; i--) {
-                    final ItemStack chestItem = chestInventory.getStack(i);
+                    final ItemStack chestItem = chestInventory.getStack(i - 1);
                     if (chestItem.getItem().equals(item)) {
                         int collectible = count - stackSize; // The amount of items remaining to give the player a full stack
                         // If stack size is full

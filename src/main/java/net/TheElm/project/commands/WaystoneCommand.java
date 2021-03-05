@@ -38,8 +38,8 @@ import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.WarpUtils;
-import net.minecraft.command.arguments.EntityArgumentType;
-import net.minecraft.command.arguments.GameProfileArgumentType;
+import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
@@ -53,6 +53,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
@@ -62,21 +63,23 @@ public class WaystoneCommand {
     
     private WaystoneCommand() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("waystones")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING))
-            .then( CommandManager.literal("set")
-                .then( CommandManager.argument( "player", EntityArgumentType.player())
+            .then(CommandManager.literal("set")
+                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING))
+                .then(CommandManager.argument("player", EntityArgumentType.player())
                     .executes(WaystoneCommand::setToCurrentLocation)
                 )
             )
             .then(CommandManager.literal("reset")
-                .then( CommandManager.argument( "player", EntityArgumentType.player())
+                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING))
+                .then(CommandManager.argument( "player", EntityArgumentType.player())
                     .executes(WaystoneCommand::resetPlayer)
                 )
                 .executes(WaystoneCommand::resetSelf)
             )
             .then(CommandManager.literal("send")
+                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING))
                 .then(CommandManager.argument("players", EntityArgumentType.players())
                     .then(CommandManager.argument("to", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtilities::getAllPlayerNames)
@@ -89,7 +92,7 @@ public class WaystoneCommand {
         CoreMod.logDebug( "- Registered Waystones command" );
     }
     
-    private static int setToCurrentLocation(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int setToCurrentLocation(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         Entity entity = source.getEntity();
         ServerPlayerEntity target = EntityArgumentType.getPlayer( context, "player" );
@@ -104,14 +107,14 @@ public class WaystoneCommand {
         source.sendFeedback(new LiteralText("Set ")
             .append(target.getDisplayName().copy())
             .append("'s waystone to ")
-            .append(MessageUtils.blockPosToTextComponent(blockPos))
+            .append(MessageUtils.xyzToText(blockPos))
             .append("."),
             true
         );
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int resetSelf(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int resetSelf(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get source of the command
         ServerCommandSource source = context.getSource();
         
@@ -121,25 +124,26 @@ public class WaystoneCommand {
         // Reset the waystone
         return WaystoneCommand.reset(source.getPlayer());
     }
-    private static int resetPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int resetPlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get source of the command
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity target = EntityArgumentType.getPlayer( context, "player" );
+        ServerPlayerEntity target = EntityArgumentType.getPlayer(context, "player");
         
         // Send feedback to the source
         source.sendFeedback(new LiteralText("Reset the waystone of ")
-            .append(target.getDisplayName().copy())
+            .append(target.getDisplayName())
             .append("."), true);
         
         // Reset the waystone
         return WaystoneCommand.reset(target);
     }
-    private static int reset(ServerPlayerEntity player) {
+    private static int reset(@NotNull ServerPlayerEntity player) {
         // Reset the position
-        ((PlayerData) player).setWarpPos( null );
+        ((PlayerData) player)
+            .setWarpPos(null);
         return Command.SINGLE_SUCCESS;
     }
-    private static int sendHome(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int sendHome(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "players");
         
@@ -159,7 +163,7 @@ public class WaystoneCommand {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int sendPlayersTo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int sendPlayersTo(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get information about the request
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getMinecraftServer();
@@ -170,7 +174,8 @@ public class WaystoneCommand {
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "to");
         
         // Get information about the target
-        GameProfile target = profiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        GameProfile target = profiles.stream().findAny()
+            .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         ServerPlayerEntity targetPlayer = manager.getPlayer(target.getId());
         
         WarpUtils.Warp warp;

@@ -31,7 +31,9 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.NbtUtils;
+import net.TheElm.project.utilities.PlayerNameUtils;
 import net.TheElm.project.utilities.TownNameUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.passive.VillagerEntity;
@@ -39,8 +41,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -62,12 +67,16 @@ public final class ClaimantTown extends Claimant {
         this.name = townName;
     }
     
-    public final String getTownType() {
+    public final @NotNull String getTownType() {
         return TownNameUtils.getTownName( this.getCount(), this.getResidentCount() );
     }
-    public final String getOwnerTitle() {
+    public final @NotNull String getOwnerTitle() {
         return TownNameUtils.getOwnerTitle( this.getCount(), this.getResidentCount(), true );
     }
+    public final @NotNull MutableText getOwnerName() {
+        return PlayerNameUtils.fetchPlayerNick(this.getOwner());
+    }
+    
     public final UUID getOwner() {
         return this.ownerId;
     }
@@ -76,6 +85,7 @@ public final class ClaimantTown extends Claimant {
         this.ownerId = owner;
         this.markDirty();
     }
+    
     public final int getResidentCount() {
         return this.getFriends().size()
             + (SewConfig.get(SewConfig.TOWN_VILLAGERS_INCLUDE)
@@ -83,8 +93,16 @@ public final class ClaimantTown extends Claimant {
     }
     
     @Override
-    public MutableText getName() {
-        return this.name.copy();
+    public @NotNull MutableText getName() {
+        return FormattingUtils.deepCopy(this.name);
+    }
+    public @NotNull HoverEvent getHoverText() {
+        return new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText("Town: ")
+            .append(this.getName()
+                .formatted(Formatting.DARK_AQUA, Formatting.BOLD))
+            .append("\nOwner: ")
+            .append(this.getOwnerName()
+                .formatted(Formatting.DARK_AQUA, Formatting.BOLD)));
     }
     
     /* Villager Options */
@@ -142,6 +160,11 @@ public final class ClaimantTown extends Claimant {
         });
     }
     
+    /* Tax Options */
+    public final int getTaxRate() {
+        return 0;
+    }
+    
     /* Nbt saving */
     @Override
     public final void writeCustomDataToTag(@NotNull CompoundTag tag) {
@@ -160,7 +183,7 @@ public final class ClaimantTown extends Claimant {
     @Override
     public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
         // Get the towns owner
-        this.ownerId = (tag.containsUuid("owner") ? tag.getUuid("owner") : null);
+        this.ownerId = (NbtUtils.hasUUID(tag, "owner") ? NbtUtils.getUUID(tag, "owner") : null);
         
         // Get the town name
         if (tag.contains("name", NbtType.STRING))
@@ -207,10 +230,10 @@ public final class ClaimantTown extends Claimant {
         if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (townId == null))
             return null;
         
-        NbtUtils.assertExists( ClaimantType.TOWN, townId );
+        NbtUtils.assertExists(ClaimantType.TOWN, townId);
         
         // If contained in the cache
-        if ((town = CoreMod.getFromCache( ClaimantTown.class, townId )) != null)
+        if ((town = CoreMod.getFromCache(ClaimantTown.class, townId)) != null)
             return town;
         
         // Return the town object

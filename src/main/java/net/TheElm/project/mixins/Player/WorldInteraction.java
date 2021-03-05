@@ -47,20 +47,30 @@ import net.TheElm.project.interfaces.PlayerServerLanguage;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.ColorUtils;
+import net.TheElm.project.utilities.EffectUtils;
+import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.TheElm.project.utilities.SleepUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.ai.pathing.LandPathNodeMaker;
+import net.minecraft.entity.ai.pathing.Path;
+import net.minecraft.entity.ai.pathing.PathNodeMaker;
+import net.minecraft.entity.ai.pathing.PathNodeNavigator;
+import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.mob.MobEntity;
+import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.MessageType;
 import net.minecraft.network.packet.c2s.play.ClientSettingsC2SPacket;
 import net.minecraft.network.packet.s2c.play.PlayerSpawnPositionS2CPacket;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
@@ -74,6 +84,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.ChunkCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -95,6 +106,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Shadow public ServerPlayerInteractionManager interactionManager;
     @Shadow public ServerPlayNetworkHandler networkHandler;
     @Shadow private boolean notInAnyWorld;
+    
+    @Shadow private RegistryKey<World> spawnPointDimension;
     
     // Client language
     private Locale clientLanguage = Locale.ENGLISH;
@@ -124,6 +137,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     
     @Inject(at = @At("RETURN"), method = "<init>*")
     public void onInitialize(CallbackInfo callback) {
+        this.spawnPointDimension = SewConfig.get(SewConfig.DEFAULT_WORLD);
+        
         // Set the player to "adventure"-like if they are not allowed to modify the world
         if (!RankUtils.hasPermission(this, Permissions.INTERACT_WORLD)) {
             this.abilities.allowModifyWorld = false;
@@ -132,15 +147,17 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         }
     }
     
-    public WorldInteraction(World world, BlockPos blockPos, GameProfile gameProfile) {
-        super(world, blockPos, gameProfile);
+    public WorldInteraction(World world, BlockPos blockPos, float yaw, GameProfile gameProfile) {
+        super(world, blockPos, yaw, gameProfile);
     }
     
     /*
      * Health Bar
      */
+    
     @Inject(at = @At("TAIL"), method = "tick")
     public void onTick(CallbackInfo callback) {
+        // Handle Health Bar
         if ((this.healthBar != null) && (!this.notInAnyWorld) && ((++this.healthTick) >= 60)) {
             // Get players from the health bar
             Set<ServerPlayerEntity> enemies = new HashSet<>(this.healthBar.getPlayers());
@@ -157,7 +174,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
                 if (!this.isAlive())
                     this.healthBar.clearPlayers();
                 else {
-                    List<ServerPlayerEntity> players = this.world.getEntities(ServerPlayerEntity.class, searchRegion, (nearby) -> (!nearby.getUuid().equals(this.getUuid())));
+                    List<ServerPlayerEntity> players = this.world.getEntitiesByClass(ServerPlayerEntity.class, searchRegion, (nearby) -> (!nearby.getUuid().equals(this.getUuid())));
                     
                     // Remove all locale players
                     enemies.removeAll(players);
@@ -174,6 +191,20 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             
             // Reset the tick
             this.healthTick = 0;
+        }
+        
+        // Handle location finder
+        if (this.sewTrailTargetPos != null) {
+            if (this.sewTrailTicks > 0)
+                this.sewTrailTicks--;
+            else {
+                if (this.sewTrailTargetPos.getSquaredDistance(this.getBlockPos()) > 100) {
+                    Path path = this.findPathTo(this.sewTrailTargetPos, 3);
+                    if (path != null)
+                        EffectUtils.summonBreadcrumbs(ParticleTypes.FALLING_OBSIDIAN_TEAR, (ServerPlayerEntity)(Entity)this, path);
+                } else this.sewTrailTargetPos = null;
+                this.sewTrailTicks = WorldInteraction.NODE_TICKS;
+            }
         }
     }
     @Inject(at = @At("TAIL"), method = "onDeath")
@@ -282,7 +313,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         if (this.getWarpPos() == null)
             return null;
         if (this.warpDimension == null)
-            this.warpDimension = World.OVERWORLD;
+            this.warpDimension = SewConfig.get(SewConfig.WARP_DIMENSION);
         return this.warpDimension;
     }
     @Override
@@ -308,6 +339,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Portal locations
      */
+    
     public void setNetherPortal(@Nullable BlockPos portalPos) {
         this.theNetherPortal = portalPos;
     }
@@ -323,12 +355,16 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         return this.overworldPortal;
     }
     
-    @Inject(at = @At("HEAD"), method = "changeDimension")
-    public void onChangeDimension(ServerWorld targetWorld, CallbackInfoReturnable<Entity> callback) {
-        RegistryKey<World> dimension = this.world.getRegistryKey();
+    @Inject(at = @At("HEAD"), method = "moveToWorld")
+    public void onChangeDimension(ServerWorld world, CallbackInfoReturnable<Entity> callback) {
+        RegistryKey<World> dimension = world.getRegistryKey();
         
         if (SewConfig.get(SewConfig.OVERWORLD_PORTAL_LOC) && dimension.equals(World.OVERWORLD)) this.setNetherPortal(this.getBlockPos());
         else if (SewConfig.get(SewConfig.NETHER_PORTAL_LOC) && dimension.equals(World.NETHER)) this.setOverworldPortal(this.getBlockPos());
+        
+        // Clear all players on the healthbar when changing worlds
+        if (this.healthBar != null)
+            this.healthBar.clearPlayers();
     }
     
     /*
@@ -348,7 +384,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     
     @Inject(at = @At("HEAD"), method = "setSpawnPoint", cancellable = true)
-    public void onSetSpawnPoint(final RegistryKey<World> dimension, @Nullable final BlockPos blockPos, final boolean overrideGlobal, final boolean showPlayerMessage, CallbackInfo callback) {
+    public void onSetSpawnPoint(final RegistryKey<World> dimension, @Nullable final BlockPos blockPos, final float angle, final boolean overrideGlobal, final boolean showPlayerMessage, CallbackInfo callback) {
         ServerPlayerEntity player = ((ServerPlayerEntity)(LivingEntity) this);
         
         // If the bed the player slept in is different 
@@ -393,6 +429,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Connected players language
      */
+    
     @Override
     public Locale getClientLanguage() {
         return this.clientLanguage;
@@ -405,6 +442,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Player Warp Point Events
      */
+    
     @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
     public void onSavingData(CompoundTag tag, CallbackInfo callback) {
         // Save the player warp location for restarts
@@ -509,6 +547,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Player names (Saved and handled cross dimension)
      */
+    
     @Override
     public void setPlayerNickname(@Nullable Text nickname) {
         this.playerNickname = nickname;
@@ -517,16 +556,17 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     public Text getPlayerNickname() {
         if (this.playerNickname == null)
             return null;
-        return this.playerNickname.copy();
+        return FormattingUtils.deepCopy(this.playerNickname);
     }
     @Inject(at = @At("HEAD"), method = "getPlayerListName", cancellable = true)
-    public void getServerlistDisplayName(CallbackInfoReturnable<Text> callback) {
+    public void getServerlistDisplayName(@NotNull CallbackInfoReturnable<Text> callback) {
         callback.setReturnValue(((Nicknamable) this).getPlayerNickname());
     }
     
     /*
      * Chat Rooms (Handled cross dimension)
      */
+    
     @Override
     public @NotNull ChatRooms getChatRoom() {
         return ((PlayerChat)this.interactionManager).getChatRoom();
@@ -560,8 +600,9 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Temporary Ruler information (Never saves)
      */
-    BlockPos rulerA = null;
-    BlockPos rulerB = null;
+    
+    private BlockPos rulerA = null;
+    private BlockPos rulerB = null;
     
     public void setRulerA(@Nullable BlockPos blockPos) {
         this.rulerA = blockPos;
@@ -579,6 +620,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     /*
      * Compasses
      */
+    
     @Override
     public CompassDirections cycleCompass() {
         CompassDirections next = this.compassDirections;
@@ -600,6 +642,62 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     public void setCompassDirection(@NotNull CompassDirections direction, @NotNull BlockPos blockPos) {
         this.compassDirections = direction;
-        this.networkHandler.sendPacket(new PlayerSpawnPositionS2CPacket( blockPos ));
+        this.networkHandler.sendPacket(new PlayerSpawnPositionS2CPacket(blockPos, 0.0F));
+    }
+    
+    /*
+     * Path finding to friends
+     */
+    
+    private static final int NODE_TICKS = 30;
+    private static final int NAV_DISTANCE = 30;
+    
+    private int sewTrailTicks = WorldInteraction.NODE_TICKS;
+    private BlockPos sewTrailTargetPos = null;
+    private MobEntity sewTrailInnerDemon = null;
+    
+    private final PathNodeMaker nodeMaker = new LandPathNodeMaker();
+    private final PathNodeNavigator nodeNavigator = this.createPathNodeNavigator(WorldInteraction.NAV_DISTANCE);
+    
+    private @NotNull PathNodeNavigator createPathNodeNavigator(int range) {
+        this.nodeMaker.setCanEnterOpenDoors(true);
+        this.nodeMaker.setCanOpenDoors(true);
+        this.nodeMaker.setCanSwim(true);
+        
+        return new PathNodeNavigator(this.nodeMaker, range);
+    }
+    @Override
+    public @NotNull PathNodeNavigator getPathNodeNavigator() {
+        return this.nodeNavigator;
+    }
+    @Override
+    public @Nullable Path findPathToAny(@NotNull Set<BlockPos> positions, int range, boolean bl, int distance) {
+        if (positions.isEmpty())
+            return null;
+        if (this.getY() < 0.0D)
+            return null;
+        
+        // Push the profiler
+        this.world.getProfiler()
+            .push("pathfind");
+        
+        if (this.sewTrailInnerDemon == null)
+            this.sewTrailInnerDemon = new ZombieEntity(this.world);
+        this.sewTrailInnerDemon.setPos(this.getX(), this.getY(), this.getZ());
+        
+        float followRange = (float)this.sewTrailInnerDemon.getAttributeValue(EntityAttributes.GENERIC_FOLLOW_RANGE);
+        BlockPos selfPos = bl ? this.getBlockPos().up() : this.getBlockPos();
+        int i = (int)(followRange + range);
+        ChunkCache chunkCache = new ChunkCache(this.world, selfPos.add(-i, -i, -i), selfPos.add(i, i, i));
+        Path path = this.getPathNodeNavigator()
+            .findPathToAny(chunkCache, this.sewTrailInnerDemon, positions, followRange, distance, 1.0F);
+        
+        // Pop the profiler
+        this.world.getProfiler()
+            .pop();
+        
+        if (path != null && path.getTarget() != null)
+            this.sewTrailTargetPos = path.getTarget();
+        return path;
     }
 }

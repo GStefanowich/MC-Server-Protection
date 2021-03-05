@@ -31,7 +31,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.fabricmc.fabric.api.util.NbtType;
-import net.minecraft.command.arguments.EntitySummonArgumentType;
+import net.minecraft.command.argument.EntitySummonArgumentType;
 import net.minecraft.command.suggestion.SuggestionProviders;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;

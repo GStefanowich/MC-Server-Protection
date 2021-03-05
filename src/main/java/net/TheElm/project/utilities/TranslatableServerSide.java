@@ -47,6 +47,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.NumberFormat;
 import java.util.Locale;
+import java.util.Objects;
 
 public final class TranslatableServerSide {
     
@@ -59,20 +60,20 @@ public final class TranslatableServerSide {
         player.sendSystemMessage(TranslatableServerSide.text(player, key, objects), Util.NIL_UUID);
     }
     
-    public static @NotNull MutableText text(ServerCommandSource source, String key, Object... objects) {
+    public static @NotNull MutableText text(@NotNull ServerCommandSource source, String key, Object... objects) {
         if (source.getEntity() instanceof ServerPlayerEntity)
             return TranslatableServerSide.text( (ServerPlayerEntity)source.getEntity(), key, objects );
         return TranslatableServerSide.text( Locale.getDefault(), key, objects );
     }
-    public static @NotNull MutableText text(PlayerEntity player, String key, Object... objects) {
+    public static @NotNull MutableText text(@NotNull PlayerEntity player, String key, Object... objects) {
         if (!(player instanceof ServerPlayerEntity))
             return null;
         return TranslatableServerSide.text((ServerPlayerEntity) player, key, objects);
     }
-    public static @NotNull MutableText text(ServerPlayerEntity player, String key, Object... objects) {
+    public static @NotNull MutableText text(@NotNull ServerPlayerEntity player, String key, Object... objects) {
         return TranslatableServerSide.text( ((PlayerServerLanguage)player).getClientLanguage(), key, objects );
     }
-    public static @NotNull MutableText text(Locale language, String key, Object... objects) {
+    public static @NotNull MutableText text(@NotNull Locale language, String key, @NotNull Object... objects) {
         String text = TranslatableServerSide.getTranslation( language, key );
         
         for (int i = 0; i < objects.length; ++i) {
@@ -86,7 +87,7 @@ public final class TranslatableServerSide {
         
         return TranslatableServerSide.replace( language, text, objects);
     }
-    private static @NotNull MutableText replace(Locale language, String text, Object... objects) {
+    private static @NotNull MutableText replace(@NotNull Locale language, String text, @NotNull Object... objects) {
         if ( objects.length <= 0 )
             return new LiteralText( text );
         String[] separated = text.split( "((?<=%[a-z])|(?=%[a-z]))" );
@@ -141,8 +142,8 @@ public final class TranslatableServerSide {
     
     private static String getTranslation(Locale language, String key) {
         JsonObject object = TranslatableServerSide.readLanguageFile( language );
-        if ( (language != Locale.US) && (!object.has( key )) )
-            return TranslatableServerSide.getTranslation( Locale.US, key );
+        if ( !Objects.equals(language, Locale.US) && !object.has(key))
+            return TranslatableServerSide.getTranslation(Locale.US, key);
         JsonElement element = object.get( key );
         if ( element == null ) {
             CoreMod.logInfo( "Missing translation key \"" + key + "\"!" );
@@ -165,11 +166,11 @@ public final class TranslatableServerSide {
         // Return the JSON language file
         return new JsonParser().parse(new InputStreamReader( resource )).getAsJsonObject();
     }
-    private static String getResourcePath(Locale locale) {
+    private static @NotNull String getResourcePath(@NotNull Locale locale) {
         return "/assets/" + CoreMod.MOD_ID + "/lang/" + (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase() + ".json";
     }
     
-    private static boolean matchAny(@NotNull String needle, String... haystack ) {
+    private static boolean matchAny(@NotNull String needle, @NotNull String... haystack ) {
         for ( String hay : haystack ) {
             if ( needle.equalsIgnoreCase( hay ) )
                 return true;

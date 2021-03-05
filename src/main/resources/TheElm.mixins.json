@@ -46,6 +46,7 @@
     "Entities.EndCrystal",
     "Entities.Enderdragon",
     
+    "Entities.EndermenFixes",
     "Entities.EndermenPickup",
     "Entities.EndermenPlace",
     
@@ -54,6 +55,9 @@
     
     "Entities.Phantom",
     "Entities.LimitedSkeletons",
+    "Entities.WanderingSpawns",
+    "Entities.WarmStriders",
+    "Entities.WolfBuff",
     
     "Player.Interaction.ItemPickup",
     "Player.Interaction.ArmorStand",
