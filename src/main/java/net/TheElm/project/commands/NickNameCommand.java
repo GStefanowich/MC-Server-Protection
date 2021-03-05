@@ -51,8 +51,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.TextColor;
-import net.minecraft.text.TranslatableText;
-import net.minecraft.world.World;
+import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -136,7 +135,10 @@ public final class NickNameCommand {
             // Update the players display name
             ((Nicknamable)player).setPlayerNickname(text);
             
-            player.sendMessage(new TranslatableText(World.OVERWORLD.getValue().toString()), false);
+            player.sendMessage(new LiteralText("Nickname updated to ")
+                .formatted(Formatting.YELLOW)
+                .append(text)
+                .append("."), false);
         }
         
         // Update the name in the claim cache
