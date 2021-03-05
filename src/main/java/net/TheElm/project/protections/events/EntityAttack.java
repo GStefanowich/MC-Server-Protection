@@ -66,7 +66,7 @@ public final class EntityAttack {
      */
     public static void init() {
         // Register our event for when an entity is attacked
-        DamageEntityCallback.EVENT.register( EntityAttack::attack );
+        DamageEntityCallback.EVENT.register(EntityAttack::attack);
     }
     
     /**

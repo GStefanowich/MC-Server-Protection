@@ -64,12 +64,16 @@ public final class DeathChestUtils {
     private DeathChestUtils() {}
     
     public static @Nullable BlockPos getChestPosition(World world, BlockPos deathPoint) {
-        BlockPos out = null;
+        BlockPos out;
         
-        int tmp = SewConfig.get(SewConfig.MAX_DEATH_SCAN);
-        int maxI = 1 + ((tmp * tmp) * 4) + (tmp * 4);
+        int maxX = SewConfig.get(SewConfig.MAX_DEATH_SCAN);
+        int maxI = 1 + ((maxX * maxX) * 4) + (maxX * 4);
         
-        int upper = Collections.min(Arrays.asList( 256, deathPoint.getY() + SewConfig.get(SewConfig.MAX_DEATH_ELEVATION) ));
+        int maxY = SewConfig.get(SewConfig.MAX_DEATH_ELEVATION);
+        if (maxY < 0)
+            maxY = world.getDimensionHeight();
+        
+        int upper = Collections.min(Arrays.asList(world.getDimensionHeight(), deathPoint.getY() + maxX));
         for ( int y = deathPoint.getY(); y < upper; y++ ) {
             int x = 0;
             int z = 0;
@@ -81,16 +85,16 @@ public final class DeathChestUtils {
                 if ((out = DeathChestUtils.isValid(world, check)) != null)
                     return out.down();
                 if ((x == z) || ((x < 0) && (x == -z)) || ((x > 0) && (x == 1 - z))) {
-                    tmp = dX;
+                    maxX = dX;
                     dX = -dZ;
-                    dZ = tmp;
+                    dZ = maxX;
                 }
                 x += dX;
                 z += dZ;
             }
         }
         
-        return out;
+        return null;
     }
     private static @Nullable BlockPos isValid(final World world, final BlockPos blockPos) {
         Block block = world.getBlockState(blockPos).getBlock();
@@ -219,7 +223,7 @@ public final class DeathChestUtils {
         // Print the death chest coordinates
         if (SewConfig.get(SewConfig.PRINT_DEATH_CHEST_LOC))
             player.sendSystemMessage(TranslatableServerSide.text(player, "player.death_chest.location", new LiteralText(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)), Util.NIL_UUID);
-        CoreMod.logInfo( "Death chest for " + playerName + " spawned at " + MessageUtils.blockPosToString( chestPos.offset(Direction.UP, 1) ));
+        CoreMod.logInfo( "Death chest for " + playerName + " spawned at " + MessageUtils.xyzToString( chestPos.offset(Direction.UP, 1) ));
         
         // Add the entity to the world
         return ( skipGroundBlock || world.setBlockState( chestPos, Blocks.DIRT.getDefaultState() ) )

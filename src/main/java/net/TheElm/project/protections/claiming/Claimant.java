@@ -86,6 +86,16 @@ public abstract class Claimant {
         if (player == null) return ClaimRanks.ENEMY;
         return this.USER_RANKS.getOrDefault( player, ClaimRanks.PASSIVE );
     }
+    public boolean isFriend(@Nullable UUID player) {
+        if (player == null) return false;
+        switch (this.getFriendRank(player)) {
+            case OWNER:
+            case ALLY:
+                return true;
+            default:
+                return false;
+        }
+    }
     public boolean updateFriend(@NotNull UUID player, @Nullable ClaimRanks rank) {
         boolean changed = false;
         if (rank == null) {
@@ -121,11 +131,11 @@ public abstract class Claimant {
         return this.id;
     }
     public abstract MutableText getName();
-    public final MutableText getName(PlayerEntity player) {
+    public final MutableText getName(@NotNull PlayerEntity player) {
         return this.getName(player.getUuid());
     }
-    public final MutableText getName(@NotNull UUID player) {
-        ClaimRanks playerRank = this.getFriendRank( player );
+    public final MutableText getName(@Nullable UUID player) {
+        ClaimRanks playerRank = this.getFriendRank(player);
         return this.getName().formatted( playerRank.getColor() );
     }
     
@@ -137,12 +147,12 @@ public abstract class Claimant {
         return this.type;
     }
     
-    public final void addToCount(WorldChunk... chunks) {
+    public final void addToCount(@NotNull WorldChunk... chunks) {
         for (WorldChunk chunk : chunks)
             this.CLAIMED_CHUNKS.add(new ClaimTag(chunk));
         this.markDirty();
     }
-    public final void removeFromCount(WorldChunk... chunks) {
+    public final void removeFromCount(@NotNull WorldChunk... chunks) {
         for (WorldChunk chunk : chunks) {
             ChunkPos pos = chunk.getPos();
             this.CLAIMED_CHUNKS.removeIf((array) -> (
@@ -235,7 +245,7 @@ public abstract class Claimant {
         tag.put("settings", settingList);
     }
     public void readCustomDataFromTag(@NotNull CompoundTag tag) {
-        if (!(tag.getString("type").equals(this.type.name()) && tag.getUuid("iden").equals(this.id)))
+        if (!(tag.getString("type").equals(this.type.name()) && Objects.equals(NbtUtils.getUUID(tag, "iden"), this.id)))
             throw new RuntimeException("Invalid NBT data match");
         
         // Get the claim size
@@ -259,7 +269,7 @@ public abstract class Claimant {
             for (Tag it : tag.getList(rankNbtTag(this), NbtType.COMPOUND)) {
                 CompoundTag friend = (CompoundTag) it;
                 this.USER_RANKS.put(
-                    friend.getUuid("i"),
+                    NbtUtils.getUUID(friend, "i"),
                     ClaimRanks.valueOf(friend.getString("r"))
                 );
             }

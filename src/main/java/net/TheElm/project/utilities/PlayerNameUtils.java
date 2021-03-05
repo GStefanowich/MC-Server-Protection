@@ -65,65 +65,66 @@ public final class PlayerNameUtils {
     
     private PlayerNameUtils() {}
     
-    public static MutableText getServerChatDisplay(ChatRooms chatRoom) {
+    public static @NotNull MutableText getServerChatDisplay(@NotNull ChatRooms chatRoom) {
         return new LiteralText("[").formatted(chatRoom.getFormatting())
             .append(PlayerNameUtils.formattedWorld((World) null))
             .append("] ")
             .append(new LiteralText("Server").formatted(Formatting.GRAY));
     }
-    public static MutableText getPlayerChatDisplay(@NotNull ServerPlayerEntity player, ChatRooms chatRoom) {
-        return PlayerNameUtils.getPlayerChatDisplay( player, null, chatRoom );
+    public static @NotNull MutableText getPlayerChatDisplay(@NotNull ServerPlayerEntity player, ChatRooms chatRoom) {
+        return PlayerNameUtils.getPlayerChatDisplay(player, null, chatRoom);
     }
-    public static MutableText getPlayerChatDisplay(@NotNull ServerPlayerEntity player, @Nullable String prepend, ChatRooms chatRoom, Formatting... playerColors) {
+    public static @NotNull MutableText getPlayerChatDisplay(@NotNull ServerPlayerEntity player, @Nullable String prepend, ChatRooms chatRoom, @NotNull Formatting... playerColors) {
         ClaimantPlayer playerPermissions = ((PlayerData) player).getClaim();
-        MutableText playerDisplay = PlayerNameUtils.getPlayerDisplayName( player );
+        MutableText playerDisplay = PlayerNameUtils.getPlayerDisplayName(player);
         if ( playerColors.length > 0 )
-            playerDisplay.formatted( playerColors );
+            playerDisplay.formatted(playerColors);
         
         // Add the players world
-        MutableText format = new LiteralText( "[" ).formatted(chatRoom.getFormatting());
-        if (!chatRoom.equals(ChatRooms.TOWN)) format.append( PlayerNameUtils.formattedWorld( player.world ) );
-        else format.append( formattedChat( chatRoom ) );
+        MutableText format = new LiteralText("[").formatted(chatRoom.getFormatting());
+        if (!chatRoom.equals(ChatRooms.TOWN)) format.append(PlayerNameUtils.formattedWorld(player.world));
+        else format.append(PlayerNameUtils.formattedChat(chatRoom));
         
         ClaimantTown town;
         // If the player is in a town, prepend the town name
         if (SewConfig.get(SewConfig.CHAT_SHOW_TOWNS) && (playerPermissions != null) && ((town = playerPermissions.getTown() ) != null)) {
             // Add the players town
             format.append( "|" )
-                .append( town.getName().formatted(Formatting.DARK_AQUA) )
+                .append(town.getName().styled(style -> style.withColor(Formatting.DARK_AQUA)
+                    .withHoverEvent(town.getHoverText())))
                 .append( "] " );
             
             if ( prepend != null )
-                format.append( prepend );
+                format.append(prepend);
             
             // Add the players title
             if (player.getUuid().equals(town.getOwner()))
                 format.append( CasingUtils.Sentence( town.getOwnerTitle() ) + " " );
             
         } else {
-            format.append( "] " );
+            format.append("] ");
             
             if ( prepend != null )
-                format.append( prepend );
+                format.append(prepend);
         }
         
         // Append the player name and return
-        return format.append( playerDisplay );
+        return format.append(playerDisplay);
     }
-    private static MutableText getPlayerDisplayName(@NotNull ServerPlayerEntity player) {
+    private static @NotNull MutableText getPlayerDisplayName(@NotNull ServerPlayerEntity player) {
         if (((Nicknamable)player).getPlayerNickname() == null)
-            return PlayerNameUtils.applyPlayerNameStyle( ((MutableText)player.getName()).formatted(Formatting.GOLD), player );
+            return PlayerNameUtils.applyPlayerNameStyle(((MutableText)player.getName()).formatted(Formatting.GOLD), player);
         
         return new LiteralText("").append(PlayerNameUtils.applyPlayerNameStyle(
-            player.getDisplayName().copy(),
+            FormattingUtils.deepCopy(player.getDisplayName()),
             player
         ));
     }
-    private static MutableText applyPlayerNameStyle(@NotNull MutableText text, @NotNull ServerPlayerEntity player) {
+    private static @NotNull MutableText applyPlayerNameStyle(@NotNull MutableText text, @NotNull ServerPlayerEntity player) {
         final String name = player.getGameProfile().getName();
         
         return text.styled((styler) ->
-            styler.setHoverEvent(new HoverEvent( HoverEvent.Action.SHOW_TEXT, new LiteralText( "Name: " ).formatted(Formatting.GRAY).append( new LiteralText( name ).formatted(Formatting.AQUA) ) ))
+            styler.withHoverEvent(new HoverEvent( HoverEvent.Action.SHOW_TEXT, new LiteralText("Name: ").formatted(Formatting.GRAY).append(new LiteralText( name ).formatted(Formatting.AQUA))))
                 .withClickEvent(new ClickEvent(ClickEvent.Action.SUGGEST_COMMAND, "/tell " + name + " "))
         );
     }
@@ -131,10 +132,10 @@ public final class PlayerNameUtils {
     /*
      * Message Components
      */
-    public static MutableText formattedWorld(@Nullable World world) {
+    public static @NotNull MutableText formattedWorld(@Nullable World world) {
         return PlayerNameUtils.formattedWorld(world == null ? null : world.getRegistryKey());
     }
-    public static MutableText formattedWorld(@Nullable RegistryKey<World> world) {
+    public static @NotNull MutableText formattedWorld(@Nullable RegistryKey<World> world) {
         String name = null;
         String ico = null;
         
@@ -158,32 +159,32 @@ public final class PlayerNameUtils {
             ico = name == null ? "~" : name.substring( 0, 1 );
         
         // Create the text
-        MutableText text = new LiteralText( ico )
-            .formatted( color );
+        MutableText text = new LiteralText(ico)
+            .formatted(color);
         
         // Set the hover event
         if ( name != null ) {
             // Create the hover event
-            final HoverEvent hover = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( name ).formatted(color));
+            final HoverEvent hover = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText(name).formatted(color));
             
-            text.styled((style) -> style.setHoverEvent( hover ));
+            text.styled((style) -> style.withHoverEvent( hover ));
         }
         return text;
     }
-    public static MutableText formattedChat(ChatRooms chatRoom) {
+    public static @NotNull MutableText formattedChat(ChatRooms chatRoom) {
         String name = CasingUtils.Sentence( chatRoom.name() );
         return new LiteralText( name.substring( 0, 1 ) )
             .formatted( Formatting.DARK_GRAY )
-            .styled((style -> style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( name ).formatted( Formatting.WHITE )))));
+            .styled((style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( name ).formatted( Formatting.WHITE )))));
     }
     
-    public static MutableText fetchPlayerNick(@NotNull UUID uuid) {
+    public static @NotNull MutableText fetchPlayerNick(@NotNull UUID uuid) {
         MutableText out;
-        if ((!uuid.equals(CoreMod.spawnID)) && ((out = PlayerNameUtils.getOfflinePlayerNickname( uuid )) != null))
+        if ((!uuid.equals(CoreMod.spawnID)) && ((out = PlayerNameUtils.getOfflinePlayerNickname(uuid)) != null))
             return out;
         return PlayerNameUtils.fetchPlayerName( uuid );
     }
-    public static MutableText fetchPlayerName(@NotNull UUID uuid) {
+    public static @NotNull MutableText fetchPlayerName(@NotNull UUID uuid) {
         // If we're looking up UUID 0, 0 (Spawn) don't try to do a lookup
         if ( uuid.equals( CoreMod.spawnID ) )
             return new LiteralText(SewConfig.get(SewConfig.NAME_SPAWN));
@@ -250,7 +251,7 @@ public final class PlayerNameUtils {
             return null;
         return (MutableText) player.getName();
     }
-    private static String getCachedPlayerName(@NotNull UUID uuid) {
+    private static @Nullable String getCachedPlayerName(@NotNull UUID uuid) {
         String name = null;
         MinecraftServer server = ServerCore.get();
         GameProfile profile = server.getUserCache().getByUuid( uuid );
@@ -267,7 +268,7 @@ public final class PlayerNameUtils {
         return null;
     }
     
-    private static String stripUUID(@NotNull UUID uuid) {
+    private static @NotNull String stripUUID(@NotNull UUID uuid) {
         return uuid.toString().replace("-", "");
     }
     

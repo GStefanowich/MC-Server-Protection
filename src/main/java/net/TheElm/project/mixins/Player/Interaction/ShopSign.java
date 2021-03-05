@@ -39,6 +39,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
@@ -100,8 +101,15 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
         return null;
     }
     @Override @Nullable
+    public Identifier getShopItemIdentifier() {
+        return this.shopSign_item;
+    }
+    @Override @Nullable
     public Text getShopItemDisplay() {
-        return new TranslatableText(Registry.ITEM.get( this.shopSign_item ).getTranslationKey());
+        Item item = this.getShopItem();
+        if (item == null)
+            return new LiteralText("");
+        return new TranslatableText(item.getTranslationKey());
     }
     @Override @Nullable
     public Integer getShopItemCount() {
@@ -160,7 +168,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                 
                 // Update the parameters here from the builder
                 this.shopSign_Owner = builder.shopOwner();
-                this.shopSign_item = builder.getItem();
+                this.shopSign_item = builder.getItemIdentifier();
                 
                 this.shopSign_itemCount = builder.itemSize();
                 this.shopSign_itemPrice = builder.shopPrice();

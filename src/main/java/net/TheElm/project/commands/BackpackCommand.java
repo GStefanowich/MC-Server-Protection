@@ -35,7 +35,7 @@ import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.utilities.TranslatableServerSide;
-import net.minecraft.command.arguments.ItemStackArgumentType;
+import net.minecraft.command.argument.ItemStackArgumentType;
 import net.minecraft.item.Item;
 import net.minecraft.network.MessageType;
 import net.minecraft.screen.SimpleNamedScreenHandlerFactory;

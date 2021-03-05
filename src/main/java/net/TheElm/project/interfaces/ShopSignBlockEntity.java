@@ -29,6 +29,7 @@ import net.TheElm.project.enums.ShopSigns;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.text.Text;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,6 +43,8 @@ public interface ShopSignBlockEntity {
     UUID getShopOwner();
     @Nullable
     Item getShopItem();
+    @Nullable
+    Identifier getShopItemIdentifier();
     @Nullable
     Text getShopItemDisplay();
     @Nullable

@@ -57,7 +57,10 @@
   "player.death_chest.location": "A new death chest has been spawned at %s.",
   "player.no_backpack": "You do not have a backpack.",
   
+  "player.target.different_world": "That target is in a different world.",
+  
   "friends.rank.self": "You can't change your own rank.",
+  "friends.not_friends": "You are not friends with that player.",
   
   "town.found": "%s founded the new town of \"%s\".",
   "town.disband": "%s disbanded their town \"%s\".",
@@ -71,7 +74,8 @@
   
   "warp.random.search": "Hang tight while we find you a sweet vacation spot.",
   "warp.random.build": "Setting up your new home!",
-  "warp.random.teleported": "You are now %d blocks from Spawn. Please do not lose this warp point, as it will help you return to spawn.",
+  "warp.random.teleported": "You are now %d blocks from Spawn. Please do not lose this warp point, as it will help you return there.",
+  "warp.random.teleported_world": "You are now in a different world than spawn. Please do not lose this warp point, as it will help you return there.",
   
   "warp.notice.player.outside_spawn": "Warping is only allowed within spawn.",
   "warp.notice.target.outside_spawn": "That player isn't in spawn.",

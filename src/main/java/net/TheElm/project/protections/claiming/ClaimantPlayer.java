@@ -34,6 +34,8 @@ import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.objects.ClaimTag;
+import net.TheElm.project.utilities.FormattingUtils;
+import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
@@ -116,11 +118,11 @@ public final class ClaimantPlayer extends Claimant {
     @Override
     public final MutableText getName() {
         if (this.name == null)
-            return (this.name = this.updateName()).copy();
-        return this.name.copy();
+            return FormattingUtils.deepCopy(this.name = this.updateName());
+        return FormattingUtils.deepCopy(this.name);
     }
     public final MutableText updateName() {
-        return PlayerNameUtils.fetchPlayerNick( this.getId() );
+        return PlayerNameUtils.fetchPlayerNick(this.getId());
     }
     
     /* Send Messages */
@@ -167,9 +169,9 @@ public final class ClaimantPlayer extends Claimant {
     public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
         // Get the players town
         ClaimantTown town = null;
-        if ( tag.containsUuid("town") ) {
+        if ( NbtUtils.hasUUID(tag, "town") ) {
             try {
-                town = ClaimantTown.get( tag.getUuid("town") );
+                town = ClaimantTown.get(NbtUtils.getUUID(tag, "town"));
                 // Ensure that the town has the player in the ranks
                 if ((town != null) && town.getFriendRank(this.getId()) == null) town = null;
             } catch (NbtNotFoundException ignored) {}
@@ -196,6 +198,9 @@ public final class ClaimantPlayer extends Claimant {
     }
     public static @NotNull ClaimantPlayer get(@NotNull GameProfile profile) {
         return ClaimantPlayer.get(profile.getId());
+    }
+    public static @NotNull ClaimantPlayer get(@NotNull ServerPlayerEntity player) {
+        return ClaimantPlayer.get(player.getUuid());
     }
     
 }

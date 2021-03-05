@@ -33,7 +33,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.block.BedBlock;
-import net.minecraft.command.arguments.BlockPosArgumentType;
+import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -80,7 +80,7 @@ public final class PlayerSpawnCommand {
         
         // Log our definition
         CoreMod.logInfo("Player " + player.getName().asString() + " spawn updated to X " + bedPos.getX() + ", Z " + bedPos.getZ() + ", Y " + bedPos.getY());
-        player.setSpawnPoint(world.getRegistryKey(), bedPos, false, true);
+        player.setSpawnPoint(world.getRegistryKey(), bedPos, 0.0F, false, true);
         
         return Command.SINGLE_SUCCESS;
     }

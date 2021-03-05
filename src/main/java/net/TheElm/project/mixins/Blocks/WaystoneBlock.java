@@ -25,6 +25,7 @@
 
 package net.TheElm.project.mixins.Blocks;
 
+import net.TheElm.project.utilities.NbtUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
@@ -92,8 +93,8 @@ public abstract class WaystoneBlock extends BlockEntity implements Tickable {
     @Inject(at = @At("RETURN"), method = "fromTag")
     public void nbtRead(BlockState state, CompoundTag tag, CallbackInfo callback) {
         
-        if (tag.containsUuid("sewingWaystone"))
-            this.wayStoneOwner = tag.getUuid("sewingWaystone");
+        if (NbtUtils.hasUUID(tag, "sewingWaystone"))
+            this.wayStoneOwner = NbtUtils.getUUID(tag, "sewingWaystone");
         
     }
     

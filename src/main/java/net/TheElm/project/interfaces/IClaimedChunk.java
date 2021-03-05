@@ -25,6 +25,7 @@
 
 package net.TheElm.project.interfaces;
 
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.TranslationKeyException;
@@ -32,7 +33,9 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.text.Text;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -54,7 +57,7 @@ public interface IClaimedChunk extends Chunk {
     default ClaimantPlayer updatePlayerOwner(@Nullable UUID owner) {
         return this.updatePlayerOwner(owner, true);
     }
-    void canPlayerClaim(@NotNull ClaimantPlayer player) throws TranslationKeyException;
+    boolean canPlayerClaim(@NotNull ClaimantPlayer player, boolean stopIfClaimed) throws TranslationKeyException;
     
     @Nullable
     UUID getOwner();
@@ -65,10 +68,39 @@ public interface IClaimedChunk extends Chunk {
     @Nullable
     ClaimantTown getTown();
     
-    default Text getOwnerName(@NotNull PlayerEntity zonePlayer) {
+    default MutableText getOwnerName() {
+        return this.getOwnerName((UUID) null);
+    }
+    default MutableText getOwnerName(@Nullable UUID zonePlayer) {
+        UUID owner = this.getOwner();
+        if ( owner == null )
+            return new LiteralText(SewConfig.get(SewConfig.NAME_WILDERNESS))
+                .formatted(Formatting.GREEN);
+    
+        // Get the owner of the chunk
+        ClaimantPlayer chunkPlayer = ClaimantPlayer.get(owner);
+    
+        // Get the owners name (Colored using the relation to the zonePlayer)
+        return chunkPlayer.getName(zonePlayer);
+    }
+    default MutableText getOwnerName(@NotNull PlayerEntity zonePlayer) {
         return this.getOwnerName(zonePlayer, zonePlayer.getBlockPos());
     }
-    Text getOwnerName(@NotNull PlayerEntity zonePlayer, @NotNull BlockPos pos);
+    default MutableText getOwnerName(@NotNull PlayerEntity zonePlayer, @NotNull BlockPos pos) {
+        return this.getOwnerName(zonePlayer.getUuid(), pos);
+    }
+    default MutableText getOwnerName(@NotNull UUID zonePlayer, @NotNull BlockPos pos) {
+        UUID owner = this.getOwner(pos);
+        if ( owner == null )
+            return new LiteralText(SewConfig.get(SewConfig.NAME_WILDERNESS))
+                .formatted(Formatting.GREEN);
+        
+        // Get the owner of the chunk
+        ClaimantPlayer chunkPlayer = ClaimantPlayer.get(owner);
+        
+        // Get the owners name (Colored using the relation to the zonePlayer)
+        return chunkPlayer.getName(zonePlayer);
+    }
     
     boolean canPlayerDo(@NotNull BlockPos blockPos, @Nullable UUID player, @Nullable ClaimPermissions perm);
     boolean isSetting(@NotNull BlockPos pos, @NotNull ClaimSettings setting);
@@ -80,10 +112,10 @@ public interface IClaimedChunk extends Chunk {
     ListTag serializeSlices();
     void deserializeSlices(@NotNull ListTag serialized);
     
-    default void updateSliceOwner(UUID owner, int slicePos) {
+    default void updateSliceOwner(@Nullable UUID owner, int slicePos) {
         this.updateSliceOwner(owner, slicePos, 0, 256);
     }
-    default void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo) {
+    default void updateSliceOwner(@Nullable UUID owner, int slicePos, int yFrom, int yTo) {
         this.updateSliceOwner(owner, slicePos, yFrom, yTo, true);
     }
     void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo, boolean fresh);
