@@ -88,7 +88,7 @@ public final class ModsCommand {
             
             // Append information
             if ( authorC > 0 ) modText.append( authorText );
-            if ( !"".equals( desc ) ) modText.styled((styler) -> styler.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText(desc).formatted(Formatting.WHITE))));
+            if ( !"".equals( desc ) ) modText.styled((styler) -> styler.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText(desc).formatted(Formatting.WHITE))));
             
             // Append to lines
             output.append( modText );

@@ -29,14 +29,15 @@ import net.TheElm.project.ServerCore;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPointer;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.WorldPosition;
+import net.minecraft.util.math.Position;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
-public class WorldPos implements BlockPointer, WorldPosition {
+public class WorldPos implements BlockPointer, Position {
     
     private final RegistryKey<World> dimensionType;
     private final BlockPos blockPos;
@@ -68,16 +69,16 @@ public class WorldPos implements BlockPointer, WorldPosition {
     
     @Override
     public BlockState getBlockState() {
-        return this.getWorld().getBlockState( this.getBlockPos() );
+        return this.getWorld().getBlockState(this.getBlockPos());
     }
     
     @Override
     public <T extends BlockEntity> T getBlockEntity() {
-        return (T) this.getWorld().getBlockEntity( this.getBlockPos() );
+        return (T) this.getWorld().getBlockEntity(this.getBlockPos());
     }
     
     @Override
-    public World getWorld() {
+    public ServerWorld getWorld() {
         MinecraftServer server = ServerCore.get();
         return server.getWorld(this.dimensionType);
     }

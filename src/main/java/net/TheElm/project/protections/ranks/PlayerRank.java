@@ -56,7 +56,7 @@ public final class PlayerRank implements Comparable<PlayerRank> {
         return this.iden;
     }
     public @Nullable Text getDisplay() {
-        return this.display == null ? null : this.display.copy();
+        return this.display == null ? null : FormattingUtils.deepCopy(this.display);
     }
     
     /*

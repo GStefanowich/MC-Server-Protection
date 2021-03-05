@@ -25,42 +25,41 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.interfaces.PlayerData;
-import net.minecraft.block.NetherPortalBlock;
-import net.minecraft.block.pattern.BlockPattern;
-import net.minecraft.block.pattern.BlockPattern.TeleportTarget;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.command.CommandOutput;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.class_5459;
+import net.minecraft.entity.EntityDimensions;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Nameable;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.world.PortalForcer;
-import net.minecraft.world.World;
-import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
+import net.minecraft.world.TeleportTarget;
+import net.minecraft.world.dimension.AreaHelper;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.Random;
-
-@Mixin(PortalForcer.class)
-public abstract class Portals implements Nameable, CommandOutput {
+@Mixin(AreaHelper.class)
+public abstract class Portals {
     
-    @Shadow @Final private ServerWorld world;
-    @Shadow @Final private Random random;
+    @Inject(at = @At("HEAD"), method = "createPortal")
+    public void onCreatePortal(CallbackInfo callback) {
+    }
     
-    @Shadow
-    public native @Nullable TeleportTarget getPortal(BlockPos blockPos, Vec3d velocity, Direction direction, double x, double z, boolean isPlayer);
+    @Inject(at = @At("HEAD"), method = "method_30494")
+    private static void onX(class_5459.class_5460 arg, Direction.Axis axis, Vec3d vec3d, EntityDimensions size, CallbackInfoReturnable<Vec3d> callback) {
+    }
     
-    @Inject(at = @At("HEAD"), method = "usePortal", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "method_30484")
+    private static void onY(ServerWorld world, class_5459.class_5460 arg, Direction.Axis axis, Vec3d vec3d, EntityDimensions size, Vec3d vec3d2, float f, float g, CallbackInfoReturnable<TeleportTarget> callback) {
+    }
+    
+    /*@Shadow @Final private ServerWorld world;
+    @Shadow @Final private Random random;*/
+    
+    /*@Shadow
+    public native @Nullable TeleportTarget getPortal(BlockPos blockPos, Vec3d velocity, Direction direction, double x, double z, boolean isPlayer);*/
+    
+    /*@Inject(at = @At("HEAD"), method = "usePortal", cancellable = true)
     public void onDimensionUpdate(Entity entity, float fl, CallbackInfoReturnable<Boolean> callback) {
         Vec3d vec3d = entity.getLastNetherPortalDirectionVector();
         Direction dir = entity.getLastNetherPortalDirection();
@@ -97,7 +96,7 @@ public abstract class Portals implements Nameable, CommandOutput {
             player.networkHandler.syncWithPlayerPosition();
             callback.setReturnValue( true );
         }
-    }
+    }*/
     
     // TODO: Search for a portal that has a matching sign on it
     /*@Inject(at = @At("HEAD"), method = "getPortal", cancellable = true)

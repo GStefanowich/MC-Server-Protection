@@ -31,7 +31,7 @@ import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.NbtUtils;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.player.PlayerInventory;
-import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.CraftingResultInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.screen.AnvilScreenHandler;
@@ -69,8 +69,8 @@ public abstract class AnvilCost extends ForgingScreenHandler {
         return oldValue;
     }
     
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/inventory/Inventory.setStack(ILnet/minecraft/item/ItemStack;)V"), method = "updateResult")
-    public void onUpdateOutput(Inventory inventory, int slot, ItemStack item) {
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/inventory/CraftingResultInventory.setStack(ILnet/minecraft/item/ItemStack;)V"), method = "updateResult")
+    public void onUpdateOutput(CraftingResultInventory inventory, int slot, ItemStack item) {
         if ((!item.isEmpty()) && item.hasEnchantments()) {
             CompoundTag display = item.getOrCreateSubTag("display");;
             

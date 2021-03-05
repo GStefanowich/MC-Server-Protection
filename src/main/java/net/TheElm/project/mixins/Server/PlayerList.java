@@ -27,6 +27,7 @@ package net.TheElm.project.mixins.Server;
 
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.protections.ranks.PlayerRank;
+import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.text.LiteralText;
@@ -64,7 +65,7 @@ public abstract class PlayerList {
     public void getDisplayName(CallbackInfoReturnable<Text> callback) {
         MutableText displayName = (this.displayName == null ?
             new LiteralText(this.profile.getName()).formatted(Formatting.YELLOW)
-            : this.displayName.copy()
+            : FormattingUtils.deepCopy(this.displayName)
         );
         
         for (PlayerRank rank : RankUtils.getPlayerRanks(this.profile)) {

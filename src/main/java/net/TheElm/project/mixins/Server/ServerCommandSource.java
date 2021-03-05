@@ -36,7 +36,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(net.minecraft.server.command.ServerCommandSource.class)
-public abstract class ServerCommandSource implements CommandSource, net.minecraft.server.command.CommandSource {
+public abstract class ServerCommandSource implements CommandSource, net.minecraft.command.CommandSource {
     
     @Nullable @Shadow
     public native Entity getEntity();

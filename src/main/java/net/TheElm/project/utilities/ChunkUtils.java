@@ -49,9 +49,12 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -202,19 +205,19 @@ public final class ChunkUtils {
     /*
      * Claim slices between two areas
      */
-    public static void claimSlices(ServerWorld world, UUID player, BlockPos firstPos, BlockPos secondPos) {
+    public static void claimSlices(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockPos firstPos, @NotNull BlockPos secondPos) {
         // Get range of values
         BlockPos min = ChunkUtils.getMinimumPosition(firstPos, secondPos);
         BlockPos max = ChunkUtils.getMaximumPosition(firstPos, secondPos);
         
         // Log the blocks being claimed
-        CoreMod.logDebug("Claiming " + MessageUtils.blockPosToString(min) + " to " + MessageUtils.blockPosToString(max));
+        CoreMod.logDebug("Claiming " + MessageUtils.xyzToString(min) + " to " + MessageUtils.xyzToString(max));
         
         // Iterate through the blocks
         for (int x = min.getX(); x <= max.getX(); x++) {
             for (int z = min.getZ(); z <= max.getZ(); z++) {
-                BlockPos sliceLoc = new BlockPos( x, 0, z );
-                int slicePos = ChunkUtils.getPositionWithinChunk( sliceLoc );
+                BlockPos sliceLoc = new BlockPos(x, 0, z);
+                int slicePos = ChunkUtils.getPositionWithinChunk(sliceLoc);
                 
                 // Get the chunk
                 WorldChunk chunk = world.getWorldChunk(sliceLoc);
@@ -224,7 +227,29 @@ public final class ChunkUtils {
             }
         }
     }
-    public static boolean canPlayerClaimSlices(ServerWorld world, BlockPos firstPos, BlockPos secondPos) {
+    public static void unclaimSlices(@NotNull ServerWorld world, @NotNull BlockPos firstPos, @NotNull BlockPos secondPos) {
+        // Get range of values
+        BlockPos min = ChunkUtils.getMinimumPosition(firstPos, secondPos);
+        BlockPos max = ChunkUtils.getMaximumPosition(firstPos, secondPos);
+        
+        // Log the blocks being claimed
+        CoreMod.logDebug("Unclaiming " + MessageUtils.xyzToString(min) + " to " + MessageUtils.xyzToString(max));
+        
+        // Iterate through the blocks
+        for (int x = min.getX(); x <= max.getX(); x++) {
+            for (int z = min.getZ(); z <= max.getZ(); z++) {
+                BlockPos sliceLoc = new BlockPos(x, 0, z);
+                int slicePos = ChunkUtils.getPositionWithinChunk(sliceLoc);
+                
+                // Get the chunk
+                WorldChunk chunk = world.getWorldChunk(sliceLoc);
+                
+                ((IClaimedChunk) chunk).updateSliceOwner(null, slicePos, min.getY(), max.getY());
+            }
+        }
+    }
+    
+    public static boolean canPlayerClaimSlices(@NotNull ServerWorld world, @NotNull BlockPos firstPos, @NotNull BlockPos secondPos) {
         // Get range of values
         BlockPos min = getMinimumPosition(firstPos, secondPos);
         BlockPos max = getMaximumPosition(firstPos, secondPos);
@@ -243,14 +268,14 @@ public final class ChunkUtils {
         
         return true;
     }
-    public static BlockPos getMinimumPosition(BlockPos a, BlockPos b) {
+    public static @NotNull BlockPos getMinimumPosition(@NotNull BlockPos a, @NotNull BlockPos b) {
         return new BlockPos(
             Math.min(a.getX(), b.getX()),
             Math.min(a.getY(), b.getY()),
             Math.min(a.getZ(), b.getZ())
         );
     }
-    public static BlockPos getMaximumPosition(BlockPos a, BlockPos b) {
+    public static @NotNull BlockPos getMaximumPosition(@NotNull BlockPos a, @NotNull BlockPos b) {
         return new BlockPos(
             Math.max(a.getX(), b.getX()),
             Math.max(a.getY(), b.getY()),
@@ -329,22 +354,75 @@ public final class ChunkUtils {
      */
     public static final class ClaimSlice {
         private final NavigableMap<Integer, InnerClaim> innerChunks = Collections.synchronizedNavigableMap(new TreeMap<>());
+        private final int chunkPos;
         
-        public ClaimSlice() {
-            this.innerChunks.put( -1, new InnerClaim( null ));
+        public ClaimSlice(int chunkPos) {
+            this.innerChunks.put( -1, new InnerClaim(null));
+            this.chunkPos = chunkPos;
         }
         
-        public void set(InnerClaim claim) {
-            this.innerChunks.put( claim.lower(), claim );
+        public boolean has(int y) {
+            return !this.get(y)
+                .isBottom();
         }
-        @NotNull
-        public InnerClaim get(int y) {
-            return this.innerChunks.floorEntry( y ).getValue();
+        public boolean hasUpperNeighbor(@NotNull InnerClaim claim) {
+            return this.has(claim.upper() + 1);
         }
-        @NotNull
-        public InnerClaim get(BlockPos blockPos) {
+        public boolean hasLowerNeighbor(@NotNull InnerClaim claim) {
+            return this.has(claim.lower() - 1);
+        }
+        
+        public void set(@NotNull InnerClaim claim) {
+            this.innerChunks.put(claim.lower(), claim);
+        }
+        public void setAll(@NotNull Collection<InnerClaim> claims) {
+            for (InnerClaim claim : claims)
+                this.set(claim);
+        }
+        
+        public InnerClaim remove(@NotNull InnerClaim claim) {
+            return this.remove(claim.lower());
+        }
+        public InnerClaim remove(int y) {
+            return this.innerChunks.remove(y);
+        }
+        
+        public @NotNull InnerClaim get(int y) {
+            return this.innerChunks.floorEntry(y).getValue();
+        }
+        public @NotNull InnerClaim get(BlockPos blockPos) {
             return this.get(blockPos.getY());
         }
+        
+        public void insert(@Nullable UUID owner, int upper, int lower) {
+            this.displace(new InnerClaim(owner, upper, lower));
+        }
+        public void displace(@NotNull InnerClaim newClaim) {
+            List<InnerClaim> updates = new ArrayList<>();
+            Iterator<InnerClaim> intersects = this.innerChunks.subMap(newClaim.lower(), true, newClaim.upper(), true)
+                .values()
+                .iterator();
+            while (intersects.hasNext()) {
+                InnerClaim claim = intersects.next();
+                if (claim.upper() <= newClaim.upper() && claim.lower() >= newClaim.lower()) {
+                    intersects.remove();
+                    continue;
+                }
+                
+                if (claim.upper() > newClaim.upper())
+                    updates.add(new InnerClaim(claim.getOwner(), claim.upper(), newClaim.upper()));
+                if (claim.lower() < newClaim.lower())
+                    updates.add(new InnerClaim(claim.getOwner(), newClaim.lower(), claim.lower()));
+            }
+            
+            // Add updated regions into the heightmap
+            this.setAll(updates);
+            
+            // Don't save unclaimed regions into the heightmap
+            if (newClaim.getOwner() != null)
+                this.set(newClaim);
+        }
+        
         public void reset() {
             Iterator<Map.Entry<Integer, InnerClaim>> it = this.innerChunks.entrySet().iterator();
             while ( it.hasNext() ) {
@@ -363,13 +441,12 @@ public final class ChunkUtils {
     }
     public static final class InnerClaim implements Claim {
         
-        @Nullable
-        private final ClaimantPlayer owner;
+        private final @Nullable ClaimantPlayer owner;
         private final int yUpper;
         private final int yLower;
         
         public InnerClaim(@Nullable UUID owner) {
-            this( owner, -1, -1 );
+            this(owner, -1, -1);
         }
         public InnerClaim(@Nullable UUID owner, int upper, int lower) {
             this.owner = (owner == null ? null : ClaimantPlayer.get( owner ));
@@ -377,12 +454,18 @@ public final class ChunkUtils {
             this.yLower = Math.max( lower, -1 );
         }
         
-        @Nullable
-        public UUID getOwner() {
+        public boolean isBottom() {
+            return this.upper() == -1 && this.lower() == -1;
+        }
+        public boolean hasOwner() {
+            return this.getOwner() != null;
+        }
+        public @Nullable UUID getOwner() {
             if (this.owner == null)
                 return null;
             return this.owner.getId();
         }
+        
         public int upper() {
             return this.yUpper;
         }

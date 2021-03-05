@@ -31,7 +31,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.commands.ArgumentTypes.PermissionArgumentType;
+import net.TheElm.project.commands.ArgumentTypes.ArgumentSuggestions;
 import net.TheElm.project.config.SewConfig;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -43,15 +43,15 @@ public final class PermissionCommand {
             .requires((source) -> SewConfig.get(SewConfig.HANDLE_PERMISSIONS) && source.hasPermissionLevel( 2 ))
             .then(CommandManager.literal("help")
                 .then(CommandManager.argument("permission", StringArgumentType.word())
-                    .suggests( PermissionArgumentType::suggestsNodes )
+                    .suggests( ArgumentSuggestions::suggestNodes)
                     .executes( PermissionCommand::nodeInfo )
                 )
             )
             .then(CommandManager.literal("add")
                 .then(CommandManager.argument("rank", StringArgumentType.word())
-                    .suggests( PermissionArgumentType::suggestsRanks )
+                    .suggests( ArgumentSuggestions::suggestRanks)
                     .then(CommandManager.argument("permission", StringArgumentType.word())
-                        .suggests( PermissionArgumentType::suggestsNodes )
+                        .suggests( ArgumentSuggestions::suggestNodes)
                         .executes( PermissionCommand::addNodeToRank )
                     )
                     .executes( PermissionCommand::addRank )
@@ -59,9 +59,9 @@ public final class PermissionCommand {
             )
             .then(CommandManager.literal("remove")
                 .then(CommandManager.argument("rank", StringArgumentType.word())
-                    .suggests( PermissionArgumentType::suggestsRanks )
+                    .suggests( ArgumentSuggestions::suggestRanks)
                     .then(CommandManager.argument("permission", StringArgumentType.word())
-                        .suggests( PermissionArgumentType::suggestsNodes )
+                        .suggests( ArgumentSuggestions::suggestNodes)
                         .executes( PermissionCommand::delNodeFromRank )
                     )
                     .executes( PermissionCommand::delRank )

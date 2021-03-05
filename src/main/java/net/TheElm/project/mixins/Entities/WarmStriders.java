@@ -23,18 +23,32 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.config.defaults;
+package net.TheElm.project.mixins.Entities;
 
-import com.google.gson.JsonElement;
-import net.TheElm.project.config.ConfigOption;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.entity.ai.goal.MoveToTargetPosGoal;
+import net.minecraft.entity.ai.pathing.NavigationType;
+import net.minecraft.entity.mob.PathAwareEntity;
+import net.minecraft.tag.BlockTags;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.WorldView;
+import org.spongepowered.asm.mixin.Mixin;
 
-public class ConfigString extends ConfigOption<String> {
-    public ConfigString(@NotNull String location) {
-        super(location, JsonElement::getAsString);
+@Mixin(targets = "net/minecraft/entity/passive/StriderEntity$GoBackToLavaGoal")
+public abstract class WarmStriders extends MoveToTargetPosGoal {
+    
+    public WarmStriders(PathAwareEntity mob, double speed, int range) {
+        super(mob, speed, range);
     }
-    public ConfigString(@NotNull String location, @Nullable String defaultValue) {
-        super(location, defaultValue, JsonElement::getAsString);
+    
+    /**
+     * Change testing of LAVA blocks to WARM_BLOCKS
+     * @author TheElm
+     * @param world
+     * @param pos
+     * @return
+     */
+    @Override
+    public boolean isTargetPos(WorldView world, BlockPos pos) {
+        return world.getBlockState(pos).isIn(BlockTags.STRIDER_WARM_BLOCKS) && world.getBlockState(pos.up()).canPathfindThrough(world, pos, NavigationType.LAND);
     }
 }

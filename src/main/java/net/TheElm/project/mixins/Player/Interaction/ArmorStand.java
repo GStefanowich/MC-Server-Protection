@@ -32,6 +32,7 @@ import net.TheElm.project.interfaces.PlayerCorpse;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
+import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.fabricmc.fabric.api.util.NbtType;
@@ -328,8 +329,8 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     }
     @Inject(at=@At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
-        if ( tag.containsUuid( "corpsePlayerUUID" ) ) {
-            this.corpsePlayerUUID = tag.getUuid("corpsePlayerUUID");
+        if ( NbtUtils.hasUUID(tag, "corpsePlayerUUID") ) {
+            this.corpsePlayerUUID = NbtUtils.getUUID(tag, "corpsePlayerUUID");
             if (tag.contains("corpsePlayerItems", NbtType.LIST))
                 this.corpsePlayerItems = tag.getList("corpsePlayerItems", NbtType.COMPOUND);
             if (tag.contains("corpsePlayerBackpack", NbtType.LIST))

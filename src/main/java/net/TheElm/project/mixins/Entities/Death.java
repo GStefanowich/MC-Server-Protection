@@ -39,6 +39,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
+import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -50,6 +51,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Nameable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
@@ -207,11 +209,16 @@ public abstract class Death extends Entity {
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
     public void onDamage(DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
         // Ignore if running as the client
-        if ((this.world.isClient) || (this.world.getRegistryKey() != World.END))
+        if (this.world.isClient)
             return;
         
-        World overWorld = ServerCore.getWorld(World.OVERWORLD);
-        if (source.isOutOfWorld())
-            WarpUtils.teleportEntity(overWorld, this, new BlockPos(this.getX(), 400, this.getZ()));
+        if (source.equals(DamageSource.OUT_OF_WORLD) && World.isOutOfBuildLimitVertically(this.getBlockPos())) {
+            if (World.END.equals(this.world.getRegistryKey()) && SewConfig.get(SewConfig.END_FALL_FROM_SKY))
+                WarpUtils.teleportEntity(ServerCore.getWorld(World.OVERWORLD), this, new BlockPos(this.getX(), 400, this.getZ()));
+            else if (SewConfig.get(SewConfig.VOID_FALL_TO_SPAWN) && !((Nameable)this instanceof HostileEntity)) // Teleport to the spawn world
+                WarpUtils.teleportEntity(ServerCore.getWorld(SewConfig.get(SewConfig.DEFAULT_WORLD)), this);
+            else return;
+            callback.cancel();
+        }
     }
 }

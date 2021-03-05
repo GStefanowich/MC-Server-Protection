@@ -30,6 +30,7 @@ import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.minecraft.block.Block;
 import net.minecraft.client.options.ChatVisibility;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -52,6 +53,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.GameRules;
@@ -136,7 +138,7 @@ public final class MessageUtils {
         // Get the players in the area
         BlockPos outerA = new BlockPos(blockPos.getX() + 800, 0, blockPos.getZ() + 800);
         BlockPos outerB = new BlockPos(blockPos.getX() - 800, 800, blockPos.getZ() - 800);
-        List<ServerPlayerEntity> players = world.getEntities(ServerPlayerEntity.class, new Box(outerA, outerB), EntityPredicates.VALID_ENTITY);
+        List<ServerPlayerEntity> players = world.getEntitiesByClass(ServerPlayerEntity.class, new Box(outerA, outerB), EntityPredicates.VALID_ENTITY);
         
         // Send the message to the players
         MessageUtils.sendChat(
@@ -255,11 +257,11 @@ public final class MessageUtils {
     }
     
     // Convert a Block Position to a Text component
-    public static MutableText blockPosToTextComponent(final BlockPos pos) {
-        return MessageUtils.blockPosToTextComponent(pos, ", ");
+    public static MutableText xyzToText(final BlockPos pos) {
+        return MessageUtils.xyzToText(pos, ", ");
     }
-    public static MutableText blockPosToTextComponent(final BlockPos pos, final Identifier id) {
-        MutableText out = blockPosToTextComponent(pos);
+    public static MutableText xyzToText(final BlockPos pos, final Identifier id) {
+        MutableText out = xyzToText(pos);
         
         // Get the dimension
         RegistryKey<World> dimension = RegistryKey.of(Registry.DIMENSION, id);
@@ -271,7 +273,7 @@ public final class MessageUtils {
         
         return out;
     }
-    public static MutableText blockPosToTextComponent(final BlockPos pos, final String separator) {
+    public static MutableText xyzToText(final BlockPos pos, final String separator) {
         return MessageUtils.dimensionToTextComponent( separator, pos.getX(), pos.getY(), pos.getZ() );
     }
     public static MutableText dimensionToTextComponent(final String separator, final int x, final int y, final int z) {
@@ -300,34 +302,53 @@ public final class MessageUtils {
         return base;
     }
     
-    public static String blockPosToString(final BlockPos pos) {
-        return MessageUtils.blockPosToString(pos, ", ");
+    public static String xyzToString(final BlockPos pos) {
+        return MessageUtils.xyzToString(pos, ", ");
     }
-    public static String blockPosToString(final BlockPos pos, final String separator) {
-        return MessageUtils.blockPosToString(separator, pos.getX(), pos.getY(), pos.getZ());
+    public static String xyzToString(final BlockPos pos, final String separator) {
+        return MessageUtils.xyzToString(separator, pos.getX(), pos.getY(), pos.getZ());
     }
-    public static String blockPosToString(final String separator, final int x, final int y, final int z) {
-        return String.join( separator, MessageUtils.posToString( x, y, z ));
+    public static String xyzToString(final String separator, final int x, final int y, final int z) {
+        return String.join(separator, MessageUtils.posToString( x, y, z ));
     }
     
+    public static String xzToString(final BlockPos pos) {
+        return MessageUtils.xzToString(", ", pos.getX(), pos.getZ());
+    }
+    public static String xzToString(final ChunkPos pos) {
+        return MessageUtils.xzToString(pos, ", ");
+    }
+    public static String xzToString(final ChunkPos pos, final String separator) {
+        return MessageUtils.xzToString(separator, pos.getRegionX(), pos.getRegionZ());
+    }
+    public static String xzToString(final String separator, final int x, final int z) {
+        return String.join(separator,MessageUtils.posToString(x, z));
+    }
+    
+    private static String[] posToString(final int x, final int z) {
+        return new String[]{
+            String.valueOf(x),
+            String.valueOf(z)
+        };
+    }
     private static String[] posToString(final int x, final int y, final int z) {
         return new String[]{
-            String.valueOf( x ),
-            String.valueOf( y ),
-            String.valueOf( z )
+            String.valueOf(x),
+            String.valueOf(y),
+            String.valueOf(z)
         };
     }
     
     // Format a message to chat from a player
-    public static MutableText formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, String raw) {
+    public static @NotNull MutableText formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, String raw) {
         return MessageUtils.formatPlayerMessage(player, chatRoom, new LiteralText(raw));
     }
-    public static MutableText formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, Text text) {
-        return PlayerNameUtils.getPlayerChatDisplay( player, chatRoom )
-            .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
+    public static @NotNull MutableText formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, Text text) {
+        return PlayerNameUtils.getPlayerChatDisplay(player, chatRoom)
+            .append(new LiteralText(": ").formatted(Formatting.GRAY))
             .append(ColorUtils.format(text, chatRoom.getFormatting()));
     }
-    public static MutableText formatPlayerMessage(ServerCommandSource source, ChatRooms chatRoom, Text text) {
+    public static @NotNull MutableText formatPlayerMessage(@NotNull ServerCommandSource source, ChatRooms chatRoom, Text text) {
         if (source.getEntity() instanceof ServerPlayerEntity)
             return MessageUtils.formatPlayerMessage((ServerPlayerEntity) source.getEntity(), chatRoom, text);
         return PlayerNameUtils.getServerChatDisplay( chatRoom )
@@ -335,12 +356,22 @@ public final class MessageUtils {
             .append(ColorUtils.format(text, chatRoom.getFormatting()));
     }
     
+    public static @NotNull MutableText formatObject(@NotNull Item item) {
+        return new TranslatableText(item.getTranslationKey()).formatted(Formatting.AQUA);
+    }
+    public static @NotNull MutableText formatObject(@NotNull Block block) {
+        return new TranslatableText(block.getTranslationKey()).formatted(Formatting.AQUA);
+    }
+    public static @NotNull MutableText formatNumber(int number) {
+        return new LiteralText(FormattingUtils.number(number)).formatted(Formatting.AQUA);
+    }
+    
     // Text Events
-    public static UnaryOperator<Style> simpleHoverText(String text, Formatting... styled) {
+    public static @NotNull UnaryOperator<Style> simpleHoverText(@NotNull String text, @NotNull Formatting... styled) {
         return MessageUtils.simpleHoverText(new LiteralText(text).formatted(styled));
     }
-    public static UnaryOperator<Style> simpleHoverText(Text text) {
-        return style -> style.setHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, text));
+    public static @NotNull UnaryOperator<Style> simpleHoverText(@NotNull Text text) {
+        return style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, text));
     }
     
     // Item text details

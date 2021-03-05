@@ -56,6 +56,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
@@ -176,7 +177,7 @@ public final class WarpUtils {
     }
     public boolean build(final ServerPlayerEntity player, final ServerWorld world, final boolean dropBlocks) {
         // Get the area of blocks to claim
-        if (!ChunkUtils.canPlayerClaimSlices( world, this.region.getLeft(), this.region.getRight() ))
+        if (!ChunkUtils.canPlayerClaimSlices(world, this.region.getLeft(), this.region.getRight()))
             return false;
         
         // Claim the defined slices in the name of Spawn
@@ -188,46 +189,46 @@ public final class WarpUtils {
         final BlockState air = Blocks.AIR.getDefaultState();
         
         // Light-source blocks
-        final BlockState light = Blocks.SEA_LANTERN.getDefaultState();
-        BlockPos[] lightBlocks = new BlockPos[]{
+        final BlockState decLight = Blocks.SHROOMLIGHT.getDefaultState();
+        BlockPos[] decLightBlocks = new BlockPos[]{
             new BlockPos( this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() + 1 ),
             new BlockPos( this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1 ),
             new BlockPos( this.createWarpAt.getX() - 1, this.createWarpAt.getY(), this.createWarpAt.getZ() + 1 ),
             new BlockPos( this.createWarpAt.getX() - 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1 )
         };
-        for ( BlockPos blockPos : lightBlocks ) {
+        for ( BlockPos blockPos : decLightBlocks ) {
             structure.addBlock(blockPos.up( 1 ), air);
             structure.addBlock(blockPos.up( 2 ), air);
-            structure.addBlock(blockPos, light);
+            structure.addBlock(blockPos, decLight);
         }
         
         // Andesite blocks
-        final BlockState andesite = Blocks.ANDESITE.getDefaultState();
-        BlockPos[] andesiteBlocks = new BlockPos[]{
+        final BlockState decJewel = Blocks.POLISHED_BLACKSTONE.getDefaultState();
+        BlockPos[] decJewelBlocks = new BlockPos[]{
             this.createWarpAt.offset(Direction.NORTH),
             this.createWarpAt.offset(Direction.SOUTH),
             this.createWarpAt.offset(Direction.EAST),
             this.createWarpAt.offset(Direction.WEST)
         };
-        for ( BlockPos blockPos : andesiteBlocks ) {
-            structure.addBlock( blockPos.up( 1 ), air );
-            structure.addBlock( blockPos.up( 2 ), air );
-            structure.addBlock( blockPos, andesite );
+        for ( BlockPos blockPos : decJewelBlocks ) {
+            structure.addBlock(blockPos.up( 1 ), air);
+            structure.addBlock(blockPos.up( 2 ), air);
+            structure.addBlock(blockPos, decJewel);
         }
         
         // Diorite blocks
-        final BlockState diorite = Blocks.POLISHED_DIORITE.getDefaultState();
-        BlockPos[] dioriteBlocks = new BlockPos[]{
+        final BlockState decBelowPlate = Blocks.CHISELED_POLISHED_BLACKSTONE.getDefaultState();
+        BlockPos[] decBelowPlateBlocks = new BlockPos[]{
             this.createWarpAt
         };
-        for ( BlockPos blockPos : dioriteBlocks ) {
-            structure.addBlock( blockPos.up( 1 ), air );
-            structure.addBlock( blockPos.up( 2 ), air );
-            structure.addBlock( blockPos, diorite );
+        for ( BlockPos blockPos : decBelowPlateBlocks ) {
+            structure.addBlock(blockPos.up( 1 ), air);
+            structure.addBlock(blockPos.up( 2 ), air);
+            structure.addBlock(blockPos, decBelowPlate);
         }
         
         // Bedrock blocks
-        final BlockState bedrock = Blocks.BEDROCK.getDefaultState();
+        final BlockState decSupport = Blocks.BEDROCK.getDefaultState();
         BlockPos[] bedrockBlocks = new BlockPos[]{
             this.createWarpAt.down( 2 ),
             new BlockPos( this.createWarpAt.getX() + 1, this.createWarpAt.getY() - 1, this.createWarpAt.getZ() ),
@@ -236,7 +237,7 @@ public final class WarpUtils {
             new BlockPos( this.createWarpAt.getX(), this.createWarpAt.getY() - 1, this.createWarpAt.getZ() - 1 )
         };
         for ( BlockPos blockPos : bedrockBlocks ) {
-            structure.addBlock( blockPos, bedrock );
+            structure.addBlock(blockPos, decSupport);
         }
         
         // Command blocks
@@ -392,7 +393,7 @@ public final class WarpUtils {
             entity = vehicle;
         }
     }
-    public static void teleportEntity(@NotNull final World world, @NotNull Entity entity, @NotNull final BlockPos tpPos) {
+    public static void teleportEntity(@NotNull final ServerWorld world, @NotNull Entity entity, @NotNull final BlockPos tpPos) {
         // Must be a ServerWorld
         if (world.isClient) return;
         
@@ -405,7 +406,12 @@ public final class WarpUtils {
             z = tpPos.getZ() + 0.5D;
         
         // Set the teleport ticket
-        ((ServerWorld) world).getChunkManager().addTicket(ChunkTicketType.field_19347, chunkPos, 1, entity.getEntityId());
+        world.getChunkManager()
+            .addTicket(ChunkTicketType.POST_TELEPORT, chunkPos, 1, entity.getEntityId());
+        
+        // Reset velocity before teleporting
+        entity.setVelocity(Vec3d.ZERO);
+        entity.fallDistance = 0.0F;
         
         if (entity instanceof ServerPlayerEntity) {
             ServerPlayerEntity player = (ServerPlayerEntity)entity;
@@ -420,7 +426,7 @@ public final class WarpUtils {
                 player.networkHandler.requestTeleport(x, y, z, player.yaw, player.pitch);
                 player.networkHandler.syncWithPlayerPosition();
             } else {
-                player.teleport(((ServerWorld) world), x, y, z, player.yaw, player.pitch);
+                player.teleport(world, x, y, z, player.yaw, player.pitch);
             }
         } else {
             float i = MathHelper.wrapDegrees( entity.yaw );
@@ -442,7 +448,7 @@ public final class WarpUtils {
                 entity.copyFrom(copyFrom);
                 entity.refreshPositionAndAngles(x, y, z, i,j);
                 entity.setHeadYaw( i );
-                ((ServerWorld) world).onDimensionChanged(entity);
+                world.onDimensionChanged(entity);
                 copyFrom.removed = true;
             }
         }
@@ -453,13 +459,13 @@ public final class WarpUtils {
             entity.setOnGround(true);
         }
     }
-    public static void teleportEntity(@NotNull final World world, @NotNull Entity entity) {
+    public static void teleportEntity(@NotNull final ServerWorld world, @NotNull Entity entity) {
         WarpUtils.teleportEntity(world, entity, ServerCore.getSpawn(world));
     }
     public static void teleportEntity(@NotNull RegistryKey<World> dimension, @NotNull Entity entity) {
         WarpUtils.teleportEntity(ServerCore.getWorld(dimension), entity);
     }
-    private static void teleportFriendlies(@NotNull final World world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
+    private static void teleportFriendlies(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
         BlockPos playerPos = player.getBlockPos();
         int x = playerPos.getX(),
             y = playerPos.getY(),

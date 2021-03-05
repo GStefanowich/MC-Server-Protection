@@ -25,9 +25,12 @@
 
 package net.TheElm.project.utilities;
 
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ClaimPermissions;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.block.AnvilBlock;
 import net.minecraft.block.BarrelBlock;
 import net.minecraft.block.BeaconBlock;
@@ -89,6 +92,7 @@ import net.minecraft.entity.passive.SquidEntity;
 import net.minecraft.entity.passive.TropicalFishEntity;
 import net.minecraft.entity.passive.TurtleEntity;
 import net.minecraft.entity.passive.VillagerEntity;
+import net.minecraft.entity.passive.WanderingTraderEntity;
 import net.minecraft.entity.passive.WolfEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.vehicle.ChestMinecartEntity;
@@ -102,6 +106,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
@@ -169,8 +174,7 @@ public final class EntityUtils {
             return SoundEvents.BLOCK_BEEHIVE_DRIP;
         return EntityUtils.getDefaultLockSound();
     }
-    @Nullable
-    public static SoundEvent getLockSound(Entity entity) {
+    public static @Nullable SoundEvent getLockSound(Entity entity) {
         // Locked blocks
         if (entity instanceof MinecartEntity || entity instanceof HopperMinecartEntity || entity instanceof FurnaceMinecartEntity)
             return SoundEvents.BLOCK_IRON_DOOR_OPEN;
@@ -243,16 +247,14 @@ public final class EntityUtils {
     /*
      * Get Lock Permissions
      */
-    @Nullable
-    public static ClaimPermissions getLockPermission(BlockEntity block) {
+    public static @Nullable ClaimPermissions getLockPermission(BlockEntity block) {
         if (block instanceof JukeboxBlockEntity)
             return ClaimPermissions.STORAGE;
         if ( block instanceof LockableContainerBlockEntity )
             return ClaimPermissions.STORAGE;
         return null;
     }
-    @Nullable
-    public static ClaimPermissions getLockPermission(@NotNull Block block) {
+    public static @Nullable ClaimPermissions getLockPermission(@NotNull Block block) {
         // Crafting Blocks
         if ( block instanceof FletchingTableBlock )
             return ClaimPermissions.CRAFTING;
@@ -395,27 +397,62 @@ public final class EntityUtils {
     }
     
     /*
+     * Wandering Traders
+     */
+    public static void wanderingTraderArrival(@NotNull WanderingTraderEntity trader) {
+        World world = trader.getEntityWorld();
+        IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(trader.getBlockPos());
+        ClaimantTown town;
+        
+        MutableText pos;
+        if (CoreMod.spawnID.equals(chunk.getOwner()))
+            pos = new LiteralText("Spawn")
+                .formatted(Formatting.AQUA);
+        else if ((town = chunk.getTown()) != null)
+            pos = town.getName()
+                .styled(style -> style.withHoverEvent(town.getHoverText()).withColor(Formatting.AQUA));
+        else if (chunk.getOwner() != null)
+            pos = chunk.getOwnerName()
+                .formatted(Formatting.AQUA);
+        else pos = MessageUtils.xyzToText(trader.getBlockPos())
+                .formatted(Formatting.AQUA);
+        
+        MessageUtils.sendToAll(new LiteralText("The ")
+            .formatted(Formatting.YELLOW)
+            .append(new LiteralText("Wandering Trader").formatted(Formatting.BOLD, Formatting.BLUE))
+            .append(" has arrived at ")
+            .append(pos)
+            .append("."));
+    }
+    public static void wanderingTraderDeparture(@NotNull WanderingTraderEntity trader) {
+        MessageUtils.sendToAll(new LiteralText("The ")
+            .formatted(Formatting.YELLOW)
+            .append(new LiteralText("Wandering Trader").formatted(Formatting.BOLD, Formatting.BLUE))
+            .append(" has departed."));
+    }
+    
+    /*
      * World
      */
-    public static boolean isInOverworld(PlayerEntity player) {
+    public static boolean isInOverworld(@NotNull Entity player) {
         return EntityUtils.isIn(player, World.OVERWORLD);
     }
-    public static boolean isNotInOverworld(PlayerEntity player) {
+    public static boolean isNotInOverworld(@NotNull Entity player) {
         return !EntityUtils.isInOverworld(player);
     }
-    public static boolean isInNether(PlayerEntity player) {
+    public static boolean isInNether(@NotNull Entity player) {
         return EntityUtils.isIn(player, World.NETHER);
     }
-    public static boolean isNotInNether(PlayerEntity player) {
+    public static boolean isNotInNether(@NotNull Entity player) {
         return !EntityUtils.isInNether(player);
     }
-    public static boolean isInTheEnd(PlayerEntity player) {
+    public static boolean isInTheEnd(@NotNull Entity player) {
         return EntityUtils.isIn(player, World.END);
     }
-    public static boolean isNotInTheEnd(PlayerEntity player) {
+    public static boolean isNotInTheEnd(@NotNull Entity player) {
         return !EntityUtils.isInTheEnd(player);
     }
-    private static boolean isIn(PlayerEntity player, RegistryKey<World> world) {
+    private static boolean isIn(@NotNull Entity player, RegistryKey<World> world) {
         return player.world.getRegistryKey().equals(world);
     }
     

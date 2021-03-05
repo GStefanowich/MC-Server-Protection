@@ -107,8 +107,6 @@ public final class DragonLoot {
             DragonLoot.bookReward(10, Enchantments.UNBREAKING, 9);
             DragonLoot.bookReward(4, Enchantments.UNBREAKING, 10);
         }
-        
-        // TODO: Add a Callable for config reloads
     }
     
     private static @NotNull WeightedReward itemReward(int weight, Item item) {

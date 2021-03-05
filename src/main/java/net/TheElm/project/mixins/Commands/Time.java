@@ -29,6 +29,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.command.TimeCommand;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.TranslatableText;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
@@ -43,15 +44,16 @@ public class Time {
      * @return Returns the time remainder
      */
     @Overwrite
-    public static int executeSet(ServerCommandSource source, int time) {
-        ServerWorld world = source.getWorld();
+    public static int executeSet(@NotNull ServerCommandSource source, int time) {
+        for (ServerWorld world : source.getMinecraftServer().getWorlds()) {
+            long newTime = 24000L * Math.round(Math.abs(world.getTimeOfDay() / 24000L));
+            world.setTimeOfDay(newTime + time);
+        }
         
-        long newTime = 24000L * Math.round(Math.abs( world.getTimeOfDay() / 24000L ));
-        world.setTimeOfDay( newTime + time );
         source.sendFeedback(new TranslatableText("commands.time.set", time), true);
         
         // Return the time remainder
-        return (int)(world.getTimeOfDay() % 24000L);
+        return (int)(source.getWorld().getTimeOfDay() % 24000L);
     }
     
 }

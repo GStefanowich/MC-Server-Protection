@@ -38,11 +38,9 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ExperienceOrbEntity.class)
 public abstract class Clumps extends Entity {
     
+    @Shadow private int health;
     @Shadow private int amount;
     @Shadow public int orbAge;
-    
-    @Shadow
-    public abstract int getExperienceAmount();
     
     public Clumps(EntityType<?> entityType_1, World world_1) {
         super(entityType_1, world_1);
@@ -50,52 +48,21 @@ public abstract class Clumps extends Entity {
     
     @Inject(at = @At("TAIL"), method = "tick")
     public void onTick(CallbackInfo callback) {
-        if (!this.world.isClient) {
+        if (!this.world.isClient && !this.removed && this.world.getTime() % 4 == 0) {
             // Get orbs of same tile
-            this.world.getEntities(
+            this.world.getEntitiesByClass(
                 ExperienceOrbEntity.class,
-                this.getBoundingBox(),
+                this.getBoundingBox()
+                    .expand(1.0D),
                 (orb -> (!orb.getUuid().equals(this.getUuid())) && orb.isAlive())
             ).stream().filter((orb) -> {
                 // Get where found orbs are younger than the current (Let the oldest live)
                 return orb.orbAge < this.orbAge;
             }).findAny().ifPresent((orb) -> {
-                // Remove the orbs
-                orb.remove();
-                this.remove();
-                
-                // Spawn a new orb
-                world.spawnEntity(new ExperienceOrbEntity(
-                    world,
-                    this.getX(),
-                    this.getY(),
-                    this.getZ(),
-                    this.getExperienceAmount() + orb.getExperienceAmount()
-                ));
+                this.amount += orb.getExperienceAmount(); // Add that orb to this
+                orb.remove(); // Remove the orb
             });
         }
     }
-    
-    /*@Redirect(at = @At(value = "INVOKE", target = "Lnet/minecraft/enchantment/EnchantmentHelper;chooseEquipmentWith(Lnet/minecraft/enchantment/Enchantment;Lnet/minecraft/entity/LivingEntity;)Ljava/util/Map$Entry;"), method = "onPlayerCollision")
-    public Entry<EquipmentSlot, ItemStack> getRandomMendable(Enchantment enchantment, PlayerEntity entity) {
-        // Get all equipment from the player with the enchantment
-        Map<EquipmentSlot, ItemStack> equipment = enchantment.getEquipment(entity);
-        if (equipment.isEmpty())
-            return null;
-        
-        int most = 0;
-        Entry<EquipmentSlot, ItemStack> slot = null;
-        
-        for (Entry<EquipmentSlot, ItemStack> entry : equipment.entrySet()) {
-            ItemStack stack = entry.getValue();
-            if ((!stack.isEmpty()) && (EnchantmentHelper.getLevel(enchantment, stack) > 0)) {
-                int damage = stack.getDamage();
-                if ((damage >= most) && ((most = damage) > 0))
-                    slot = entry;
-            }
-        }
-        
-        return slot;
-    }*/ 
     
 }

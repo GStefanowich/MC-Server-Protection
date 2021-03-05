@@ -29,31 +29,31 @@ import net.minecraft.entity.Entity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.item.SpawnEggItem;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.village.TradeOffer;
 import net.minecraft.village.TradeOffers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
 import java.util.Random;
 
 public class TradeUtils {
     
-    public static TradeOffers.Factory createSellItem(int countWants, Item itemWants, int countOffers, Item itemOffers, int maxTrades) {
+    public static TradeOffers.Factory createSellItem(int countWants, @NotNull Item itemWants, int countOffers, @NotNull Item itemOffers, int maxTrades) {
         return new SellTradeFactory(itemWants, countWants, itemOffers, countOffers, maxTrades);
     }
-    public static TradeOffers.Factory createSellItem(int countWants1, Item itemWants1, int countWants2, Item itemWants2, int countOffers, Item itemOffers, int maxTrades) {
+    public static TradeOffers.Factory createSellItem(int countWants1, @NotNull Item itemWants1, int countWants2, @NotNull Item itemWants2, int countOffers, @NotNull Item itemOffers, int maxTrades) {
         return new SellTradeFactory(itemWants1, countWants1, itemWants2, countWants2, itemOffers, countOffers, maxTrades);
     }
     public static TradeOffers.Factory createSellItem(int countEmeralds, int countOffers, Item itemOffers, int maxTrades) {
         return TradeUtils.createSellItem(countEmeralds, Items.EMERALD, countOffers, itemOffers, maxTrades);
     }
-    public static TradeOffers.Factory createSellSpawnEgg(int minimumEmeralds, Item itemOffers, int maxTrades) {
-        return new EggTradeFactory(itemOffers, minimumEmeralds,maxTrades);
+    public static TradeOffers.Factory createSellSpawnEgg(int minimumEmeralds, @NotNull Item itemOffers, int maxTrades) {
+        if (!(itemOffers instanceof SpawnEggItem))
+            throw new IllegalArgumentException("Provided trade item is not a Spawn Egg.");
+        return new EggTradeFactory((SpawnEggItem) itemOffers, minimumEmeralds,maxTrades);
     }
     
     private static class SellTradeFactory implements TradeOffers.Factory {
@@ -99,12 +99,12 @@ public class TradeUtils {
         }
     }
     private static class EggTradeFactory implements TradeOffers.Factory {
-        private final Item spawnEgg;
+        private final SpawnEggItem spawnEgg;
         private final int minimumCost;
         
         private final int maxTrades;
         
-        private EggTradeFactory(@NotNull Item spawnEgg, int minimumCost, int maxTrades) {
+        private EggTradeFactory(@NotNull SpawnEggItem spawnEgg, int minimumCost, int maxTrades) {
             this.spawnEgg = spawnEgg;
             this.minimumCost = minimumCost;
             
@@ -115,11 +115,13 @@ public class TradeUtils {
         public TradeOffer create(Entity entity, Random random) {
             ItemStack spawnEgg = new ItemStack(this.spawnEgg, 1);
             
-            if (this.spawnEgg.equals(Items.WANDERING_TRADER_SPAWN_EGG)) {
+            if (!this.spawnEgg.equals(Items.WANDERING_TRADER_SPAWN_EGG))
+                ItemUtils.setLore(spawnEgg, new LiteralText("You can hear a ")
+                    .append(new TranslatableText(this.spawnEgg.getEntityType(null).getTranslationKey()))
+                    .append(" rumbling around inside."));
+            else {
                 spawnEgg.setCustomName(new TranslatableText(Items.EGG.getTranslationKey()));
-                
-                CompoundTag display = spawnEgg.getOrCreateSubTag("display");
-                display.put("Lore", NbtUtils.toList(Collections.singleton(new LiteralText("I 'wander' where this came from?")), Text.Serializer::toJson));
+                ItemUtils.setLore(spawnEgg, new LiteralText("I 'wander' where this came from?"));
             }
             
             return new TradeOffer(

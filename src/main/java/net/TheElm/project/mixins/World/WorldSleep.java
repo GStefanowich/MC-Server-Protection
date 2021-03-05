@@ -33,6 +33,7 @@ import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.IntUtils;
 import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.SleepUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.minecraft.entity.Entity;
@@ -41,7 +42,9 @@ import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
+import net.minecraft.util.ProgressListener;
 import net.minecraft.util.profiler.Profiler;
+import net.minecraft.util.registry.DynamicRegistryManager;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.MutableWorldProperties;
@@ -49,6 +52,7 @@ import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.ServerWorldProperties;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -67,18 +71,18 @@ import java.util.function.Supplier;
 
 @Mixin(ServerWorld.class)
 public abstract class WorldSleep extends World implements SleepingWorld, ServerWorldAccess {
-    
     // Shadows from ServerWorld
     @Shadow @Final private List<ServerPlayerEntity> players;
     @Shadow @Final private ServerWorldProperties worldProperties;
     @Shadow private boolean allPlayersSleeping;
     
-    protected WorldSleep(MutableWorldProperties mutableWorldProperties, RegistryKey<World> registryKey, RegistryKey<DimensionType> registryKey2, DimensionType dimensionType, Supplier<Profiler> profiler, boolean bl, boolean bl2, long l) {
-        super(mutableWorldProperties, registryKey, registryKey2, dimensionType, profiler, bl, bl2, l);
+    protected WorldSleep(MutableWorldProperties properties, RegistryKey<World> registryRef, final DimensionType dimensionType, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long seed) {
+        super(properties, registryRef, dimensionType, profiler, isClient, debugWorld, seed);
     }
     
     @Shadow private native void resetWeather();
     @Shadow public native void setTimeOfDay(long timeOfDay);
+    @Shadow public native DynamicRegistryManager getRegistryManager();
     
     @Inject(at = @At("HEAD"), method = "tick")
     public void onTick(BooleanSupplier booleanSupplier, CallbackInfo callback) {
@@ -143,11 +147,24 @@ public abstract class WorldSleep extends World implements SleepingWorld, ServerW
     public void onSpawnMob(Entity entity, CallbackInfoReturnable<Boolean> callback) {
         if (entity instanceof ConstructableEntity) {
             Optional<UUID> chunkOwner;
-            if ((chunkOwner = ChunkUtils.getPosOwner( this.getWorld(), entity.getBlockPos() )).isPresent())
+            if ((chunkOwner = ChunkUtils.getPosOwner(this.toServerWorld(), entity.getBlockPos() )).isPresent())
                 ((ConstructableEntity)entity).setEntityOwner( chunkOwner.get() );
             
             if (entity instanceof WitherEntity)
-                CoreMod.logInfo("A new Wither Boss was summoned at " + MessageUtils.blockPosToString(entity.getBlockPos()));
+                CoreMod.logInfo("A new Wither Boss was summoned at " + MessageUtils.xyzToString(entity.getBlockPos()));
+        }
+    }
+    
+    @Inject(at = @At("TAIL"), method = "save")
+    public void onWorldSave(@Nullable ProgressListener progressListener, boolean flush, boolean bl, CallbackInfo callback) {
+        RegistryKey<World> key = this.getRegistryKey();
+        
+        // If the world should save it's properties to a different location
+        if ((!key.equals(World.OVERWORLD)) && !bl && SewConfig.get(SewConfig.WORLD_SEPARATE_PROPERTIES)) {
+            NbtUtils.writeWorldDat(
+                this.toServerWorld(),
+                this.getLevelProperties()
+            );
         }
     }
     

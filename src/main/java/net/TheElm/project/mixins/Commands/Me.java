@@ -39,7 +39,7 @@ public final class Me {
                     MinecraftServer server = player.getServer();
                     
                     // Create the player display for chat
-                    Text text = PlayerNameUtils.getPlayerChatDisplay( player, "* ", ((PlayerChat) player).getChatRoom(), Formatting.WHITE )
+                    Text text = PlayerNameUtils.getPlayerChatDisplay(player, "* ", ((PlayerChat) player).getChatRoom(), Formatting.WHITE)
                         .append(" ")
                         .append( message );
                     

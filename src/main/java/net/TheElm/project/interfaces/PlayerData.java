@@ -25,8 +25,12 @@
 
 package net.TheElm.project.interfaces;
 
+import com.google.common.collect.ImmutableSet;
 import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.ai.pathing.Path;
+import net.minecraft.entity.ai.pathing.PathNodeNavigator;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
@@ -35,11 +39,14 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Set;
+
 public interface PlayerData {
     
     /*
      * Saved warp data
      */
+    
     ServerWorld getWarpWorld();
     RegistryKey<World> getWarpDimension();
     BlockPos getWarpPos();
@@ -49,21 +56,22 @@ public interface PlayerData {
     /*
      * Player claim information
      */
+    
     ClaimantPlayer getClaim();
     
     /*
      * Player join information
      */
-    @Nullable
-    Long getFirstJoinAt();
+    
+    @Nullable Long getFirstJoinAt();
     void updateFirstJoin();
-    @Nullable
-    Long getLastJoinAt();
+    @Nullable Long getLastJoinAt();
     void updateLastJoin();
     
     /*
      * Player block ruler information
      */
+    
     void setRulerA(@Nullable BlockPos blockPos);
     void setRulerB(@Nullable BlockPos blockPos);
     @Nullable BlockPos getRulerA();
@@ -72,6 +80,7 @@ public interface PlayerData {
     /*
      * Portal save locations
      */
+    
     void setNetherPortal(@Nullable BlockPos blockPos);
     void setOverworldPortal(@Nullable BlockPos blockPos);
     @Nullable BlockPos getNetherPortal();
@@ -80,12 +89,26 @@ public interface PlayerData {
     /*
      * Compass handling
      */
+    
     CompassDirections cycleCompass();
     CompassDirections getCompass();
     
     /*
      * Health Bar
      */
-    @NotNull
-    ServerBossBar getHealthBar();
+    
+    @NotNull ServerBossBar getHealthBar();
+    
+    /*
+     * Path Finding
+     */
+    
+    @NotNull PathNodeNavigator getPathNodeNavigator();
+    default @Nullable Path findPathTo(@NotNull Entity entity, int distance) {
+        return this.findPathTo(entity.getBlockPos(), distance);
+    }
+    default @Nullable Path findPathTo(@NotNull BlockPos pos, int distance) {
+        return this.findPathToAny(ImmutableSet.of(pos), 16, true, distance);
+    }
+    @Nullable Path findPathToAny(Set<BlockPos> positions, int range, boolean bl, int distance);
 }

@@ -37,13 +37,10 @@ import net.TheElm.project.protections.logging.BlockEvent;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.protections.logging.EventLogger.BlockAction;
 import net.TheElm.project.utilities.ChunkUtils;
-import net.minecraft.block.BeetrootsBlock;
+import net.TheElm.project.utilities.CropUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.CarrotsBlock;
-import net.minecraft.block.CropBlock;
 import net.minecraft.block.MelonBlock;
-import net.minecraft.block.PotatoesBlock;
 import net.minecraft.block.PumpkinBlock;
 import net.minecraft.block.SugarCaneBlock;
 import net.minecraft.entity.Entity;
@@ -53,7 +50,6 @@ import net.minecraft.entity.mob.GhastEntity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket.Action;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -144,25 +140,17 @@ public final class BlockBreak {
                 if ((ground instanceof SugarCaneBlock) && ChunkUtils.canPlayerHarvestCrop(player, blockPos))
                     return ActionResult.PASS;
                 
-            } else if (block instanceof CropBlock) {
+            } else if (CropUtils.isCrop(block)) {
                 
                 /*
                  * If block is a CROP, and the player is allowed to FARM
                  */
                 
-                // Cast the crop
-                CropBlock cropBlock = (CropBlock) block;
-                
                 // Check growth
-                boolean cropFullyGrown = cropBlock.isMature(blockState);
-                
-                // Check player permissions
-                boolean playerCanHarvest = ChunkUtils.canPlayerHarvestCrop(player, blockPos);
-                boolean playerCanBreak = ChunkUtils.canPlayerBreakInChunk(player, blockPos);
+                boolean cropFullyGrown = CropUtils.isMature(blockState);
                 
                 // If the crop can be broken
-                if (playerCanBreak || (cropFullyGrown && playerCanHarvest)) {
-                    
+                if (ChunkUtils.canPlayerBreakInChunk(player, blockPos) || (cropFullyGrown && ChunkUtils.canPlayerHarvestCrop(player, blockPos))) {
                     if (cropFullyGrown) {
                         // Get the chunk information if we should replant
                         WorldChunk chunk = world.getWorldChunk(blockPos);
@@ -172,22 +160,24 @@ public final class BlockBreak {
                              */
                             
                             // Get the crops seed
-                            Item cropSeed = BlockBreak.getCropSeed(cropBlock);
+                            Item cropSeed = CropUtils.getSeed(block);
                             
                             // Get the crop state with 0 growth
-                            BlockState cropFresh = cropBlock.withAge(0);
+                            BlockState cropFresh = CropUtils.withAge(block, 0);
                             
                             // Get the drops
                             List<ItemStack> drops = Block.getDroppedStacks(blockState, world, blockPos, world.getBlockEntity(blockPos), player, player.getStackInHand(hand));
-                            for (ItemStack stack : drops) {
-                                // Check that item matches
-                                if (!stack.getItem().equals(cropSeed))
-                                    continue;
-                                
-                                // Negate a single seed
-                                if (stack.getCount() > 0) {
-                                    stack.setCount(stack.getCount() - 1);
-                                    break;
+                            if (cropSeed != null) { // Only remove a seed if the seed exists
+                                for (ItemStack stack : drops) {
+                                    // Check that item matches
+                                    if (!stack.getItem().equals(cropSeed))
+                                        continue;
+        
+                                    // Negate a single seed
+                                    if (stack.getCount() > 0) {
+                                        stack.setCount(stack.getCount() - 1);
+                                        break;
+                                    }
                                 }
                             }
                             
@@ -282,15 +272,5 @@ public final class BlockBreak {
      */
     private static void logBlockBreakEvent(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final BlockPos blockPos) {
         EventLogger.log(new BlockEvent(entity, BlockAction.BREAK, world.getBlockState(blockPos).getBlock(), blockPos));
-    }
-    
-    public static Item getCropSeed(Block crop) {
-        if ( crop instanceof CarrotsBlock )
-            return Items.CARROT;
-        if ( crop instanceof PotatoesBlock )
-            return Items.POTATO;
-        if ( crop instanceof BeetrootsBlock )
-            return Items.BEETROOT_SEEDS;
-        return Items.WHEAT_SEEDS;
     }
 }

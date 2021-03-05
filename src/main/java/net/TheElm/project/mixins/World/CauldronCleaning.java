@@ -84,7 +84,7 @@ public abstract class CauldronCleaning extends Block {
         ItemStack binderStack = null;
         
         // Search for the spawner
-        List<ItemEntity> list = world.getEntities(EntityType.ITEM, new Box(blockPos), entity1 -> true);
+        List<ItemEntity> list = world.getEntitiesByType(EntityType.ITEM, new Box(blockPos), entity1 -> true);
         for (ItemEntity item : list) {
             if ((item.getThrower() == null) || (!item.getThrower().equals(owner)))
                 continue;

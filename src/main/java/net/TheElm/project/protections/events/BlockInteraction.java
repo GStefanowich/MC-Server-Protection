@@ -155,7 +155,7 @@ public final class BlockInteraction {
                 if ( player.isSpectator() || (blockEntity instanceof EnderChestBlockEntity))
                     return ActionResult.PASS;
                 
-                if ((((blockPermission = EntityUtils.getLockPermission( blockEntity )) != null) || ((blockPermission = EntityUtils.getLockPermission( block )) != null))) {
+                if ((((blockPermission = EntityUtils.getLockPermission(blockEntity)) != null) || ((blockPermission = EntityUtils.getLockPermission( block )) != null))) {
                     WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk(blockPos);
                     
                     // Check if allowed to open storages in this location
@@ -209,7 +209,7 @@ public final class BlockInteraction {
             if (item instanceof BlockItem)
                 EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, ((BlockItem)item).getBlock(), blockPos));
             else
-                CoreMod.logDebug("Player \"placed\" non-block item \"" + item.getTranslationKey() + "\" at " + MessageUtils.blockPosToString(blockPos));
+                CoreMod.logDebug("Player \"placed\" non-block item \"" + item.getTranslationKey() + "\" at " + MessageUtils.xyzToString(blockPos));
         }
         return result;
     }
