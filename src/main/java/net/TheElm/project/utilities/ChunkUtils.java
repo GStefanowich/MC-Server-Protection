@@ -63,7 +63,8 @@ public final class ChunkUtils {
     }
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // If claims are disabled
-        if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (player != null && player.isCreative())) return true;
+        if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (player != null && player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)))
+            return true;
         
         // Check if player can do action in chunk
         return ChunkUtils.canPlayerDoInChunk( perm, EntityUtils.getUUID(player), chunk, blockPos );

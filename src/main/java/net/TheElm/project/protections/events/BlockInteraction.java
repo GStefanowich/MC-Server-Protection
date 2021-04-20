@@ -142,35 +142,32 @@ public final class BlockInteraction {
             return ActionResult.FAIL;
         }
         
-        // If claiming is enabled, check the players permission
-        if (!(player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)) && (SewConfig.get(SewConfig.DO_CLAIMS))) {
-            // If the block is something that can be accessed (Like a chest)
-            if ( (!player.isSneaking() || (!(itemStack.getItem() instanceof BlockItem || itemStack.getItem() instanceof BucketItem))) ) {
-                if ( player.isSpectator() || (blockEntity instanceof EnderChestBlockEntity))
-                    return ActionResult.PASS;
+        // If the block is something that can be accessed (Like a chest)
+        if ( (!player.isSneaking() || (!(itemStack.getItem() instanceof BlockItem || itemStack.getItem() instanceof BucketItem))) ) {
+            if ( player.isSpectator() || (blockEntity instanceof EnderChestBlockEntity))
+                return ActionResult.PASS;
+            
+            if ((((blockPermission = EntityUtils.getLockPermission(blockEntity)) != null) || ((blockPermission = EntityUtils.getLockPermission(block)) != null))) {
+                WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk(blockPos);
                 
-                if ((((blockPermission = EntityUtils.getLockPermission(blockEntity)) != null) || ((blockPermission = EntityUtils.getLockPermission( block )) != null))) {
-                    WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk(blockPos);
-                    
-                    // Check if allowed to open storages in this location
-                    if (ChunkUtils.canPlayerDoInChunk(blockPermission, player, claimedChunkInfo, blockPos)) {
-                        // Check if the chest is NOT part of a shop, Or the player owns that shop
-                        ShopSignBlockEntity shopSign;
-                        if ((!EntityUtils.isValidShopContainer(blockEntity)) || ((shopSign = EntityUtils.getAttachedShopSign(world, blockPos)) == null) || player.getUuid().equals(shopSign.getShopOwner()))
-                            return ActionResult.PASS;
-                    }
-                    
-                    // Play a sound to the player
-                    world.playSound(null, blockPos, EntityUtils.getLockSound(block, blockState, blockEntity), SoundCategory.BLOCKS, 0.5f, 1f);
-                    
-                    // Display that this item can't be opened
-                    TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
-                        EntityUtils.getLockedName(block),
-                        (claimedChunkInfo == null ? new LiteralText("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) claimedChunkInfo).getOwnerName(player, blockPos))
-                    ));
-                    
-                    return ActionResult.FAIL;
+                // Check if allowed to open storages in this location
+                if (ChunkUtils.canPlayerDoInChunk(blockPermission, player, claimedChunkInfo, blockPos)) {
+                    // Check if the chest is NOT part of a shop, Or the player owns that shop
+                    ShopSignBlockEntity shopSign;
+                    if ((!EntityUtils.isValidShopContainer(blockEntity)) || ((shopSign = EntityUtils.getAttachedShopSign(world, blockPos)) == null) || player.getUuid().equals(shopSign.getShopOwner()))
+                        return ActionResult.PASS;
                 }
+                
+                // Play a sound to the player
+                world.playSound(null, blockPos, EntityUtils.getLockSound(block, blockState, blockEntity), SoundCategory.BLOCKS, 0.5f, 1f);
+                
+                // Display that this item can't be opened
+                TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
+                    EntityUtils.getLockedName(block),
+                    (claimedChunkInfo == null ? new LiteralText("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) claimedChunkInfo).getOwnerName(player, blockPos))
+                ));
+                
+                return ActionResult.FAIL;
             }
         }
         
