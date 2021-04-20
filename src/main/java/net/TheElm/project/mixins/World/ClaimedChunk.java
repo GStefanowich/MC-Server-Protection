@@ -38,7 +38,7 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.ChunkUtils.ClaimSlice;
 import net.TheElm.project.utilities.ChunkUtils.InnerClaim;
-import net.TheElm.project.utilities.NbtUtils;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -174,7 +174,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
             return false;
         }
         // Check claims limit (If the player is spawn, always allow)
-        if (!player.getId().equals(CoreMod.spawnID) && !player.canClaim((WorldChunk)(Chunk) this))
+        if (!player.getId().equals(CoreMod.SPAWN_ID) && !player.canClaim((WorldChunk)(Chunk) this))
             throw new TranslationKeyException("claim.chunk.error.max");
         return true;
     }

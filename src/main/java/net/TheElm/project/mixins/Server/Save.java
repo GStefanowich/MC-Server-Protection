@@ -34,7 +34,7 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.DimensionUtils;
-import net.TheElm.project.utilities.NbtUtils;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerTask;
 import net.minecraft.server.WorldGenerationProgressListener;

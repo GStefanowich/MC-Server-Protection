@@ -33,13 +33,14 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.SQLFunction;
 import net.TheElm.project.protections.logging.EventLogger.BlockAction;
-import net.TheElm.project.utilities.CommandUtilities;
-import net.TheElm.project.utilities.MessageUtils;
-import net.TheElm.project.utilities.NbtUtils;
+import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
+import net.TheElm.project.utilities.nbt.NbtUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.DimensionArgumentType;
 import net.minecraft.command.argument.GameProfileArgumentType;
@@ -48,13 +49,8 @@ import net.minecraft.item.Item;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.HoverEvent;
+import net.minecraft.text.*;
 import net.minecraft.text.HoverEvent.Action;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
@@ -73,8 +69,8 @@ public final class LoggingCommand {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         if (( SewConfig.any(SewConfig.LOG_CHUNKS_CLAIMED, SewConfig.LOG_CHUNKS_UNCLAIMED) ) && ( SewConfig.any(SewConfig.LOG_BLOCKS_BREAKING, SewConfig.LOG_BLOCKS_PLACING) )) {
-            dispatcher.register(CommandManager.literal("blocklog")
-                .requires((source -> source.hasPermissionLevel(SewConfig.get(SewConfig.LOG_VIEW_OP_LEVEL))))
+            ServerCore.register(dispatcher, "blocklog", builder -> builder
+                .requires(CommandUtils.requires(SewConfig.LOG_VIEW_OP_LEVEL))
                 .then(CommandManager.literal("pos")
                     .then(CommandManager.argument("dimension", DimensionArgumentType.dimension())
                         .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
@@ -90,7 +86,7 @@ public final class LoggingCommand {
                         .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
                             .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
                                 .then(CommandManager.argument("count", IntegerArgumentType.integer(1))
-                                    .executes(LoggingCommand::getFromRangeWithCount)
+                                        .executes(LoggingCommand::getFromRangeWithCount)
                                 )
                                 .executes(LoggingCommand::getFromRange)
                             )
@@ -99,16 +95,14 @@ public final class LoggingCommand {
                 )
                 .then(CommandManager.literal("by")
                     .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
-                        .suggests(CommandUtilities::getAllPlayerNames)
+                        .suggests(CommandUtils::getAllPlayerNames)
                         .then(CommandManager.argument("count", IntegerArgumentType.integer(1))
-                            .executes(LoggingCommand::getByPlayerWithCount)
+                                .executes(LoggingCommand::getByPlayerWithCount)
                         )
                         .executes(LoggingCommand::getByPlayer)
                     )
                 )
             );
-            
-            CoreMod.logDebug( "- Registered BlockLog command" );
         }
     }
     

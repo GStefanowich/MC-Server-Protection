@@ -36,16 +36,10 @@ import net.TheElm.project.protections.logging.BlockEvent;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
-import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
-import net.minecraft.block.AbstractButtonBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.DoorBlock;
-import net.minecraft.block.FenceGateBlock;
-import net.minecraft.block.Material;
-import net.minecraft.block.TrapdoorBlock;
+import net.TheElm.project.utilities.text.MessageUtils;
+import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.EnderChestBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
@@ -82,7 +76,7 @@ public final class BlockInteraction {
         BlockPos blockPos = blockHitResult.getBlockPos();
         final BlockState blockState = world.getBlockState(blockPos);
         final Block block = blockState.getBlock();
-        final BlockEntity blockEntity = world.getBlockEntity( blockPos );
+        final BlockEntity blockEntity = world.getBlockEntity(blockPos);
         
         // Check if the block interacted with is a sign (For shop signs)
         if ( blockEntity instanceof ShopSignBlockEntity && blockEntity instanceof SignBlockEntity) {

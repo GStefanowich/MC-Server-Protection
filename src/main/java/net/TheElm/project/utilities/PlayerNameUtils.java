@@ -38,15 +38,12 @@ import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
+import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
@@ -180,13 +177,13 @@ public final class PlayerNameUtils {
     
     public static @NotNull MutableText fetchPlayerNick(@NotNull UUID uuid) {
         MutableText out;
-        if ((!uuid.equals(CoreMod.spawnID)) && ((out = PlayerNameUtils.getOfflinePlayerNickname(uuid)) != null))
+        if ((!uuid.equals(CoreMod.SPAWN_ID)) && ((out = PlayerNameUtils.getOfflinePlayerNickname(uuid)) != null))
             return out;
         return PlayerNameUtils.fetchPlayerName( uuid );
     }
     public static @NotNull MutableText fetchPlayerName(@NotNull UUID uuid) {
         // If we're looking up UUID 0, 0 (Spawn) don't try to do a lookup
-        if ( uuid.equals( CoreMod.spawnID ) )
+        if ( uuid.equals( CoreMod.SPAWN_ID) )
             return new LiteralText(SewConfig.get(SewConfig.NAME_SPAWN));
         
         // Check if there is an online player with UUID (No unnecessary web calls)

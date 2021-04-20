@@ -31,6 +31,8 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.protections.BlockRange;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.Material;
@@ -50,37 +52,26 @@ import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.Pair;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.*;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ThreadLocalRandom;
 
 public final class WarpUtils {
     
-    private static final Set<UUID> warpPlayers = Collections.synchronizedSet(new HashSet<>());
+    private static final Set<UUID> GENERATING_PLAYERS = Collections.synchronizedSet(new HashSet<>());
     
     private BlockPos createWarpAt;
-    private Pair<BlockPos, BlockPos> region;
+    private BlockRange region;
     
     public WarpUtils(final ServerPlayerEntity player, final BlockPos pos) {
-        warpPlayers.add( player.getUuid() );
-        this.updateWarpPos( pos );
+        WarpUtils.GENERATING_PLAYERS.add(player.getUuid());
+        this.updateWarpPos(pos);
     }
     
     private boolean updateWarpPos(@Nullable BlockPos warpPos) {
@@ -88,9 +79,9 @@ public final class WarpUtils {
             return false;
         
         this.createWarpAt = warpPos;
-        this.region = new Pair<>(
-            new BlockPos( this.createWarpAt.getX() - 4, this.createWarpAt.getY() - 4, this.createWarpAt.getZ() - 3 ),
-            new BlockPos( this.createWarpAt.getX() + 4, this.createWarpAt.getY() + 4, this.createWarpAt.getZ() + 6 )
+        this.region = new BlockRange(
+            new BlockPos(this.createWarpAt.getX() - 4, this.createWarpAt.getY() - 4, this.createWarpAt.getZ() - 3),
+            new BlockPos(this.createWarpAt.getX() + 4, this.createWarpAt.getY() + 4, this.createWarpAt.getZ() + 6)
         );
         
         return true;
@@ -100,7 +91,7 @@ public final class WarpUtils {
         int x = this.createWarpAt.getX();
         int z = this.createWarpAt.getZ();
         do {
-            CoreMod.logInfo( "Finding a new warp position!" );
+            CoreMod.logInfo("Finding a new warp position!");
             this.updateWarpPos( new BlockPos( getRandom( x ), 256, getRandom( z ) ) );
         } while (!this.updateWarpPos(this.isValid( world, this.createWarpAt,50,true)));
         
@@ -177,11 +168,11 @@ public final class WarpUtils {
     }
     public boolean build(final ServerPlayerEntity player, final ServerWorld world, final boolean dropBlocks) {
         // Get the area of blocks to claim
-        if (!ChunkUtils.canPlayerClaimSlices(world, this.region.getLeft(), this.region.getRight()))
+        if (!ChunkUtils.canPlayerClaimSlices(world, this.region))
             return false;
         
         // Claim the defined slices in the name of Spawn
-        ChunkUtils.claimSlices(world, CoreMod.spawnID, this.region.getLeft(), this.region.getRight());
+        ChunkUtils.claimSlices(world, CoreMod.SPAWN_ID, this.region);
         
         // Create the structure
         StructureBuilderUtils structure = new StructureBuilderUtils( world, "waystone" );
@@ -191,10 +182,10 @@ public final class WarpUtils {
         // Light-source blocks
         final BlockState decLight = Blocks.SHROOMLIGHT.getDefaultState();
         BlockPos[] decLightBlocks = new BlockPos[]{
-            new BlockPos( this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() + 1 ),
-            new BlockPos( this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1 ),
-            new BlockPos( this.createWarpAt.getX() - 1, this.createWarpAt.getY(), this.createWarpAt.getZ() + 1 ),
-            new BlockPos( this.createWarpAt.getX() - 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1 )
+            new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() + 1),
+            new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1),
+            new BlockPos(this.createWarpAt.getX() - 1, this.createWarpAt.getY(), this.createWarpAt.getZ() + 1),
+            new BlockPos(this.createWarpAt.getX() - 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1)
         };
         for ( BlockPos blockPos : decLightBlocks ) {
             structure.addBlock(blockPos.up( 1 ), air);
@@ -230,11 +221,11 @@ public final class WarpUtils {
         // Bedrock blocks
         final BlockState decSupport = Blocks.BEDROCK.getDefaultState();
         BlockPos[] bedrockBlocks = new BlockPos[]{
-            this.createWarpAt.down( 2 ),
-            new BlockPos( this.createWarpAt.getX() + 1, this.createWarpAt.getY() - 1, this.createWarpAt.getZ() ),
-            new BlockPos( this.createWarpAt.getX(), this.createWarpAt.getY() - 1, this.createWarpAt.getZ() + 1 ),
-            new BlockPos( this.createWarpAt.getX() - 1, this.createWarpAt.getY() - 1, this.createWarpAt.getZ() ),
-            new BlockPos( this.createWarpAt.getX(), this.createWarpAt.getY() - 1, this.createWarpAt.getZ() - 1 )
+            this.createWarpAt.down(2),
+            new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY() - 1, this.createWarpAt.getZ()),
+            new BlockPos(this.createWarpAt.getX(), this.createWarpAt.getY() - 1, this.createWarpAt.getZ() + 1),
+            new BlockPos(this.createWarpAt.getX() - 1, this.createWarpAt.getY() - 1, this.createWarpAt.getZ()),
+            new BlockPos(this.createWarpAt.getX(), this.createWarpAt.getY() - 1, this.createWarpAt.getZ() - 1)
         };
         for ( BlockPos blockPos : bedrockBlocks ) {
             structure.addBlock(blockPos, decSupport);
@@ -272,17 +263,17 @@ public final class WarpUtils {
         
         try {
             // Destroy the blocks where the waystone goes
-            structure.destroy( dropBlocks );
+            structure.destroy(dropBlocks);
             
             // Build the structure
             structure.build();
             
             // Play sounds
             structure.particlesSounds(ParticleTypes.HAPPY_VILLAGER, SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f, 1.0f, 1.0f, 12,
-                new BlockPos( this.createWarpAt.getX() - 1, this.createWarpAt.getY() + 3, this.createWarpAt.getZ() - 1 ),
-                new BlockPos( this.createWarpAt.getX() + 1, this.createWarpAt.getY() + 2, this.createWarpAt.getZ() + 1 ),
-                new BlockPos( this.createWarpAt.getX() + 1, this.createWarpAt.getY() + 2, this.createWarpAt.getZ() - 1 ),
-                new BlockPos( this.createWarpAt.getX() - 1, this.createWarpAt.getY() + 1, this.createWarpAt.getZ() + 1 )
+                new BlockPos(this.createWarpAt.getX() - 1, this.createWarpAt.getY() + 3, this.createWarpAt.getZ() - 1),
+                new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY() + 2, this.createWarpAt.getZ() + 1),
+                new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY() + 2, this.createWarpAt.getZ() - 1),
+                new BlockPos(this.createWarpAt.getX() - 1, this.createWarpAt.getY() + 1, this.createWarpAt.getZ() + 1)
             );
         } catch (InterruptedException e) {
             throw new RuntimeException( e );
@@ -295,11 +286,11 @@ public final class WarpUtils {
     
     public void save(final World world, final BlockPos warpPos, final ServerPlayerEntity player) {
         // Remove the player from the build list
-        warpPlayers.remove( player.getUuid() );
+        WarpUtils.GENERATING_PLAYERS.remove(player.getUuid());
         
         // Set the players warp position to save
-        ((PlayerData) player).setWarpPos( warpPos );
-        ((PlayerData) player).setWarpDimension( world );
+        ((PlayerData) player).setWarpPos(warpPos);
+        ((PlayerData) player).setWarpDimension(world);
         
         // Update the players Teleporting commands
         MinecraftServer server = player.getServer();
@@ -347,7 +338,7 @@ public final class WarpUtils {
             return null;
         return new Warp(((PlayerData) player).getWarpWorld(), ((PlayerData) player).getWarpPos());
     }
-    public static boolean hasWarp(final ServerCommandSource source) {
+    public static boolean hasWarp(@NotNull final ServerCommandSource source) {
         Entity entity = source.getEntity();
         if (entity instanceof ServerPlayerEntity)
             return WarpUtils.hasWarp((ServerPlayerEntity) entity);
@@ -359,8 +350,8 @@ public final class WarpUtils {
     public static boolean hasWarp(final ServerPlayerEntity player) {
         return WarpUtils.getWarp( player ) != null;
     }
-    public static boolean isPlayerCreating(final ServerPlayerEntity player) {
-        return warpPlayers.contains( player.getUuid() );
+    public static boolean isPlayerCreating(@NotNull final ServerPlayerEntity player) {
+        return WarpUtils.GENERATING_PLAYERS.contains( player.getUuid() );
     }
     public static void teleportPlayer(@NotNull ServerPlayerEntity player) {
         Warp warp = WarpUtils.getWarp( player );

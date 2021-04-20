@@ -28,6 +28,7 @@ package net.TheElm.project.utilities;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.interfaces.MoneyHolder;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;

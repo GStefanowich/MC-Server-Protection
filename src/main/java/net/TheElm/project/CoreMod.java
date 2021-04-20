@@ -47,6 +47,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -55,13 +56,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.lang.ref.WeakReference;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.WeakHashMap;
+import java.util.*;
 import java.util.stream.Stream;
 
 public abstract class CoreMod {
@@ -77,7 +72,7 @@ public abstract class CoreMod {
     private static final Map<UUID, WeakReference<ClaimantPlayer>> PLAYER_CLAIM_CACHE = Collections.synchronizedMap(new HashMap<>()); // Reference from player UUID
     private static final Map<UUID, WeakReference<ClaimantTown>> TOWN_CLAIM_CACHE = Collections.synchronizedMap(new HashMap<>()); // Reference from owner UUID
     
-    public static final UUID spawnID = new UUID( 0, 0 );
+    public static final @NotNull UUID SPAWN_ID = Util.NIL_UUID;
     
     // MySQL Host
     private static MySQLHost MySQL = null;
@@ -256,7 +251,7 @@ public abstract class CoreMod {
             + System.lineSeparator() + String.join( System.lineSeparator(), notice )
         );
     }
-    public static File getConfDir() throws RuntimeException {
+    public static @NotNull File getConfDir() throws RuntimeException {
         // Get the directory
         final File config = CoreMod.getFabric().getConfigDirectory();
         final File dir = new File(config, CoreMod.MOD_ID);
@@ -300,7 +295,7 @@ public abstract class CoreMod {
         if (CoreMod.isDebugging())
             CoreMod.logInfo( message );
     }
-    public static void logDebug( @Nullable Text message ) {
+    public static void logDebug(@Nullable Text message ) {
         if (message == null) CoreMod.logDebug("NULL");
         else if (CoreMod.isDebugging()) CoreMod.logInfo(message);
     }

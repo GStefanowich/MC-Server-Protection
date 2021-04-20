@@ -52,7 +52,7 @@ public abstract class ProjectileDamage extends PersistentProjectileEntity {
     }
     
     @Override
-    protected void onEntityHit(EntityHitResult entityHitResult) {
+    public void onEntityHit(EntityHitResult entityHitResult) {
         if (this.entityHitShouldApplyDamage(entityHitResult))
             super.onEntityHit(entityHitResult);
     }

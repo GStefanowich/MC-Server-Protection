@@ -28,19 +28,10 @@ package net.TheElm.project.mixins.Player;
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.interfaces.BlockBreakCallback;
-import net.TheElm.project.interfaces.BlockInteractionCallback;
-import net.TheElm.project.interfaces.ItemUseCallback;
-import net.TheElm.project.interfaces.PlayerChat;
-import net.TheElm.project.interfaces.PlayerPermissions;
+import net.TheElm.project.interfaces.*;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.block.BedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.DoorBlock;
-import net.minecraft.block.HorizontalFacingBlock;
-import net.minecraft.block.TallPlantBlock;
+import net.minecraft.block.*;
 import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.item.ItemStack;
@@ -118,8 +109,8 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
      */
     private PlayerRank[] ranks = null;
     
-    @NotNull
-    public PlayerRank[] getRanks() {
+    @Override
+    public @NotNull PlayerRank[] getRanks() {
         if (this.ranks == null)
             this.ranks = RankUtils.loadPlayerRanks(this.player.getGameProfile());
         return this.ranks;
@@ -133,7 +124,7 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
     private void onBlockBreakChange(BlockPos blockPos, Action action, Direction direction, int i, CallbackInfo info) {
         ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this.player, this.world, Hand.MAIN_HAND, blockPos, direction, action);
         if ( result != ActionResult.PASS ) {
-            this.updateNeighboringBlockStates( blockPos );
+            this.updateNeighboringBlockStates(blockPos);
             info.cancel();
         }
     }

@@ -35,23 +35,11 @@ import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.interfaces.BackpackCarrier;
-import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.interfaces.LanguageEntity;
-import net.TheElm.project.interfaces.MoneyHolder;
-import net.TheElm.project.interfaces.Nicknamable;
-import net.TheElm.project.interfaces.PlayerChat;
-import net.TheElm.project.interfaces.PlayerData;
-import net.TheElm.project.interfaces.PlayerPermissions;
-import net.TheElm.project.interfaces.PlayerServerLanguage;
+import net.TheElm.project.interfaces.*;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.ranks.PlayerRank;
-import net.TheElm.project.utilities.ColorUtils;
-import net.TheElm.project.utilities.EffectUtils;
-import net.TheElm.project.utilities.FormattingUtils;
-import net.TheElm.project.utilities.NbtUtils;
-import net.TheElm.project.utilities.RankUtils;
-import net.TheElm.project.utilities.SleepUtils;
+import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -94,11 +82,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.Calendar;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Locale;
-import java.util.Set;
+import java.util.*;
 
 @Mixin(ServerPlayerEntity.class)
 public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerPermissions, PlayerServerLanguage, Nicknamable, PlayerChat, LanguageEntity {
@@ -279,7 +263,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
      */
     
     @Override
-    public PlayerRank[] getRanks() {
+    public @NotNull PlayerRank[] getRanks() {
         return ((PlayerPermissions)this.interactionManager).getRanks();
     }
     @Override
@@ -399,10 +383,10 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
                         .formatted(Formatting.RED, Formatting.BOLD)
                         
                         // Add the click command
-                        .styled((style) -> style.withClickEvent(new ClickEvent( ClickEvent.Action.RUN_COMMAND, "/" + PlayerSpawnCommand.commandName + " " + blockPos.getX() + " " + blockPos.getY() + " " + blockPos.getZ() )))
+                        .styled((style) -> style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/" + PlayerSpawnCommand.COMMAND_NAME.toLowerCase() + " " + blockPos.getX() + " " + blockPos.getY() + " " + blockPos.getZ() )))
                     ).append( "." ),
                     MessageType.SYSTEM,
-                    ServerCore.spawnID
+                    ServerCore.SPAWN_ID
                 );
                 
                 callback.cancel();

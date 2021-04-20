@@ -25,16 +25,13 @@
 
 package net.TheElm.project.protections;
 
-import net.TheElm.project.utilities.MessageUtils;
-import net.minecraft.text.LiteralText;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import org.jetbrains.annotations.NotNull;
 
-import java.text.NumberFormat;
-
-public final class BlockDistance {
+public final class BlockRange {
     
     final BlockPos firstPos;
     final BlockPos secondPos;
@@ -45,19 +42,19 @@ public final class BlockDistance {
     
     final int volume;
     
-    public BlockDistance(@NotNull final BlockPos firstPos, @NotNull final BlockPos secondPos) {
+    public BlockRange(@NotNull final BlockPos firstPos, @NotNull final BlockPos secondPos) {
         this.firstPos = firstPos;
         this.secondPos = secondPos;
         
         int volume = 1;
         
-        int ew = Math.abs( firstPos.getX() - secondPos.getX() ); // East-West
+        int ew = Math.abs(firstPos.getX() - secondPos.getX()); // East-West
         if (ew != 0) volume *= (++ew);
         
-        int ns = Math.abs( firstPos.getZ() - secondPos.getZ() ); // North-South
+        int ns = Math.abs(firstPos.getZ() - secondPos.getZ()); // North-South
         if (ns != 0) volume *= (++ns);
         
-        int ud = Math.abs( firstPos.getY() - secondPos.getY() ); // Up-Down
+        int ud = Math.abs(firstPos.getY() - secondPos.getY()); // Up-Down
         if (ud != 0) volume *= (++ud);
         
         this.distEastWest = ew;
@@ -73,7 +70,7 @@ public final class BlockDistance {
     
     // Volume
     public MutableText formattedVolume() {
-        return new LiteralText(NumberFormat.getInstance().format(this.volume));
+        return MessageUtils.formatNumber(this.getVolume());
     }
     public int getVolume() {
         return this.volume;
@@ -159,5 +156,27 @@ public final class BlockDistance {
     }
     private boolean withinZ(int z) {
         return ((z <= this.getUpperZ()) && (z >= this.getLowerZ()));
+    }
+    
+    public @NotNull BlockPos getUpper() {
+        return new BlockPos(
+            this.getUpperX(),
+            this.getUpperY(),
+            this.getUpperZ()
+        );
+    }
+    public @NotNull BlockPos getLower() {
+        return new BlockPos(
+            this.getLowerX(),
+            this.getLowerY(),
+            this.getLowerZ()
+        );
+    }
+    
+    public static @NotNull BlockRange between(@NotNull BlockPos firstPos, @NotNull BlockPos secondPos) {
+        return new BlockRange(firstPos, secondPos);
+    }
+    public static @NotNull BlockRange of(@NotNull BlockPos pos) {
+        return new BlockRange(pos, pos);
     }
 }

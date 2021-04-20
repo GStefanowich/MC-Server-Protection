@@ -71,15 +71,15 @@ public final class TranslatableServerSide {
         return TranslatableServerSide.text((ServerPlayerEntity) player, key, objects);
     }
     public static @NotNull MutableText text(@NotNull ServerPlayerEntity player, String key, Object... objects) {
-        return TranslatableServerSide.text( ((PlayerServerLanguage)player).getClientLanguage(), key, objects );
+        return TranslatableServerSide.text(((PlayerServerLanguage)player).getClientLanguage(), key, objects);
     }
     public static @NotNull MutableText text(@NotNull Locale language, String key, @NotNull Object... objects) {
-        String text = TranslatableServerSide.getTranslation( language, key );
+        String text = TranslatableServerSide.getTranslation(language, key);
         
         for (int i = 0; i < objects.length; ++i) {
             Object obj = objects[i];
             if (obj instanceof Text) {
-                objects[i] = ((Text) obj).copy();
+                objects[i] = ((Text) obj).shallowCopy();
             } else if (obj == null) {
                 objects[i] = "null";
             }

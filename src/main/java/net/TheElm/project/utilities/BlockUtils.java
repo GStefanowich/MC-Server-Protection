@@ -28,6 +28,7 @@ package net.TheElm.project.utilities;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.minecraft.entity.Entity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -41,11 +42,25 @@ import org.jetbrains.annotations.Nullable;
 public final class BlockUtils {
     
     private BlockUtils() {}
-    
-    public static BlockHitResult getLookingBlock(BlockView world, Entity entity) {
-        return BlockUtils.getLookingBlock( world, entity, 8 );
+
+    /**
+     * Get the block that an entity is looking at
+     * @param world The world
+     * @param entity The entity
+     * @return The hit result
+     */
+    public static @NotNull BlockHitResult getLookingBlock(@NotNull BlockView world, @NotNull Entity entity) {
+        return BlockUtils.getLookingBlock(world, entity, 8);
     }
-    public static BlockHitResult getLookingBlock(BlockView world, Entity entity, int distance) {
+
+    /**
+     * Get the block that an entity is looking at, up to a max distance
+     * @param world The world
+     * @param entity The entity
+     * @param distance How far to check
+     * @return The hit result
+     */
+    public static @NotNull BlockHitResult getLookingBlock(@NotNull BlockView world, @NotNull Entity entity, int distance) {
         // Get the direction the entity is facing
         Vec3d posVec = entity.getCameraPosVec(1.0F); // Get camera pos
         Vec3d lookVec = entity.getRotationVec(1.0F); // Get looking dir
@@ -58,6 +73,13 @@ public final class BlockUtils {
         );
         
         return world.raycast(new RaycastContext( posVec, traceVec, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.ANY, entity));
+    }
+    
+    public static void igniteNearbyLightSources(@NotNull ServerWorld world) {
+        
+    }
+    public static void extinguishNearbyLightSources(@NotNull ServerWorld world) {
+        
     }
     
     /**

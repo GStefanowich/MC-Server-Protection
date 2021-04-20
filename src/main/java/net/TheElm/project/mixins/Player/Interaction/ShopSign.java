@@ -29,6 +29,8 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.ShopSignBuilder;
+import net.TheElm.project.utilities.nbt.NbtGet;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
@@ -46,6 +48,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.InvalidIdentifierException;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -84,8 +87,8 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
      * Mixin Getters
      */
     
-    @Override @Nullable
-    public UUID getShopOwner() {
+    @Override
+    public @Nullable UUID getShopOwner() {
         return this.shopSign_Owner;
     }
     @Override
@@ -93,44 +96,50 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
         return this.text[line];
     }
     
-    @Override @Nullable
-    public Item getShopItem() {
+    @Override
+    public @Nullable Item getShopItem() {
         Item tradeItem;
         if (( tradeItem = Registry.ITEM.get( this.shopSign_item ) ) != Items.AIR )
             return tradeItem;
         return null;
     }
-    @Override @Nullable
-    public Identifier getShopItemIdentifier() {
+    @Override
+    public @Nullable Identifier getShopItemIdentifier() {
         return this.shopSign_item;
     }
-    @Override @Nullable
-    public Text getShopItemDisplay() {
+    @Override
+    public @Nullable Text getShopItemDisplay() {
         Item item = this.getShopItem();
         if (item == null)
             return new LiteralText("");
         return new TranslatableText(item.getTranslationKey());
     }
-    @Override @Nullable
-    public Integer getShopItemCount() {
+    @Override
+    public @Nullable Integer getShopItemCount() {
         return this.shopSign_itemCount;
     }
-    @Override @Nullable
-    public Integer getShopItemPrice() {
+    private void setShopItemCount(@Nullable Integer count) {
+        this.shopSign_itemCount = count;
+    }
+    @Override
+    public @Nullable Integer getShopItemPrice() {
         return this.shopSign_itemPrice;
     }
+    private void setShopItemPrice(@Nullable Integer price) {
+        this.shopSign_itemPrice = price;
+    }
     
-    @Override @Nullable
-    public BlockPos getFirstPos() {
+    @Override
+    public @Nullable BlockPos getFirstPos() {
         return this.shopSign_posA;
     }
-    @Override @Nullable
-    public BlockPos getSecondPos() {
+    @Override
+    public @Nullable BlockPos getSecondPos() {
         return this.shopSign_posB;
     }
     
-    @Override @Nullable
-    public ShopSigns getShopType() {
+    @Override
+    public @Nullable ShopSigns getShopType() {
         return this.shopSign_Type;
     }
     
@@ -186,52 +195,60 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
      */
     
     @Inject(at = @At("RETURN"), method = "toTag", cancellable = true)
-    public void nbtWrite(CompoundTag originalTag, CallbackInfoReturnable<CompoundTag> callback) {
+    public void nbtWrite(@NotNull CompoundTag originalTag, @NotNull CallbackInfoReturnable<CompoundTag> callback) {
         CompoundTag tag = callback.getReturnValue();
         
         if ( this.shopSign_Owner == null )
             return;
         
-        tag.putUuid("shop_owner", this.shopSign_Owner );
-        if ( this.shopSign_item != null ) {
-            tag.putString("shop_item_mod", this.shopSign_item.getNamespace());
-            tag.putString("shop_item_name", this.shopSign_item.getPath());
-        }
-        if (this.shopSign_itemCount != null) tag.putInt("shop_item_count", this.shopSign_itemCount );
-        if (this.shopSign_itemPrice != null) tag.putInt("shop_price", this.shopSign_itemPrice );
+        tag.putUuid("shop_owner", this.getShopOwner());
+        if ( this.shopSign_item != null )
+            tag.putString("shop_item", this.getShopItemIdentifier().toString());
+        if (this.shopSign_itemCount != null)
+            tag.putInt("shop_count", this.getShopItemCount());
+        if (this.shopSign_itemPrice != null)
+            tag.putInt("shop_price", this.getShopItemPrice());
         
         if ((this.getFirstPos() != null) && (this.getSecondPos() != null)) {
             tag.putLong("shop_blockPosA", this.getFirstPos().asLong());
             tag.putLong("shop_blockPosB", this.getSecondPos().asLong());
         }
         
-        callback.setReturnValue( tag );
+        callback.setReturnValue(tag);
     }
     
     @Inject(at = @At("RETURN"), method = "fromTag")
-    public void nbtRead(BlockState state, CompoundTag tag, CallbackInfo callback) {
+    public void nbtRead(@NotNull BlockState state, @NotNull CompoundTag tag, @NotNull CallbackInfo callback) {
         // Shop signs
-        if ( tag.containsUuid( "shop_owner" ) && (this.shopSign_Type = ShopSigns.valueOf(this.text[0])) != null) {
-            // Get the ITEM for the shop
-            if (tag.contains("shop_item_mod", NbtType.STRING) && tag.contains("shop_item_name", NbtType.STRING)) {
-                String signItem = tag.getString("shop_item_mod") + ":" + tag.getString("shop_item_name");
+        if ((this.shopSign_Type = ShopSigns.valueOf(this.text[0])) != null) {
+            NbtUtils.tryGet(tag, NbtGet.UUID, "shop_owner", (uuid) -> {
+                String signItem = "";
                 try {
-                    this.shopSign_item = new Identifier(signItem);
+                    // Get the ITEM for the shop
+                    if (tag.contains("shop_item_mod", NbtType.STRING) && tag.contains("shop_item_name", NbtType.STRING)) {
+                        this.shopSign_item = new Identifier(signItem = (tag.getString("shop_item_mod") + ":" + tag.getString("shop_item_name")));
+                    } else if (tag.contains("shop_item", NbtType.STRING))
+                        this.shopSign_item = new Identifier(signItem = tag.getString("shop_item"));
                 } catch (InvalidIdentifierException e) {
-                    CoreMod.logError("Could not find item \"" + signItem + "\" for shop sign.", e);
+                    CoreMod.logError("Invalid item identifier \"" + signItem + "\" for shop sign.", e);
                 }
-            }
-            
-            // Get the BLOCK POSITIONS for deed
-            if (tag.contains("shop_blockPosA", NbtType.LONG) && tag.contains("shop_blockPosB", NbtType.LONG)) {
-                this.shopSign_posA = BlockPos.fromLong(tag.getLong("shop_blockPosA"));
-                this.shopSign_posB = BlockPos.fromLong(tag.getLong("shop_blockPosB"));
-            }
-            
-            // Save other relevant shop sign data
-            this.shopSign_Owner = tag.getUuid("shop_owner");
-            if (tag.contains("shop_item_count", NbtType.NUMBER)) this.shopSign_itemCount = tag.getInt("shop_item_count");
-            if (tag.contains("shop_price", NbtType.NUMBER)) this.shopSign_itemPrice = tag.getInt("shop_price");
+                
+                // Get the BLOCK POSITIONS for deed
+                if (tag.contains("shop_blockPosA", NbtType.LONG) && tag.contains("shop_blockPosB", NbtType.LONG)) {
+                    this.shopSign_posA = BlockPos.fromLong(tag.getLong("shop_blockPosA"));
+                    this.shopSign_posB = BlockPos.fromLong(tag.getLong("shop_blockPosB"));
+                }
+                
+                // Save the shop owner UUID
+                this.shopSign_Owner = uuid;
+                
+                // Get the Item COUNT
+                NbtUtils.tryGet(tag, NbtGet.INT, "shop_item_count", this::setShopItemCount)
+                    .orElse("shop_count");
+                
+                // Get the Item PRICE
+                NbtUtils.tryGet(tag, NbtGet.INT, "shop_price", this::setShopItemPrice);
+            });
         }
     }
     

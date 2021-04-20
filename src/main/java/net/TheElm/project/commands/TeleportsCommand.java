@@ -35,15 +35,9 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
-import net.TheElm.project.utilities.ChunkUtils;
-import net.TheElm.project.utilities.ColorUtils;
-import net.TheElm.project.utilities.CommandUtilities;
-import net.TheElm.project.utilities.MessageUtils;
-import net.TheElm.project.utilities.PlayerNameUtils;
-import net.TheElm.project.utilities.TitleUtils;
-import net.TheElm.project.utilities.TranslatableServerSide;
-import net.TheElm.project.utilities.WarpUtils;
+import net.TheElm.project.utilities.*;
 import net.TheElm.project.utilities.WarpUtils.Warp;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
@@ -57,11 +51,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
 import net.minecraft.world.World;
@@ -80,9 +70,9 @@ public final class TeleportsCommand {
     
     private TeleportsCommand() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("spawn")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING))
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
+        ServerCore.register(dispatcher, "spawn", builder -> builder
+            .requires(CommandUtils.requires(OpLevels.CHEATING))
             .then(CommandManager.argument("player", EntityArgumentType.players())
                 .executes((context) -> {
                     // Get location information
@@ -100,7 +90,7 @@ public final class TeleportsCommand {
                     } else {
                         source.sendFeedback(new TranslatableText("commands.teleport.success.entity.multiple", players.size(), spawnText), true);
                     }
-                
+                    
                     return Command.SINGLE_SUCCESS;
                 })
             )
@@ -117,10 +107,9 @@ public final class TeleportsCommand {
                 return Command.SINGLE_SUCCESS;
             })
         );
-        CoreMod.logDebug("- Registered Spawn command");
         
-        dispatcher.register(CommandManager.literal("theend")
-            .requires((source -> source.hasPermissionLevel(OpLevels.CHEATING)))
+        ServerCore.register(dispatcher, "theend", "end teleport", builder -> builder
+            .requires(CommandUtils.requires(OpLevels.CHEATING))
             .then(CommandManager.argument("players", EntityArgumentType.entities())
                 .executes((context) -> TeleportsCommand.sendEntitiesToEnd(EntityArgumentType.getEntities(context, "players")))
             )
@@ -131,39 +120,35 @@ public final class TeleportsCommand {
             })
         );
         
-        dispatcher.register(CommandManager.literal("tpa")
+        ServerCore.register(dispatcher, "tpa", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
-                .suggests(CommandUtilities::getAllPlayerNames)
+                .suggests(CommandUtils::getAllPlayerNames)
                 .executes(TeleportsCommand::tpaCommand)
             )
             .executes(TeleportsCommand::homeCommand)
         );
-        CoreMod.logDebug("- Registered TPA command");
         
-        dispatcher.register(CommandManager.literal("tpaccept")
+        ServerCore.register(dispatcher, "tpaccept", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(WarpUtils::hasWarp)
                 .executes(TeleportsCommand::tpAcceptCommand)
             )
         );
-        CoreMod.logDebug("- Registered TPAccept command");
         
-        dispatcher.register(CommandManager.literal("tpdeny")
+        ServerCore.register(dispatcher, "tpdeny", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(WarpUtils::hasWarp)
                 .executes(TeleportsCommand::tpDenyCommand)
             )
         );
-        CoreMod.logDebug("- Registered TPDeny command");
         
-        dispatcher.register(CommandManager.literal("home")
+        ServerCore.register(dispatcher, "home", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
             .executes(TeleportsCommand::homeCommand)
         );
-        CoreMod.logDebug("- Registered Home command");
     }
     
     private static int homeCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

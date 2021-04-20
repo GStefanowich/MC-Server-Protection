@@ -28,7 +28,7 @@ package net.TheElm.project.protections.logging;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.utilities.NbtUtils;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;

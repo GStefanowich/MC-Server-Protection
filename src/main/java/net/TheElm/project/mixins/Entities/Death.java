@@ -27,8 +27,8 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.WarpUtils;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.enchantment.EnchantmentHelper;

@@ -42,9 +42,9 @@ public final class CasingUtils {
     }
     
     public static String Sentence( @NotNull String modify ) {
-        if ( "".equals( modify ) )
+        if ( "".equals(modify) )
             return modify;
-        String out = CasingUtils.Lower( modify );
+        String out = CasingUtils.Lower(modify);
         return out.substring( 0, 1 ).toUpperCase() + out.substring( 1 );
     }
     

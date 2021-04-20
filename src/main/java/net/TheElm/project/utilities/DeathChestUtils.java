@@ -30,23 +30,28 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.PlayerCorpse;
 import net.TheElm.project.objects.PlayerBackpack;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.SlabBlock;
 import net.minecraft.block.enums.SlabType;
 import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.fluid.Fluids;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Util;
@@ -54,16 +59,16 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.EulerAngle;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
 
 public final class DeathChestUtils {
-    
     private DeathChestUtils() {}
     
-    public static @Nullable BlockPos getChestPosition(World world, BlockPos deathPoint) {
+    public static @Nullable BlockPos getChestPosition(@NotNull final World world, @NotNull final BlockPos deathPoint) {
         BlockPos out;
         
         int maxX = SewConfig.get(SewConfig.MAX_DEATH_SCAN);
@@ -96,7 +101,7 @@ public final class DeathChestUtils {
         
         return null;
     }
-    private static @Nullable BlockPos isValid(final World world, final BlockPos blockPos) {
+    private static @Nullable BlockPos isValid(@NotNull final World world, @NotNull final BlockPos blockPos) {
         Block block = world.getBlockState(blockPos).getBlock();
         
         // If AIR, A-O-KAY
@@ -115,20 +120,19 @@ public final class DeathChestUtils {
         // Return NULL if no valid position was found
         return null;
     }
-    public static boolean createDeathChestFor(final PlayerEntity player, BlockPos deathPos) {
+    public static boolean createDeathChestFor(@NotNull final PlayerEntity player, @NotNull BlockPos deathPos) {
         final PlayerInventory inventory = player.inventory;
         final PlayerBackpack backpack = ((BackpackCarrier)player).getBackpack();
         World world = player.world;
         
         if (deathPos.getY() < 0)
-            deathPos = new BlockPos( deathPos.getX(), 0, deathPos.getZ() );
-        
-        final BlockPos chestPos;
+            deathPos = new BlockPos(deathPos.getX(), 0, deathPos.getZ());
         
         // Check if the ground is a liquid, and move up
         BlockState groundBlockState = world.getBlockState(deathPos);
         boolean skipGroundBlock = !(groundBlockState.getMaterial().isLiquid() && (!groundBlockState.getBlock().equals(Blocks.WATER)));
         
+        final BlockPos chestPos;
         if (!skipGroundBlock) {
             // Shift up by one if block is a fluid (and require a dirt block)
             chestPos = deathPos.offset(Direction.UP); // If block is air (require a dirt block)
@@ -144,13 +148,40 @@ public final class DeathChestUtils {
          */
         
         // Create the armor stands entity
-        ArmorStandEntity corpse = new ArmorStandEntity(
-            world,
-            chestPos.getX() + 0.5D,
-            chestPos.getY() - (world.getBlockState(chestPos.up()).getBlock() instanceof SlabBlock ? 0 : 0.5D),
-            chestPos.getZ() + 0.5D
+        ArmorStandEntity corpse = DeathChestUtils.createFakeCorpse(world, chestPos, player);
+        
+        /*
+         * Add our items to the "Chest"
+         */
+        ListTag inventoryTag = DeathChestUtils.collectInventoryTags(inventory);
+        ListTag backpackTag = DeathChestUtils.collectInventoryTags(backpack);
+        
+        // Set the contents of the item stand
+        ((PlayerCorpse)corpse).setCorpseData(
+            player.getUuid(),
+            inventoryTag,
+            backpackTag
         );
         
+        // Backup data
+        CompoundTag file = new CompoundTag();
+        file.putLong("xp", player.totalExperience);
+        file.put("inventory", inventoryTag);
+        file.put("backpack", backpackTag);
+        
+        // TODO: Write "file" tag to disk to recover past deaths
+        
+        // Print the death chest coordinates
+        if (SewConfig.get(SewConfig.PRINT_DEATH_CHEST_LOC))
+            player.sendSystemMessage(TranslatableServerSide.text(player, "player.death_chest.location", new LiteralText(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)), Util.NIL_UUID);
+        CoreMod.logInfo("Death chest for " + player.getName().asString() + " spawned at " + MessageUtils.xyzToString( chestPos.offset(Direction.UP, 1)));
+        
+        // Add the entity to the world
+        return ( skipGroundBlock || world.setBlockState(chestPos, Blocks.DIRT.getDefaultState()) )
+            && world.spawnEntity(corpse) // Spawn the Armor stand into the World
+            && corpse.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, 1000000, 1, false, true )); // Apply a visual appearance to the Armor stand
+    }
+    private static @NotNull ArmorStandEntity createFakeCorpse(@NotNull final World world, @NotNull final BlockPos chestPos, @NotNull final LivingEntity copyOf) {
         // Set the stands basic attributes (From tags)
         CompoundTag entityData = new CompoundTag();
         entityData.putBoolean("NoBasePlate", true);
@@ -158,20 +189,36 @@ public final class DeathChestUtils {
         entityData.putBoolean("Invisible", true);
         entityData.putBoolean("NoGravity", true);
         entityData.putInt("DisabledSlots", 2039583);
+
+        // Create the armor stands entity
+        ArmorStandEntity corpse = new ArmorStandEntity(
+            world,
+            chestPos.getX() + 0.5D,
+            chestPos.getY() - (world.getBlockState(chestPos.up()).getBlock() instanceof SlabBlock ? 0 : 0.5D),
+            chestPos.getZ() + 0.5D
+        );
         
+        // Apply data from the CompoundTag
         corpse.readCustomDataFromTag(entityData);
-        
-        // Set the stands basic attributes
-        corpse.pitch = player.pitch;
-        corpse.yaw = player.yaw;
         
         corpse.setInvulnerable(true);
         corpse.setNoGravity(true);
         corpse.setInvisible(true);
         
-        // Set our players name
-        String playerName = player.getName().asString();
-        corpse.setCustomName(new LiteralText(playerName + "'s Corpse").formatted(Formatting.GOLD));
+        // Set the stands basic attributes
+        corpse.pitch = copyOf.pitch;
+        corpse.yaw = copyOf.yaw;
+        
+        String playerName = copyOf.getName().asString();
+        corpse.setCustomName(new LiteralText(playerName + "'s Corpse")
+            .styled((s) -> {
+                // Set our players name
+                Text customName = copyOf.getDisplayName();
+                TextColor color;
+                if (customName == null || (color = customName.getStyle().getColor()) == null)
+                    color = TextColor.fromFormatting(Formatting.GOLD);
+                return s.withColor(color);
+            }));
         corpse.setCustomNameVisible(true);
         
         // Set the armor stands head
@@ -181,54 +228,26 @@ public final class DeathChestUtils {
         
         // Set the armor stands equipped item
         corpse.equipStack(EquipmentSlot.HEAD, head);
-        corpse.setStackInHand( Hand.OFF_HAND, inventory.getMainHandStack().copy());
-        corpse.setStackInHand( Hand.MAIN_HAND, player.getOffHandStack().copy());
+        corpse.setStackInHand(Hand.OFF_HAND, copyOf.getMainHandStack().copy());
+        corpse.setStackInHand(Hand.MAIN_HAND, copyOf.getOffHandStack().copy());
         
         // Set the pose
         corpse.setHeadRotation(new EulerAngle(334.0f,37.0f,0.0f));
         corpse.setLeftArmRotation(new EulerAngle(325.0f,356.0f,265.0f));
         corpse.setRightArmRotation(new EulerAngle(0.0f,0.0f,82.0f));
         
-        /*
-         * Add our items to the "Chest"
-         */
-        ListTag inventoryTag = new ListTag();
-        ListTag backpackTag = new ListTag();
-        
-        // Iterate inventory items
-        for (int i = 0; i < inventory.size(); i++) {
-            ItemStack stack = inventory.removeStack(i);
-            if (stack.getItem().equals(Items.AIR))
-                continue;
-            inventoryTag.add(stack.toTag(new CompoundTag()));
-        }
-        
-        // Iterate backpack items
-        if (backpack != null) {
-            for (int i = 0; i < backpack.size(); i++) {
-                ItemStack stack = backpack.removeStack(i);
+        return corpse;
+    }
+    private static @NotNull ListTag collectInventoryTags(@Nullable Inventory inventory) {
+        ListTag list = new ListTag();
+        if (inventory != null) {
+            for (int i = 0; i < inventory.size(); i++) {
+                ItemStack stack = inventory.removeStack(i);
                 if (stack.getItem().equals(Items.AIR))
                     continue;
-                backpackTag.add(stack.toTag(new CompoundTag()));
+                list.add(stack.toTag(new CompoundTag()));
             }
         }
-        
-        // Set the contents of the item stand
-        ((PlayerCorpse)corpse).setCorpseData(
-            player.getUuid(),
-            inventoryTag,
-            backpackTag
-        );
-        
-        // Print the death chest coordinates
-        if (SewConfig.get(SewConfig.PRINT_DEATH_CHEST_LOC))
-            player.sendSystemMessage(TranslatableServerSide.text(player, "player.death_chest.location", new LiteralText(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)), Util.NIL_UUID);
-        CoreMod.logInfo( "Death chest for " + playerName + " spawned at " + MessageUtils.xyzToString( chestPos.offset(Direction.UP, 1) ));
-        
-        // Add the entity to the world
-        return ( skipGroundBlock || world.setBlockState( chestPos, Blocks.DIRT.getDefaultState() ) )
-            && world.spawnEntity( corpse ) // Spawn the Armor stand into the World
-            && corpse.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, 1000000, 1, false, true )); // Apply a visual appearance to the Armor stand
+        return list;
     }
-    
 }

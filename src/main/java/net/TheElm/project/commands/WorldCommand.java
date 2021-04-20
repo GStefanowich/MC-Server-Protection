@@ -30,9 +30,10 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.DimensionArgumentType;
@@ -66,9 +67,9 @@ public final class WorldCommand {
                 );
             }
         });
-        
-        dispatcher.register(CommandManager.literal("world")
-            .requires((source -> source.hasPermissionLevel(OpLevels.CHEATING)))
+
+        ServerCore.register(dispatcher, "world", builder -> builder
+            .requires(CommandUtils.requires(OpLevels.CHEATING))
             .then(CommandManager.argument("world", DimensionArgumentType.dimension())
                 .then(CommandManager.literal("teleport")
                     .then(CommandManager.argument("target", EntityArgumentType.entities())
@@ -85,7 +86,6 @@ public final class WorldCommand {
                 .then(gamerules)
             )
         );
-        CoreMod.logDebug("- Registered World command");
     }
     
     private static int teleportSelfTo(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

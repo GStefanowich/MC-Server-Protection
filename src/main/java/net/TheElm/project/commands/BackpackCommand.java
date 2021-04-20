@@ -81,7 +81,7 @@ public final class BackpackCommand {
         player.sendMessage(new LiteralText( added ?
             "Backpack will now automatically pick up "
             : "Backpack will no longer pick up "
-        ).formatted(Formatting.YELLOW).append(new TranslatableText(item.getTranslationKey()).formatted(Formatting.AQUA)).append("."), MessageType.GAME_INFO, ServerCore.spawnID);
+        ).formatted(Formatting.YELLOW).append(new TranslatableText(item.getTranslationKey()).formatted(Formatting.AQUA)).append("."), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
         
         return Command.SINGLE_SUCCESS;
     }

@@ -73,10 +73,10 @@ public final class FormattingUtils {
     }
     
     public static @NotNull MutableText deepCopy(@NotNull final Text text) {
-        return text.copy().setStyle(text.getStyle());
+        return text.shallowCopy();
     }
     
-    private static String[] stringToColorSegments(@NotNull String raw) {
+    private static @NotNull String[] stringToColorSegments(@NotNull String raw) {
         List<String> segments = new ArrayList<>();
         Matcher matches = Pattern.compile(regex.pattern() + '+').matcher(raw);
         

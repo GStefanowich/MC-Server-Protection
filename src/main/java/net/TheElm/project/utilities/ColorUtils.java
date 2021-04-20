@@ -35,7 +35,7 @@ import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.Color;
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -213,17 +213,17 @@ public final class ColorUtils {
             .append(text), color);
     }
     
-    private static @NotNull Color materialToColor(MaterialColor material) {
+    private static @NotNull Color materialToColor(@NotNull MaterialColor material) {
         return new Color(material.color);
     }
-    private static @NotNull Color dyeToColor(DyeColor color) {
+    private static @NotNull Color dyeToColor(@NotNull DyeColor color) {
         float[] components = color.getColorComponents();
         return new Color(components[0], components[1], components[2]);
     }
     private static @NotNull Color formatToColor(Formatting color) {
         return new Color(ColorUtils.formatToInt( color ));
     }
-    private static int formatToInt(Formatting color) {
+    private static int formatToInt(@NotNull Formatting color) {
         switch ( color ) {
             case BLACK:
                 return 0;
@@ -261,25 +261,25 @@ public final class ColorUtils {
                 throw new IllegalArgumentException(( color.isColor() ? "Unhandled color " + color.name() : "Invalid formatting, " + color.name() + " is not a color." ));
         }
     }
-    private static double colorDistance(Color one, Color two) {
+    private static double colorDistance(@NotNull Color one, @NotNull Color two) {
         return Math.pow((one.getRed() - two.getRed()) * 0.30, 2)
             + Math.pow((one.getGreen() - two.getGreen()) * 0.59, 2)
             + Math.pow((one.getBlue() - two.getBlue()) * 0.11, 2);
     }
     
-    public static @NotNull DyeColor getNearestDye(Formatting color) {
+    public static @NotNull DyeColor getNearestDye(@NotNull Formatting color) {
         DyeColor dye = DyeColor.byName(color.getName(), null);
         if (dye != null)
             return dye;
         return ColorUtils.getNearestDye(ColorUtils.formatToColor( color ));
     }
-    public static @NotNull DyeColor getNearestDye(String hex) {
+    public static @NotNull DyeColor getNearestDye(@NotNull String hex) {
         return ColorUtils.getNearestDye(Color.decode( hex ));
     }
     public static @NotNull DyeColor getNearestDye(float r, float g, float b) {
         return ColorUtils.getNearestDye(new Color(r, g, b));
     }
-    public static @NotNull DyeColor getNearestDye(Color colorA) {
+    public static @NotNull DyeColor getNearestDye(@NotNull Color colorA) {
         HashMap<DyeColor, Double> list = new HashMap<>();
         DyeColor nearest = null;
         
@@ -303,10 +303,10 @@ public final class ColorUtils {
         return nearest;
     }
     
-    public static @Nullable TextColor getNearestTextColor(Formatting formatting) {
+    public static @Nullable TextColor getNearestTextColor(@NotNull Formatting formatting) {
         return TextColor.fromFormatting(formatting);
     }
-    public static @NotNull TextColor getNearestTextColor(String hex) {
+    public static @NotNull TextColor getNearestTextColor(@NotNull String hex) {
         return ColorUtils.getNearestTextColor(Color.decode(hex));
     }
     public static @NotNull TextColor getNearestTextColor(float r, float g, float b) {
@@ -317,6 +317,26 @@ public final class ColorUtils {
     }
     public static @NotNull TextColor getNearestTextColor(@NotNull Color color) {
         return ColorUtils.getNearestTextColor(color.getRed(), color.getGreen(), color.getBlue());
+    }
+    
+    public static @NotNull Color[] getRange(@NotNull Color start, @NotNull Color end, final int scale) {
+        if (scale == 1)
+            return new Color[] { start };
+        if (scale == 2)
+            return new Color[] { start, end };
+        
+        float r = (float)(end.getRed() - start.getRed()) / scale,
+            g = (float)(end.getGreen() - start.getGreen()) / scale,
+            b = (float)(end.getBlue() - start.getBlue()) / scale;
+        
+        Color[] colors = new Color[scale]; // Create the scale
+        colors[0] = start; // Add starting color
+        for (int i = 1; i < scale; i++) {
+            Color previous = colors[i - 1]; // Set the previous
+            colors[i] = ColorUtils.createColor(previous.getRed() + r, previous.getGreen() + g, previous.getBlue() + b); //
+        }
+        
+        return colors;
     }
     
     public static @NotNull Formatting getNearestFormatting(@NotNull DyeColor color) {
@@ -401,16 +421,42 @@ public final class ColorUtils {
         return array[RANDOM.nextInt( array.length )];
     }
     
-    public static Set<String> getSuggestedNames() {
+    public static @NotNull Set<String> getSuggestedNames() {
         return ColorUtils.COLORS.keySet();
     }
-    public static TextColor getRawColor(@NotNull String value) {
+    public static @Nullable TextColor getRawTextColor(@NotNull String value) {
         if (!value.startsWith("#"))
             return ColorUtils.getNearestTextColor(ColorUtils.COLORS.get(value));
+        return TextColor.parse(value);
+    }
+    public static @Nullable Color getRawColor(@NotNull String value) {
+        if (!value.startsWith("#"))
+            return ColorUtils.COLORS.get(value);
         try {
-            return TextColor.parse(value);
-        } catch (NumberFormatException ignored) {}
+            return new Color(Integer.parseInt(value.substring(1), 16));
+        } catch (NumberFormatException var2) {}
         return null;
+    }
+    
+    public static @NotNull Color createColor(int r, int g, int b) {
+        return new Color(
+            ColorUtils.withinScale(r) / 255,
+            ColorUtils.withinScale(g) / 255,
+            ColorUtils.withinScale(b) / 255
+        );
+    }
+    public static @NotNull Color createColor(float r, float g, float b) {
+        return new Color(
+            ColorUtils.withinScale(r) / 255,
+            ColorUtils.withinScale(g) / 255,
+            ColorUtils.withinScale(b) / 255
+        );
+    }
+    public static int withinScale(int c) {
+        return Math.max(0, Math.min(c, 255));
+    }
+    public static float withinScale(float c) {
+        return Math.max(0, Math.min(c, 255));
     }
     
     static {

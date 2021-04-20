@@ -30,11 +30,11 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.PlayerChat;
-import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -42,6 +42,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.NotNull;
 
 public final class MiscCommands {
     
@@ -50,49 +51,47 @@ public final class MiscCommands {
     
     private MiscCommands() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("shrug")
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
+        ServerCore.register(dispatcher, "shrug", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.COMMAND_SHRUG))
             .then(CommandManager.argument("message", StringArgumentType.greedyString())
                 .executes(MiscCommands::shrugMessage)
             )
             .executes(MiscCommands::shrug)
         );
-        CoreMod.logDebug("- Registered Nick command");
         
-        dispatcher.register(CommandManager.literal("tableflip")
+        ServerCore.register(dispatcher, "tableflip", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.COMMAND_TABLEFLIP))
             .then(CommandManager.argument("message", StringArgumentType.greedyString())
                 .executes(MiscCommands::flipMessage)
             )
             .executes(MiscCommands::flip)
         );
-        CoreMod.logDebug("- Registered Nick command");
     }
     
-    private static int shrug(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int shrug(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
         return MiscCommands.playerSendsMessageAndData(player,"", MiscCommands.SHRUG);
     }
-    private static int shrugMessage(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int shrugMessage(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
         String text = StringArgumentType.getString( context, "message" );
         return MiscCommands.playerSendsMessageAndData(player, text, MiscCommands.SHRUG);
     }
-    private static int flip(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int flip(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
         return MiscCommands.playerSendsMessageAndData(player,"", MiscCommands.FLIP);
     }
-    private static int flipMessage(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int flipMessage(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
         String text = StringArgumentType.getString( context, "message" );
         return MiscCommands.playerSendsMessageAndData(player, text, MiscCommands.FLIP);
     }
     
-    public static int playerSendsMessageAndData(ServerPlayerEntity player, String message, String main) {
+    public static int playerSendsMessageAndData(@NotNull ServerPlayerEntity player, @NotNull String message, @NotNull String main) {
         return MiscCommands.playerSendsMessageAndData(player, message, new LiteralText( main ));
     }
-    public static int playerSendsMessageAndData(ServerPlayerEntity player, String message, Text main) {
+    public static int playerSendsMessageAndData(@NotNull ServerPlayerEntity player, @NotNull String message, @NotNull Text main) {
         // Create the player display for chat
         MutableText text = PlayerNameUtils.getPlayerChatDisplay( player, ((PlayerChat) player).getChatRoom() )
             .append(new LiteralText( ": " ).formatted(Formatting.GRAY));

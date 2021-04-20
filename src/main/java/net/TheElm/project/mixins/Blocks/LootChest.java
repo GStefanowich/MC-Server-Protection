@@ -41,11 +41,11 @@ public abstract class LootChest extends BlockWithEntity {
                 if (identifier != null) {
                     BossLootRewards rewards = BossLootRewards.get(identifier);
                     if (rewards == null)
-                        ((ServerPlayerEntity)player).sendMessage(new LiteralText("Couldn't find any loot for that boss.").formatted(Formatting.RED), MessageType.GAME_INFO, ServerCore.spawnID);
+                        ((ServerPlayerEntity)player).sendMessage(new LiteralText("Couldn't find any loot for that boss.").formatted(Formatting.RED), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
                     else {
                         LootInventory inventory = rewards.getPlayerLoot(player.getUuid());
                         if (inventory.isEmpty())
-                            ((ServerPlayerEntity)player).sendMessage(new LiteralText("You don't have any loot from the ").formatted(Formatting.RED).append(rewards.getEntityName()).append("."), MessageType.GAME_INFO, ServerCore.spawnID);
+                            ((ServerPlayerEntity)player).sendMessage(new LiteralText("You don't have any loot from the ").formatted(Formatting.RED).append(rewards.getEntityName()).append("."), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
                         else {
                             player.openHandledScreen(new SimpleNamedScreenHandlerFactory((i, playerInventory, playerEntity) ->
                                 inventory.createContainer(i, playerInventory),

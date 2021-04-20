@@ -23,14 +23,16 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Server;
+package net.TheElm.project.mixins.Entities;
 
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.IntUtils;
 import net.TheElm.project.utilities.TradeUtils;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.MerchantEntity;
 import net.minecraft.entity.passive.WanderingTraderEntity;
@@ -40,6 +42,7 @@ import net.minecraft.village.TradeOffer;
 import net.minecraft.village.TradeOfferList;
 import net.minecraft.village.TradeOffers;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -61,7 +64,7 @@ public abstract class WanderingTraders extends MerchantEntity {
      * Created customized traders for the trader
      */
     @Inject(at = @At("HEAD"), method = "fillRecipes", cancellable = true)
-    protected void fillRecipes(CallbackInfo callback) {
+    protected void fillRecipes(@NotNull CallbackInfo callback) {
         // If replacing wandering trader trades with better items is enabled
         if (SewConfig.isTrue(SewConfig.IMPROVED_WANDERING_TRADER)) {
             TradeOffers.Factory[] mainFactory = WANDERING_TRADER_TRADES.get(1);
@@ -88,9 +91,16 @@ public abstract class WanderingTraders extends MerchantEntity {
      * Change the wander target of the Trader to be their home
      */
     @Inject(at = @At("HEAD"), method = "getWanderTarget", cancellable = true)
-    protected void onGetHomePosition(CallbackInfoReturnable<BlockPos> callback) {
-        if (SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN) && SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD).equals(this.world.getRegistryKey()))
+    protected void onGetHomePosition(@NotNull CallbackInfoReturnable<BlockPos> callback) {
+        if (SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN) && SewConfig.equals(SewConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD, this.world.getRegistryKey()) && TradeUtils.isEntityWanderingTrader(this))
             callback.setReturnValue(SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN_POS));
+    }
+    
+    @Override
+    public void remove() {
+        if (!this.world.isClient && TradeUtils.isEntityWanderingTrader(this))
+            EntityUtils.wanderingTraderDeparture((WanderingTraderEntity)(Entity) this);
+        super.remove();
     }
     
     private static final Int2ObjectMap<TradeOffers.Factory[]> WANDERING_TRADER_TRADES = copyToFastUtilMap(

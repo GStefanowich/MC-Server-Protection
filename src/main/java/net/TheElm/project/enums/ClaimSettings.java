@@ -115,7 +115,7 @@ public enum ClaimSettings implements BoolEnums {
         return this.spawnDef;
     }
     public boolean getDefault(@Nullable UUID owner) {
-        if (CoreMod.spawnID.equals( owner ))
+        if (CoreMod.SPAWN_ID.equals( owner ))
             return this.getSpawnDefault();
         return this.getPlayerDefault();
     }

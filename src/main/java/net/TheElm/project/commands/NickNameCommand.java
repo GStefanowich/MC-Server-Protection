@@ -30,116 +30,166 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.commands.ArgumentTypes.ArgumentSuggestions;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
+import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.ColorUtils;
+import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.MoneyUtils;
-import net.TheElm.project.utilities.RankUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.text.TextUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket.Action;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
-import net.minecraft.text.TextColor;
+import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.awt.*;
+
 public final class NickNameCommand {
+    
+    private static final ExceptionTranslatableServerSide NAME_TOO_LONG = TranslatableServerSide.exception("player.nick.too_long");
+    private static final int NICK_MAX_LENGTH = 20;
     
     private NickNameCommand() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("nick")
-            .requires((source) -> SewConfig.get(SewConfig.DO_PLAYER_NICKS))
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
+        ServerCore.register(dispatcher, "Nick", (builder) -> builder
+            .requires(CommandUtils.isEnabled(SewConfig.DO_PLAYER_NICKS))
             .then(CommandManager.literal("reset")
                 .then(CommandManager.argument("target", EntityArgumentType.player())
-                    .requires((source) -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP))
+                    .requires(CommandUtils.requires(OpLevels.KICK_BAN_OP))
                     .executes((context) -> {
                         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "target");
-                        return setNickForPlayer(player, null);
+                        return NickNameCommand.setNickForPlayer(player, null);
                     })
                 )
                 .executes((context) -> {
                     ServerPlayerEntity player = context.getSource().getPlayer();
-                    return setNickForPlayer(player, null);
+                    return NickNameCommand.setNickForPlayer(player, null);
                 })
             )
             .then(CommandManager.argument("nick", StringArgumentType.string())
-                .requires((source) -> (!SewConfig.get(SewConfig.HANDLE_PERMISSIONS)) || RankUtils.hasPermission(source, Permissions.PLAYER_NICKNAME))
-                .then(CommandManager.argument("color", StringArgumentType.greedyString())
+                .requires(CommandUtils.requires(Permissions.PLAYER_NICKNAME))
+                .then(CommandManager.argument("color", StringArgumentType.string())
+                    .requires(CommandUtils.requires(Permissions.PLAYER_NICKNAME_COLOR))
                     .suggests(ArgumentSuggestions::suggestColors)
+                    .then(CommandManager.argument("ends", StringArgumentType.string())
+                        .requires(CommandUtils.requires(Permissions.PLAYER_NICKNAME_COLOR_GRADIENT))
+                        .suggests(ArgumentSuggestions::suggestColors)
+                        .executes(NickNameCommand::commandNickSetNamedColorRange)
+                    )
                     .executes(NickNameCommand::commandNickSetNamedColor)
                 )
                 .executes(NickNameCommand::commandNickSet)
             )
         );
-        CoreMod.logDebug("- Registered Nick command");
     }
     
-    private static int commandNickSet(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerPlayerEntity player = context.getSource().getPlayer();
+    private static @Nullable String commandVerifyNick(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        String nick = StringArgumentType.getString(context, "nick");
+        if (nick.isEmpty())
+            return null;
+        else if (nick.length() > NickNameCommand.NICK_MAX_LENGTH)
+            throw NickNameCommand.NAME_TOO_LONG.create(context.getSource(), NickNameCommand.NICK_MAX_LENGTH);
         
         if (SewConfig.get(SewConfig.NICKNAME_COST) > 0) {
             try {
                 if (!MoneyUtils.takePlayerMoney(player, SewConfig.get(SewConfig.NICKNAME_COST)))
-                    return Command.SINGLE_SUCCESS;
+                    return null;
             } catch (NotEnoughMoneyException e) {
-                return Command.SINGLE_SUCCESS;
+                return null;
             }
         }
         
-        return NickNameCommand.setNickForPlayer(player, StringArgumentType.getString(context, "nick"));
+        return nick;
     }
-    
+    private static int commandNickSet(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get command runtime information
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        // Get the nickname
+        String nickname = NickNameCommand.commandVerifyNick(context);
+        if (nickname == null)
+            return 0;
+        
+        return NickNameCommand.setNickForPlayer(player, nickname);
+    }
     private static int commandNickSetNamedColor(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
-        String nickname = StringArgumentType.getString(context, "nick");
+        // Get the nickname
+        String nickname = NickNameCommand.commandVerifyNick(context);
+        if (nickname == null)
+            return 0;
         
-        TextColor color = ColorUtils.getRawColor(StringArgumentType.getString(context, "color"));
+        // Get the color
+        Color color = ColorUtils.getRawColor(StringArgumentType.getString(context, "color"));
         if (color == null)
             return 0;
+        
         return NickNameCommand.setNickForPlayer(player, nickname, color);
+    }
+    private static int commandNickSetNamedColorRange(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        // Get the nickname
+        String nickname = NickNameCommand.commandVerifyNick(context);
+        if (nickname == null)
+            return 0;
+        
+        // Get the color
+        Color starts = ColorUtils.getRawColor(StringArgumentType.getString(context, "color"));
+        Color ends = ColorUtils.getRawColor(StringArgumentType.getString(context, "ends"));
+        if (starts == null || ends == null)
+            return 0;
+        return NickNameCommand.setNickForPlayer(player, nickname, starts, ends);
     }
     
     private static int commandNickSetOther(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerPlayerEntity player = EntityArgumentType.getPlayer( context, "player" );
-        String nickname = StringArgumentType.getString( context, "nick" );
+        ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+        String nickname = StringArgumentType.getString(context, "nick");
         return NickNameCommand.setNickForPlayer(player, nickname);
     }
     
-    private static int setNickForPlayer(@NotNull ServerPlayerEntity player, @Nullable String nickname) {
+    private static int setNickForPlayer(@NotNull final ServerPlayerEntity player, @Nullable final String nickname) {
         return NickNameCommand.setNickForPlayer(player, nickname, null);
     }
-    private static int setNickForPlayer(@NotNull ServerPlayerEntity player, @Nullable String nickname, @Nullable TextColor color) {
+    private static int setNickForPlayer(@NotNull final ServerPlayerEntity player, @Nullable final String nickname, @Nullable final Color color) {
+        return NickNameCommand.setNickForPlayer(player, nickname, color, color);
+    }
+    private static int setNickForPlayer(@NotNull final ServerPlayerEntity player, @Nullable final String nickname, @Nullable final Color starts, @Nullable final Color ends) {
+        MutableText notifyMessage;
+        Text newName = null;
         if (nickname == null)
-            ((Nicknamable)player).setPlayerNickname(null);
+            notifyMessage = TranslatableServerSide.text(player, "player.nick.reset");
         else {
             // Format the text with a color
-            MutableText text = new LiteralText(nickname);
-            if (color != null)
-                text.styled(style -> style.withColor(color));
-            
-            // Update the players display name
-            ((Nicknamable)player).setPlayerNickname(text);
-            
-            player.sendMessage(new LiteralText("Nickname updated to ")
-                .formatted(Formatting.YELLOW)
-                .append(text)
-                .append("."), false);
+            newName = TextUtils.literal(nickname, starts, ends);
+            notifyMessage = TranslatableServerSide.text(player, "player.nick.updated", newName);
         }
+        
+        // Update the players display name
+        ((Nicknamable) player).setPlayerNickname(newName);
+        player.sendMessage(notifyMessage.formatted(Formatting.YELLOW), false);
         
         // Update the name in the claim cache
         ((PlayerData)player).getClaim().updateName();

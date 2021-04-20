@@ -30,14 +30,14 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.interfaces.PlayerData;
-import net.TheElm.project.utilities.CommandUtilities;
-import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.WarpUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
@@ -64,32 +64,31 @@ public class WaystoneCommand {
     private WaystoneCommand() {}
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("waystones")
+        ServerCore.register(dispatcher, "waystones", builder -> builder
             .then(CommandManager.literal("set")
-                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING))
+                .requires(CommandUtils.requires(OpLevels.CHEATING))
                 .then(CommandManager.argument("player", EntityArgumentType.player())
                     .executes(WaystoneCommand::setToCurrentLocation)
                 )
             )
             .then(CommandManager.literal("reset")
-                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING))
-                .then(CommandManager.argument( "player", EntityArgumentType.player())
+                .requires(CommandUtils.requires(OpLevels.CHEATING))
+                .then(CommandManager.argument("player", EntityArgumentType.player())
                     .executes(WaystoneCommand::resetPlayer)
                 )
                 .executes(WaystoneCommand::resetSelf)
             )
             .then(CommandManager.literal("send")
-                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING))
+                .requires(CommandUtils.requires(OpLevels.CHEATING))
                 .then(CommandManager.argument("players", EntityArgumentType.players())
                     .then(CommandManager.argument("to", GameProfileArgumentType.gameProfile())
-                        .suggests(CommandUtilities::getAllPlayerNames)
+                        .suggests(CommandUtils::getAllPlayerNames)
                         .executes(WaystoneCommand::sendPlayersTo)
                     )
                     .executes(WaystoneCommand::sendHome)
                 )
             )
         );
-        CoreMod.logDebug( "- Registered Waystones command" );
     }
     
     private static int setToCurrentLocation(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

@@ -39,6 +39,7 @@ import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -48,6 +49,7 @@ import net.minecraft.item.RangedWeaponItem;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
@@ -82,6 +84,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
     /* 
      * If player drops inventory (At death, stop that!)
      */
+    
     @Inject(at = @At("HEAD"), method = "dropInventory", cancellable = true)
     public void onInventoryDrop(CallbackInfo callback) {
         if (!SewConfig.get(SewConfig.DO_DEATH_CHESTS))
@@ -110,10 +113,20 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
                 this.vanishCursedItems();
                 
                 // If a death chest was successfully spawned
-                if (DeathChestUtils.createDeathChestFor( (PlayerEntity)(LivingEntity) this, chestPos ))
+                if (DeathChestUtils.createDeathChestFor((PlayerEntity)(LivingEntity) this, chestPos))
                     callback.cancel();
             }
         }
+    }
+    
+    /*
+     * Stats of Mob Kills
+     */
+    
+    @Inject(at = @At("HEAD"), method = "onKilledOther", cancellable = true)
+    public void onKilledTarget(ServerWorld serverWorld, LivingEntity livingEntity, CallbackInfo callback) {
+        if (livingEntity instanceof EnderDragonEntity)
+            callback.cancel();
     }
     
     /*

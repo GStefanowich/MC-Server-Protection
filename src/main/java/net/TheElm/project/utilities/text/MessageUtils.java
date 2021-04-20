@@ -23,13 +23,17 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.utilities;
+package net.TheElm.project.utilities.text;
 
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.utilities.ColorUtils;
+import net.TheElm.project.utilities.FormattingUtils;
+import net.TheElm.project.utilities.PlayerNameUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.block.Block;
 import net.minecraft.client.options.ChatVisibility;
 import net.minecraft.enchantment.Enchantment;
@@ -42,12 +46,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
-import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
@@ -61,39 +60,39 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
-import java.util.Iterator;
+import java.awt.*;
 import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 public final class MessageUtils {
-    
     private MessageUtils() {}
     
     // General send
-    public static void sendTo(ChatRooms chatRoom, ServerPlayerEntity player, Text chatText) {
+    public static void sendTo(@NotNull ChatRooms chatRoom, @NotNull ServerPlayerEntity player, @NotNull Text chatText) {
+        MessageUtils.sendTo(chatRoom, player, Collections.emptyList(), chatText);
+    }
+    public static boolean sendTo(@NotNull ChatRooms chatRoom, @NotNull ServerPlayerEntity player, @NotNull Collection<ServerPlayerEntity> tags, @NotNull Text chatText) {
         switch (chatRoom) {
             // Local message
             case LOCAL: {
-                MessageUtils.sendToLocal( player.world, player.getBlockPos(), chatText );
-                break;
+                return MessageUtils.sendToLocal(player.world, player.getBlockPos(), tags, chatText);
             }
             // Global message
             case GLOBAL: {
-                MessageUtils.sendToAll( chatText );
-                break;
+                MessageUtils.sendToAll(chatText, tags);
+                return true;
             }
             // Message to the players town
             case TOWN: {
                 ClaimantPlayer claimantPlayer = ((PlayerData) player).getClaim();
-                MessageUtils.sendToTown( claimantPlayer.getTown(), chatText );
-                break;
+                return MessageUtils.sendToTown(claimantPlayer.getTown(), tags, chatText);
             }
         }
+        return false;
     }
     
     // Send a text blob from a target to a player
@@ -106,7 +105,8 @@ public final class MessageUtils {
     }
     public static boolean sendAsWhisper(@Nullable ServerPlayerEntity sender, @NotNull ServerPlayerEntity target, @NotNull Text text) {
         // Log the the server
-        ServerCore.get().sendSystemMessage(text, ServerCore.spawnID);
+        ServerCore.get()
+            .sendSystemMessage(text, ServerCore.SPAWN_ID);
         
         // Send the message to the player (SENDER)
         if ((sender != null) && (!sender.getUuid().equals( target.getUuid() ))) {
@@ -117,7 +117,7 @@ public final class MessageUtils {
         }
         
         ChatVisibility visibility = target.getClientChatVisibility();
-        if (visibility != ChatVisibility.FULL)
+        if (visibility != null && visibility != ChatVisibility.FULL)
             return false;
         else {
             // Send the message to the player (TARGET)
@@ -131,13 +131,17 @@ public final class MessageUtils {
     }
     
     // Send a text blob to a local area
-    public static void sendToLocal(final World world, final BlockPos blockPos, Text text) {
+    public static void sendToLocal(@NotNull final World world, @NotNull final BlockPos pos, @NotNull Text text) {
+        MessageUtils.sendToLocal(world, pos, Collections.emptyList(), text);
+    }
+    public static boolean sendToLocal(@NotNull final World world, @NotNull final BlockPos pos, @NotNull Collection<ServerPlayerEntity> tags, @NotNull Text text) {
         // Log to the server
-        ((ServerWorld) world).getServer().sendSystemMessage(text, ServerCore.spawnID);
+        ((ServerWorld) world).getServer()
+            .sendSystemMessage(text, ServerCore.SPAWN_ID);
         
         // Get the players in the area
-        BlockPos outerA = new BlockPos(blockPos.getX() + 800, 0, blockPos.getZ() + 800);
-        BlockPos outerB = new BlockPos(blockPos.getX() - 800, 800, blockPos.getZ() - 800);
+        BlockPos outerA = new BlockPos(pos.getX() + 800, 0, pos.getZ() + 800);
+        BlockPos outerB = new BlockPos(pos.getX() - 800, 800, pos.getZ() - 800);
         List<ServerPlayerEntity> players = world.getEntitiesByClass(ServerPlayerEntity.class, new Box(outerA, outerB), EntityPredicates.VALID_ENTITY);
         
         // Send the message to the players
@@ -145,10 +149,11 @@ public final class MessageUtils {
             players.stream(),
             text
         );
+        return false;
     }
     
     // Send a translation blob to all Players
-    public static void sendToAll(final String translationKey, final Object... objects) {
+    public static void sendToAll(@NotNull final String translationKey, final Object... objects) {
         final MinecraftServer server = ServerCore.get();
         MessageUtils.sendSystem(
             server.getPlayerManager().getPlayerList().stream(),
@@ -156,23 +161,27 @@ public final class MessageUtils {
             objects
         );
     }
-    public static void sendToAll(final Text text) {
+    public static void sendToAll(@NotNull final Text text) {
+        MessageUtils.sendToAll(text, Collections.emptyList());
+    }
+    public static boolean sendToAll(@NotNull final Text text, @NotNull Collection<ServerPlayerEntity> tags) {
         final MinecraftServer server = ServerCore.get();
         
         // Log to the server
-        server.sendSystemMessage(text, ServerCore.spawnID);
+        server.sendSystemMessage(text, ServerCore.SPAWN_ID);
         
         // Send to the players
         MessageUtils.sendChat(
             server.getPlayerManager().getPlayerList().stream(),
             text
         );
+        return false;
     }
-    public static void sendToAll(final Text text, Predicate<ServerPlayerEntity> predicate) {
+    public static void sendToAll(@NotNull final Text text, @NotNull Predicate<ServerPlayerEntity> predicate) {
         final MinecraftServer server = ServerCore.get();
         
         // Log to the server
-        server.sendSystemMessage(text, ServerCore.spawnID);
+        server.sendSystemMessage(text, ServerCore.SPAWN_ID);
         
         // Send to the players
         MessageUtils.sendChat(
@@ -182,7 +191,7 @@ public final class MessageUtils {
     }
     
     // Send a translation blob to a Town
-    public static void sendToTown(final ClaimantTown town, final String translationKey, final Object... objects) {
+    public static void sendToTown(@NotNull final ClaimantTown town, @NotNull Collection<ServerPlayerEntity> tags, @NotNull final String translationKey, final Object... objects) {
         final MinecraftServer server = ServerCore.get();
         MessageUtils.sendSystem(
             server.getPlayerManager().getPlayerList().stream().filter((player) -> {
@@ -193,11 +202,11 @@ public final class MessageUtils {
             objects
         );
     }
-    public static void sendToTown(final ClaimantTown town, final Text text) {
+    public static boolean sendToTown(@NotNull final ClaimantTown town, @NotNull Collection<ServerPlayerEntity> tags, @NotNull final Text text) {
         final MinecraftServer server = ServerCore.get();
         
         // Log to the server
-        server.sendSystemMessage(text, ServerCore.spawnID);
+        server.sendSystemMessage(text, ServerCore.SPAWN_ID);
         
         // Send to the players
         MessageUtils.sendChat(
@@ -207,6 +216,7 @@ public final class MessageUtils {
             }),
             text
         );
+        return false;
     }
     
     // Send a translation blob to OPs
@@ -223,10 +233,10 @@ public final class MessageUtils {
     }
     
     // Send command block text to OPs
-    public static void consoleToOps(Text event) {
+    public static void consoleToOps(@NotNull Text event) {
         MessageUtils.consoleToOps(new LiteralText("@"), event);
     }
-    public static void consoleToOps(Text player, Text event) {
+    public static void consoleToOps(@NotNull Text player, @NotNull Text event) {
         MinecraftServer server = ServerCore.get();
         
         Text send = (new TranslatableText("chat.type.admin", player, event)).formatted(Formatting.GRAY, Formatting.ITALIC);
@@ -236,7 +246,7 @@ public final class MessageUtils {
             while ( iterator.hasNext() ) {
                 ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity)iterator.next();
                 if (server.getPlayerManager().isOperator(serverPlayerEntity.getGameProfile()))
-                    serverPlayerEntity.sendMessage(send, MessageType.GAME_INFO, ServerCore.spawnID);
+                    serverPlayerEntity.sendSystemMessage(send, ServerCore.SPAWN_ID);
             }
         }
         
@@ -245,22 +255,22 @@ public final class MessageUtils {
     }
     
     // Send a translation blob to a stream of players
-    private static void sendSystem(final Stream<ServerPlayerEntity> players, final String translationKey, final Object... objects) {
+    private static void sendSystem(@NotNull final Stream<ServerPlayerEntity> players, final String translationKey, final Object... objects) {
         players.forEach((player) -> player.sendMessage(
             TranslatableServerSide.text(player, translationKey, objects).formatted(Formatting.YELLOW),
             MessageType.SYSTEM,
             Util.NIL_UUID
         ));
     }
-    private static void sendChat(final Stream<ServerPlayerEntity> players, final Text text) {
+    private static void sendChat(@NotNull final Stream<ServerPlayerEntity> players, final Text text) {
         players.forEach((player) -> player.sendMessage( text, MessageType.CHAT, Util.NIL_UUID ));
     }
     
     // Convert a Block Position to a Text component
-    public static MutableText xyzToText(final BlockPos pos) {
+    public static MutableText xyzToText(@NotNull final BlockPos pos) {
         return MessageUtils.xyzToText(pos, ", ");
     }
-    public static MutableText xyzToText(final BlockPos pos, final Identifier id) {
+    public static MutableText xyzToText(@NotNull final BlockPos pos, @NotNull final Identifier id) {
         MutableText out = xyzToText(pos);
         
         // Get the dimension
@@ -273,10 +283,10 @@ public final class MessageUtils {
         
         return out;
     }
-    public static MutableText xyzToText(final BlockPos pos, final String separator) {
-        return MessageUtils.dimensionToTextComponent( separator, pos.getX(), pos.getY(), pos.getZ() );
+    public static MutableText xyzToText(@NotNull final BlockPos pos, @NotNull final String separator) {
+        return MessageUtils.dimensionToTextComponent(separator, pos.getX(), pos.getY(), pos.getZ() );
     }
-    public static MutableText dimensionToTextComponent(final String separator, final int x, final int y, final int z) {
+    public static MutableText dimensionToTextComponent(@NotNull final String separator, final int x, final int y, final int z) {
         String[] pos = MessageUtils.posToString(x, y, z);
         return new LiteralText("")
             .append(new LiteralText(pos[0]).formatted(Formatting.AQUA))
@@ -286,10 +296,10 @@ public final class MessageUtils {
             .append(new LiteralText(pos[2]).formatted(Formatting.AQUA));
     }
     
-    public static <O> MutableText listToTextComponent(final Collection<O> list, Function<O, Text> function) {
+    public static @NotNull <O> MutableText listToTextComponent(@NotNull final Collection<O> list, @NotNull Function<O, Text> function) {
         return MessageUtils.listToTextComponent(list, ", ", function);
     }
-    public static <O> MutableText listToTextComponent(final Collection<O> list, String separator, Function<O, Text> function) {
+    public static @NotNull <O> MutableText listToTextComponent(@NotNull final Collection<O> list, @NotNull String separator, @NotNull Function<O, Text> function) {
         MutableText base = new LiteralText("");
         
         Iterator<O> iterator = list.iterator();
@@ -302,41 +312,48 @@ public final class MessageUtils {
         return base;
     }
     
-    public static String xyzToString(final BlockPos pos) {
+    public static @NotNull String xyzToString(@NotNull final BlockPos pos) {
         return MessageUtils.xyzToString(pos, ", ");
     }
-    public static String xyzToString(final BlockPos pos, final String separator) {
+    public static @NotNull String xyzToString(@NotNull final BlockPos pos, final String separator) {
         return MessageUtils.xyzToString(separator, pos.getX(), pos.getY(), pos.getZ());
     }
-    public static String xyzToString(final String separator, final int x, final int y, final int z) {
+    public static @NotNull String xyzToString(@NotNull final String separator, final int x, final int y, final int z) {
         return String.join(separator, MessageUtils.posToString( x, y, z ));
     }
     
-    public static String xzToString(final BlockPos pos) {
+    public static @NotNull String xzToString(@NotNull final BlockPos pos) {
         return MessageUtils.xzToString(", ", pos.getX(), pos.getZ());
     }
-    public static String xzToString(final ChunkPos pos) {
+    public static @NotNull String xzToString(@NotNull final ChunkPos pos) {
         return MessageUtils.xzToString(pos, ", ");
     }
-    public static String xzToString(final ChunkPos pos, final String separator) {
+    public static @NotNull String xzToString(@NotNull final ChunkPos pos, final String separator) {
         return MessageUtils.xzToString(separator, pos.getRegionX(), pos.getRegionZ());
     }
-    public static String xzToString(final String separator, final int x, final int z) {
+    public static @NotNull String xzToString(@NotNull final String separator, final int x, final int z) {
         return String.join(separator,MessageUtils.posToString(x, z));
     }
     
-    private static String[] posToString(final int x, final int z) {
+    private static @NotNull String[] posToString(final int x, final int z) {
         return new String[]{
             String.valueOf(x),
             String.valueOf(z)
         };
     }
-    private static String[] posToString(final int x, final int y, final int z) {
+    private static @NotNull String[] posToString(final int x, final int y, final int z) {
         return new String[]{
             String.valueOf(x),
             String.valueOf(y),
             String.valueOf(z)
         };
+    }
+    
+    public static @NotNull String colorToString(@NotNull Color color) {
+        return MessageUtils.colorToString(color.getRed(), color.getBlue(), color.getGreen());
+    }
+    public static @NotNull String colorToString(final int r, final int g, final int b) {
+        return "R: " + r +" G: " + g + " B: " + b;
     }
     
     // Format a message to chat from a player
@@ -362,8 +379,20 @@ public final class MessageUtils {
     public static @NotNull MutableText formatObject(@NotNull Block block) {
         return new TranslatableText(block.getTranslationKey()).formatted(Formatting.AQUA);
     }
-    public static @NotNull MutableText formatNumber(int number) {
-        return new LiteralText(FormattingUtils.number(number)).formatted(Formatting.AQUA);
+    public static @NotNull MutableText formatNumber(@NotNull Number number, @NotNull Formatting... formatting) {
+        return MessageUtils.formatNumber("", number, "", formatting);
+    }
+    public static @NotNull MutableText formatNumber(@NotNull String prefix, @NotNull Number number, @NotNull Formatting... formatting) {
+        return MessageUtils.formatNumber(prefix, number, "", formatting);
+    }
+    public static @NotNull MutableText formatNumber(@NotNull Number number, @NotNull String suffix, @NotNull Formatting... formatting) {
+        return MessageUtils.formatNumber("", number, suffix, formatting);
+    }
+    public static @NotNull MutableText formatNumber(@NotNull String prefix, @NotNull Number number, @NotNull String suffix, @NotNull Formatting... formatting) {
+        MutableText out = new LiteralText(prefix + FormattingUtils.number(number) + suffix);
+        if (formatting.length > 0)
+            return out.formatted(formatting);
+        return out.formatted(Formatting.AQUA);
     }
     
     // Text Events

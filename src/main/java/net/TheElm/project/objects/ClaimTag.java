@@ -39,20 +39,19 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class ClaimTag extends CompoundTag {
-    
     public ClaimTag() {
         super();
     }
     public ClaimTag(@NotNull World world, @NotNull ChunkPos chunk) {
         super();
         
-        RegistryKey dimType = world.getRegistryKey();
+        RegistryKey<World> dimType = world.getRegistryKey();
         if (dimType != null)
-            this.putString("dimension", dimType.toString());
+            this.putString("dimension", dimType.getValue().toString());
         this.putInt("x", chunk.x);
         this.putInt("z", chunk.z);
     }
-    public ClaimTag(WorldChunk chunk) {
+    public ClaimTag(@NotNull WorldChunk chunk) {
         this(chunk.getWorld(), chunk.getPos());
     }
     
@@ -64,12 +63,16 @@ public final class ClaimTag extends CompoundTag {
     }
     
     public @Nullable RegistryKey<World> getDimension() {
+        Identifier identifier;
         String dimType = this.getString("dimension");
-        if (dimType == null) return null;
-        return RegistryKey.of(Registry.DIMENSION, new Identifier(dimType));
+        if (dimType == null)
+            return null;
+        if ((identifier = Identifier.tryParse(dimType)) == null)
+            return null;
+        return RegistryKey.of(Registry.DIMENSION, identifier);
     }
     
-    public static @Nullable ClaimTag fromCompound(CompoundTag compoundTag) {
+    public static @Nullable ClaimTag fromCompound(@NotNull CompoundTag compoundTag) {
         if (!(compoundTag.contains("dimension", NbtType.STRING) && compoundTag.contains("x", NbtType.INT) && compoundTag.contains("z", NbtType.INT)))
             return null;
         else {
@@ -82,14 +85,14 @@ public final class ClaimTag extends CompoundTag {
             return tag;
         }
     }
-    public static @Nullable ClaimTag fromArray(IntArrayTag arrayTag) {
+    public static @Nullable ClaimTag fromArray(@NotNull IntArrayTag arrayTag) {
         int[] array = arrayTag.getIntArray();
         ClaimTag tag = new ClaimTag();
         
         RegistryKey<World> world = LegacyConverter.getWorldFromId((byte) array[0]);
         if (world == null) return null;
         
-        tag.putString("dimension", world.toString());
+        tag.putString("dimension", world.getValue().toString());
         tag.putInt("x", array[1]);
         tag.putInt("z", array[2]);
         

@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.Blocks;
 
-import net.TheElm.project.utilities.NbtUtils;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;

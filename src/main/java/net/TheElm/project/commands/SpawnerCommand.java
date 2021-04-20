@@ -27,9 +27,10 @@ package net.TheElm.project.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
-import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.utilities.CommandUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.command.argument.EntitySummonArgumentType;
 import net.minecraft.command.suggestion.SuggestionProviders;
@@ -43,50 +44,47 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.NotNull;
 
 public final class SpawnerCommand {
     
     private SpawnerCommand() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        if (SewConfig.get(SewConfig.SILK_TOUCH_SPAWNERS)) {
-            dispatcher.register(CommandManager.literal("spawner")
-                .requires((source -> source.hasPermissionLevel(OpLevels.CHEATING)))
-                .then(CommandManager.argument("type", EntitySummonArgumentType.entitySummon())
-                    .suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
-                    .executes((context) -> {
-                        // Get command information
-                        ServerCommandSource source = context.getSource();
-                        ServerPlayerEntity player = source.getPlayer();
-                        ServerWorld world = player.getServerWorld();
-                        
-                        // Get item information
-                        ItemStack spawner = new ItemStack(Items.SPAWNER);
-                        Identifier mobIdentifier = EntitySummonArgumentType.getEntitySummon(context, "type");
-                        StringTag mob = StringTag.of(mobIdentifier.toString());
-                        
-                        // Add mob to the list
-                        CompoundTag tag = spawner.getOrCreateTag();
-                        ListTag list;
-                        if (tag.contains("EntityIds", NbtType.LIST))
-                            list = tag.getList("EntityIds", NbtType.STRING);
-                        else {
-                            list = new ListTag();
-                            tag.put("EntityIds", list);
-                        }
-                        
-                        list.add(mob);
-                        
-                        // Give the spawner
-                        player.inventory.offerOrDrop(world, spawner);
-                        
-                        return Command.SINGLE_SUCCESS;
-                    })
-                )
-            );
-            
-            CoreMod.logDebug( "- Registered Spawner command" );
-        }
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
+        ServerCore.register(dispatcher, "spawner", builder -> builder
+            .requires(CommandUtils.isEnabledAnd(SewConfig.SILK_TOUCH_SPAWNERS, OpLevels.CHEATING))
+            .then(CommandManager.argument("type", EntitySummonArgumentType.entitySummon())
+                .suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
+                .executes((context) -> {
+                    // Get command information
+                    ServerCommandSource source = context.getSource();
+                    ServerPlayerEntity player = source.getPlayer();
+                    ServerWorld world = player.getServerWorld();
+                    
+                    // Get item information
+                    ItemStack spawner = new ItemStack(Items.SPAWNER);
+                    Identifier mobIdentifier = EntitySummonArgumentType.getEntitySummon(context, "type");
+                    StringTag mob = StringTag.of(mobIdentifier.toString());
+                    
+                    // Add mob to the list
+                    CompoundTag tag = spawner.getOrCreateTag();
+                    ListTag list;
+                    if (tag.contains("EntityIds", NbtType.LIST))
+                        list = tag.getList("EntityIds", NbtType.STRING);
+                    else {
+                        list = new ListTag();
+                        tag.put("EntityIds", list);
+                    }
+                    
+                    list.add(mob);
+                    
+                    // Give the spawner
+                    player.inventory.offerOrDrop(world, spawner);
+                    
+                    return Command.SINGLE_SUCCESS;
+                })
+            )
+        );
     }
     
 }

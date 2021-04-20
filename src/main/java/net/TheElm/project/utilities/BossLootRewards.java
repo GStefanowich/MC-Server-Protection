@@ -1,6 +1,7 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.objects.LootInventory;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundTag;

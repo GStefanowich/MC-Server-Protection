@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.utilities;
+package net.TheElm.project.utilities.nbt;
 
 import com.google.gson.JsonObject;
 import com.mojang.serialization.DataResult;
@@ -32,15 +32,10 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.objects.WorldPos;
 import net.TheElm.project.protections.claiming.Claimant;
+import net.TheElm.project.utilities.LegacyConverter;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.EntityType;
-import net.minecraft.nbt.AbstractNumberTag;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.*;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -63,11 +58,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 public final class NbtUtils {
@@ -427,6 +419,10 @@ public final class NbtUtils {
                 return tag.getUuid(key);
         }
         return null;
+    }
+    public static @NotNull <T> NbtReader<T> tryGet(@Nullable CompoundTag tag, @NotNull NbtGet<T> nbtType, @NotNull String key, @NotNull Consumer<T> consumer) {
+        return new NbtReaderContext<>(tag, nbtType, consumer)
+            .run(key);
     }
     
     /*

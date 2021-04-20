@@ -31,14 +31,7 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.BlockUtils;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.TitleUtils;
-import net.minecraft.block.BedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ChestBlock;
-import net.minecraft.block.DoorBlock;
-import net.minecraft.block.HorizontalFacingBlock;
-import net.minecraft.block.PillarBlock;
-import net.minecraft.block.StairsBlock;
+import net.minecraft.block.*;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.block.enums.DoorHinge;
 import net.minecraft.block.enums.DoubleBlockHalf;
@@ -57,9 +50,13 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class ItemUse {
+    
+    private static final int BLOCK_UPDATE_ROTATION_FLAG = 16;
+    private static final int BLOCK_UPDATE_MAX_DEPTH = 512;
     
     private ItemUse() {}
     
@@ -70,7 +67,7 @@ public final class ItemUse {
         ItemUseCallback.EVENT.register(ItemUse::blockInteract);
     }
     
-    private static ActionResult blockInteract(ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack) {
+    private static @NotNull ActionResult blockInteract(@NotNull ServerPlayerEntity player, @NotNull World world, @NotNull Hand hand, @NotNull ItemStack itemStack) {
         if (itemStack.getItem() == Items.COMPASS) {
             CompassDirections newDirection = ((PlayerData) player).cycleCompass();
             TitleUtils.showPlayerAlert( player, Formatting.YELLOW, new LiteralText("Compass now pointing towards "), newDirection.text() );
@@ -80,73 +77,76 @@ public final class ItemUse {
             /*
              * If item is stick and player has build permission
              */
-            BlockHitResult blockHitResult = BlockUtils.getLookingBlock( world, player );
-            BlockPos blockPos = blockHitResult.getBlockPos();
-            
-            if ((blockHitResult.getType() == HitResult.Type.MISS) || (!ChunkUtils.canPlayerBreakInChunk( player, blockPos )))
-                return ActionResult.PASS;
-    
-            Direction rotation = null;
-            BlockState blockState = world.getBlockState( blockPos );
-            Block block = blockState.getBlock();
-            
-            // If a HorizontalFacingBlock can be rotated
-            boolean canBeRotated = blockState.contains(HorizontalFacingBlock.FACING)
-                && (!((block instanceof ChestBlock && blockState.get(ChestBlock.CHEST_TYPE) != ChestType.SINGLE) || (block instanceof BedBlock)))
-                && ((rotation = findNewRotation(world, blockPos, block, blockState)) != null);
-            
-            if ((!player.isSneaking()) && canBeRotated) {
-                /*
-                 * Rotate blocks
-                 */
-                world.setBlockState(blockPos, blockState.with(HorizontalFacingBlock.FACING, rotation), 16 );
-                
+            BlockHitResult hitResult = BlockUtils.getLookingBlock(world, player);
+            if ((hitResult.getType() != HitResult.Type.MISS) && ChunkUtils.canPlayerBreakInChunk(player, hitResult.getBlockPos()) && ItemUse.stickBlockInteraction(player, world, hitResult))
                 return ActionResult.SUCCESS;
-            } else if (player.isSneaking() && blockState.contains(PillarBlock.AXIS)) {
-                /*
-                 * Change block axis
-                 */
-                world.setBlockState(blockPos, ((PillarBlock) block).rotate( blockState, BlockRotation.CLOCKWISE_90 ), 16 );
-                
-                return ActionResult.SUCCESS;
-            } else if (block instanceof StairsBlock) {
-                /* 
-                 * If block is a stairs block
-                 */
-                StairShape shape = blockState.get(StairsBlock.SHAPE);
-                
-                world.setBlockState( blockPos, blockState.with(StairsBlock.SHAPE, rotateStairShape(shape)), 16 );
-                
-                return ActionResult.SUCCESS;
-            } else if (block instanceof DoorBlock) {
-                /* 
-                 * Switch door hinges
-                 */
-                DoubleBlockHalf doorHalf = blockState.get(DoorBlock.HALF);
-                
-                BlockPos otherHalf = blockPos.offset(doorHalf == DoubleBlockHalf.LOWER ? Direction.UP : Direction.DOWN);
-                
-                // Change the doors hinge
-                DoorHinge hinge = blockState.get(DoorBlock.HINGE) == DoorHinge.LEFT ? DoorHinge.RIGHT : DoorHinge.LEFT;
-                
-                world.setBlockState( blockPos, blockState.with(DoorBlock.HINGE, hinge));
-                world.setBlockState( otherHalf, world.getBlockState(otherHalf).with(DoorBlock.HINGE, hinge));
-                
-                return ActionResult.SUCCESS;
-            } else if (player.isSneaking() && canBeRotated) {
-                /*
-                 * Catch for block rotating
-                 */
-                world.setBlockState(blockPos, blockState.with(HorizontalFacingBlock.FACING, rotation));
-                
-                return ActionResult.SUCCESS;
-            }
         }
         
         return ActionResult.PASS;
     }
-    @Nullable
-    private static Direction findNewRotation(WorldView world, BlockPos blockPos, Block block, BlockState blockState) {
+    private static boolean stickBlockInteraction(@NotNull ServerPlayerEntity player, @NotNull World world, @NotNull BlockHitResult hitResult) {
+        Direction rotation = null;
+        BlockPos pos = hitResult.getBlockPos();
+        BlockState state = world.getBlockState(pos);
+        Block block = state.getBlock();
+        
+        // If a HorizontalFacingBlock can be rotated
+        boolean canBeRotated = state.contains(HorizontalFacingBlock.FACING)
+            && (!((block instanceof ChestBlock && state.get(ChestBlock.CHEST_TYPE) != ChestType.SINGLE) || (block instanceof BedBlock)))
+            && ((rotation = findNewRotation(world, pos, block, state)) != null);
+        
+        if ((!player.isSneaking()) && canBeRotated) {
+            /*
+             * Rotate blocks
+             */
+            ItemUse.simpleBlockRotation(world, pos, state.with(HorizontalFacingBlock.FACING, rotation));
+            
+            return true;
+        } else if (player.isSneaking() && state.contains(PillarBlock.AXIS)) {
+            /*
+             * Change block axis
+             */
+            ItemUse.simpleBlockRotation(world, pos, ((PillarBlock) block).rotate(state, BlockRotation.CLOCKWISE_90));
+            
+            return true;
+        } else if (block instanceof StairsBlock) {
+            /*
+             * If block is a stairs block
+             */
+            StairShape shape = state.get(StairsBlock.SHAPE);
+            ItemUse.simpleBlockRotation(world, pos, state.with(StairsBlock.SHAPE, ItemUse.rotateStairShape(shape)));
+            
+            return true;
+        } else if (block instanceof DoorBlock) {
+            /*
+             * Switch door hinges
+             */
+            DoubleBlockHalf doorHalf = state.get(DoorBlock.HALF);
+            
+            BlockPos otherHalf = pos.offset(doorHalf == DoubleBlockHalf.LOWER ? Direction.UP : Direction.DOWN);
+            
+            // Change the doors hinge
+            DoorHinge hinge = state.get(DoorBlock.HINGE) == DoorHinge.LEFT ? DoorHinge.RIGHT : DoorHinge.LEFT;
+            
+            ItemUse.simpleBlockRotation(world, pos, state.with(DoorBlock.HINGE, hinge));
+            ItemUse.simpleBlockRotation(world, otherHalf, world.getBlockState(otherHalf).with(DoorBlock.HINGE, hinge));
+            
+            return true;
+        } else if (player.isSneaking() && canBeRotated) {
+            /*
+             * Catch for block rotating
+             */
+            ItemUse.simpleBlockRotation(world, pos, state.with(HorizontalFacingBlock.FACING, rotation));
+            
+            return true;
+        }
+        return false;
+    }
+    private static boolean simpleBlockRotation(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state) {
+        return world.setBlockState(pos, state, ItemUse.BLOCK_UPDATE_ROTATION_FLAG, ItemUse.BLOCK_UPDATE_MAX_DEPTH);
+    }
+    
+    private static @Nullable Direction findNewRotation(WorldView world, BlockPos blockPos, @NotNull Block block, @NotNull BlockState blockState) {
         Direction starting = blockState.get(HorizontalFacingBlock.FACING), rotation = starting.rotateYClockwise();
         do {
             if (block.canPlaceAt(blockState.with(HorizontalFacingBlock.FACING, rotation), world, blockPos))
@@ -156,7 +156,7 @@ public final class ItemUse {
         } while (rotation != starting);
         return null;
     }
-    private static StairShape rotateStairShape(StairShape shape) {
+    private static @NotNull StairShape rotateStairShape(@NotNull StairShape shape) {
         switch (shape) {
             case STRAIGHT:
                 return StairShape.INNER_LEFT;

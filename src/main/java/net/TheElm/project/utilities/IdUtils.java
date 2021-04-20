@@ -28,17 +28,19 @@ package net.TheElm.project.utilities;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 
 public final class IdUtils {
     private IdUtils() {}
     
-    public static String get(World world) {
+    public static @NotNull String get(@NotNull World world) {
         return get(world.getRegistryKey());
     }
-    public static String get(RegistryKey<?> registryKey) {
+    public static @NotNull String get(@NotNull RegistryKey<?> registryKey) {
         return get(registryKey.getValue());
     }
-    public static String get(Identifier identifier) {
+    public static @NotNull String get(@NotNull Identifier identifier) {
         return identifier.toString();
     }
+    
 }

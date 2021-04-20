@@ -40,6 +40,7 @@ import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.nbt.NbtOps;
@@ -57,13 +58,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 public final class LegacyConverter implements AutoCloseable {
     
@@ -269,7 +264,7 @@ public final class LegacyConverter implements AutoCloseable {
                         chunk.markDirty();
                         
                         // Obtain the chunk
-                        CoreMod.logInfo(String.format("Converting chunk %d, %d to \"%s\" in %s", x, z, (ownerUUID.equals(CoreMod.spawnID) ? "Spawn" : ownerUUID.toString()), dimension.toString()));
+                        CoreMod.logInfo(String.format("Converting chunk %d, %d to \"%s\" in %s", x, z, (ownerUUID.equals(CoreMod.SPAWN_ID) ? "Spawn" : ownerUUID.toString()), dimension.toString()));
                     }
                 }
             }
@@ -352,7 +347,7 @@ public final class LegacyConverter implements AutoCloseable {
     /*
      * Exception handling
      */
-    private boolean shouldFail(SQLException exception) {
+    private boolean shouldFail(@NotNull SQLException exception) {
         // If table doesn't exist
         if (exception.getErrorCode() != 1146) {
             CoreMod.logError( exception );

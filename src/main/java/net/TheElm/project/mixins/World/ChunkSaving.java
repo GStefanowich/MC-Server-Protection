@@ -26,7 +26,7 @@
 package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.utilities.NbtUtils;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;

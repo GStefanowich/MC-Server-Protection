@@ -169,7 +169,7 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
                         new LiteralText("A new villager, ").append(bName).append(", has been welcomed into your town.")
                         : new LiteralText("A new villager has been welcomed into your town.")
                     )
-                ).formatted(Formatting.GRAY, Formatting.ITALIC), MessageType.GAME_INFO, ServerCore.spawnID);
+                ).formatted(Formatting.GRAY, Formatting.ITALIC), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
             }
         }
     }
