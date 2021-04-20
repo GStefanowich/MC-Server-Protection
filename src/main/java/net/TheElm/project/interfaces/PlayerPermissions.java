@@ -26,10 +26,11 @@
 package net.TheElm.project.interfaces;
 
 import net.TheElm.project.protections.ranks.PlayerRank;
+import org.jetbrains.annotations.NotNull;
 
 public interface PlayerPermissions {
     
-    PlayerRank[] getRanks();
+    @NotNull PlayerRank[] getRanks();
     void resetRanks();
     
 }

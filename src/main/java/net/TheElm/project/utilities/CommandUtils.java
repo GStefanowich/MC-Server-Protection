@@ -30,7 +30,11 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.ConfigOption;
+import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.permissions.PermissionNode;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.command.CommandSource;
@@ -46,9 +50,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-public final class CommandUtilities {
+public final class CommandUtils {
     
     public static @NotNull CompletableFuture<Suggestions> getOnlinePlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) {
         PlayerManager manager = context.getSource().getMinecraftServer().getPlayerManager();
@@ -60,11 +65,11 @@ public final class CommandUtilities {
         MinecraftServer server = context.getSource()
             .getMinecraftServer();
         
-        Set<String> userNames = new HashSet<>(CommandUtilities.getOnlinePlayerNames(server));
+        Set<String> userNames = new HashSet<>(CommandUtils.getOnlinePlayerNames(server));
         
         // Add all users
         if (!builder.getRemaining().isEmpty())
-            userNames.addAll(CommandUtilities.getWhitelistedNames(server));
+            userNames.addAll(CommandUtils.getWhitelistedNames(server));
         
         // Return the suggestion handler
         return CommandSource.suggestMatching(
@@ -75,7 +80,7 @@ public final class CommandUtilities {
     public static @NotNull CompletableFuture<Suggestions> getFriendPlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         return CommandSource.suggestMatching(
-            CommandUtilities.getFriendPlayerNames(source.getMinecraftServer(), source.getPlayer()),
+            CommandUtils.getFriendPlayerNames(source.getMinecraftServer(), source.getPlayer()),
             builder
         );
     }
@@ -120,4 +125,53 @@ public final class CommandUtilities {
                 .asString());
     }
     
+    private static @NotNull Predicate<ServerCommandSource> OP_LEVEL_1 = source -> source.hasPermissionLevel(OpLevels.SPAWN_PROTECTION);
+    private static @NotNull Predicate<ServerCommandSource> OP_LEVEL_2 = source -> source.hasPermissionLevel(OpLevels.CHEATING);
+    private static @NotNull Predicate<ServerCommandSource> OP_LEVEL_3 = source -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP);
+    private static @NotNull Predicate<ServerCommandSource> OP_LEVEL_4 = source -> source.hasPermissionLevel(OpLevels.STOP);
+    
+    public static @NotNull Predicate<ServerCommandSource> isEnabled(ConfigOption<Boolean> configLevel) {
+        return source -> SewConfig.get(configLevel);
+    }
+    public static @NotNull Predicate<ServerCommandSource> requires(final int level) {
+        switch (level) {
+            case 1: return CommandUtils.OP_LEVEL_1;
+            case 2: return CommandUtils.OP_LEVEL_2;
+            case 3: return CommandUtils.OP_LEVEL_3;
+            default: return CommandUtils.OP_LEVEL_4;
+        }
+    }
+    public static @NotNull Predicate<ServerCommandSource> requires(ConfigOption<Integer> configLevel) {
+        return source -> source.hasPermissionLevel(SewConfig.get(configLevel));
+    }
+    public static @NotNull Predicate<ServerCommandSource> requires(@NotNull final PermissionNode permission) {
+        return source -> RankUtils.hasPermission(source, permission);
+    }
+    public static @NotNull Predicate<ServerCommandSource> either(final int level, @NotNull final PermissionNode permission) {
+        Predicate<ServerCommandSource> predicate = CommandUtils.requires(level);
+        return source -> predicate.test(source) || RankUtils.hasPermission(source, permission);
+    }
+    public static @NotNull Predicate<ServerCommandSource> either(@NotNull final ConfigOption<Integer> level, @NotNull final PermissionNode permission) {
+        Predicate<ServerCommandSource> predicate = CommandUtils.requires(level);
+        return source -> predicate.test(source) || RankUtils.hasPermission(source, permission);
+    }
+    public static @NotNull Predicate<ServerCommandSource> isEnabledAnd(@NotNull final ConfigOption<Boolean> enabled, @NotNull final ConfigOption<Integer> permission) {
+        return source -> SewConfig.get(enabled) && source.hasPermissionLevel(SewConfig.get(permission));
+    }
+    public static @NotNull Predicate<ServerCommandSource> isEnabledAnd(@NotNull final ConfigOption<Boolean> enabled, @NotNull int permission) {
+        return source -> SewConfig.get(enabled) && source.hasPermissionLevel(permission);
+    }
+    public static @NotNull Predicate<ServerCommandSource> isEnabledOr(@NotNull final ConfigOption<Boolean> enabled, @NotNull final PermissionNode permission) {
+        return source -> SewConfig.get(enabled) || RankUtils.hasPermission(source, permission);
+    }
+    public static @NotNull Predicate<ServerCommandSource> isEnabledOr(@NotNull final ConfigOption<Boolean> enabled, @NotNull final ConfigOption<Integer> permission) {
+        return source -> SewConfig.get(enabled) || source.hasPermissionLevel(SewConfig.get(permission));
+    }
+    public static @NotNull Predicate<ServerCommandSource> isEnabledOr(@NotNull final ConfigOption<Boolean> enabled, @NotNull final int permission) {
+        return source -> SewConfig.get(enabled) || source.hasPermissionLevel(permission);
+    }
+    public static @NotNull Predicate<ServerCommandSource> isEnabledAndEither(@NotNull final ConfigOption<Boolean> enabled, @NotNull final ConfigOption<Integer> level, @NotNull final PermissionNode permission) {
+        Predicate<ServerCommandSource> predicate = CommandUtils.either(level, permission);
+        return source -> SewConfig.get(enabled) && predicate.test(source);
+    }
 }

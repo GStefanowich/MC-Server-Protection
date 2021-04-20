@@ -6,7 +6,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.utilities.RankUtils;
+import net.TheElm.project.utilities.CommandUtils;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.command.argument.MessageArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -34,7 +34,7 @@ public class Ban {
     @Overwrite
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("ban")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_BAN))
+            .requires(CommandUtils.either(OpLevels.KICK_BAN_OP, Permissions.VANILLA_COMMAND_BAN))
             .then(CommandManager.argument("targets", GameProfileArgumentType.gameProfile())
                 .then(CommandManager.argument("reason", MessageArgumentType.message())
                     .executes((context) -> Ban.ban(context.getSource(), GameProfileArgumentType.getProfileArgument(context, "targets"), MessageArgumentType.getMessage(context, "reason")))

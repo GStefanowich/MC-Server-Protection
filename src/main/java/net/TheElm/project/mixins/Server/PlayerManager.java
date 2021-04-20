@@ -31,6 +31,7 @@ import net.TheElm.project.utilities.DimensionUtils;
 import net.TheElm.project.utilities.LegacyConverter;
 import net.TheElm.project.utilities.TeamUtils;
 import net.minecraft.network.ClientConnection;
+import net.minecraft.network.packet.s2c.play.ExperienceBarUpdateS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -75,8 +76,14 @@ public class PlayerManager {
     }
     
     @Inject(at = @At("TAIL"), method = "sendWorldInfo")
-    public void onSendWorldInfo(ServerPlayerEntity player, ServerWorld world, CallbackInfo callback) {
-        player.sendAbilitiesUpdate();
+    public void onSendWorldInfo(@NotNull ServerPlayerEntity player, ServerWorld world, CallbackInfo callback) {
+        if (player.networkHandler != null) {
+            // Send all of the players abilities when world changed
+            player.sendAbilitiesUpdate();
+            
+            // Send the player their XP information
+            player.networkHandler.sendPacket(new ExperienceBarUpdateS2CPacket(player.experienceProgress, player.totalExperience, player.experienceLevel));
+        }
     }
     
     /**

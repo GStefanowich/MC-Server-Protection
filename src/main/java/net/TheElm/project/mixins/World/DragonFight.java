@@ -29,27 +29,33 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.DragonLoot;
+import net.TheElm.project.interfaces.BossLootableContainer;
+import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.utilities.BossLootRewards;
+import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
-import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.TitleUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.block.pattern.BlockPattern;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.entity.boss.dragon.EnderDragonFight;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.stat.Stats;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.gen.feature.EndPortalFeature;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -58,10 +64,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.text.NumberFormat;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Mixin(EnderDragonFight.class)
 public abstract class DragonFight {
@@ -212,7 +215,7 @@ public abstract class DragonFight {
     }
     
     @Inject(at = @At("RETURN"), method = "createDragon")
-    public void dragonCreation(CallbackInfoReturnable<EnderDragonEntity> callback) {
+    public void dragonCreation(@NotNull CallbackInfoReturnable<EnderDragonEntity> callback) {
         EnderDragonEntity dragon = callback.getReturnValue();
         if (dragon != null)
             MessageUtils.sendToAll(new LiteralText("A new Ender Dragon has arrived in The End.")
@@ -220,36 +223,30 @@ public abstract class DragonFight {
     }
     
     @Inject(at = @At("TAIL"), method = "dragonKilled")
-    public void dragonDestroyed(EnderDragonEntity dragon, CallbackInfo callback) {
+    public void dragonDestroyed(@NotNull EnderDragonEntity dragon, @NotNull CallbackInfo callback) {
         if (this.dragonUuid.equals(dragon.getUuid()))
             this.sewingMachineDragonShouldExist = false;
+        boolean giveLootReward = SewConfig.get(SewConfig.DRAGON_LOOT_END_ITEMS) || SewConfig.get(SewConfig.DRAGON_LOOT_RARE_BOOKS);
         
         MessageUtils.consoleToOps(new LiteralText("An Ender Dragon was slain by " + this.seenPlayers.size() + " player(s)."));
-        
-        for (UUID playerId : this.seenPlayers) {
-            if (!BossLootRewards.DRAGON_LOOT.addLoot(playerId, DragonLoot.createReward())) {
-                ServerPlayerEntity player = ServerCore.getPlayer(playerId);
-                if (player != null)
-                    player.sendSystemMessage(new LiteralText("You were not rewarded a drop from killing the Ender Dragon, your loot chest is full.")
-                        .formatted(Formatting.RED), Util.NIL_UUID);
-            }
-        }
+        this.seenPlayers.stream()
+            .map(ServerCore::getPlayer)
+            .filter(Objects::nonNull)
+            .filter((player) -> {
+                // Increase the dragon kill statistic
+                player.incrementStat(Stats.KILLED.getOrCreateStat(EntityType.ENDER_DRAGON));
+                
+                return giveLootReward && !BossLootRewards.DRAGON_LOOT.addLoot(player.getUuid(), DragonLoot.createReward());
+            })
+            .forEach(player -> player.sendSystemMessage(new LiteralText("You were not rewarded a drop from killing the Ender Dragon, your loot chest is full.")
+                .formatted(Formatting.RED), Util.NIL_UUID));
         
         // Clear the list of seen players
         if ( this.world.getAliveEnderDragons().isEmpty() )
             this.seenPlayers.clear();
         
-        if (SewConfig.get(SewConfig.DRAGON_LOOT_END_ITEMS) || SewConfig.get(SewConfig.DRAGON_LOOT_RARE_BOOKS)) {
-            BlockPos chestPos = this.world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, EndPortalFeature.ORIGIN);
-            this.world.setBlockState(chestPos, Blocks.BLACK_SHULKER_BOX.getDefaultState());
-            BlockEntity blockEntity = this.world.getBlockEntity(chestPos);
-            if (blockEntity != null) {
-                CompoundTag chestTag = blockEntity.toTag(new CompoundTag());
-                chestTag.putString("BossLootContainer", BossLootRewards.DRAGON_LOOT.toString());
-                
-                blockEntity.fromTag(Blocks.BLACK_SHULKER_BOX.getDefaultState(), chestTag);
-            }
-        }
+        if (giveLootReward)
+            DragonFight.generateLootRewardContainer(this.world);
     }
     
     @Inject(at = @At("TAIL"), method = "updatePlayers")
@@ -294,5 +291,30 @@ public abstract class DragonFight {
             // Claim the portal
             ChunkUtils.claimSlices(this.world, CoreMod.spawnID, frontTopLeft.up(2), backBottomRight);*/
         }
+    }
+    
+    private static void generateLootRewardContainer(@NotNull ServerWorld world) {
+        DragonFight.generateLootRewardContainer(world, world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, EndPortalFeature.ORIGIN));
+    }
+    private static void generateLootRewardContainer(@NotNull ServerWorld world, @NotNull BlockPos pos) {
+        if (DragonFight.isLootRewardContainer(world, pos.down()))
+            return;
+        
+        world.setBlockState(pos, Blocks.BLACK_SHULKER_BOX.getDefaultState());
+        
+        BlockEntity blockEntity = world.getBlockEntity(pos);
+        if (blockEntity != null) {
+            CompoundTag chestTag = blockEntity.toTag(new CompoundTag());
+            chestTag.putString("BossLootContainer", BossLootRewards.DRAGON_LOOT.toString());
+            
+            blockEntity.fromTag(Blocks.BLACK_SHULKER_BOX.getDefaultState(), chestTag);
+        }
+        
+        ChunkUtils.claimSlices(world, ServerCore.SPAWN_ID, BlockRange.of(pos));
+    }
+    private static boolean isLootRewardContainer(@NotNull ServerWorld world, @NotNull BlockPos pos) {
+        BlockEntity blockEntity = world.getBlockEntity(pos);
+        return blockEntity instanceof ShulkerBoxBlockEntity
+            && ((BossLootableContainer)blockEntity).getBossLootIdentifier() != null;
     }
 }

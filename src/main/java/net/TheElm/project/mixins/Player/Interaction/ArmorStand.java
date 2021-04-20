@@ -32,9 +32,9 @@ import net.TheElm.project.interfaces.PlayerCorpse;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
-import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.Block;
 import net.minecraft.entity.EntityType;
@@ -61,6 +61,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -123,7 +124,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
      */
     
     @Inject(at = @At("HEAD"), method = "interactAt", cancellable = true)
-    public void interactedWith(PlayerEntity player, Vec3d vec3d, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
+    public void onPlayerInteract(PlayerEntity player, Vec3d vec3d, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         // Armor Stand is a corpse
         if (this.corpsePlayerUUID != null) {
             // Return the items back to their owner
@@ -189,8 +190,8 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
             
             // Add arms
             else if (handStack.getItem().equals(Items.STICK) && (handStack.getCount() >= 2)) {
-                handStack.decrement( 2 );
-                this.setShowArms( true );
+                handStack.decrement(2);
+                this.setShowArms(true);
                 
                 callback.setReturnValue(ActionResult.SUCCESS);
                 return;
@@ -200,14 +201,14 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
         }
         
         // Player sound
-        this.playSound( EntityUtils.getLockSound( this ), 1, 1 );
+        this.playSound(EntityUtils.getLockSound(this), 1, 1);
         
-        WorldChunk chunk = world.getWorldChunk( this.getBlockPos() );
+        WorldChunk chunk = this.world.getWorldChunk(this.getBlockPos());
         
         // Display that this item can't be opened
-        TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
-            EntityUtils.getLockedName( this ),
-            ( chunk == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName( player, this.getBlockPos() ) )
+        TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
+            EntityUtils.getLockedName(this),
+            (chunk == null ? new LiteralText("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, this.getBlockPos()))
         ));
         
         callback.setReturnValue(ActionResult.FAIL);
@@ -234,7 +235,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
         this.corpsePlayerItems = inventory;
         this.corpsePlayerBackpack = backpack;
     }
-    private void giveCorpseItems(final PlayerEntity player) {
+    private void giveCorpseItems(@NotNull final PlayerEntity player) {
         World world = player.world;
         Iterator<Tag> items;
         
@@ -289,7 +290,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
             }
         }
     }
-    private void returnItemsToPlayer(final PlayerEntity player) {
+    private void returnItemsToPlayer(@NotNull final PlayerEntity player) {
         // Give the items back to the player
         this.giveCorpseItems(player);
         

@@ -30,17 +30,20 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.commands.ArgumentTypes.ArgumentSuggestions;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.utilities.CommandUtils;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import org.jetbrains.annotations.NotNull;
 
 public final class PermissionCommand {
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("permissions")
-            .requires((source) -> SewConfig.get(SewConfig.HANDLE_PERMISSIONS) && source.hasPermissionLevel( 2 ))
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
+        ServerCore.register(dispatcher, "permissions", builder -> builder
+            .requires(CommandUtils.isEnabledAnd(SewConfig.HANDLE_PERMISSIONS, OpLevels.CHEATING))
             .then(CommandManager.literal("help")
                 .then(CommandManager.argument("permission", StringArgumentType.word())
                     .suggests( ArgumentSuggestions::suggestNodes)
@@ -68,24 +71,23 @@ public final class PermissionCommand {
                 )
             )
         );
-        CoreMod.logDebug("- Registered Permission command");
     }
     
-    public static int nodeInfo(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return Command.SINGLE_SUCCESS;
-    }
-    
-    public static int addRank(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return Command.SINGLE_SUCCESS;
-    }
-    public static int delRank(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    public static int nodeInfo(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return Command.SINGLE_SUCCESS;
     }
     
-    public static int addNodeToRank(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    public static int addRank(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return Command.SINGLE_SUCCESS;
     }
-    public static int delNodeFromRank(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    public static int delRank(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return Command.SINGLE_SUCCESS;
+    }
+    
+    public static int addNodeToRank(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return Command.SINGLE_SUCCESS;
+    }
+    public static int delNodeFromRank(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return Command.SINGLE_SUCCESS;
     }
     

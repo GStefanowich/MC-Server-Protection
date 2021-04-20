@@ -32,7 +32,9 @@ import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.Claim;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.AirBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -49,17 +51,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.Optional;
-import java.util.TreeMap;
-import java.util.UUID;
+import java.util.*;
 
 public final class ChunkUtils {
 
@@ -205,10 +197,10 @@ public final class ChunkUtils {
     /*
      * Claim slices between two areas
      */
-    public static void claimSlices(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockPos firstPos, @NotNull BlockPos secondPos) {
+    public static void claimSlices(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockRange region) {
         // Get range of values
-        BlockPos min = ChunkUtils.getMinimumPosition(firstPos, secondPos);
-        BlockPos max = ChunkUtils.getMaximumPosition(firstPos, secondPos);
+        BlockPos min = region.getLower();
+        BlockPos max = region.getUpper();
         
         // Log the blocks being claimed
         CoreMod.logDebug("Claiming " + MessageUtils.xyzToString(min) + " to " + MessageUtils.xyzToString(max));
@@ -227,10 +219,10 @@ public final class ChunkUtils {
             }
         }
     }
-    public static void unclaimSlices(@NotNull ServerWorld world, @NotNull BlockPos firstPos, @NotNull BlockPos secondPos) {
+    public static void unclaimSlices(@NotNull ServerWorld world, @NotNull BlockRange region) {
         // Get range of values
-        BlockPos min = ChunkUtils.getMinimumPosition(firstPos, secondPos);
-        BlockPos max = ChunkUtils.getMaximumPosition(firstPos, secondPos);
+        BlockPos min = region.getLower();
+        BlockPos max = region.getUpper();
         
         // Log the blocks being claimed
         CoreMod.logDebug("Unclaiming " + MessageUtils.xyzToString(min) + " to " + MessageUtils.xyzToString(max));
@@ -249,16 +241,16 @@ public final class ChunkUtils {
         }
     }
     
-    public static boolean canPlayerClaimSlices(@NotNull ServerWorld world, @NotNull BlockPos firstPos, @NotNull BlockPos secondPos) {
+    public static boolean canPlayerClaimSlices(@NotNull ServerWorld world, @NotNull BlockRange region) {
         // Get range of values
-        BlockPos min = getMinimumPosition(firstPos, secondPos);
-        BlockPos max = getMaximumPosition(firstPos, secondPos);
+        BlockPos min = region.getLower();
+        BlockPos max = region.getUpper();
         
         // Iterate through the blocks
         for (int x = min.getX(); x <= max.getX(); x++) {
             for (int z = min.getZ(); z <= max.getZ(); z++) {
-                BlockPos sliceLoc = new BlockPos( x, 0, z );
-                int slicePos = getPositionWithinChunk( sliceLoc );
+                BlockPos sliceLoc = new BlockPos(x, 0, z);
+                int slicePos = ChunkUtils.getPositionWithinChunk(sliceLoc);
                 
                 WorldChunk chunk = world.getWorldChunk( sliceLoc );
                 if (((IClaimedChunk) chunk).getSliceOwner(slicePos, min.getY(), max.getY()).length > 0)
@@ -267,20 +259,6 @@ public final class ChunkUtils {
         }
         
         return true;
-    }
-    public static @NotNull BlockPos getMinimumPosition(@NotNull BlockPos a, @NotNull BlockPos b) {
-        return new BlockPos(
-            Math.min(a.getX(), b.getX()),
-            Math.min(a.getY(), b.getY()),
-            Math.min(a.getZ(), b.getZ())
-        );
-    }
-    public static @NotNull BlockPos getMaximumPosition(@NotNull BlockPos a, @NotNull BlockPos b) {
-        return new BlockPos(
-            Math.max(a.getX(), b.getX()),
-            Math.max(a.getY(), b.getY()),
-            Math.max(a.getZ(), b.getZ())
-        );
     }
     
     /*
@@ -295,7 +273,7 @@ public final class ChunkUtils {
             return true;
         // If player is in creative/spectator, or is within Spawn
         return (SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
-            || CoreMod.spawnID.equals(ChunkUtils.getPlayerLocation( player ));
+            || CoreMod.SPAWN_ID.equals(ChunkUtils.getPlayerLocation( player ));
     }
     public static int getPositionWithinChunk(BlockPos blockPos) {
         int chunkIndex = blockPos.getX() & 0xF;
@@ -430,7 +408,7 @@ public final class ChunkUtils {
                 InnerClaim claim = entry.getValue();
                 
                 // Remove all that are not SPAWN
-                if (!CoreMod.spawnID.equals( claim.getOwner() ))
+                if (!CoreMod.SPAWN_ID.equals( claim.getOwner() ))
                     it.remove();
             }
         }

@@ -46,6 +46,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -68,11 +69,11 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
             if (result != ActionResult.PASS)
                 return result == ActionResult.FAIL;
         }
-        return super.handleAttack( entity );
+        return super.handleAttack(entity);
     }
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
-    public void onPlayerInteract(final PlayerEntity player, final Hand hand, final CallbackInfoReturnable<ActionResult> callback) {
+    public void onPlayerInteract(final PlayerEntity player, final Hand hand, final @NotNull CallbackInfoReturnable<ActionResult> callback) {
         ItemFrameEntity entity = (ItemFrameEntity)(AbstractDecorationEntity) this;
         
         // Do special item frame interaction if NOT CROUCHING and HOLDING A TOOL
@@ -84,8 +85,8 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
             ItemStack itemStack = itemFrame.getHeldItemStack();
             
             // Get blocks
-            BlockPos containerPos = itemFrame.getBlockPos().offset( direction, 1 );
-            Block containerBlock = this.world.getBlockState( containerPos ).getBlock();
+            BlockPos containerPos = itemFrame.getBlockPos().offset(direction, 1);
+            Block containerBlock = this.world.getBlockState(containerPos).getBlock();
             
             // If the block behind the item frame is a storage
             if ( containerBlock instanceof ChestBlock || containerBlock instanceof BarrelBlock ) {
@@ -95,7 +96,7 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
                     return;
                 }
                 
-                Inventory chestInventory = InventoryUtils.getInventoryOf(world, containerPos);
+                Inventory chestInventory = InventoryUtils.getInventoryOf(this.world, containerPos);
                 if ((chestInventory != null) && (!itemStack.getItem().equals(Items.AIR))) {
                     // The amount the player wants to take
                     int putStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
@@ -112,7 +113,7 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
     }
     
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
-    public void onDamage(DamageSource damageSource, float damage, CallbackInfoReturnable<Boolean> callback) {
+    public void onDamage(@NotNull DamageSource damageSource, float damage, final @NotNull CallbackInfoReturnable<Boolean> callback) {
         Entity attacker = damageSource.getAttacker();
         if (!(attacker instanceof PlayerEntity))
             return;

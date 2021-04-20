@@ -25,6 +25,7 @@
 
 package net.TheElm.project.utilities;
 
+import net.TheElm.project.CoreMod;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -37,23 +38,35 @@ import net.minecraft.village.TradeOffers;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.Random;
+import java.util.UUID;
 
 public class TradeUtils {
     
-    public static TradeOffers.Factory createSellItem(int countWants, @NotNull Item itemWants, int countOffers, @NotNull Item itemOffers, int maxTrades) {
+    public static @NotNull TradeOffers.Factory createSellItem(int countWants, @NotNull Item itemWants, int countOffers, @NotNull Item itemOffers, int maxTrades) {
         return new SellTradeFactory(itemWants, countWants, itemOffers, countOffers, maxTrades);
     }
-    public static TradeOffers.Factory createSellItem(int countWants1, @NotNull Item itemWants1, int countWants2, @NotNull Item itemWants2, int countOffers, @NotNull Item itemOffers, int maxTrades) {
+    public static @NotNull TradeOffers.Factory createSellItem(int countWants1, @NotNull Item itemWants1, int countWants2, @NotNull Item itemWants2, int countOffers, @NotNull Item itemOffers, int maxTrades) {
         return new SellTradeFactory(itemWants1, countWants1, itemWants2, countWants2, itemOffers, countOffers, maxTrades);
     }
-    public static TradeOffers.Factory createSellItem(int countEmeralds, int countOffers, Item itemOffers, int maxTrades) {
+    public static @NotNull TradeOffers.Factory createSellItem(int countEmeralds, int countOffers, Item itemOffers, int maxTrades) {
         return TradeUtils.createSellItem(countEmeralds, Items.EMERALD, countOffers, itemOffers, maxTrades);
     }
-    public static TradeOffers.Factory createSellSpawnEgg(int minimumEmeralds, @NotNull Item itemOffers, int maxTrades) {
+    public static @NotNull TradeOffers.Factory createSellSpawnEgg(int minimumEmeralds, @NotNull Item itemOffers, int maxTrades) {
         if (!(itemOffers instanceof SpawnEggItem))
             throw new IllegalArgumentException("Provided trade item is not a Spawn Egg.");
         return new EggTradeFactory((SpawnEggItem) itemOffers, minimumEmeralds,maxTrades);
+    }
+    
+    private static @Nullable UUID WANDERING_TRADER_UUID;
+    
+    public static void updateWanderingTraderUuid(@Nullable UUID uuid) {
+        CoreMod.logInfo("Wandering Trader set to: " + (uuid == null ? "NULL" : uuid.toString()));
+        TradeUtils.WANDERING_TRADER_UUID = uuid;
+    }
+    public static boolean isEntityWanderingTrader(@NotNull Entity entity) {
+        return Objects.equals(TradeUtils.WANDERING_TRADER_UUID, entity.getUuid());
     }
     
     private static class SellTradeFactory implements TradeOffers.Factory {

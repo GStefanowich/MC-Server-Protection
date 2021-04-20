@@ -29,9 +29,11 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.interfaces.PlayerPermissions;
+import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -40,6 +42,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
@@ -47,9 +50,9 @@ public final class ModCommands {
     private ModCommands() {
     }
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("sewingmachine")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.STOP))
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
+        ServerCore.register(dispatcher, "SewingMachine", (builder) -> builder
+            .requires(CommandUtils.requires(OpLevels.STOP))
             .then(CommandManager.literal("reload")
                 .then(CommandManager.literal("config")
                     .executes(ModCommands::ReloadConfig)
@@ -59,12 +62,13 @@ public final class ModCommands {
                     .executes(ModCommands::ReloadPermissions)
                 )
             )
+            .then(CommandManager.literal("fix-shop")
+                .executes((s) -> 0)
+            )
         );
-        
-        CoreMod.logDebug("- Registered SewingMachine command");
     }
     
-    private static int ReloadConfig(CommandContext<ServerCommandSource> context) {
+    private static int ReloadConfig(@NotNull CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
         try {
             // Reload the config

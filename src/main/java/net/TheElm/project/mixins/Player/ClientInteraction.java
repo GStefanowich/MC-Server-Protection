@@ -35,12 +35,8 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.PlayerMovement;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.utilities.CasingUtils;
-import net.TheElm.project.utilities.ChunkUtils;
-import net.TheElm.project.utilities.MessageUtils;
-import net.TheElm.project.utilities.MoneyUtils;
-import net.TheElm.project.utilities.TitleUtils;
-import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
@@ -288,7 +284,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                 
                 try {
                     // If player is in spawn protection
-                    if (locationOwner.equals(CoreMod.spawnID)) {
+                    if (locationOwner.equals(CoreMod.SPAWN_ID)) {
                         popupText.append(
                             owner.getName( player )
                         );

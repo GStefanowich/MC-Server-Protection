@@ -49,22 +49,13 @@ import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.exceptions.TranslationKeyException;
-import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.interfaces.PlayerData;
-import net.TheElm.project.interfaces.PlayerMovement;
-import net.TheElm.project.interfaces.VillagerTownie;
-import net.TheElm.project.interfaces.WhitelistedPlayer;
+import net.TheElm.project.interfaces.*;
+import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.utilities.CasingUtils;
-import net.TheElm.project.utilities.ChunkUtils;
-import net.TheElm.project.utilities.CommandUtilities;
-import net.TheElm.project.utilities.EffectUtils;
-import net.TheElm.project.utilities.LegacyConverter;
-import net.TheElm.project.utilities.MessageUtils;
-import net.TheElm.project.utilities.MoneyUtils;
-import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -85,12 +76,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.ClickEvent;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.text.Texts;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.UserCache;
 import net.minecraft.util.math.BlockPos;
@@ -105,13 +91,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
 import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 
 public final class ClaimCommand {
@@ -141,12 +121,12 @@ public final class ClaimCommand {
         /*
          * Admin Force commands
          */
-        dispatcher.register(CommandManager.literal("chunk")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.STOP))
+        ServerCore.register(dispatcher, "Chunk", builder -> builder
+            .requires(CommandUtils.requires(OpLevels.STOP))
             .then(CommandManager.literal("set")
                 .then(CommandManager.literal("player")
                     .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
-                        .suggests(CommandUtilities::getAllPlayerNames)
+                        .suggests(CommandUtils::getAllPlayerNames)
                         .executes(ClaimCommand::rawSetChunkPlayer)
                     )
                 )
@@ -159,26 +139,30 @@ public final class ClaimCommand {
         /*
          * Claim Command
          */
-        LiteralCommandNode<ServerCommandSource> claim = dispatcher.register(CommandManager.literal("claim")
+        LiteralCommandNode<ServerCommandSource> claim = ServerCore.register(dispatcher, "claim", builder -> builder
             // Claim a chunk radius
             .then(CommandManager.argument("radius", IntegerArgumentType.integer(1, 4))
                 .executes(ClaimCommand::claimChunkSelfRadius)
             )
             // Claim a region
             .then(CommandManager.literal("region")
-                .requires((source) -> source.hasPermissionLevel(SewConfig.get(SewConfig.CLAIM_OP_LEVEL_OTHER)))
-                .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
-                    .then(CommandManager.argument("from", BlockPosArgumentType.blockPos())
-                        .then(CommandManager.argument("to", BlockPosArgumentType.blockPos())
-                            .executes(ClaimCommand::claimRegionAt)
+                .then(CommandManager.argument("from", BlockPosArgumentType.blockPos())
+                    .then(CommandManager.argument("to", BlockPosArgumentType.blockPos())
+                        .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
+                            .requires(CommandUtils.requires(SewConfig.CLAIM_OP_LEVEL_OTHER))
+                            .executes(ClaimCommand::claimRegionFor)
+                        )
+                        .then(CommandManager.literal("spawn")
+                            .requires(CommandUtils.requires(SewConfig.CLAIM_OP_LEVEL_SPAWN))
+                            .executes(ClaimCommand::claimSpawnRegionAt)
                         )
                     )
                 )
             )
             // Claim chunk for another player
             .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
-                .suggests(CommandUtilities::getAllPlayerNames)
-                .requires((source) -> source.hasPermissionLevel(SewConfig.get(SewConfig.CLAIM_OP_LEVEL_OTHER)))
+                .suggests(CommandUtils::getAllPlayerNames)
+                .requires(CommandUtils.requires(SewConfig.CLAIM_OP_LEVEL_OTHER))
                 .then(CommandManager.argument("radius", IntegerArgumentType.integer(1, 4))
                     .executes(ClaimCommand::claimChunkOtherRadius)
                 )
@@ -186,7 +170,7 @@ public final class ClaimCommand {
             )
             // Claim chunk for the spawn
             .then(CommandManager.literal("spawn")
-                .requires((source) -> source.hasPermissionLevel(SewConfig.get(SewConfig.CLAIM_OP_LEVEL_SPAWN)))
+                .requires(CommandUtils.requires(SewConfig.CLAIM_OP_LEVEL_SPAWN))
                 .then(CommandManager.argument("radius", IntegerArgumentType.integer(1, 4))
                     .executes(ClaimCommand::claimChunkSpawnRadius)
                 )
@@ -194,25 +178,24 @@ public final class ClaimCommand {
             )
             // Claim chunk for players town
             .then(CommandManager.literal("town")
-                .requires(CommandUtilities::playerIsInTown)
+                .requires(CommandUtils::playerIsInTown)
                 .executes(ClaimCommand::claimChunkTown)
             )
             // Claim a chunk for yourself
             .executes(ClaimCommand::claimChunkSelf)
         );
-        CoreMod.logDebug( "- Registered Claim command" );
         
         /*
          * Unclaim Command
          */
-        LiteralCommandNode<ServerCommandSource> unclaim = dispatcher.register( CommandManager.literal("unclaim")
+        LiteralCommandNode<ServerCommandSource> unclaim = ServerCore.register(dispatcher, "unclaim", builder -> builder
             // Unclaim all chunks
             .then(CommandManager.literal("all")
                 .executes(ClaimCommand::unclaimAll)
             )
             // Unclaim a region
             .then(CommandManager.literal("region")
-                .requires((source) -> source.hasPermissionLevel(SewConfig.get(SewConfig.CLAIM_OP_LEVEL_OTHER)))
+                .requires(CommandUtils.requires(SewConfig.CLAIM_OP_LEVEL_OTHER))
                 .then(CommandManager.argument("from", BlockPosArgumentType.blockPos())
                     .then(CommandManager.argument("to", BlockPosArgumentType.blockPos())
                         .executes(ClaimCommand::unclaimRegionAt)
@@ -221,27 +204,26 @@ public final class ClaimCommand {
             )
             // Force remove a claim
             .then(CommandManager.literal("force")
-                .requires((source -> source.hasPermissionLevel( SewConfig.get(SewConfig.CLAIM_OP_LEVEL_OTHER) )))
+                .requires(CommandUtils.requires(SewConfig.CLAIM_OP_LEVEL_OTHER))
                 .executes(ClaimCommand::unclaimChunkOther)
             )
             // Unclaim current chunk
             .executes(ClaimCommand::unclaimChunk)
         );
-        CoreMod.logDebug( "- Registered Unclaim command" );
         
         /*
          * Friends Command
          */
-        LiteralCommandNode<ServerCommandSource> friends = dispatcher.register(CommandManager.literal("friends")
+        LiteralCommandNode<ServerCommandSource> friends = ServerCore.register(dispatcher, "friends", builder -> builder
             // Whitelist a friend
             .then(CommandManager.literal("whitelist")
                 .requires((context) -> SewConfig.get(SewConfig.FRIEND_WHITELIST))
                 .then( CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
-                    .suggests((context, builder) -> {
+                    .suggests((context, builder2) -> {
                         PlayerManager manager = context.getSource().getMinecraftServer().getPlayerManager();
                         return CommandSource.suggestMatching(manager.getPlayerList().stream()
                             .filter(( player ) -> !manager.getWhitelist().isAllowed(player.getGameProfile()))
-                            .map(( player ) -> player.getGameProfile().getName()), builder);
+                            .map(( player ) -> player.getGameProfile().getName()), builder2);
                     })
                     .executes(ClaimCommand::inviteFriend)
                 )
@@ -250,16 +232,16 @@ public final class ClaimCommand {
             // Locate friends using pathing
             .then(CommandManager.literal("locate")
                 .then(CommandManager.argument("friend", EntityArgumentType.player())
-                    .suggests(CommandUtilities::getFriendPlayerNames)
+                    .suggests(CommandUtils::getFriendPlayerNames)
                     .executes(ClaimCommand::findFriend)
                 )
                 .executes(ClaimCommand::stopFindingPos)
             )
             // Get Whitelisted friends
             .then(CommandManager.literal("get")
-                .requires((source) -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP))
+                .requires(CommandUtils.requires(OpLevels.KICK_BAN_OP))
                 .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
-                    .suggests(CommandUtilities::getAllPlayerNames)
+                    .suggests(CommandUtils::getAllPlayerNames)
                     .executes(ClaimCommand::invitedListOther)
                 )
             )
@@ -268,7 +250,7 @@ public final class ClaimCommand {
                 .then(CommandManager.argument("rank", StringArgumentType.word())
                     .suggests(EnumArgumentType.enumerate(ClaimRanks.class))
                     .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
-                        .suggests(CommandUtilities::getAllPlayerNames)
+                        .suggests(CommandUtils::getAllPlayerNames)
                         .executes(ClaimCommand::addRank)
                     )
                 )
@@ -283,12 +265,11 @@ public final class ClaimCommand {
             // List all friends
             .executes(ClaimCommand::listFriends)
         );
-        CoreMod.logDebug( "- Registered Friends command" );
         
         /*
          * Register the town command
          */
-        LiteralCommandNode<ServerCommandSource> towns = dispatcher.register( CommandManager.literal( "town" )
+        LiteralCommandNode<ServerCommandSource> towns = ServerCore.register(dispatcher, "town", builder -> builder
             .then(CommandManager.literal("new")
                 .requires(ClaimCommand::sourceNotMayor)
                 .then( CommandManager.argument("name", StringArgumentType.greedyString())
@@ -302,7 +283,7 @@ public final class ClaimCommand {
             .then(CommandManager.literal("claim")
                 .requires(ClaimCommand::sourceIsMayor)
                 .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
-                    .suggests(CommandUtilities::getAllPlayerNames)
+                    .suggests(CommandUtils::getAllPlayerNames)
                     .executes(ClaimCommand::townGiveChunk)
                 )
                 .executes(ClaimCommand::claimChunkTown)
@@ -329,33 +310,32 @@ public final class ClaimCommand {
                 .executes(ClaimCommand::playerPartsTown)
             )
             .then(CommandManager.literal("set")
-                .requires((source) -> source.hasPermissionLevel(OpLevels.STOP))
+                .requires(CommandUtils.requires(OpLevels.STOP))
                 .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
-                    .suggests(CommandUtilities::getAllPlayerNames)
+                    .suggests(CommandUtils::getAllPlayerNames)
                     .then(CommandManager.argument("town", StringArgumentType.greedyString())
-                        .suggests(CommandUtilities::getAllTowns)
+                        .suggests(CommandUtils::getAllTowns)
                         .executes(ClaimCommand::adminSetPlayerTown)
                     )
                 )
             )
             .then(CommandManager.literal("villagers")
-                .requires((source) -> source.hasPermissionLevel(OpLevels.STOP))
+                .requires(CommandUtils.requires(OpLevels.STOP))
                 .then(CommandManager.argument("entities", EntityArgumentType.entities())
                     .then(CommandManager.argument("town", StringArgumentType.greedyString())
-                        .suggests(CommandUtilities::getAllTowns)
+                        .suggests(CommandUtils::getAllTowns)
                         .executes(ClaimCommand::adminSetEntityTown)
                     )
                 )
             )
         );
-        CoreMod.logDebug( "- Registered Town command" );
         
         /*
          * Register the main command object
          */
         
         // The main command
-        LiteralCommandNode<ServerCommandSource> protection = dispatcher.register(CommandManager.literal("protection")
+        LiteralCommandNode<ServerCommandSource> protection = ServerCore.register(dispatcher, "protection", builder -> builder
             // Claim a chunk
             .then(claim)
             
@@ -401,8 +381,6 @@ public final class ClaimCommand {
                 .executes(ClaimCommand::convertFromLegacy )
             )
         );
-        
-        CoreMod.logDebug("- Registered Protection command");
     }
     
     /*
@@ -496,13 +474,13 @@ public final class ClaimCommand {
         
         // Claim the chunk for spawn
         return ClaimCommand.claimChunk(
-            CoreMod.spawnID,
+            CoreMod.SPAWN_ID,
             source.getPlayer()
         );
     }
     private static int claimChunkSpawnRadius(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return ClaimCommand.claimChunkRadius(
-            CoreMod.spawnID,
+            CoreMod.SPAWN_ID,
             context
         );
     }
@@ -565,13 +543,13 @@ public final class ClaimCommand {
                 if (claimant != null) claimant.sendMessage(
                     TranslatableServerSide.text(claimant, e.getKey()),
                     MessageType.SYSTEM,
-                    ServerCore.spawnID
+                    ServerCore.SPAWN_ID
                 );
             } catch (CommandSyntaxException e) {
                 if (claimant != null) claimant.sendMessage(
                     new LiteralText( e.getMessage() ).formatted(Formatting.RED),
                     MessageType.SYSTEM,
-                    ServerCore.spawnID
+                    ServerCore.SPAWN_ID
                 );
             }
         });
@@ -628,28 +606,35 @@ public final class ClaimCommand {
     }
     
     private static int unclaimChunk(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerPlayerEntity player = context.getSource().getPlayer();
-        
-        // Get run from positioning
-        BlockPos blockPos = player.getBlockPos();
-        World world = player.getEntityWorld();
-        
-        if (!ClaimCommand.tryUnclaimChunkAt( player.getUuid(), player, blockPos ))
-            throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create( player );
-        
-        // Get chunk
-        WorldChunk worldChunk = world.getWorldChunk( blockPos );
-        
-        // Update total count
-        Claimant claimed;
-        if ((claimed = ((PlayerData) player).getClaim()) != null) {
-            claimed.removeFromCount( worldChunk );
+        try {
+            ServerPlayerEntity player = context.getSource()
+                .getPlayer();
             
-            if ((claimed = ((ClaimantPlayer) claimed).getTown()) != null) claimed.removeFromCount( worldChunk );
+            // Get run from positioning
+            BlockPos blockPos = player.getBlockPos();
+            World world = player.getEntityWorld();
+            
+            if (!ClaimCommand.tryUnclaimChunkAt(player.getUuid(), player, blockPos))
+                throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create( player );
+            
+            // Get chunk
+            WorldChunk worldChunk = world.getWorldChunk(blockPos);
+            
+            // Update total count
+            Claimant claimed;
+            if ((claimed = ((PlayerData) player).getClaim()) != null) {
+                claimed.removeFromCount(worldChunk);
+                
+                if ((claimed = ((ClaimantPlayer) claimed).getTown()) != null)
+                    claimed.removeFromCount(worldChunk);
+            }
+            
+            // Update runtime
+            ((IClaimedChunk) worldChunk).updatePlayerOwner(null);
+        } catch (Exception e) {
+            CoreMod.logError(e);
+            return 0;
         }
-        
-        // Update runtime
-        ((IClaimedChunk) worldChunk).updatePlayerOwner( null );
         
         return Command.SINGLE_SUCCESS;
     }
@@ -755,34 +740,45 @@ public final class ClaimCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int claimRegionAt(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int claimSpawnRegionAt(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return ClaimCommand.claimRegionAt(context, ServerCore.SPAWN_ID);
+    }
+    private static int claimRegionFor(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get information about the target
+        Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "target");
+        GameProfile target = profiles.stream().findAny()
+            .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        return ClaimCommand.claimRegionAt(context, target.getId());
+    }
+    private static int claimRegionAt(@NotNull CommandContext<ServerCommandSource> context, @NotNull UUID target) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         
-        try {
-            BlockPos start = BlockPosArgumentType.getBlockPos(context, "from");
-            BlockPos end = BlockPosArgumentType.getBlockPos(context, "to");
-            
-            // Get information about the target
-            Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "target");
-            GameProfile target = profiles.stream().findAny()
-                .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
-            
-            // Claim the defined slices
-            ChunkUtils.claimSlices(source.getWorld(), target.getId(), start, end);
-        } catch (Exception e) {
-            CoreMod.logError(e);
-        }
+        BlockRange region = new BlockRange(
+            BlockPosArgumentType.getBlockPos(context, "from"),
+            BlockPosArgumentType.getBlockPos(context, "to")
+        );
+        
+        // Claim the defined slices
+        ChunkUtils.claimSlices(source.getWorld(), target, region);
+        source.sendFeedback(new LiteralText("Claimed ")
+            .append(region.formattedVolume())
+            .append(" blocks."), false);
         
         return Command.SINGLE_SUCCESS;
     }
     private static int unclaimRegionAt(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        
-        BlockPos start = BlockPosArgumentType.getBlockPos(context, "from");
-        BlockPos end = BlockPosArgumentType.getBlockPos(context, "to");
+
+        BlockRange region = new BlockRange(
+            BlockPosArgumentType.getBlockPos(context, "from"),
+            BlockPosArgumentType.getBlockPos(context, "to")
+        );
         
         // Unclaim the defined slices
-        ChunkUtils.unclaimSlices(source.getWorld(), start, end);
+        ChunkUtils.unclaimSlices(source.getWorld(), region);
+        source.sendFeedback(new LiteralText("Unclaimed ")
+            .append(region.formattedVolume())
+            .append(" blocks."), false);
         
         return Command.SINGLE_SUCCESS;
     }
@@ -1018,7 +1014,7 @@ public final class ClaimCommand {
                 .append(amount)
                 .append(" villagers have been added to your town."),
                 MessageType.SYSTEM,
-                ServerCore.spawnID
+                ServerCore.SPAWN_ID
             );
         }
         
@@ -1061,7 +1057,7 @@ public final class ClaimCommand {
             .append(new LiteralText(CasingUtils.Sentence(rank.name())).formatted(Formatting.AQUA))
             .append(new LiteralText(".").formatted(Formatting.WHITE)),
             MessageType.SYSTEM,
-            ServerCore.spawnID
+            ServerCore.SPAWN_ID
         );
         
         // Return command success
@@ -1087,7 +1083,7 @@ public final class ClaimCommand {
                 .append(new LiteralText(CasingUtils.Sentence(rank.name())).formatted(Formatting.AQUA))
                 .append(new LiteralText(".").formatted(Formatting.WHITE)),
                 MessageType.SYSTEM,
-                ServerCore.spawnID
+                ServerCore.SPAWN_ID
             );
         }
         
@@ -1117,7 +1113,7 @@ public final class ClaimCommand {
             .append(new LiteralText( enabled ? "Enabled" : "Disabled" ).formatted(setting.getAttributeColor( enabled )))
             .append(new LiteralText(" in your claimed area.").formatted(Formatting.WHITE)),
             MessageType.SYSTEM,
-            ServerCore.spawnID
+            ServerCore.SPAWN_ID
         );
         
         return Command.SINGLE_SUCCESS;
@@ -1153,7 +1149,7 @@ public final class ClaimCommand {
             .append( new LiteralText( CasingUtils.Sentence(rank.name()) ).formatted(Formatting.AQUA) )
             .append( new LiteralText("." ).formatted(Formatting.WHITE) ),
             MessageType.SYSTEM,
-            ServerCore.spawnID
+            ServerCore.SPAWN_ID
         );
         
         // Play a sound to the player
@@ -1204,7 +1200,7 @@ public final class ClaimCommand {
                 .append( new LiteralText(friend.getName()).formatted(Formatting.DARK_PURPLE) )
                 .append( new LiteralText(" removed.")),
                 MessageType.SYSTEM,
-                ServerCore.spawnID
+                ServerCore.SPAWN_ID
             );
             
             // Play sound to player
@@ -1241,7 +1237,7 @@ public final class ClaimCommand {
         ClaimantPlayer friendData = ClaimantPlayer.get(friend);
         if (!friendData.isFriend(player.getUuid()))
             throw ClaimCommand.PLAYER_NOT_FRIENDS.create(player);
-        if (player.world != friend.world)
+        if (player.world != friend.world || friend.isInvisible())
             throw ClaimCommand.PLAYER_DIFFERENT_WORLD.create(player);
         return ClaimCommand.findFriend(player, friend);
     }

@@ -29,13 +29,13 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.utilities.MessageUtils;
-import net.TheElm.project.utilities.RankUtils;
+import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -53,13 +53,12 @@ public final class WhereCommand {
     }
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("where")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.LOCATE_PLAYERS))
+        ServerCore.register(dispatcher, "where", builder -> builder
+            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.LOCATE_PLAYERS))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .executes(WhereCommand::locatePlayer)
+                    .executes(WhereCommand::locatePlayer)
             )
         );
-        CoreMod.logDebug("- Registered Where command");
     }
     
     private static int locatePlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

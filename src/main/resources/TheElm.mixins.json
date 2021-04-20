@@ -55,7 +55,7 @@
     
     "Entities.Phantom",
     "Entities.LimitedSkeletons",
-    "Entities.WanderingSpawns",
+    "Entities.WanderingTraders",
     "Entities.WarmStriders",
     "Entities.WolfBuff",
     
@@ -102,8 +102,9 @@
     "Server.PlayerManager",
     "Server.Save",
     "Server.SaveFolder",
+    "Server.WanderingSpawns",
     "Server.Whitelist",
-    "Server.WanderingTraders"
+    "Server.WorldProperties"
   ],
   "injectors": {
     "defaultRequire": 1

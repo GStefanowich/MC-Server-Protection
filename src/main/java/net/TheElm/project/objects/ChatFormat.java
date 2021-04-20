@@ -29,7 +29,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonSerializationContext;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ChatRooms;
-import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;

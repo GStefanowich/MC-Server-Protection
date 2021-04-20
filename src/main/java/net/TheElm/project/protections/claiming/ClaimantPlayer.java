@@ -35,8 +35,8 @@ import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.objects.ClaimTag;
 import net.TheElm.project.utilities.FormattingUtils;
-import net.TheElm.project.utilities.NbtUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.MessageType;
@@ -59,7 +59,7 @@ public final class ClaimantPlayer extends Claimant {
     private ClaimantTown town;
     
     private ClaimantPlayer(@NotNull UUID playerUUID) {
-        super( ClaimantType.PLAYER, playerUUID );
+        super(ClaimantType.PLAYER, playerUUID);
     }
     
     public final ClaimRanks getPermissionRankRequirement(@Nullable ClaimPermissions permission) {

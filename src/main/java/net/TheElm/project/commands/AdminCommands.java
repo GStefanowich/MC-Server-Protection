@@ -31,12 +31,13 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
-import net.TheElm.project.utilities.RankUtils;
+import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.item.ItemStack;
@@ -55,48 +56,44 @@ public final class AdminCommands {
     
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         // Register the FLY command
-        dispatcher.register(CommandManager.literal("fly")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_FLY))
+        ServerCore.register(dispatcher, "Fly", (builder) -> builder
+            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_FLY))
             .then( CommandManager.argument( "target", EntityArgumentType.players())
-                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_FLY.onOther()))
+                .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_FLY.onOther()))
                 .executes(AdminCommands::targetFlying)
             )
             .executes(AdminCommands::selfFlying)
         );
-        CoreMod.logDebug("- Registered Fly command");
         
         // Register the GOD command
-        dispatcher.register(CommandManager.literal("god")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GODMODE))
+        ServerCore.register(dispatcher, "God", (builder) -> builder
+            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GODMODE))
             .then( CommandManager.argument( "target", EntityArgumentType.players())
-                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_GODMODE.onOther()))
+                .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GODMODE.onOther()))
                 .executes(AdminCommands::targetGod)
             )
             .executes(AdminCommands::selfGod)
         );
-        CoreMod.logDebug("- Registered God Mode command");
         
         // Register the HEAL command
-        dispatcher.register(CommandManager.literal("heal")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_HEAL))
+        ServerCore.register(dispatcher, "Heal", (builder) -> builder
+            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_HEAL))
             .then( CommandManager.argument( "target", EntityArgumentType.players())
-                .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_HEAL.onOther()))
+                .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_HEAL.onOther()))
                 .executes(AdminCommands::targetHeal)
             )
             .executes(AdminCommands::selfHeal)
         );
-        CoreMod.logDebug("- Registered Heal command");
         
         // Register the HEAL command
-        dispatcher.register(CommandManager.literal("repair")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.CHEATING) || RankUtils.hasPermission(source, Permissions.PLAYER_REPAIR))
+        ServerCore.register(dispatcher, "Repair", (builder) -> builder
+            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_REPAIR))
             .executes(AdminCommands::selfRepair)
         );
-        CoreMod.logDebug("- Registered Repair command");
         
         // Create DEBUG commands
         if (CoreMod.isDebugging()) {
-            dispatcher.register(CommandManager.literal("dragon-players")
+            ServerCore.register(dispatcher, "Dragon Players", (builder) -> builder
                 .then(CommandManager.argument("count", IntegerArgumentType.integer( 0 ))
                     .executes((context) -> {
                         SewConfig.set(SewConfig.DRAGON_PLAYERS, ConfigOption.convertToJSON(

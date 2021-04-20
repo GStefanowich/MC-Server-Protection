@@ -39,27 +39,15 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.objects.ShopStats;
-import net.TheElm.project.protections.BlockDistance;
+import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.utilities.CasingUtils;
-import net.TheElm.project.utilities.ChunkUtils;
-import net.TheElm.project.utilities.GuideUtils;
-import net.TheElm.project.utilities.InventoryUtils;
-import net.TheElm.project.utilities.MessageUtils;
-import net.TheElm.project.utilities.MoneyUtils;
-import net.TheElm.project.utilities.ShopSignBuilder;
-import net.TheElm.project.utilities.TitleUtils;
-import net.TheElm.project.utilities.TranslatableServerSide;
-import net.TheElm.project.utilities.WarpUtils;
+import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.WallSignBlock;
-import net.minecraft.block.entity.BarrelBlockEntity;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.ChestBlockEntity;
-import net.minecraft.block.entity.LootableContainerBlockEntity;
-import net.minecraft.block.entity.SignBlockEntity;
+import net.minecraft.block.entity.*;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -139,7 +127,7 @@ public enum ShopSigns {
                 return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
             
             // Check if the attached chest exists
-            if (CoreMod.spawnID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
+            if (CoreMod.SPAWN_ID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
                 if (player.getUuid().equals(sign.getShopOwner()))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.self_sell"));
                 /*
@@ -160,13 +148,13 @@ public enum ShopSigns {
                  */
                 try {
                     // Take shop keepers money
-                    if (!(sign.getShopOwner().equals(CoreMod.spawnID) || MoneyUtils.takePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice())))
+                    if (!(sign.getShopOwner().equals(CoreMod.SPAWN_ID) || MoneyUtils.takePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice())))
                         return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
                     
                     // Put players item into chest
                     if (!InventoryUtils.playerToChest( player, signPos, player.inventory, chestInventory, item, sign.getShopItemCount(), true )) {
                         // Refund the shopkeeper
-                        if (!(sign.getShopOwner().equals(CoreMod.spawnID)))
+                        if (!(sign.getShopOwner().equals(CoreMod.SPAWN_ID)))
                             MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
                         
                         // Error message
@@ -265,7 +253,7 @@ public enum ShopSigns {
                 return Either.right( true );
             
             // Check if the attached chest exists
-            if (CoreMod.spawnID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
+            if (CoreMod.SPAWN_ID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
                 if (player.getUuid().equals(sign.getShopOwner()))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.self_buy"));
                 
@@ -304,7 +292,7 @@ public enum ShopSigns {
                     player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
                     
                     // Give the shop keeper money
-                    if (!sign.getShopOwner().equals(CoreMod.spawnID)) {
+                    if (!sign.getShopOwner().equals(CoreMod.SPAWN_ID)) {
                         try {
                             MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
                         } catch (NbtNotFoundException e) {
@@ -390,7 +378,7 @@ public enum ShopSigns {
                 return Either.right( true );
             
             // Check if the attached chest exists
-            if (CoreMod.spawnID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
+            if (CoreMod.SPAWN_ID.equals(sign.getShopOwner()) || ((chest = this.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
                 if (player.getUuid().equals(sign.getShopOwner()))
                     return Either.left(new LiteralText("Cannot buy items from yourself."));
     
@@ -446,7 +434,7 @@ public enum ShopSigns {
             sign.setTextOnRow( 3, new LiteralText(""));
             
             // Set the sign owner to SPAWN
-            signBuilder.shopOwner( CoreMod.spawnID );
+            signBuilder.shopOwner( CoreMod.SPAWN_ID);
             
             return true;
         }
@@ -459,7 +447,7 @@ public enum ShopSigns {
             long playerHas = MoneyUtils.getPlayerMoney( player );
             player.sendMessage(TranslatableServerSide.text( player, "player.money",
                 playerHas
-            ), MessageType.SYSTEM, ServerCore.spawnID);
+            ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
             
             return Either.right( true );
         }
@@ -488,7 +476,7 @@ public enum ShopSigns {
             sign.setTextOnRow( 3, new LiteralText(""));
             
             // Set the sign owner to SPAWN
-            signBuilder.shopOwner( CoreMod.spawnID );
+            signBuilder.shopOwner( CoreMod.SPAWN_ID);
             
             return true;
         }
@@ -527,7 +515,7 @@ public enum ShopSigns {
                 player.sendMessage(TranslatableServerSide.text(
                     player,
                     "warp.random.search"
-                ), MessageType.SYSTEM, ServerCore.spawnID);
+                ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
                 
                 // Create warp
                 WarpUtils newWarp = new WarpUtils(player, spawnPos);
@@ -542,7 +530,7 @@ public enum ShopSigns {
                 player.sendMessage(TranslatableServerSide.text(
                     player,
                     "warp.random.build"
-                ), MessageType.SYSTEM, ServerCore.spawnID);
+                ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
                 
                 // Teleport the player
                 BlockPos safeTeleportPos = newWarp.getSafeTeleportPos(world);
@@ -557,12 +545,12 @@ public enum ShopSigns {
                         player,
                         "warp.random.teleported",
                         distance
-                    ), MessageType.SYSTEM, ServerCore.spawnID);
+                    ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
                 else
                     player.sendMessage(TranslatableServerSide.text(
                         player,
                         "warp.random.teleported_world"
-                    ), MessageType.SYSTEM, ServerCore.spawnID);
+                    ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
             }).start();
             return true;
         }
@@ -594,7 +582,7 @@ public enum ShopSigns {
             sign.setTextOnRow(3, new LiteralText("for ").formatted(Formatting.BLACK).append(priceText));
             
             // Set the sign owner to SPAWN
-            signBuilder.shopOwner(CoreMod.spawnID);
+            signBuilder.shopOwner(CoreMod.SPAWN_ID);
             return true;
         }
         @Override
@@ -613,7 +601,7 @@ public enum ShopSigns {
                         player.sendMessage(
                             new LiteralText("Can't build that here").formatted(Formatting.RED),
                             MessageType.SYSTEM,
-                            ServerCore.spawnID
+                            ServerCore.SPAWN_ID
                         );
                         
                         // Refund the player
@@ -679,7 +667,7 @@ public enum ShopSigns {
                         throw new ShopBuilderException(new LiteralText("Deed sign must be within a valid region. Use \"").append(new LiteralText("/ruler").formatted(Formatting.AQUA)).append("\" command to select two points"));
                     
                     // Check that the region contains the sign
-                    BlockDistance region = new BlockDistance( firstPos, secondPos );
+                    BlockRange region = new BlockRange( firstPos, secondPos );
                     if (!region.isWithin( sign.getPos() ))
                         throw new ShopBuilderException(new LiteralText("Deed sign must be within a valid region. Use \"").append(new LiteralText("/ruler").formatted(Formatting.AQUA)).append("\" command to select two points"));
                     
@@ -761,7 +749,7 @@ public enum ShopSigns {
             sign.setTextOnRow( 3, new LiteralText(""));
             
             // Set the sign owner to SPAWN
-            signBuilder.shopOwner( CoreMod.spawnID );
+            signBuilder.shopOwner( CoreMod.SPAWN_ID);
             
             return true;
         }
@@ -800,7 +788,7 @@ public enum ShopSigns {
                 .append(" / ")
                 .append(new LiteralText(NumberFormat.getInstance().format( claim.getMaxChunkLimit() )).formatted(Formatting.AQUA)),
                 MessageType.SYSTEM,
-                ServerCore.spawnID
+                ServerCore.SPAWN_ID
             );
             
             return Either.right( true );
@@ -822,7 +810,7 @@ public enum ShopSigns {
             
             if (creator.isCreative()) {
                 // Set the sign owner
-                signBuilder.shopOwner(CoreMod.spawnID);
+                signBuilder.shopOwner(CoreMod.SPAWN_ID);
                 
                 String guideName = CasingUtils.Sentence(signBuilder.getLines()[1].asString());
                 
@@ -891,7 +879,7 @@ public enum ShopSigns {
             sign.setTextOnRow( 3, new LiteralText(""));
             
             // Set the sign owner to SPAWN
-            signBuilder.shopOwner( CoreMod.spawnID );
+            signBuilder.shopOwner( CoreMod.SPAWN_ID);
             
             return true;
         }
@@ -935,7 +923,7 @@ public enum ShopSigns {
                 player.sendMessage(new LiteralText("Backpack size is now ").formatted(Formatting.YELLOW)
                     .append(new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() )).formatted(Formatting.AQUA)),
                     MessageType.SYSTEM,
-                    ServerCore.spawnID
+                    ServerCore.SPAWN_ID
                 );
                 
                 // Log the transaction

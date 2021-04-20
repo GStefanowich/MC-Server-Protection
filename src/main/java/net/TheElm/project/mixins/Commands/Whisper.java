@@ -26,7 +26,7 @@
 package net.TheElm.project.mixins.Commands;
 
 import net.TheElm.project.enums.ChatRooms;
-import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.server.command.MessageCommand;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;

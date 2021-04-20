@@ -26,17 +26,8 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.enums.ClaimPermissions;
-import net.minecraft.item.BlockItem;
-import net.minecraft.item.BucketItem;
-import net.minecraft.item.EndCrystalItem;
-import net.minecraft.item.EnderEyeItem;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.LeadItem;
-import net.minecraft.item.MusicDiscItem;
-import net.minecraft.item.ToolItem;
-import net.minecraft.item.WritableBookItem;
-import net.minecraft.item.WrittenBookItem;
+import net.TheElm.project.utilities.nbt.NbtUtils;
+import net.minecraft.item.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;

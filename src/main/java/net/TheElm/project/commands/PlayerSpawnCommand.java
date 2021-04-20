@@ -30,6 +30,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.block.BedBlock;
@@ -39,6 +40,7 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -51,19 +53,17 @@ public final class PlayerSpawnCommand {
     
     private static final ExceptionTranslatableServerSide SPAWN_NOT_AT_BED = TranslatableServerSide.exception("spawn.set.missing_bed");
     public static final Set<UUID> commandRanUUIDs = Collections.synchronizedSet(new HashSet<>());
-    public static String commandName = "setspawn";
+    public static final String COMMAND_NAME = "SetSpawn";
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         /*
          * Move the players spawn
          */
-        dispatcher.register( CommandManager.literal( commandName )
-            .then(CommandManager.argument( "bed_position", BlockPosArgumentType.blockPos() )
+        ServerCore.register(dispatcher, COMMAND_NAME, builder -> builder
+            .then(CommandManager.argument("bed_position", BlockPosArgumentType.blockPos() )
                 .executes(PlayerSpawnCommand::moveSpawn)
             )
         );
-        
-        CoreMod.logDebug( "- Registered SetSpawn command" );
     }
     
     private static int moveSpawn(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

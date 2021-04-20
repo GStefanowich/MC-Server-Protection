@@ -25,11 +25,7 @@
 
 package net.TheElm.project.config;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
+import com.google.gson.*;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.addons.SewBluemapConfig;
 import net.TheElm.project.objects.ChatFormat;
@@ -44,18 +40,8 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -414,6 +400,9 @@ public final class SewConfig extends SewConfigContainer {
     
     public static <T> boolean equals( ConfigOption<T> a, ConfigOption<T> b ) {
         return Objects.equals(SewConfig.get(a), SewConfig.get(b));
+    }
+    public static <T> boolean equals( ConfigOption<T> option, T value ) {
+        return Objects.equals(SewConfig.get(option), value);
     }
     
     public static boolean isTrue( ConfigOption config ) {

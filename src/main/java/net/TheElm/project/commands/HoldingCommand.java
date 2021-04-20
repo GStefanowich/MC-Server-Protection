@@ -29,7 +29,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.utilities.TranslatableServerSide;
@@ -60,15 +60,14 @@ public final class HoldingCommand {
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         // Command to display the object the player is holding
         for (EquipmentSlot slot : EquipmentSlot.values()) {
-            dispatcher.register(CommandManager.literal(slot.getName())
+            ServerCore.register(dispatcher, slot.getName(), builder -> builder
                 .requires((source) -> SewConfig.get(SewConfig.COMMAND_EQUIPMENT))
                 .then(CommandManager.argument("message", StringArgumentType.greedyString())
-                    .executes((source) -> HoldingCommand.handMessage(source, slot))
+                        .executes((source) -> HoldingCommand.handMessage(source, slot))
                 )
                 .executes((source) -> HoldingCommand.slot(source, slot))
             );
         }
-        CoreMod.logDebug("- Registered Equipment command");
     }
     
     private static int slot(@NotNull CommandContext<ServerCommandSource> context, @NotNull EquipmentSlot slot) throws CommandSyntaxException {

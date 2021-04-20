@@ -29,6 +29,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.exceptions.ShopBuilderException;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -171,7 +172,7 @@ public final class ShopSignBuilder {
             creator.sendMessage(
                 e.getErrorMessage(),
                 MessageType.SYSTEM,
-                ServerCore.spawnID
+                ServerCore.SPAWN_ID
             );
         }
         this.breakSign();
@@ -233,7 +234,7 @@ public final class ShopSignBuilder {
         String str = text.getString();
         if ( "server".equalsIgnoreCase( str ) && player.isCreative() ) {
             // Set the owner
-            this.ownerUUID = CoreMod.spawnID;
+            this.ownerUUID = CoreMod.SPAWN_ID;
             return new LiteralText( "" );
         } else {
             // Set the owner

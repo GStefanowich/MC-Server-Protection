@@ -52,6 +52,10 @@
   "player.equipment.empty_hand": "You don't have anything in that hand.",
   "player.equipment.empty_slot": "You aren't wearing anything in that slot.",
   
+  "player.nick.too_long": "Nickname cannot be longer than %d characters.",
+  "player.nick.updated": "Nickname updated to %s.",
+  "player.nick.reset": "Your nickname was reset.",
+  
   "player.money": "Your wallet: $%d",
   "player.money.poor": "You do not have enough money.",
   "player.death_chest.location": "A new death chest has been spawned at %s.",

@@ -23,10 +23,11 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Entities;
+package net.TheElm.project.mixins.Server;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.utilities.BlockUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
@@ -72,7 +73,7 @@ public abstract class WanderingSpawns implements Spawner {
     private native boolean doesNotSuffocateAt(@NotNull BlockView blockView, @NotNull BlockPos blockPos);
     
     @Inject(at = @At("HEAD"), method = "method_18018", cancellable = true)
-    private void onAttemptSpawning(@NotNull ServerWorld world, @NotNull CallbackInfoReturnable<Boolean> callback) {
+    private void onAttemptTraderSpawn(@NotNull ServerWorld world, @NotNull CallbackInfoReturnable<Boolean> callback) {
         if (!SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN))
             return;
         callback.setReturnValue( // Try spawning the wandering trader
@@ -118,6 +119,7 @@ public abstract class WanderingSpawns implements Spawner {
             if (trader != null) {
                 // Set the custom name as visible from anywhere
                 trader.setCustomNameVisible(true);
+                trader.setInvulnerable(true);
                 
                 // Spawn llamas around the trader
                 for (int i = 0; i < 2; i++)
@@ -131,6 +133,10 @@ public abstract class WanderingSpawns implements Spawner {
                 trader.setWanderTarget(forcedPos);
                 trader.setPositionTarget(forcedPos, 16);
                 
+                // Light nearby campfire
+                if (SewConfig.get(SewConfig.WANDERING_TRADER_CAMPFIRES))
+                    BlockUtils.igniteNearbyLightSources(world);
+                
                 if (SewConfig.get(SewConfig.ANNOUNCE_WANDERING_TRADER))
                     EntityUtils.wanderingTraderArrival(trader);
                 
@@ -140,5 +146,4 @@ public abstract class WanderingSpawns implements Spawner {
         
         return false;
     }
-    
 }

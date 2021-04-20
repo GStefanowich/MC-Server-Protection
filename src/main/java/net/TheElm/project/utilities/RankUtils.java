@@ -47,12 +47,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 public final class RankUtils {
     
@@ -64,28 +59,27 @@ public final class RankUtils {
     /*
      * Stored ranks
      */
-    @Nullable
-    public static PlayerRank getRank(@Nullable String identifier) {
+    public static @Nullable PlayerRank getRank(@Nullable String identifier) {
         if (identifier == null) return null;
         return RankUtils.RANKS.get( identifier );
     }
-    public static Set<String> getRanks() {
+    public static @NotNull Set<String> getRanks() {
         return RANKS.keySet();
     }
     
     /*
      * Get player ranks
      */
-    public static PlayerRank[] getPlayerRanks(@NotNull GameProfile profile) {
+    public static @NotNull PlayerRank[] getPlayerRanks(@NotNull GameProfile profile) {
         ServerPlayerEntity player = ServerCore.getPlayer( profile.getId() );
         if (player == null)
             return new PlayerRank[0];
         return RankUtils.getPlayerRanks(player);
     }
-    public static PlayerRank[] getPlayerRanks(@NotNull ServerPlayerEntity player) {
+    public static @NotNull PlayerRank[] getPlayerRanks(@NotNull ServerPlayerEntity player) {
         return ((PlayerPermissions) player).getRanks();
     }
-    public static PlayerRank[] loadPlayerRanks(@NotNull GameProfile profile) {
+    public static @NotNull PlayerRank[] loadPlayerRanks(@NotNull GameProfile profile) {
         String uuid = profile.getId().toString();
         try {
             JsonObject json = RankUtils.filePlayers();
@@ -203,21 +197,21 @@ public final class RankUtils {
             } else CoreMod.logInfo("Could not find EVERYONE perm.");
         }
     }
-    private static JsonObject fileRanks() throws FileNotFoundException {
+    private static @NotNull JsonObject fileRanks() throws FileNotFoundException {
         JsonObject main = RankUtils.fileLoad();
         JsonElement ranks;
         if (main.has("ranks") && ((ranks = main.get("ranks")) instanceof JsonObject))
             return (JsonObject) ranks;
         return new JsonObject();
     }
-    private static JsonObject filePlayers() throws FileNotFoundException {
+    private static @NotNull JsonObject filePlayers() throws FileNotFoundException {
         JsonObject main = RankUtils.fileLoad();
         JsonElement players;
         if (main.has("players") && ((players = main.get("players")) instanceof JsonObject))
             return (JsonObject) players;
         return new JsonObject();
     }
-    private static JsonObject fileLoad() throws FileNotFoundException {
+    private static @NotNull JsonObject fileLoad() throws FileNotFoundException {
         File ranksFile = new File(
             CoreMod.getConfDir(),
             "permissions.json"

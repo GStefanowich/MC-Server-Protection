@@ -25,39 +25,21 @@
 
 package net.TheElm.project;
 
-import net.TheElm.project.commands.AdminCommands;
-import net.TheElm.project.commands.BackpackCommand;
-import net.TheElm.project.commands.ChatroomCommands;
-import net.TheElm.project.commands.ClaimCommand;
-import net.TheElm.project.commands.GameModesCommand;
-import net.TheElm.project.commands.HoldingCommand;
-import net.TheElm.project.commands.LoggingCommand;
-import net.TheElm.project.commands.MiscCommands;
-import net.TheElm.project.commands.ModCommands;
-import net.TheElm.project.commands.ModsCommand;
-import net.TheElm.project.commands.MoneyCommand;
-import net.TheElm.project.commands.NickNameCommand;
-import net.TheElm.project.commands.PermissionCommand;
-import net.TheElm.project.commands.PlayerSpawnCommand;
-import net.TheElm.project.commands.RideCommand;
-import net.TheElm.project.commands.RulerCommand;
-import net.TheElm.project.commands.SpawnerCommand;
-import net.TheElm.project.commands.TeleportEffectCommand;
-import net.TheElm.project.commands.TeleportsCommand;
-import net.TheElm.project.commands.WaystoneCommand;
-import net.TheElm.project.commands.WhereCommand;
-import net.TheElm.project.commands.WorldCommand;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import net.TheElm.project.commands.*;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.protections.events.BlockBreak;
-import net.TheElm.project.protections.events.BlockInteraction;
-import net.TheElm.project.protections.events.EntityAttack;
-import net.TheElm.project.protections.events.ItemPlace;
-import net.TheElm.project.protections.events.ItemUse;
+import net.TheElm.project.protections.events.*;
 import net.TheElm.project.protections.logging.EventLogger;
+import net.TheElm.project.utilities.CasingUtils;
+import net.TheElm.project.utilities.MapUtils;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.dedicated.MinecraftDedicatedServer;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -73,6 +55,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public final class ServerCore extends CoreMod implements DedicatedServerModInitializer {
     
@@ -89,6 +72,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             BackpackCommand.register(dispatcher);
             ChatroomCommands.register(dispatcher);
             ClaimCommand.register(dispatcher);
+            DateCommand.register(dispatcher);
             GameModesCommand.register(dispatcher);
             HoldingCommand.register(dispatcher);
             LoggingCommand.register(dispatcher);
@@ -102,40 +86,16 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             RideCommand.register(dispatcher);
             RulerCommand.register(dispatcher);
             SpawnerCommand.register(dispatcher);
+            StatsCommand.register(dispatcher);
+            TagUserCommand.register(dispatcher);
             TeleportsCommand.register(dispatcher);
             WaystoneCommand.register(dispatcher);
             WhereCommand.register(dispatcher);
             WorldCommand.register(dispatcher);
-            
+                        
             if ( CoreMod.isDebugging() )
                 TeleportEffectCommand.register(dispatcher);
         });
-        
-        /*COMMANDS.register(false, AdminCommands::register);
-        COMMANDS.register(false, BackpackCommand::register);
-        COMMANDS.register(false, ChatroomCommands::register);
-        COMMANDS.register(false, ClaimCommand::register);
-        COMMANDS.register(false, GameModesCommand::register);
-        COMMANDS.register(false, HoldingCommand::register);
-        COMMANDS.register(false, LoggingCommand::register);
-        COMMANDS.register(false, MiscCommands::register);
-        COMMANDS.register(false, ModCommands::register);
-        COMMANDS.register(false, ModsCommand::register);
-        COMMANDS.register(false, MoneyCommand::register);
-        COMMANDS.register(false, NickNameCommand::register);
-        COMMANDS.register(false, PermissionCommand::register);
-        COMMANDS.register(false, PlayerSpawnCommand::register);
-        COMMANDS.register(false, RideCommand::register);
-        COMMANDS.register(false, RulerCommand::register);
-        COMMANDS.register(false, SpawnerCommand::register);
-        COMMANDS.register(false, TeleportsCommand::register);
-        COMMANDS.register(false, WaystoneCommand::register);
-        COMMANDS.register(false, WhereCommand::register);*/
-        
-        // Debug commands
-        /*if ( CoreMod.isDebugging() ) {
-            COMMANDS.register(false, TeleportEffectCommand::register);
-        }*/
         
         // Create registry based listeners
         BlockBreak.init();
@@ -144,7 +104,9 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         ItemPlace.init();
         ItemUse.init();
         
-        CoreMod.logInfo( "Initializing Database." );
+        MapUtils.init();
+        
+        CoreMod.logInfo("Initializing Database.");
         try {
             // Initialize the database
             if (CoreMod.initDB()) {
@@ -172,7 +134,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             SewConfig.save();
             
             // Alert the mod presence
-            CoreMod.logInfo( "Finished loading." );
+            CoreMod.logInfo("Finished loading.");
         } catch (IOException e) {
             CoreMod.logError("Error during startup", e);
         }
@@ -194,10 +156,31 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         return ServerCore.getWorld(ServerCore.defaultWorldKey());
     }
     
+    public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final Consumer<LiteralArgumentBuilder<ServerCommandSource>> consumer) {
+        return ServerCore.register(dispatcher, command, command, consumer);
+    }
+    public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final String descriptive, @NotNull final Consumer<LiteralArgumentBuilder<ServerCommandSource>> consumer) {
+        final String display = CasingUtils.Sentence(command);
+        
+        // Build the literal using the name
+        LiteralArgumentBuilder<ServerCommandSource> builder = CommandManager.literal(command.toLowerCase().replace(" ", "-"));
+        
+        // Apply the builder
+        consumer.accept(builder);
+        
+        // Register the command
+        LiteralCommandNode<ServerCommandSource> node = dispatcher.register(builder);
+        
+        // Log the command registration
+        CoreMod.logDebug("- Registered " + (descriptive.isEmpty() || descriptive.equalsIgnoreCase(command) ? "/" + display : descriptive + " [/" + display + "]") + " command");
+        
+        return node;
+    }
+    
     public static @NotNull BlockPos getSpawn() {
         return ServerCore.getSpawn(ServerCore.defaultWorld());
     }
-    public static @NotNull BlockPos getSpawn(World world) {
+    public static @NotNull BlockPos getSpawn(@NotNull World world) {
         // Get the forced position of TheEnd
         if ((world instanceof ServerWorld) && (world.getRegistryKey() == World.END) && (!SewConfig.get(SewConfig.WORLD_SPECIFIC_SPAWN))) {
             BlockPos pos = ((ServerWorld)world).getSpawnPos();
@@ -216,13 +199,13 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             properties.getSpawnZ()
         );
     }
-    public static @NotNull BlockPos getSpawn(RegistryKey<World> world) {
+    public static @NotNull BlockPos getSpawn(@NotNull RegistryKey<World> world) {
         return ServerCore.getSpawn(ServerCore.getWorld(world));
     }
-    public static @NotNull ServerWorld getWorld(RegistryKey<World> key) {
+    public static @NotNull ServerWorld getWorld(@NotNull RegistryKey<World> key) {
         return ServerCore.getWorld(ServerCore.get(), key);
     }
-    public static @NotNull ServerWorld getWorld(MinecraftServer server, RegistryKey<World> key) {
+    public static @NotNull ServerWorld getWorld(@NotNull MinecraftServer server, @NotNull RegistryKey<World> key) {
         Optional<ServerWorld> world = Optional.ofNullable(server.getWorld(key));
         if (!world.isPresent())
             world = Optional.ofNullable(server.getWorld(World.OVERWORLD));

@@ -26,6 +26,7 @@
 package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.interfaces.ConstructableEntity;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.RangedAttackMob;
 import net.minecraft.entity.boss.WitherEntity;
@@ -68,13 +69,13 @@ public abstract class WitherBoss extends HostileEntity implements RangedAttackMo
     public void onSavingData(CompoundTag tag, CallbackInfo callback) {
         // Save the players money
         if (this.getEntityOwner() != null)
-            tag.putUuid( "WitherCreator", this.getEntityOwner() );
+            tag.putUuid("WitherCreator", this.getEntityOwner());
     }
     @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
     public void onReadingData(CompoundTag tag, CallbackInfo callback) {
         // Read the players money
-        if (tag.containsUuid( "WitherCreator" ))
-            this.setEntityOwner(tag.getUuid("WitherCreator" ));
+        if (NbtUtils.hasUUID(tag, "WitherCreator"))
+            this.setEntityOwner(NbtUtils.getUUID(tag, "WitherCreator"));
     }
     
 }

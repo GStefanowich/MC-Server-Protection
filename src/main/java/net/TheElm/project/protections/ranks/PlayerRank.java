@@ -92,7 +92,7 @@ public final class PlayerRank implements Comparable<PlayerRank> {
      * Overrides
      */
     @Override
-    public String toString() {
+    public @NotNull String toString() {
         return this.getIdentifier();
     }
     @Override

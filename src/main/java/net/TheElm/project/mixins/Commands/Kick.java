@@ -5,7 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.utilities.RankUtils;
+import net.TheElm.project.utilities.CommandUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.MessageArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -34,7 +34,7 @@ public class Kick {
     @Overwrite
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("kick")
-            .requires((source) -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP) || RankUtils.hasPermission(source, Permissions.VANILLA_COMMAND_KICK))
+            .requires(CommandUtils.either(OpLevels.KICK_BAN_OP, Permissions.VANILLA_COMMAND_KICK))
             .then(CommandManager.argument("targets", EntityArgumentType.players())
                 .then(CommandManager.argument("reason", MessageArgumentType.message())
                     .executes((sourceCommandContext) -> Kick.execute(sourceCommandContext.getSource(), EntityArgumentType.getPlayers(sourceCommandContext, "targets"), MessageArgumentType.getMessage(sourceCommandContext, "reason")))

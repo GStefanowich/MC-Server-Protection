@@ -30,16 +30,16 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
-import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.PlayerChat;
-import net.TheElm.project.utilities.CommandUtilities;
-import net.TheElm.project.utilities.MessageUtils;
+import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.MessageArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -49,6 +49,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
+import org.jetbrains.annotations.NotNull;
 
 public final class ChatroomCommands {
     
@@ -56,29 +57,26 @@ public final class ChatroomCommands {
     
     private ChatroomCommands() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("t")
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
+        ServerCore.register(dispatcher, "t", "Town Chat", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.CHAT_MODIFY) && ClaimCommand.sourceInTown( source ))
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
             .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
         );
-        CoreMod.logDebug( "- Registered Town chat command" );
         
-        dispatcher.register(CommandManager.literal("g")
+        ServerCore.register(dispatcher, "g", "Global Chat", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.CHAT_MODIFY))
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
             .executes((context -> switchToChatRoom(context, ChatRooms.GLOBAL)))
         );
-        CoreMod.logDebug( "- Registered Global chat command" );
         
-        dispatcher.register(CommandManager.literal("l")
+        ServerCore.register(dispatcher, "l", "Local Chat", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.CHAT_MODIFY))
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
             .executes((context -> switchToChatRoom(context, ChatRooms.LOCAL)))
         );
-        CoreMod.logDebug( "- Registered Local chat command" );
         
-        dispatcher.register(CommandManager.literal("chat")
+        ServerCore.register(dispatcher, "Chat", builder -> builder
             .then(CommandManager.literal("town")
                 .requires(( source ) -> SewConfig.get(SewConfig.CHAT_MODIFY) && ClaimCommand.sourceInTown( source ))
                 .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
@@ -98,10 +96,10 @@ public final class ChatroomCommands {
         
         // TODO: Add Mute permission node
         // TODO: Add shadow mute
-        dispatcher.register(CommandManager.literal("mute")
+        ServerCore.register(dispatcher, "Mute", builder -> builder
             .requires(( source ) -> (SewConfig.get(SewConfig.CHAT_MODIFY)) && (SewConfig.get(SewConfig.CHAT_MUTE_SELF) || SewConfig.get(SewConfig.CHAT_MUTE_OP) && source.hasPermissionLevel( 3 )))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .suggests( CommandUtilities::getOnlinePlayerNames )
+                .suggests( CommandUtils::getOnlinePlayerNames )
                 .then(CommandManager.literal("global")
                     .requires(( source ) -> SewConfig.get(SewConfig.CHAT_MUTE_OP) && (source.hasPermissionLevel(OpLevels.KICK_BAN_OP) || RankUtils.hasPermission(source, Permissions.CHAT_COMMAND_MUTE)))
                     .executes(ChatroomCommands::opMute)
@@ -111,7 +109,7 @@ public final class ChatroomCommands {
         );
     }
     
-    private static int sendToChatRoom(final CommandContext<ServerCommandSource> context, final ChatRooms room) throws CommandSyntaxException {
+    private static int sendToChatRoom(@NotNull final CommandContext<ServerCommandSource> context, final ChatRooms room) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         if ((room != ChatRooms.TOWN) && ((PlayerChat)player).isMuted()) {
@@ -135,7 +133,7 @@ public final class ChatroomCommands {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int switchToChatRoom(final CommandContext<ServerCommandSource> context, final ChatRooms chatRoom) throws CommandSyntaxException {
+    private static int switchToChatRoom(@NotNull final CommandContext<ServerCommandSource> context, final ChatRooms chatRoom) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         // Update the chat room
@@ -164,7 +162,7 @@ public final class ChatroomCommands {
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int opMute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int opMute(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity target = EntityArgumentType.getPlayer( context, "player" );
         PlayerChat chatter = (PlayerChat) target;

@@ -1,17 +1,19 @@
 buildscript {
 	repositories {
-		maven {
-			url "https://plugins.gradle.org/m2/"
-		}
+		maven { url 'https://plugins.gradle.org/m2/' }
 	}
 	dependencies {
-		classpath "com.github.jengelman.gradle.plugins:shadow:5.0.0"
+		classpath 'com.github.jengelman.gradle.plugins:shadow:5.0.0'
 	}
 }
 
 plugins {
 	id 'fabric-loom' version '0.5-SNAPSHOT'
 	id 'maven-publish'
+}
+
+repositories {
+    maven { url 'https://jitpack.io' }
 }
 
 apply plugin: "com.github.johnrengelman.shadow"
@@ -35,8 +37,8 @@ dependencies {
 	// Fabric API. Used for commands
 	modCompile "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	
-	// PSA: Some older mods, compiled on Loom 0.2.1, might have outdated Maven POMs.
-	// You may need to force-disable transitiveness on them.
+	// Bluemap API
+	implementation 'com.github.BlueMap-Minecraft:BlueMapAPI:v1.4.0'
 	
 	// https://mvnrepository.com/artifact/mysql/mysql-connector-java
 	compile group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'

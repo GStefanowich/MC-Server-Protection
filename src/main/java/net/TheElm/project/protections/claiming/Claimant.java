@@ -30,7 +30,7 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.objects.ClaimTag;
-import net.TheElm.project.utilities.NbtUtils;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
@@ -46,14 +46,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Consumer;
 
 public abstract class Claimant {
@@ -65,17 +58,17 @@ public abstract class Claimant {
     
     private boolean dirty = false;
     
-    private final ClaimantType type;
-    private final UUID id;
+    private final @NotNull ClaimantType type;
+    private final @NotNull UUID id;
     
     protected MutableText name = null;
     
-    protected Claimant(ClaimantType type, @NotNull UUID uuid) {
+    protected Claimant(@NotNull ClaimantType type, @NotNull UUID uuid) {
         this.type = type;
         this.id = uuid;
         
         // Save to the cache BEFORE loading (For synchronocity!)
-        CoreMod.addToCache( this );
+        CoreMod.addToCache(this);
         
         // Load all information about the claim
         this.readCustomDataFromTag(NbtUtils.readClaimData( this.type, id ));
@@ -155,13 +148,13 @@ public abstract class Claimant {
     public final void removeFromCount(@NotNull WorldChunk... chunks) {
         for (WorldChunk chunk : chunks) {
             ChunkPos pos = chunk.getPos();
-            this.CLAIMED_CHUNKS.removeIf((array) -> (
+            this.CLAIMED_CHUNKS.removeIf((iteration) -> (
                 Objects.equals(
-                    array.getDimension(),
+                    iteration.getDimension(),
                     chunk.getWorld().getDimension()
                 )
-                && array.getX() == pos.x
-                && array.getZ() == pos.z
+                && iteration.getX() == pos.x
+                && iteration.getZ() == pos.z
             ));
         }
         this.markDirty();
@@ -194,9 +187,9 @@ public abstract class Claimant {
         }
     }
     public boolean forceSave() {
-        if (CoreMod.isDebugging()) CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.spawnID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
+        if (CoreMod.isDebugging()) CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
         boolean success = NbtUtils.writeClaimData( this );
-        if (!success) CoreMod.logInfo( "FAILED TO SAVE " + this.getType().name() + " DATA, " + (CoreMod.spawnID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
+        if (!success) CoreMod.logInfo( "FAILED TO SAVE " + this.getType().name() + " DATA, " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
         return success;
     }
     public void writeCustomDataToTag(@NotNull CompoundTag tag) {
@@ -210,7 +203,7 @@ public abstract class Claimant {
         for (Map.Entry<UUID, ClaimRanks> friend : this.USER_RANKS.entrySet()) {
             // Make a map for the ranked player
             CompoundTag friendTag = new CompoundTag();
-            friendTag.putUuid("i", friend.getKey() );
+            friendTag.putUuid("i", friend.getKey());
             friendTag.putString("r", friend.getValue().name());
             
             // Save the ranked player to our data tag
@@ -298,7 +291,7 @@ public abstract class Claimant {
         }
     }
     
-    private static String rankNbtTag(Claimant claimant) {
+    private static @NotNull String rankNbtTag(@Nullable Claimant claimant) {
         return (claimant instanceof ClaimantTown ? "members" : "friends");
     }
     public enum ClaimantType {

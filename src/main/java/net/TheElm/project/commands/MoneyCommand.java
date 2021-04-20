@@ -32,7 +32,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
@@ -40,11 +39,7 @@ import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
-import net.TheElm.project.utilities.ColorUtils;
-import net.TheElm.project.utilities.CommandUtilities;
-import net.TheElm.project.utilities.MoneyUtils;
-import net.TheElm.project.utilities.TitleUtils;
-import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.*;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
@@ -75,21 +70,20 @@ public final class MoneyCommand {
         /*
          * Player Pay
          */
-        LiteralCommandNode<ServerCommandSource> pay = dispatcher.register( CommandManager.literal( "pay" )
+        LiteralCommandNode<ServerCommandSource> pay = ServerCore.register(dispatcher, "pay", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.DO_MONEY))
             .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
                 .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                    .suggests( CommandUtilities::getAllPlayerNames )
+                    .suggests( CommandUtils::getAllPlayerNames )
                     .executes( MoneyCommand::commandMoneyPay )
                 )
             )
         );
-        CoreMod.logDebug( "- Registered Pay command" );
         
         /*
          * Player Money Management
          */
-        dispatcher.register( CommandManager.literal("money" )
+        ServerCore.register(dispatcher, "money", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.DO_MONEY))
             // Admin GIVE money (Adds money)
             .then( CommandManager.literal("give" )
@@ -97,7 +91,7 @@ public final class MoneyCommand {
                 .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
                 .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
                     .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                        .suggests( CommandUtilities::getAllPlayerNames )
+                        .suggests( CommandUtils::getAllPlayerNames )
                         .executes( MoneyCommand::commandAdminGive )
                     )
                 )
@@ -108,7 +102,7 @@ public final class MoneyCommand {
                 .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
                 .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
                     .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                        .suggests( CommandUtilities::getAllPlayerNames )
+                        .suggests( CommandUtils::getAllPlayerNames )
                         .executes( MoneyCommand::commandAdminTake )
                     )
                 )
@@ -119,7 +113,7 @@ public final class MoneyCommand {
                 .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
                 .then( CommandManager.argument( "amount", IntegerArgumentType.integer() )
                     .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                        .suggests( CommandUtilities::getAllPlayerNames )
+                        .suggests( CommandUtils::getAllPlayerNames )
                         .executes( MoneyCommand::commandAdminSet )
                     )
                 )
@@ -129,7 +123,7 @@ public final class MoneyCommand {
                 // If player is OP
                 .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
                 .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                    .suggests( CommandUtilities::getAllPlayerNames )
+                    .suggests( CommandUtils::getAllPlayerNames )
                     .executes( MoneyCommand::commandAdminReset )
                 )
             )
@@ -140,7 +134,7 @@ public final class MoneyCommand {
             .then( CommandManager.literal( "request" )
                 .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
                     .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                        .suggests( CommandUtilities::getAllPlayerNames )
+                        .suggests( CommandUtils::getAllPlayerNames )
                         .executes( MoneyCommand::commandMoneyRequest )
                     )
                 )
@@ -148,7 +142,6 @@ public final class MoneyCommand {
             // Player CHECKS money (Balance check)
             .executes(MoneyCommand::commandMoneyGet)
         );
-        CoreMod.logDebug( "- Registered Money command" );
     }
     
     /*

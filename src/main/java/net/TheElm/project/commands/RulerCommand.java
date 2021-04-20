@@ -29,14 +29,13 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.interfaces.PlayerData;
-import net.TheElm.project.protections.BlockDistance;
+import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.utilities.BlockUtils;
-import net.TheElm.project.utilities.MessageUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -49,6 +48,7 @@ import net.minecraft.util.Util;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import org.jetbrains.annotations.NotNull;
 
 public final class RulerCommand {
     
@@ -56,26 +56,23 @@ public final class RulerCommand {
     
     private RulerCommand() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        
-        dispatcher.register( CommandManager.literal( "ruler" )
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
+        ServerCore.register(dispatcher, "ruler", builder -> builder
             .then(CommandManager.argument("test", BlockPosArgumentType.blockPos()))
             .executes(RulerCommand::ruler)
         );
-        CoreMod.logDebug("- Registered Ruler command");
-        
     }
     
-    private static int ruler(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int ruler(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the command information
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         ServerWorld world = source.getWorld();
         
         // Get the block that the player is facing
-        BlockHitResult search = BlockUtils.getLookingBlock( world, player, 8 );
+        BlockHitResult search = BlockUtils.getLookingBlock(world, player, 8);
         if (search.getType() == HitResult.Type.MISS)
-            throw BLOCK_NOT_HIT.create( player );
+            throw RulerCommand.BLOCK_NOT_HIT.create( player );
         
         BlockPos newPos = search.getBlockPos().offset(search.getSide());
         PlayerData playerData = (PlayerData) player;
@@ -83,8 +80,8 @@ public final class RulerCommand {
         // Start a new RULER calculation
         if ((playerData.getRulerB() != null) || (playerData.getRulerA() == null)) {
             // Update ruler position
-            playerData.setRulerA( newPos );
-            playerData.setRulerB( null );
+            playerData.setRulerA(newPos);
+            playerData.setRulerB(null);
             
             player.sendSystemMessage(new LiteralText("First position set to ").formatted(Formatting.YELLOW)
                 .append(MessageUtils.xyzToText( newPos ))
@@ -92,14 +89,14 @@ public final class RulerCommand {
             
         } else {
             // Update ruler position
-            playerData.setRulerB( newPos );
+            playerData.setRulerB(newPos);
             
             BlockPos firstPos = playerData.getRulerA();
             
             /*
              * Output RULER calculation
              */
-            BlockDistance region = new BlockDistance( firstPos, newPos );
+            BlockRange region = new BlockRange(firstPos, newPos);
             
             MutableText distance = new LiteralText("Distance: ").formatted(Formatting.YELLOW)
                 .append(region.displayDimensions());
@@ -123,9 +120,9 @@ public final class RulerCommand {
                     .append(region.isUpOrDown().getName().toLowerCase());
             }
             if (region.hasDistinctVolume())
-                distance.append("\n").append(region.formattedVolume().formatted(Formatting.AQUA)).append(" block volume");
+                distance.append("\n").append(region.formattedVolume()).append(" block volume");
             
-            player.sendSystemMessage(distance, ServerCore.spawnID);
+            player.sendSystemMessage(distance, ServerCore.SPAWN_ID);
         }
         
         return Command.SINGLE_SUCCESS;

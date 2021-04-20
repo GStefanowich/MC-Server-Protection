@@ -31,82 +31,22 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.minecraft.block.AnvilBlock;
-import net.minecraft.block.BarrelBlock;
-import net.minecraft.block.BeaconBlock;
-import net.minecraft.block.BeehiveBlock;
-import net.minecraft.block.BellBlock;
-import net.minecraft.block.BlastFurnaceBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.CartographyTableBlock;
-import net.minecraft.block.ChestBlock;
-import net.minecraft.block.CraftingTableBlock;
-import net.minecraft.block.DropperBlock;
-import net.minecraft.block.EnchantingTableBlock;
-import net.minecraft.block.FletchingTableBlock;
-import net.minecraft.block.FlowerPotBlock;
-import net.minecraft.block.FurnaceBlock;
-import net.minecraft.block.GrindstoneBlock;
-import net.minecraft.block.HopperBlock;
-import net.minecraft.block.LecternBlock;
-import net.minecraft.block.LoomBlock;
-import net.minecraft.block.NoteBlock;
-import net.minecraft.block.ShulkerBoxBlock;
-import net.minecraft.block.SmithingTableBlock;
-import net.minecraft.block.SmokerBlock;
-import net.minecraft.block.StonecutterBlock;
-import net.minecraft.block.entity.BarrelBlockEntity;
-import net.minecraft.block.entity.BeehiveBlockEntity;
-import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.ChestBlockEntity;
-import net.minecraft.block.entity.JukeboxBlockEntity;
-import net.minecraft.block.entity.LockableContainerBlockEntity;
-import net.minecraft.block.entity.SignBlockEntity;
+import net.TheElm.project.utilities.text.MessageUtils;
+import net.minecraft.block.*;
+import net.minecraft.block.entity.*;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.mob.PiglinEntity;
-import net.minecraft.entity.passive.CatEntity;
-import net.minecraft.entity.passive.ChickenEntity;
-import net.minecraft.entity.passive.CodEntity;
-import net.minecraft.entity.passive.CowEntity;
-import net.minecraft.entity.passive.DolphinEntity;
-import net.minecraft.entity.passive.DonkeyEntity;
-import net.minecraft.entity.passive.FoxEntity;
-import net.minecraft.entity.passive.HorseEntity;
-import net.minecraft.entity.passive.IronGolemEntity;
-import net.minecraft.entity.passive.LlamaEntity;
-import net.minecraft.entity.passive.MuleEntity;
-import net.minecraft.entity.passive.OcelotEntity;
-import net.minecraft.entity.passive.PandaEntity;
-import net.minecraft.entity.passive.ParrotEntity;
-import net.minecraft.entity.passive.PigEntity;
-import net.minecraft.entity.passive.PolarBearEntity;
-import net.minecraft.entity.passive.PufferfishEntity;
-import net.minecraft.entity.passive.RabbitEntity;
-import net.minecraft.entity.passive.SalmonEntity;
-import net.minecraft.entity.passive.SheepEntity;
-import net.minecraft.entity.passive.SnowGolemEntity;
-import net.minecraft.entity.passive.SquidEntity;
-import net.minecraft.entity.passive.TropicalFishEntity;
-import net.minecraft.entity.passive.TurtleEntity;
-import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.entity.passive.WanderingTraderEntity;
-import net.minecraft.entity.passive.WolfEntity;
+import net.minecraft.entity.passive.*;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.vehicle.ChestMinecartEntity;
-import net.minecraft.entity.vehicle.FurnaceMinecartEntity;
-import net.minecraft.entity.vehicle.HopperMinecartEntity;
-import net.minecraft.entity.vehicle.MinecartEntity;
-import net.minecraft.entity.vehicle.TntMinecartEntity;
+import net.minecraft.entity.vehicle.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
@@ -119,13 +59,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Stream;
 
 public final class EntityUtils {
@@ -350,11 +284,11 @@ public final class EntityUtils {
     /*
      * Get Entity Names
      */
-    public static Text getLockedName(Block block) {
+    public static Text getLockedName(@NotNull Block block) {
         return new TranslatableText( block.getTranslationKey() )
             .formatted(Formatting.AQUA);
     }
-    public static Text getLockedName(Entity entity) {
+    public static Text getLockedName(@NotNull Entity entity) {
         return entity.getName().copy()
             .formatted(Formatting.AQUA);
     }
@@ -370,65 +304,81 @@ public final class EntityUtils {
     /*
      * Player methods
      */
-    public static void resendInventory(PlayerEntity player) {
+    public static void resendInventory(@NotNull PlayerEntity player) {
         if (player instanceof ServerPlayerEntity)
             EntityUtils.resendInventory((ServerPlayerEntity)player);
     }
-    public static void resendInventory(ServerPlayerEntity player) {
+    public static void resendInventory(@NotNull ServerPlayerEntity player) {
         player.updateCursorStack();
     }
     
     /*
      * Get Online Players
      */
-    public static @Nullable ServerPlayerEntity getPlayer(String username) {
-        // Get the server
-        MinecraftServer server = ServerCore.get();
-        
+    public static @Nullable ServerPlayerEntity getPlayer(@NotNull String username) {
         // If the player is online
-        return server.getPlayerManager().getPlayer( username );
+        return ServerCore.get()
+            .getPlayerManager()
+            .getPlayer(username);
     }
-    public static @Nullable ServerPlayerEntity getPlayer(UUID playerId) {
-        // Get the server
-        MinecraftServer server = ServerCore.get();
-        
+    public static @Nullable ServerPlayerEntity getPlayer(@NotNull UUID playerId) {
         // If the player is online
-        return server.getPlayerManager().getPlayer( playerId );
+        return ServerCore.get()
+            .getPlayerManager()
+            .getPlayer(playerId);
     }
     
     /*
      * Wandering Traders
      */
     public static void wanderingTraderArrival(@NotNull WanderingTraderEntity trader) {
-        World world = trader.getEntityWorld();
-        IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(trader.getBlockPos());
-        ClaimantTown town;
-        
-        MutableText pos;
-        if (CoreMod.spawnID.equals(chunk.getOwner()))
-            pos = new LiteralText("Spawn")
-                .formatted(Formatting.AQUA);
-        else if ((town = chunk.getTown()) != null)
-            pos = town.getName()
-                .styled(style -> style.withHoverEvent(town.getHoverText()).withColor(Formatting.AQUA));
-        else if (chunk.getOwner() != null)
-            pos = chunk.getOwnerName()
-                .formatted(Formatting.AQUA);
-        else pos = MessageUtils.xyzToText(trader.getBlockPos())
-                .formatted(Formatting.AQUA);
-        
         MessageUtils.sendToAll(new LiteralText("The ")
             .formatted(Formatting.YELLOW)
             .append(new LiteralText("Wandering Trader").formatted(Formatting.BOLD, Formatting.BLUE))
             .append(" has arrived at ")
-            .append(pos)
+            .append(EntityUtils.getEntityRegionName(trader))
+            .append("."));
+        EntityUtils.wanderingTraderTimeRemaining(trader);
+    }
+    public static void wanderingTraderTimeRemaining(@NotNull WanderingTraderEntity trader) {
+        if (trader.getDespawnDelay() <= 0)
+            return;
+        MessageUtils.sendToAll(new LiteralText("The ")
+            .formatted(Formatting.YELLOW, Formatting.ITALIC)
+            .append(new LiteralText("Wandering Trader").formatted(Formatting.BOLD, Formatting.BLUE))
+            .append(" will depart in ")
+            .append(MessageUtils.formatNumber((double)trader.getDespawnDelay() / 1200, " minutes"))
             .append("."));
     }
     public static void wanderingTraderDeparture(@NotNull WanderingTraderEntity trader) {
         MessageUtils.sendToAll(new LiteralText("The ")
             .formatted(Formatting.YELLOW)
             .append(new LiteralText("Wandering Trader").formatted(Formatting.BOLD, Formatting.BLUE))
-            .append(" has departed."));
+            .append(" has departed from ")
+            .append(EntityUtils.getEntityRegionName(trader))
+            .append("."));
+    }
+    public static Text getEntityRegionName(@NotNull Entity entity) {
+        World world = entity.getEntityWorld();
+        IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(entity.getBlockPos());
+        
+        if (CoreMod.SPAWN_ID.equals(chunk.getOwner()))
+            return new LiteralText("Spawn")
+                .formatted(Formatting.AQUA);
+        
+        ClaimantTown town;
+        if ((town = chunk.getTown()) != null)
+            return town.getName()
+                .styled(style -> style.withHoverEvent(town.getHoverText()).withColor(Formatting.AQUA));
+        
+        if (chunk.getOwner() != null)
+            return new LiteralText("")
+                .append(chunk.getOwnerName()
+                    .formatted(Formatting.AQUA))
+                .append("'s");
+        
+        return MessageUtils.xyzToText(entity.getBlockPos())
+            .formatted(Formatting.AQUA);
     }
     
     /*
@@ -453,7 +403,8 @@ public final class EntityUtils {
         return !EntityUtils.isInTheEnd(player);
     }
     private static boolean isIn(@NotNull Entity player, RegistryKey<World> world) {
-        return player.world.getRegistryKey().equals(world);
+        return player.world.getRegistryKey()
+            .equals(world);
     }
     
     /*
