@@ -29,6 +29,7 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.DamageEntityCallback;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.mixins.Interfaces.LightningAccessor;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.InventoryUtils;
@@ -36,14 +37,17 @@ import net.minecraft.block.BarrelBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.ChestBlock;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LightningEntity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.decoration.ItemFrameEntity;
+import net.minecraft.entity.mob.AbstractPiglinEntity;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.entity.mob.PiglinEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -53,6 +57,8 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Collections;
@@ -76,8 +82,8 @@ public final class EntityAttack {
      * @param source The damage source, damage applied, attacker, etc
      * @return SUCCESS - Cancel and return true; PASS - Allow the interaction; FAIL - Cancel the interaction
      */
-    private static ActionResult attack(final Entity target, final World world, final DamageSource source, float damage) {
-        final Entity attacker = source.getAttacker();
+    private static ActionResult attack(@NotNull final Entity target, @NotNull final World world, @NotNull final DamageSource source, float damage) {
+        final Entity attacker = EntityAttack.getRootAttacker(source);
         SoundEvent sound = null;
         
         // If self harm
@@ -88,7 +94,7 @@ public final class EntityAttack {
             final PlayerEntity player = (PlayerEntity) attacker;
             
             // Always allow defending self from hostiles
-            if (target instanceof HostileEntity && ((!(target instanceof PiglinEntity)) || (((PiglinEntity)target).getTarget() instanceof PlayerEntity)))
+            if (target instanceof HostileEntity && ((!(target instanceof AbstractPiglinEntity)) || (((AbstractPiglinEntity)target).getTarget() instanceof PlayerEntity)))
                 return ActionResult.PASS;
             
             // Do special item frame interaction if NOT CROUCHING and HOLDING A TOOL
@@ -145,7 +151,7 @@ public final class EntityAttack {
             }
             
             // Check if the tamed entity is tamed
-            if ((target instanceof TameableEntity) && (((TameableEntity) target).getOwner() != null)) {
+            if ((target instanceof TameableEntity) && (((TameableEntity) target).getOwnerUuid() != null)) {
                 // Deny if the entity belongs to the attacker (Can't hurt friendlies)
                 if (player.getUuid().equals(((TameableEntity) target).getOwnerUuid()))
                     return ActionResult.FAIL;
@@ -168,7 +174,7 @@ public final class EntityAttack {
             
         } else if (attacker instanceof CreeperEntity) {
             final CreeperEntity creeper = (CreeperEntity) attacker;
-    
+            
             // Protect item frames if creeper damage is off
             if (target instanceof ItemFrameEntity) {
                 ItemFrameEntity itemFrame = (ItemFrameEntity) target;
@@ -186,4 +192,21 @@ public final class EntityAttack {
         return ActionResult.FAIL;
     }
     
+    private static Entity getRootAttacker(@Nullable DamageSource source) {
+        if (source == null)
+            return null;
+        return EntityAttack.getRootAttacker(source.getAttacker());
+    }
+    private static Entity getRootAttacker(@Nullable Entity source) {
+        if (source == null)
+            return null;
+        Entity child = null;
+        if (source instanceof LightningEntity)
+            child = ((LightningAccessor) source).getChanneler();
+        else if (source instanceof TntEntity)
+            child = ((TntEntity) source).getCausingEntity();
+        else if (source instanceof ProjectileEntity)
+            child = ((ProjectileEntity) source).getOwner();
+        return child == null ? source : EntityAttack.getRootAttacker(child);
+    }
 }

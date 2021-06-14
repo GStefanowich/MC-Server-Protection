@@ -25,6 +25,7 @@
 
 package net.TheElm.project.objects;
 
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.SimpleInventory;
@@ -48,6 +49,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public class PlayerBackpack extends SimpleInventory {
@@ -79,10 +81,10 @@ public class PlayerBackpack extends SimpleInventory {
     /*
      * Insert into the backpack
      */
-    public boolean insertStack(ItemStack itemStack) {
+    public boolean insertStack(@NotNull ItemStack itemStack) {
         return this.insertStack(-1, itemStack);
     }
-    public boolean insertStack(int slot, ItemStack itemStack) {
+    public boolean insertStack(int slot, @NotNull ItemStack itemStack) {
         if (itemStack.isEmpty())
             return false;
         try {
@@ -125,7 +127,7 @@ public class PlayerBackpack extends SimpleInventory {
      * @param extStack The stack to take items from
      * @return The amount of items remaining in the extStack
      */
-    private int insertFrom(ItemStack extStack) {
+    private int insertFrom(@NotNull ItemStack extStack) {
         int i = this.getOccupiedSlotWithRoomForStack(extStack);
         if (i == -1)
             i = this.getEmptySlot();
@@ -139,7 +141,7 @@ public class PlayerBackpack extends SimpleInventory {
      * @param extStack The stack to take items from
      * @return The amount of items remaining in the extStack
      */
-    private int insertFrom(int slot, ItemStack extStack) {
+    private int insertFrom(int slot, @NotNull ItemStack extStack) {
         Item item = extStack.getItem();
         int j = extStack.getCount();
         ItemStack invStack = this.getStack(slot);
@@ -171,10 +173,10 @@ public class PlayerBackpack extends SimpleInventory {
         }
     }
     
-    private boolean canStackAddMore(ItemStack mainStack, ItemStack otherStack) {
+    private boolean canStackAddMore(@NotNull ItemStack mainStack, @NotNull ItemStack otherStack) {
         return !mainStack.isEmpty() && this.areItemsEqual(mainStack, otherStack) && mainStack.isStackable() && mainStack.getCount() < mainStack.getMaxCount() && mainStack.getCount() < this.getMaxCountPerStack();
     }
-    private boolean areItemsEqual(ItemStack mainStack, ItemStack otherStack) {
+    private boolean areItemsEqual(@NotNull ItemStack mainStack, @NotNull ItemStack otherStack) {
         return mainStack.getItem() == otherStack.getItem() && ItemStack.areTagsEqual(mainStack, otherStack);
     }
     
@@ -198,7 +200,7 @@ public class PlayerBackpack extends SimpleInventory {
     /*
      * Backpack Items as NBT
      */
-    public void readTags(ListTag listTag) {
+    public void readTags(@NotNull ListTag listTag) {
         for(int slot = 0; slot < this.size(); ++slot) {
             this.setStack(slot, ItemStack.EMPTY);
         }
@@ -230,7 +232,7 @@ public class PlayerBackpack extends SimpleInventory {
     /*
      * Backpack Auto-Pickup NBT
      */
-    public void readPickupTags(ListTag listTag) {
+    public void readPickupTags(@NotNull ListTag listTag) {
         for (int i = 0; i < listTag.size(); ++i) {
             this.autopickup.add(new Identifier(
                 listTag.getString(i)
@@ -261,15 +263,13 @@ public class PlayerBackpack extends SimpleInventory {
         return new LiteralText(this.player.getDisplayName().asString() + "'s Backpack");
     }
     
-    public @Nullable GenericContainerScreenHandler createContainer(int syncId, PlayerInventory playerInventory) {
+    public @Nullable GenericContainerScreenHandler createContainer(int syncId, @NotNull PlayerInventory playerInventory) {
         int slots = this.size();
-        ScreenHandlerType type = PlayerBackpack.getSizeType(slots);
-        if (type == null)
-            return null;
-        return new GenericContainerScreenHandler(type, syncId, playerInventory, this, slots / 9);
+        ScreenHandlerType<?> type = PlayerBackpack.getSizeType(slots);
+        return type == null ? null : new GenericContainerScreenHandler(type, syncId, playerInventory, this, slots / 9);
     }
     
-    public static @Nullable ScreenHandlerType getSizeType(int slots) {
+    public static @Nullable ScreenHandlerType<?> getSizeType(int slots) {
         switch (slots) {
             case 9:
                 return ScreenHandlerType.GENERIC_3X3;
@@ -301,7 +301,7 @@ public class PlayerBackpack extends SimpleInventory {
     }
     
     @Override
-    public void onOpen(PlayerEntity player) {
+    public void onOpen(@NotNull PlayerEntity player) {
         // Play sound
         player.playSound(SoundEvents.UI_TOAST_OUT, SoundCategory.BLOCKS, 0.5f, 1.0f);
         
@@ -309,11 +309,19 @@ public class PlayerBackpack extends SimpleInventory {
         super.onOpen(player);
     }
     @Override
-    public void onClose(PlayerEntity player) {
+    public void onClose(@NotNull PlayerEntity player) {
         // Play sound
         player.playSound(SoundEvents.UI_TOAST_IN, SoundCategory.BLOCKS, 0.5f, 1.0f);
         
         // Parent method
         super.onClose(player);
+    }
+    
+    public void dropAll() {
+        List<ItemStack> list = this.clearToList();
+        for (ItemStack itemStack : list) {
+            if (!itemStack.isEmpty() && !EnchantmentHelper.hasVanishingCurse(itemStack))
+                this.player.dropItem(itemStack, true, false);
+        }
     }
 }

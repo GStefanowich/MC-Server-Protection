@@ -23,31 +23,34 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.commands.ArgumentTypes;
+package net.TheElm.project.objects;
 
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.utilities.ColorUtils;
-import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.command.CommandSource;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.function.Function;
 
-public class ArgumentSuggestions {
+/**
+ * Created on Jun 13 2021 at 12:53 AM.
+ * By greg in SewingMachineMod
+ */
+public class MaskSet<E> extends HashSet<E> {
+    @NotNull
+    private final Function<E, E> mask;
     
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestNodes(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(Permissions.keys(), builder);
+    public MaskSet(@NotNull Function<E, E> mask) {
+        super();
+        this.mask = mask;
+    }
+    public MaskSet(@NotNull Function<E, E> mask, @NotNull Collection<? extends E> collection) {
+        super();
+        this.mask = mask;
+        this.addAll(collection);
     }
     
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestRanks(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(RankUtils.getRanks(), builder);
+    @Override
+    public boolean add(E e) {
+        return super.add(this.mask.apply(e));
     }
-    
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestColors(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(ColorUtils.getSuggestedNames(), builder);
-    }
-    
 }

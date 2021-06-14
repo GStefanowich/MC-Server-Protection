@@ -35,7 +35,6 @@ import net.TheElm.project.config.SewConfig;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.fabricmc.loader.api.metadata.Person;
-import net.minecraft.network.MessageType;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.HoverEvent;
@@ -92,7 +91,7 @@ public final class ModsCommand {
             output.append( modText );
         }
         
-        player.sendMessage(output, MessageType.GAME_INFO, ServerCore.SPAWN_ID);
+        player.sendMessage(output, false);
         return Command.SINGLE_SUCCESS;
     }
 

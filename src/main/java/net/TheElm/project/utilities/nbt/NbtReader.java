@@ -23,31 +23,28 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.commands.ArgumentTypes;
+package net.TheElm.project.utilities.nbt;
 
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.utilities.ColorUtils;
-import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.command.CommandSource;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
-public class ArgumentSuggestions {
+/**
+ * Created on Mar 19 2021 at 3:51 PM.
+ * By greg in SewingMachineMod
+ */
+public interface NbtReader<T> {
+    @NotNull NbtReader FINAL = new NbtReader() {};
     
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestNodes(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(Permissions.keys(), builder);
+    default @NotNull <X> NbtReader<X> orElse(@NotNull String key, @NotNull NbtGet<X> nbtType, @NotNull Consumer<X> consumer) {
+        return (NbtReader<X>) this;
+    }
+    default @NotNull NbtReader<T> orElse(@NotNull String key) {
+        return this;
     }
     
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestRanks(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(RankUtils.getRanks(), builder);
+    @SuppressWarnings("unchecked")
+    static <T> NbtReader<T> empty() {
+        return NbtReader.FINAL;
     }
-    
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestColors(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(ColorUtils.getSuggestedNames(), builder);
-    }
-    
 }

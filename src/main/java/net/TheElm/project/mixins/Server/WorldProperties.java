@@ -23,31 +23,39 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.commands.ArgumentTypes;
+package net.TheElm.project.mixins.Server;
 
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.utilities.ColorUtils;
-import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.command.CommandSource;
+import net.TheElm.project.utilities.TradeUtils;
+import net.minecraft.world.level.LevelProperties;
+import net.minecraft.world.level.ServerWorldProperties;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.UUID;
 
-public class ArgumentSuggestions {
+/**
+ * Created on Mar 14 2021 at 3:15 PM.
+ * By greg in SewingMachineMod
+ */
+@Mixin(LevelProperties.class)
+public abstract class WorldProperties implements ServerWorldProperties {
     
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestNodes(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(Permissions.keys(), builder);
+    @Shadow
+    private @Nullable UUID wanderingTraderId;
+    
+    @Inject(at = @At("RETURN"), method = "<init>*")
+    private void onInit(CallbackInfo callback) {
+        if (this.wanderingTraderId != null)
+            TradeUtils.updateWanderingTraderUuid(this.wanderingTraderId);
     }
     
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestRanks(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(RankUtils.getRanks(), builder);
+    @Inject(at = @At("RETURN"), method = "setWanderingTraderId")
+    private void updateWanderingTrader(@Nullable UUID uuid, @NotNull CallbackInfo callback) {
+        TradeUtils.updateWanderingTraderUuid(uuid);
     }
-    
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestColors(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(ColorUtils.getSuggestedNames(), builder);
-    }
-    
 }

@@ -31,8 +31,10 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.objects.MaskSet;
 import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.utilities.nbt.NbtUtils;
+import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.Material;
@@ -60,16 +62,21 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.regex.Pattern;
 
 public final class WarpUtils {
-    
+    public static final String PRIMARY_DEFAULT_HOME = "Homestead";
     private static final Set<UUID> GENERATING_PLAYERS = Collections.synchronizedSet(new HashSet<>());
     
+    private final @NotNull String name;
     private BlockPos createWarpAt;
     private BlockRange region;
     
-    public WarpUtils(final ServerPlayerEntity player, final BlockPos pos) {
+    public WarpUtils(@NotNull final String name, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos pos) {
+        this.name = name;
+        
         WarpUtils.GENERATING_PLAYERS.add(player.getUuid());
         this.updateWarpPos(pos);
     }
@@ -87,7 +94,7 @@ public final class WarpUtils {
         return true;
     }
     
-    public BlockPos getWarpPositionIn(final ServerWorld world) {
+    public BlockPos getWarpPositionIn(@NotNull final ServerWorld world) {
         int x = this.createWarpAt.getX();
         int z = this.createWarpAt.getZ();
         do {
@@ -97,7 +104,7 @@ public final class WarpUtils {
         
         return this.createWarpAt;
     }
-    public BlockPos getSafeTeleportPos(final World world) {
+    public BlockPos getSafeTeleportPos(@NotNull final World world) {
         BlockPos tpPos;
         
         int count = 1;
@@ -128,7 +135,7 @@ public final class WarpUtils {
         return tpPos.up( 2 );
     }
     
-    private static int getRandom( int position ) {
+    private static int getRandom(int position) {
         int random = ThreadLocalRandom.current().nextInt(
             position - SewConfig.get(SewConfig.WARP_MAX_DISTANCE),
             position + SewConfig.get(SewConfig.WARP_MAX_DISTANCE)
@@ -136,9 +143,9 @@ public final class WarpUtils {
         return ( 16 * Math.round(random >> 4) ) + 8;
     }
     
-    private BlockPos isValid(final World world, final BlockPos startingPos, final int minY, final boolean mustBeUnowned) {
+    private @Nullable BlockPos isValid(@NotNull final World world, @NotNull final BlockPos startingPos, final int minY, final boolean mustBeUnowned) {
         // If the chunks are claimed.
-        if (mustBeUnowned && IClaimedChunk.isOwnedAround( world, this.createWarpAt, 5 ))
+        if (mustBeUnowned && IClaimedChunk.isOwnedAround(world, this.createWarpAt, 5))
             return null;
         
         BlockPos pos = startingPos;
@@ -284,82 +291,172 @@ public final class WarpUtils {
         return true;
     }
     
-    public void save(final World world, final BlockPos warpPos, final ServerPlayerEntity player) {
+    public void save(@NotNull final World world, @NotNull final BlockPos warpPos, @NotNull final ServerPlayerEntity player) {
         // Remove the player from the build list
         WarpUtils.GENERATING_PLAYERS.remove(player.getUuid());
         
+        WarpUtils.Warp currentFavorite = WarpUtils.getWarp(player, null);
+        boolean hasFavorite = (currentFavorite != null) && (!currentFavorite.name.equals(this.name));
+        
         // Set the players warp position to save
-        ((PlayerData) player).setWarpPos(warpPos);
-        ((PlayerData) player).setWarpDimension(world);
+        ((PlayerData) player).setWarp(new Warp(
+            this.name,
+            world,
+            warpPos,
+            !hasFavorite
+        ));
         
         // Update the players Teleporting commands
         MinecraftServer server = player.getServer();
         if (server != null)
-            server.getPlayerManager().sendCommandTree( player );
+            server.getPlayerManager().sendCommandTree(player);
     }
     
     /*
      * Static checks
      */
-    @Nullable
-    public static Warp getWarp(final UUID uuid) {
+    public static @Nullable Warp getWarp(@NotNull final UUID uuid, @Nullable final String location) {
         MinecraftServer server = ServerCore.get();
         
         // Read from the player
         ServerPlayerEntity player;
-        if ((player = server.getPlayerManager().getPlayer( uuid )) != null)
-            return WarpUtils.getWarp( player );
+        if ((player = server.getPlayerManager().getPlayer(uuid)) != null)
+            return WarpUtils.getWarp(player, location);
+        return WarpUtils.fromMapByName(WarpUtils.getWarps(uuid), location);
+    }
+    public static @Nullable Warp getWarp(@NotNull final ServerPlayerEntity player, @Nullable final String location) {
+        /*if ( ((PlayerData) player).getWarpPos() == null )
+            return null;
+        return new Warp("", ((PlayerData) player).getWarpWorld(), ((PlayerData) player).getWarpPos());*/
+        return WarpUtils.fromMapByName(WarpUtils.getWarps(player), location);
+    }
+    public static @NotNull Map<String, WarpUtils.Warp> getWarps(@NotNull final UUID uuid) {
+        MinecraftServer server = ServerCore.get();
         
-        Warp warp = null;
+        // Read from the player
+        ServerPlayerEntity player;
+        if ((player = server.getPlayerManager().getPlayer(uuid)) != null)
+            return WarpUtils.getWarps(player);
+        
         try {
             // Read from the NBT file
             CompoundTag playerNBT;
             if ((playerNBT = NbtUtils.readOfflinePlayerData(uuid)) == null)
-                return null;
+                return Collections.emptyMap();
             
-            // Read the player warp location after restarting
-            if (playerNBT.contains("playerWarpX") && playerNBT.contains("playerWarpY") && playerNBT.contains("playerWarpZ")) {
-                warp = new Warp(
-                    server.getWorld(NbtUtils.worldRegistryFromTag(playerNBT.get("playerWarpD"))),
-                    new BlockPos(
-                        playerNBT.getInt("playerWarpX"),
-                        playerNBT.getInt("playerWarpY"),
-                        playerNBT.getInt("playerWarpZ")
-                    )
-                );
-            }
+            return WarpUtils.fromNBT(playerNBT);
         } catch (NbtNotFoundException ignored) {}
         
-        return warp;
+        return Collections.emptyMap();
     }
-    @Nullable
-    public static Warp getWarp(final ServerPlayerEntity player) {
-        if ( ((PlayerData) player).getWarpPos() == null )
+    public static @NotNull Map<String, WarpUtils.Warp> getWarps(@NotNull final ServerPlayerEntity player) {
+        return ((PlayerData)player).getWarps();
+    }
+    public static @NotNull Collection<String> getWarpNames(@NotNull final UUID uuid) {
+        return WarpUtils.getWarpNames(WarpUtils.getWarps(uuid));
+    }
+    public static @NotNull Collection<String> getWarpNames(@NotNull final ServerPlayerEntity player) {
+        return WarpUtils.getWarpNames(WarpUtils.getWarps(player));
+    }
+    public static @NotNull Collection<String> getWarpNames(@NotNull Map<String, WarpUtils.Warp> warps) {
+        return new MaskSet<>(s -> s.contains(" ") ? "\"" + s + "\"" : s, warps.keySet());
+    }
+    public static boolean validateName(@NotNull String name) {
+        Pattern pattern = Pattern.compile("[A-Za-z0-9 ]*");
+        return pattern.matcher(name).matches();
+    }
+    
+    public static @NotNull Map<String, WarpUtils.Warp> fromNBT(@NotNull CompoundTag mainNBT) {
+        Map<String, WarpUtils.Warp> warps = new ConcurrentHashMap<>();
+        
+        // Read the player warp location after restarting
+        if (mainNBT.contains("playerWarpX", NbtType.NUMBER) && mainNBT.contains("playerWarpY", NbtType.NUMBER) && mainNBT.contains("playerWarpZ", NbtType.NUMBER)) {
+            warps.put(WarpUtils.PRIMARY_DEFAULT_HOME, new Warp(
+                WarpUtils.PRIMARY_DEFAULT_HOME,
+                NbtUtils.worldRegistryFromTag(mainNBT.get("playerWarpD")),
+                new BlockPos(
+                    mainNBT.getInt("playerWarpX"),
+                    mainNBT.getInt("playerWarpY"),
+                    mainNBT.getInt("playerWarpZ")
+                ),
+                true
+            ));
+        } else if (mainNBT.contains("playerWarps", NbtType.COMPOUND)) {
+            CompoundTag warpsNBT = mainNBT.getCompound("playerWarps");
+            if (warpsNBT != null) {
+                Set<String> warpNames = warpsNBT.getKeys();
+                for (String warpName : warpNames) {
+                    if (!warpsNBT.contains(warpName, NbtType.COMPOUND))
+                        continue;
+                    CompoundTag warpNBT = warpsNBT.getCompound(warpName);
+                    if (warpNBT.contains("x", NbtType.NUMBER) && warpNBT.contains("y", NbtType.NUMBER) && warpNBT.contains("z", NbtType.NUMBER)) {
+                        warps.put(warpName, new Warp(
+                            warpName,
+                            NbtUtils.worldRegistryFromTag(mainNBT.get("d")),
+                            new BlockPos(
+                                warpNBT.getInt("x"),
+                                warpNBT.getInt("y"),
+                                warpNBT.getInt("z")
+                            ),
+                            warpNBT.contains("fav", NbtType.BYTE) && warpNBT.getBoolean("fav")
+                        ));
+                    }
+                }
+            }
+        }
+        
+        return warps;
+    }
+    public static @NotNull CompoundTag toNBT(@NotNull Map<String, WarpUtils.Warp> warps) {
+        CompoundTag tag = new CompoundTag();
+        warps.forEach((name, warp) -> tag.put(name, warp.toTag()));
+        return tag;
+    }
+    public static @Nullable WarpUtils.Warp fromMapByName(@NotNull final Map<String, WarpUtils.Warp> map, @Nullable final String name) {
+        if (map.isEmpty())
             return null;
-        return new Warp(((PlayerData) player).getWarpWorld(), ((PlayerData) player).getWarpPos());
+        else if (name != null)
+            return map.get(name);
+        else return map.values()
+            .stream().filter(warp -> warp.favorite)
+            .findFirst().orElse(null);
     }
+    
     public static boolean hasWarp(@NotNull final ServerCommandSource source) {
         Entity entity = source.getEntity();
         if (entity instanceof ServerPlayerEntity)
             return WarpUtils.hasWarp((ServerPlayerEntity) entity);
         return false;
     }
-    public static boolean hasWarp(final UUID uuid) {
-        return WarpUtils.getWarp( uuid ) != null;
+    public static boolean hasWarp(@NotNull final UUID uuid) {
+        return WarpUtils.hasWarp(uuid, null);
     }
-    public static boolean hasWarp(final ServerPlayerEntity player) {
-        return WarpUtils.getWarp( player ) != null;
+    public static boolean hasWarp(@NotNull final UUID uuid, @Nullable final String name) {
+        return WarpUtils.getWarp(uuid, name) != null;
     }
+    public static boolean hasWarp(@NotNull final ServerPlayerEntity player) {
+        return WarpUtils.hasWarp(player, null);
+    }
+    public static boolean hasWarp(@NotNull final ServerPlayerEntity player, @Nullable final String name) {
+        return WarpUtils.getWarp(player, name) != null;
+    }
+    
     public static boolean isPlayerCreating(@NotNull final ServerPlayerEntity player) {
         return WarpUtils.GENERATING_PLAYERS.contains( player.getUuid() );
     }
-    public static void teleportPlayer(@NotNull ServerPlayerEntity player) {
-        Warp warp = WarpUtils.getWarp( player );
+    public static void teleportPlayer(@NotNull ServerPlayerEntity player, @Nullable String location) {
+        Warp warp = WarpUtils.getWarp(player, location);
         if (warp != null)
             WarpUtils.teleportPlayer( warp, player );
     }
     public static void teleportPlayer(@NotNull final Warp warp, @NotNull final ServerPlayerEntity player) {
-        WarpUtils.teleportPlayer( warp.world, player, warp.warpPos );
+        WarpUtils.teleportPlayer(warp.world, player, warp.warpPos);
+    }
+    public static void teleportPlayer(@NotNull final RegistryKey<World> dimension, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
+        MinecraftServer server = player.getServer();
+        ServerWorld world = server.getWorld(dimension);
+        if (world != null)
+            WarpUtils.teleportPlayer(world, player, tpPos);
     }
     public static void teleportPlayer(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
         Entity bottom = player.getRootVehicle(),
@@ -373,7 +470,7 @@ public final class WarpUtils {
         
         // If the entity can be teleported within the same world
         if (world == player.world || bottom == player)
-            WarpUtils.teleportEntity(world, bottom, tpPos );
+            WarpUtils.teleportEntity(world, bottom, tpPos);
         else while (entity != null) {
             // Get the entity vehicle
             Entity vehicle = entity.getVehicle();
@@ -386,10 +483,11 @@ public final class WarpUtils {
     }
     public static void teleportEntity(@NotNull final ServerWorld world, @NotNull Entity entity, @NotNull final BlockPos tpPos) {
         // Must be a ServerWorld
-        if (world.isClient) return;
+        if (world.isClient || entity.removed)
+            return;
         
         // Get the chunks
-        ChunkPos chunkPos = new ChunkPos( tpPos );
+        ChunkPos chunkPos = new ChunkPos(tpPos);
         
         // Get the X, Y, and Z
         double x = tpPos.getX() + 0.5D,
@@ -420,17 +518,18 @@ public final class WarpUtils {
                 player.teleport(world, x, y, z, player.yaw, player.pitch);
             }
         } else {
-            float i = MathHelper.wrapDegrees( entity.yaw );
-            float j = MathHelper.wrapDegrees( entity.pitch );
+            float i = MathHelper.wrapDegrees(entity.yaw);
+            float j = MathHelper.wrapDegrees(entity.pitch);
             j = MathHelper.clamp(j, -90.0F, 90.0F);
             
             if (world == entity.world) {
                 entity.refreshPositionAndAngles(x, y, z, i, j);
-                entity.setHeadYaw( i );
+                entity.setHeadYaw(i);
             } else {
                 entity.detach();
                 Entity copyFrom = entity;
-                entity = entity.getType().create( world );
+                entity = entity.getType()
+                    .create(world);
                 
                 // Return if the entity failed to copy
                 if (entity == null)
@@ -476,7 +575,7 @@ public final class WarpUtils {
             }
         }
     }
-    private static void teleportPoof(final Entity entity) {
+    private static void teleportPoof(@NotNull final Entity entity) {
         final World world = entity.getEntityWorld();
         BlockPos blockPos = entity.getBlockPos();
         if ((world instanceof ServerWorld) && (!entity.isSpectator())) {
@@ -484,18 +583,44 @@ public final class WarpUtils {
             EffectUtils.particleSwirl(ParticleTypes.WITCH, (ServerWorld) world, entity.getPos(), 10);
         }
     }
-    public static BlockPos getWorldSpawn(@NotNull final ServerWorld world) {
+    public static @NotNull BlockPos getWorldSpawn(@NotNull final ServerWorld world) {
         WorldProperties properties = world.getLevelProperties();
         return new BlockPos(properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ());
     }
     
     public static class Warp {
-        public final BlockPos warpPos;
-        public final ServerWorld world;
+        public final @NotNull String name;
+        public final @NotNull BlockPos warpPos;
+        public final @NotNull RegistryKey<World> world;
+        public boolean favorite;
         
-        private Warp(ServerWorld world, BlockPos blockPos) {
+        public Warp(@NotNull String name, @NotNull World world, @NotNull BlockPos blockPos, boolean favorite) {
+            this(name, world.getRegistryKey(), blockPos, favorite);
+        }
+        public Warp(@NotNull String name, @NotNull RegistryKey<World> world, @NotNull BlockPos blockPos, boolean favorite) {
+            this.name = name;
             this.warpPos = blockPos;
             this.world = world;
+            this.favorite = favorite;
+        }
+        
+        public Warp copy(@NotNull String name) {
+            return new Warp(name, this.world, this.warpPos, this.favorite);
+        }
+        public Warp copy() {
+            return this.copy(this.name);
+        }
+        public CompoundTag toTag() {
+            CompoundTag tag = new CompoundTag();
+            
+            tag.putInt("x", this.warpPos.getX());
+            tag.putInt("y", this.warpPos.getY());
+            tag.putInt("z", this.warpPos.getZ());
+            
+            tag.putString("d", NbtUtils.worldToTag(this.world));
+            tag.putBoolean("fav", this.favorite);
+            
+            return tag;
         }
     }
 }

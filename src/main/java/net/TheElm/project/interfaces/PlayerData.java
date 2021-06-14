@@ -28,17 +28,16 @@ package net.TheElm.project.interfaces;
 import com.google.common.collect.ImmutableSet;
 import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.ai.pathing.Path;
 import net.minecraft.entity.ai.pathing.PathNodeNavigator;
 import net.minecraft.entity.boss.ServerBossBar;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
 import java.util.Set;
 
 public interface PlayerData {
@@ -47,11 +46,10 @@ public interface PlayerData {
      * Saved warp data
      */
     
-    ServerWorld getWarpWorld();
-    RegistryKey<World> getWarpDimension();
-    BlockPos getWarpPos();
-    void setWarpPos(@Nullable BlockPos blockPos);
-    void setWarpDimension(World world);
+    void setWarp(@NotNull WarpUtils.Warp warp);
+    void delWarp(@NotNull WarpUtils.Warp warp);
+    void delWarp(@NotNull String name);
+    @NotNull Map<String, WarpUtils.Warp> getWarps();
     
     /*
      * Player claim information

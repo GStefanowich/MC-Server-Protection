@@ -26,7 +26,7 @@
 package net.TheElm.project.enums;
 
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
@@ -47,7 +47,8 @@ public enum CompassDirections {
     WARP {
         @Override
         public @Nullable BlockPos getPos(ServerPlayerEntity player) {
-            return ((PlayerData) player).getWarpPos();
+            WarpUtils.Warp warp = WarpUtils.getWarp(player, null);
+            return warp == null ? null : warp.warpPos;
         }
         @Override
         public CompassDirections getNext() { return BED; }

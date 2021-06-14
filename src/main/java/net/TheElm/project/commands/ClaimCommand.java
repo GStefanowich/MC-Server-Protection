@@ -615,7 +615,7 @@ public final class ClaimCommand {
             World world = player.getEntityWorld();
             
             if (!ClaimCommand.tryUnclaimChunkAt(player.getUuid(), player, blockPos))
-                throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create( player );
+                throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create(player);
             
             // Get chunk
             WorldChunk worldChunk = world.getWorldChunk(blockPos);
@@ -693,23 +693,23 @@ public final class ClaimCommand {
     }
     public static boolean tryUnclaimChunkAt(final UUID chunkFor, @NotNull final PlayerEntity claimant, final BlockPos blockPos) {
         World world = claimant.getEntityWorld();
-        return ClaimCommand.tryUnclaimChunkAt( chunkFor, world.getWorldChunk( blockPos ));
+        return ClaimCommand.tryUnclaimChunkAt(chunkFor, world.getWorldChunk(blockPos));
     }
     private static boolean tryUnclaimChunkAt(@NotNull final UUID chunkFor, final WorldChunk chunk) {
-        if ( !chunkFor.equals( ((IClaimedChunk) chunk).getOwner() ) )
+        if ( !chunkFor.equals(((IClaimedChunk) chunk).getOwner()) )
             return false;
         
         // Update total count
-        Claimant claimed = ClaimantPlayer.get( chunkFor );
+        Claimant claimed = ClaimantPlayer.get(chunkFor);
         
         // Remove the players count
-        claimed.removeFromCount( chunk );
+        claimed.removeFromCount(chunk);
         
         // Remove the towns count
-        if ((claimed = ((IClaimedChunk)chunk).getTown()) != null) claimed.removeFromCount( chunk );
+        if ((claimed = ((IClaimedChunk)chunk).getTown()) != null) claimed.removeFromCount(chunk);
         
         // Set the chunks owner
-        ((IClaimedChunk) chunk).updatePlayerOwner( null );
+        ((IClaimedChunk) chunk).updatePlayerOwner(null);
         
         return true;
     }

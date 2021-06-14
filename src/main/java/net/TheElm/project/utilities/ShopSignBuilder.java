@@ -25,12 +25,15 @@
 
 package net.TheElm.project.utilities;
 
+import com.google.common.collect.Maps;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.exceptions.ShopBuilderException;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.entity.SignBlockEntity;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -39,6 +42,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.InvalidIdentifierException;
@@ -48,10 +52,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -72,6 +73,7 @@ public final class ShopSignBuilder {
     private ShopSigns signType = null;
     
     private Identifier tradeItemIdentifier = null;
+    private Map<Enchantment, Integer> tradeItemEnchants = Maps.newLinkedHashMap();
     private Item tradeItem = null;
     private int tradePrice = 0;
     private int stackSize = 0;
@@ -181,7 +183,7 @@ public final class ShopSignBuilder {
     /*
      * Build individual sign types
      */
-    public boolean textMatchItem(ServerPlayerEntity player, Text text) {
+    public boolean textMatchItem(@NotNull ServerPlayerEntity player, @NotNull Text text) {
         String str = text.getString();
         Pattern p = Pattern.compile( "^(\\d+) (.*)$" );
         
@@ -196,6 +198,8 @@ public final class ShopSignBuilder {
         if ( "hand".equals(itemName)) {
             ItemStack handStack = player.getOffHandStack();
             this.tradeItemIdentifier = Registry.ITEM.getId(handStack.getItem());
+            this.tradeItemEnchants.putAll(EnchantmentHelper.get(handStack));
+            
             return (this.tradeItem = handStack.getItem()) != Items.AIR;
             
         } else {
@@ -210,7 +214,7 @@ public final class ShopSignBuilder {
             return (this.tradeItem = this.getItem()) != Items.AIR;
         }
     }
-    public boolean textMatchCount(Text text) {
+    public boolean textMatchCount(@NotNull Text text) {
         try {
             this.stackSize = Integer.parseUnsignedInt(text.asString());
         } catch (NumberFormatException e) {
@@ -218,7 +222,7 @@ public final class ShopSignBuilder {
         }
         return true;
     }
-    public boolean textMatchPrice(Text text) {
+    public boolean textMatchPrice(@NotNull Text text) {
         String str = text.getString();
         if ( str.startsWith( "$" ) )
             str = str.substring( 1 );
@@ -230,9 +234,9 @@ public final class ShopSignBuilder {
             return false;
         }
     }
-    public MutableText textParseOwner(Text text, ServerPlayerEntity player) {
+    public MutableText textParseOwner(@NotNull Text text, @NotNull ServerPlayerEntity player) {
         String str = text.getString();
-        if ( "server".equalsIgnoreCase( str ) && player.isCreative() ) {
+        if ( "server".equalsIgnoreCase(str) && player.isCreative() ) {
             // Set the owner
             this.ownerUUID = CoreMod.SPAWN_ID;
             return new LiteralText( "" );
@@ -242,9 +246,35 @@ public final class ShopSignBuilder {
             return ((MutableText)player.getName()).formatted(Formatting.DARK_GRAY);
         }
     }
+    public MutableText textParseItem() {
+        MutableText baseText = new LiteralText(this.itemSize() == 1 ? "" : (this.itemSize() + " "));
+        TranslatableText translatable = new TranslatableText(this.getItem().getTranslationKey());
+        
+        if (Items.ENCHANTED_BOOK.equals(this.tradeItem) && this.tradeItemEnchants.size() == 1) {
+            Optional<Map.Entry<Enchantment, Integer>> optional = this.tradeItemEnchants.entrySet().stream()
+                .findFirst();
+            if (optional.isPresent()) {
+                Map.Entry<Enchantment, Integer> entry = optional.get();
+                Enchantment enchantment = entry.getKey();
+                int level = entry.getValue();
+                
+                // Set the text
+                translatable = new TranslatableText(enchantment.getTranslationKey());
+                
+                // Add the level of the enchantment
+                if (level != 1 || enchantment.getMaxLevel() != 1) {
+                    translatable.append(" ")
+                        .append(new TranslatableText("enchantment.level." + level));
+                }
+            }
+        }
+        
+        return baseText.formatted(Formatting.BLACK)
+            .append(translatable.formatted(Formatting.DARK_AQUA));
+    }
     
     private void breakSign() {
-        this.world.breakBlock( this.blockPos, true );
+        this.world.breakBlock(this.blockPos, true);
     }
     
     /*

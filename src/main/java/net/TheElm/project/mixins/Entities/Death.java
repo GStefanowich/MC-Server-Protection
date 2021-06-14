@@ -54,6 +54,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.Nameable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -146,7 +147,7 @@ public abstract class Death extends Entity {
      * Check for totem of undying
      */
     @Inject(at = @At("HEAD"), method = "tryUseTotem", cancellable = true)
-    public void onUseTotem(DamageSource source, CallbackInfoReturnable<Boolean> callback) {
+    public void onUseTotem(@NotNull DamageSource source, CallbackInfoReturnable<Boolean> callback) {
         if (source.isOutOfWorld())
             callback.setReturnValue(false);
         else {
@@ -207,17 +208,18 @@ public abstract class Death extends Entity {
      * Check for falling into the Void in The End
      */
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
-    public void onDamage(DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
+    public void onDamage(@NotNull DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
         // Ignore if running as the client
         if (this.world.isClient)
             return;
         
         if (source.equals(DamageSource.OUT_OF_WORLD) && World.isOutOfBuildLimitVertically(this.getBlockPos())) {
-            if (World.END.equals(this.world.getRegistryKey()) && SewConfig.get(SewConfig.END_FALL_FROM_SKY))
+            if (World.END.equals(this.world.getRegistryKey()) && SewConfig.get(SewConfig.END_FALL_FROM_SKY)) {
                 WarpUtils.teleportEntity(ServerCore.getWorld(World.OVERWORLD), this, new BlockPos(this.getX(), 400, this.getZ()));
-            else if (SewConfig.get(SewConfig.VOID_FALL_TO_SPAWN) && !((Nameable)this instanceof HostileEntity)) // Teleport to the spawn world
+            } else if (SewConfig.get(SewConfig.VOID_FALL_TO_SPAWN) && !((Nameable) this instanceof HostileEntity)) { // Teleport to the spawn world
                 WarpUtils.teleportEntity(ServerCore.getWorld(SewConfig.get(SewConfig.DEFAULT_WORLD)), this);
-            else return;
+            } else return;
+            
             callback.cancel();
         }
     }

@@ -47,6 +47,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Pair;
 import net.minecraft.util.Util;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -68,7 +69,7 @@ public abstract class CoreMod {
     
     // Mod memory cache for claims
     public static final Map<ServerPlayerEntity, UUID> PLAYER_LOCATIONS = Collections.synchronizedMap(new WeakHashMap<>()); // Reference of where players are
-    public static final Map<ServerPlayerEntity, UUID> PLAYER_WARP_INVITES = Collections.synchronizedMap(new WeakHashMap<>()); // Reference of warp invitations
+    public static final Map<ServerPlayerEntity, Pair<UUID, String>> PLAYER_WARP_INVITES = Collections.synchronizedMap(new WeakHashMap<>()); // Reference of warp invitations
     private static final Map<UUID, WeakReference<ClaimantPlayer>> PLAYER_CLAIM_CACHE = Collections.synchronizedMap(new HashMap<>()); // Reference from player UUID
     private static final Map<UUID, WeakReference<ClaimantTown>> TOWN_CLAIM_CACHE = Collections.synchronizedMap(new HashMap<>()); // Reference from owner UUID
     

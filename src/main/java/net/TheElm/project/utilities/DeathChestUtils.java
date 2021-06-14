@@ -120,6 +120,7 @@ public final class DeathChestUtils {
         // Return NULL if no valid position was found
         return null;
     }
+    
     public static boolean createDeathChestFor(@NotNull final PlayerEntity player, @NotNull BlockPos deathPos) {
         final PlayerInventory inventory = player.inventory;
         final PlayerBackpack backpack = ((BackpackCarrier)player).getBackpack();
@@ -181,6 +182,13 @@ public final class DeathChestUtils {
             && world.spawnEntity(corpse) // Spawn the Armor stand into the World
             && corpse.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, 1000000, 1, false, true )); // Apply a visual appearance to the Armor stand
     }
+    public static void createDeathSnapshotFor(@NotNull final PlayerEntity player) {
+        final String deathName = player.getEntityName() + System.currentTimeMillis() + "_" + MessageUtils.xyzToString(player.getBlockPos(), "_");
+        MessageUtils.consoleToOps(new LiteralText("Created new Death Chest for player ")
+            .append(player.getDisplayName().shallowCopy())
+            .append(" (" + deathName + ")"));
+    }
+    
     private static @NotNull ArmorStandEntity createFakeCorpse(@NotNull final World world, @NotNull final BlockPos chestPos, @NotNull final LivingEntity copyOf) {
         // Set the stands basic attributes (From tags)
         CompoundTag entityData = new CompoundTag();
@@ -209,8 +217,7 @@ public final class DeathChestUtils {
         corpse.pitch = copyOf.pitch;
         corpse.yaw = copyOf.yaw;
         
-        String playerName = copyOf.getName().asString();
-        corpse.setCustomName(new LiteralText(playerName + "'s Corpse")
+        corpse.setCustomName(new LiteralText("")
             .styled((s) -> {
                 // Set our players name
                 Text customName = copyOf.getDisplayName();
@@ -218,12 +225,14 @@ public final class DeathChestUtils {
                 if (customName == null || (color = customName.getStyle().getColor()) == null)
                     color = TextColor.fromFormatting(Formatting.GOLD);
                 return s.withColor(color);
-            }));
+            }).append(copyOf.getDisplayName().shallowCopy()).append("'s Corpse"));
         corpse.setCustomNameVisible(true);
         
         // Set the armor stands head
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
         CompoundTag headData = head.getOrCreateTag();
+        
+        String playerName = copyOf.getName().asString();
         headData.putString("SkullOwner", playerName);
         
         // Set the armor stands equipped item

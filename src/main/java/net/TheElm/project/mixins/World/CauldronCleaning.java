@@ -115,7 +115,7 @@ public abstract class CauldronCleaning extends Block {
         spawnerTag.put("display", NbtUtils.getSpawnerDisplay( entityIds ));
         
         // Take the emerald
-        binderStack.decrement( 1 );
+        binderStack.decrement(1);
         
         // Play a level effect
         ((ServerWorld) world).spawnParticles(ParticleTypes.SPLASH, blockPos.getX() + 0.5, blockPos.getY(), blockPos.getZ() + 0.5, 25, 0.0, 2.0, 0.0, 0.2);
@@ -123,9 +123,9 @@ public abstract class CauldronCleaning extends Block {
         this.setLevel(world, blockPos, blockState, 0);
         
         // Cause the player to pickup the spawner
-        ownerEntity.sendPickup( spawnerEntity, spawnerStack.getCount() );
+        ownerEntity.sendPickup(spawnerEntity, spawnerStack.getCount());
         spawnerEntity.remove();
-        ownerEntity.inventory.offerOrDrop( world, spawnerStack );
+        ownerEntity.inventory.offerOrDrop(world, spawnerStack);
         
         // Cancel the initial cauldron event
         callback.cancel();

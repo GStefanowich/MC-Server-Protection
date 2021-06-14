@@ -28,6 +28,7 @@ package net.TheElm.project.commands;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
@@ -55,20 +56,20 @@ public final class ModCommands {
             .requires(CommandUtils.requires(OpLevels.STOP))
             .then(CommandManager.literal("reload")
                 .then(CommandManager.literal("config")
-                    .executes(ModCommands::ReloadConfig)
+                    .executes(ModCommands::reloadConfig)
                 )
                 .then(CommandManager.literal("permissions")
                     .requires((source) -> SewConfig.get(SewConfig.HANDLE_PERMISSIONS))
-                    .executes(ModCommands::ReloadPermissions)
+                    .executes(ModCommands::reloadPermissions)
                 )
             )
             .then(CommandManager.literal("fix-shop")
-                .executes((s) -> 0)
+                .executes(ModCommands::repairShopSign)
             )
         );
     }
     
-    private static int ReloadConfig(@NotNull CommandContext<ServerCommandSource> context) {
+    private static int reloadConfig(@NotNull CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
         try {
             // Reload the config
@@ -76,7 +77,7 @@ public final class ModCommands {
             source.sendFeedback(new LiteralText("Config has been reloaded.").formatted(Formatting.GREEN), true);
             
             // Re-send the command-tree to all players
-            ModCommands.ReloadCommandTree(source.getMinecraftServer(), false);
+            ModCommands.reloadCommandTree(source.getMinecraftServer(), false);
             
             return Command.SINGLE_SUCCESS;
         } catch (IOException e) {
@@ -86,21 +87,21 @@ public final class ModCommands {
         }
     }
     
-    private static int ReloadPermissions(CommandContext<ServerCommandSource> context) {
+    private static int reloadPermissions(@NotNull CommandContext<ServerCommandSource> context) {
         boolean success = RankUtils.reload();
         ServerCommandSource source = context.getSource();
         
         if (!success)
             source.sendFeedback(new LiteralText("Failed to reload permissions, see console for errors").formatted(Formatting.RED), true);
         else{
-            ModCommands.ReloadCommandTree(source.getMinecraftServer(), true);
+            ModCommands.reloadCommandTree(source.getMinecraftServer(), true);
             source.sendFeedback(new LiteralText("Permissions file has been reloaded").formatted(Formatting.GREEN), true);
         }
         
         return success ? Command.SINGLE_SUCCESS : -1;
     }
     
-    private static void ReloadCommandTree(MinecraftServer server, boolean reloadPermissions) {
+    private static void reloadCommandTree(@NotNull MinecraftServer server, boolean reloadPermissions) {
         PlayerManager playerManager = server.getPlayerManager();
         
         // For all players
@@ -114,4 +115,10 @@ public final class ModCommands {
         }
     }
     
+    private static int repairShopSign(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        return Command.SINGLE_SUCCESS;
+    }
 }

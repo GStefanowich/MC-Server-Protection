@@ -29,10 +29,12 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.WorldBorderS2CPacket;
 import net.minecraft.network.packet.s2c.play.WorldBorderS2CPacket.Type;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.border.WorldBorderListener;
+import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 
 public final class DimensionUtils {
@@ -42,6 +44,20 @@ public final class DimensionUtils {
     public static void addWorldBorderListener(@NotNull final ServerWorld world) {
         world.getWorldBorder()
             .addListener(new IndividualWorldListener(world));
+    }
+
+    public static boolean isOutOfBuildLimitVertically(@NotNull World world, @NotNull BlockPos pos) {
+        return DimensionUtils.isOutOfBuildLimitVertically(world.getDimension(), pos);
+    }
+    public static boolean isOutOfBuildLimitVertically(@NotNull DimensionType dimension, @NotNull BlockPos pos) {
+        return DimensionUtils.isOutOfBuildLimitVertically(dimension, pos.getY());
+    }
+    
+    public static boolean isOutOfBuildLimitVertically(@NotNull World world, int y) {
+        return DimensionUtils.isOutOfBuildLimitVertically(world.getDimension(), y);
+    }
+    public static boolean isOutOfBuildLimitVertically(@NotNull DimensionType dimension, int y) {
+        return y < 0 || y >= dimension.getLogicalHeight();
     }
     
     private static final class IndividualWorldListener implements WorldBorderListener {

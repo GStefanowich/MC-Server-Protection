@@ -61,6 +61,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import org.jetbrains.annotations.NotNull;
 
 public final class BlockInteraction {
     private BlockInteraction() {}
@@ -179,7 +180,7 @@ public final class BlockInteraction {
             EntityUtils.resendInventory(player);
         return placeResult;
     }
-    private static ActionResult blockPlace(ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack, BlockHitResult blockHitResult) {
+    private static ActionResult blockPlace(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
         // Get the item being used
         final Item item = itemStack.getItem();
         
@@ -204,7 +205,7 @@ public final class BlockInteraction {
         }
         return result;
     }
-    private static ActionResult canBlockPlace(ServerPlayerEntity player, BlockPos blockPos, BlockHitResult blockHitResult) {
+    private static ActionResult canBlockPlace(@NotNull ServerPlayerEntity player, @NotNull BlockPos blockPos, @NotNull BlockHitResult blockHitResult) {
         // Test the players permissions to the chunk
         if (ChunkUtils.canPlayerBreakInChunk(player, blockPos))
             return ActionResult.PASS;

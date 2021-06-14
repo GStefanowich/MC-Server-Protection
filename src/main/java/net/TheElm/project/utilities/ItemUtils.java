@@ -30,6 +30,7 @@ import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.item.*;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.Text;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -61,18 +62,24 @@ public final class ItemUtils {
         return ClaimPermissions.BLOCKS;
     }
     
-    public static void setLore(@NotNull Item item, @NotNull Text ...text) {
-        ItemUtils.setLore(item, 1, text);
+    @Contract("_, _ -> new")
+    public static @NotNull ItemStack setLore(@NotNull Item item, @NotNull Text ...text) {
+        return ItemUtils.setLore(item, 1, text);
     }
-    public static void setLore(@NotNull Item item, int size, Text ...text) {
-        ItemUtils.setLore(new ItemStack(item, size), text);
+    @Contract("_, _, _ -> new")
+    public static @NotNull ItemStack setLore(@NotNull Item item, int size, Text ...text) {
+        return ItemUtils.setLore(new ItemStack(item, size), text);
     }
-    public static void setLore(@NotNull ItemStack stack, @NotNull Text ...text) {
+    @Contract("_, _ -> param1")
+    public static @NotNull ItemStack setLore(@NotNull ItemStack stack, @NotNull Text ...text) {
         CompoundTag display = stack.getOrCreateSubTag("display");
         display.put(
             "Lore",
-            NbtUtils.toList(Arrays.asList(text),
-            Text.Serializer::toJson)
+            NbtUtils.toList(
+            Arrays.asList(text),
+            Text.Serializer::toJson
+            )
         );
+        return stack;
     }
 }

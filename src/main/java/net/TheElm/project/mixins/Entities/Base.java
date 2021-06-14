@@ -27,34 +27,39 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.interfaces.DamageEntityCallback;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LightningEntity;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.entity.mob.PiglinEntity;
-import net.minecraft.entity.passive.AnimalEntity;
-import net.minecraft.entity.passive.BeeEntity;
-import net.minecraft.entity.passive.TameableEntity;
-import net.minecraft.entity.passive.WolfEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.entity.damage.EntityDamageSource;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin({AnimalEntity.class, HostileEntity.class, PiglinEntity.class, BeeEntity.class, WolfEntity.class, ServerPlayerEntity.class})
-public abstract class Damage extends Entity {
-    protected Damage(EntityType<? extends TameableEntity> entityType_1, World world_1) {
-        super(entityType_1, world_1);
+/**
+ * Created on Jun 13 2021 at 11:26 PM.
+ * By greg in SewingMachineMod
+ */
+@Mixin(Entity.class)
+public class Base {
+    @Shadow
+    public native World getEntityWorld();
+    
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/entity/Entity.damage(Lnet/minecraft/entity/damage/DamageSource;F)Z"), method = "onStruckByLightning")
+    public boolean onLightningHit(@NotNull Entity self, DamageSource source, float damage, ServerWorld world, LightningEntity lightning) {
+        return self.damage(new EntityDamageSource("lightningBolt", lightning), damage);
     }
     
-    @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
-    public void onDamage(@NotNull DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
+    @Inject(at = @At("HEAD"), method = "onStruckByLightning", cancellable = true)
+    public void onLightningHit(ServerWorld world, LightningEntity lightning, CallbackInfo callback) {
         ActionResult result = DamageEntityCallback.EVENT.invoker()
-            .interact(this, this.getEntityWorld(), source, damage);
-        if (result != ActionResult.PASS)
-            callback.setReturnValue(result == ActionResult.SUCCESS);
+            .interact((Entity)(Object) this, this.getEntityWorld(), new EntityDamageSource("lightningBolt", lightning), 0F);
+        if (result != ActionResult.PASS && result != ActionResult.SUCCESS)
+            callback.cancel();
     }
 }

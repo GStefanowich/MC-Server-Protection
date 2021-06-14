@@ -135,7 +135,7 @@ public abstract class WanderingSpawns implements Spawner {
                 
                 // Light nearby campfire
                 if (SewConfig.get(SewConfig.WANDERING_TRADER_CAMPFIRES))
-                    BlockUtils.igniteNearbyLightSources(world);
+                    BlockUtils.igniteNearbyLightSources(world, trader.getBlockPos());
                 
                 if (SewConfig.get(SewConfig.ANNOUNCE_WANDERING_TRADER))
                     EntityUtils.wanderingTraderArrival(trader);

@@ -87,15 +87,26 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
     
     @Inject(at = @At("HEAD"), method = "dropInventory", cancellable = true)
     public void onInventoryDrop(CallbackInfo callback) {
-        if (!SewConfig.get(SewConfig.DO_DEATH_CHESTS))
+        boolean keepInventory = this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY);
+        if (!SewConfig.get(SewConfig.DO_DEATH_CHESTS)) {
+            // Drop the backpack if we're not using death chests (And keep inventory is off)
+            if (!keepInventory) {
+                DeathChestUtils.createDeathSnapshotFor((PlayerEntity)(LivingEntity) this);
+                this.backpack.dropAll();
+            }
             return;
+        }
         
         // Only do if we're not keeping the inventory, and the player is actually dead! (Death Chest!)
-        if ((!this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY)) && (!this.isAlive())) {
+        if (!keepInventory && !this.isAlive()) {
+            DeathChestUtils.createDeathSnapshotFor((PlayerEntity)(LivingEntity) this);
             BlockPos chestPos;
             
             // Check if player is in combat
             if (SewConfig.get(SewConfig.PVP_DISABLE_DEATH_CHEST) && (this.hitByOtherPlayerAt != null)) {
+                // Drop the backpack as well as the inventory
+                this.backpack.dropAll();
+                
                 // Tell the player that they didn't get a death chest
                 this.sendSystemMessage(
                     new LiteralText("A death chest was not generated because you died in combat.").formatted(Formatting.RED),

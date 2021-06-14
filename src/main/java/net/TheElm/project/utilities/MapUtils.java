@@ -23,31 +23,42 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.commands.ArgumentTypes;
+package net.TheElm.project.utilities;
 
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.utilities.ColorUtils;
-import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.command.CommandSource;
-import org.jetbrains.annotations.NotNull;
+import de.bluecolored.bluemap.api.BlueMapAPI;
+import de.bluecolored.bluemap.api.marker.MarkerAPI;
+import net.TheElm.project.CoreMod;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.CompletableFuture;
+import java.io.IOException;
+import java.util.Optional;
 
-public class ArgumentSuggestions {
+/**
+ * Created on Mar 14 2021 at 3:37 PM.
+ * By greg in SewingMachineMod
+ */
+public final class MapUtils {
+    private MapUtils() {}
+    public static void init() {}
     
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestNodes(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(Permissions.keys(), builder);
+    private static @Nullable MarkerAPI MARKERS;
+    
+    static {
+        // When the API is made available
+        BlueMapAPI.onEnable((api) -> {
+            if (MapUtils.MARKERS != null)
+                return;
+            try {
+                MapUtils.MARKERS = api.getMarkerAPI();
+                CoreMod.logInfo("BlueMap Integration detected");
+            } catch (IOException e) {
+                CoreMod.logError(e);
+            }
+        });
     }
     
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestRanks(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(RankUtils.getRanks(), builder);
-    }
-    
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestColors(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(ColorUtils.getSuggestedNames(), builder);
+    public static Optional<BlueMapAPI> getBlueMap() {
+        return BlueMapAPI.getInstance();
     }
     
 }

@@ -31,10 +31,19 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.SpawnEggItem;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
+import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.village.TradeOffer;
 import net.minecraft.village.TradeOffers;
+import net.minecraft.world.biome.Biome;
+import net.minecraft.world.gen.feature.FeatureConfig;
+import net.minecraft.world.gen.feature.StructureFeature;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,6 +66,12 @@ public class TradeUtils {
         if (!(itemOffers instanceof SpawnEggItem))
             throw new IllegalArgumentException("Provided trade item is not a Spawn Egg.");
         return new EggTradeFactory((SpawnEggItem) itemOffers, minimumEmeralds,maxTrades);
+    }
+    public static @NotNull <FC extends FeatureConfig> TradeOffers.Factory createSellLocator(int minimumEmeralds, @NotNull StructureFeature<FC> structure, int pearlUses) {
+        return new StructureEnderLocatorTradeFactory<>(structure, minimumEmeralds, pearlUses);
+    }
+    public static @NotNull TradeOffers.Factory createSellLocator(int minimumEmeralds, @NotNull RegistryKey<Biome> biome, int pearlUses) {
+        return new BiomeEnderLocatorTradeFactory(biome, minimumEmeralds, pearlUses);
     }
     
     private static @Nullable UUID WANDERING_TRADER_UUID;
@@ -149,5 +164,132 @@ public class TradeUtils {
             );
         }
     }
-    
+    private static abstract class EnderLocatorTradeFactory implements TradeOffers.Factory {
+        private static Item THROWABLE = Items.ENDER_EYE;
+        protected final int emeralds;
+        protected final int uses;
+        
+        protected EnderLocatorTradeFactory(int emeralds, int uses) {
+            this.emeralds = emeralds;
+            this.uses = uses;
+        }
+        
+        @Override
+        public @Nullable TradeOffer create(Entity entity, Random random) {
+            int strength = IntUtils.random(random, 0, 2);
+            
+            ItemStack pearl = this.createPearl();
+            pearl.setCustomName(this.itemName(strength));
+            pearl.getOrCreateTag()
+                .putInt("strength", strength);
+            
+            return new TradeOffer(
+                // Wants
+                new ItemStack(Items.EMERALD, IntUtils.random(random, this.emeralds, 64)),
+                new ItemStack(Items.ENDER_EYE, 1),
+                // Offers
+                pearl,
+                1, // Max trades
+                1, // Experience
+                0.05F // Multiplier
+            );
+        }
+        
+        protected @NotNull ItemStack createPearl() {
+            return ItemUtils.setLore(new ItemStack(THROWABLE, 1), this.usesDescription());
+        }
+        protected @NotNull ItemStack createPearl(@NotNull MutableText description) {
+            return ItemUtils.setLore(new ItemStack(THROWABLE, 1), new LiteralText("Throw to locate: ").append(description.formatted(Formatting.WHITE)), this.usesDescription());
+        }
+        protected abstract @NotNull Text itemName(int strength);
+        private @NotNull Text usesDescription() {
+            // ToDo: Change Ender Pearls from % breaking to # Uses
+            return new LiteralText("Fragile, may break after a couple uses");
+            /*return new LiteralText("Can be thrown ")
+                .append(new LiteralText(FormattingUtils.number(this.uses)).formatted(Formatting.WHITE))
+                .append(" more times");*/
+        }
+    }
+    private static class StructureEnderLocatorTradeFactory<FC extends FeatureConfig> extends EnderLocatorTradeFactory implements TradeOffers.Factory {
+        @NotNull
+        private final StructureFeature<FC> structure;
+        
+        public StructureEnderLocatorTradeFactory(@NotNull StructureFeature<FC> structure, int minimumEmeralds, int pearlUses) {
+            super(minimumEmeralds, pearlUses);
+            this.structure = structure;
+        }
+        
+        @Override
+        protected @NotNull ItemStack createPearl() {
+            String structureName = this.structure.getName();
+            
+            ItemStack pearl = super.createPearl(new LiteralText(this.description(structureName)));
+            CompoundTag throwDat = pearl.getOrCreateSubTag("throw");
+            
+            throwDat.putString("structure", structureName);
+            throwDat.putInt("uses", this.uses);
+            
+            return pearl;
+        }
+        
+        @Override
+        protected @NotNull Text itemName(int strength) {
+            switch (strength) {
+                case 0: return new LiteralText("Weak Structure Locator");
+                case 1: return new LiteralText("Normal Structure Locator");
+                default: return new LiteralText("Strong Structure Locator");
+            }
+        }
+        
+        protected @NotNull String description(@Nullable String key) {
+            if (key == null)
+                return "Unknown";
+            switch (key) {
+                case "bastion_remnant": return "Bastion";
+                case "desert_pyramid": return "Desert Pyramid";
+                case "endcity": return "End City";
+                case "village": return "Village";
+                case "fortress": return "Fortress";
+                case "mansion": return "Mansion";
+                case "jungle_pyramid": return "Jungle Pyramid";
+                default: return CasingUtils.Sentence(key);
+            }
+        }
+    }
+    private static class BiomeEnderLocatorTradeFactory extends EnderLocatorTradeFactory implements TradeOffers.Factory {
+        @NotNull
+        private final RegistryKey<Biome> biome;
+        
+        public BiomeEnderLocatorTradeFactory(@NotNull RegistryKey<Biome> biome, int minimumEmeralds, int pearlUses) {
+            super(minimumEmeralds, pearlUses);
+            this.biome = biome;
+        }
+        
+        @Override
+        protected @NotNull ItemStack createPearl() {
+            Identifier biomeId = this.biome.getValue();
+            ItemStack pearl = super.createPearl(this.description(biomeId));
+            CompoundTag throwDat = pearl.getOrCreateSubTag("throw");
+            throwDat.putString("biome", biomeId.toString());
+            throwDat.putInt("uses", this.uses);
+            
+            return pearl;
+        }
+        
+        @Override
+        protected @NotNull Text itemName(int strength) {
+            switch (strength) {
+                case 0: return new LiteralText("Weak Biome Locator");
+                case 1: return new LiteralText("Normal Biome Locator");
+                default: return new LiteralText("Strong Biome Locator");
+            }
+        }
+        
+        protected @NotNull MutableText description(@Nullable Identifier identifier) {
+            if (identifier == null)
+                return new LiteralText("Unknown");
+            String key = identifier.toString().replace(":", ".");
+            return new TranslatableText("biome." + key);
+        }
+    }
 }

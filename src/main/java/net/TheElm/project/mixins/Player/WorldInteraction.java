@@ -83,6 +83,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(ServerPlayerEntity.class)
 public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerPermissions, PlayerServerLanguage, Nicknamable, PlayerChat, LanguageEntity {
@@ -106,6 +107,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     private Long lastJoinedAt = null;
     
     // Warps
+    private Map<String, WarpUtils.Warp> warps = new ConcurrentHashMap<>();
     private RegistryKey<World> warpDimension = null;
     private BlockPos warpPos = null;
     
@@ -293,31 +295,21 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
      * Warping
      */
     
-    public @Nullable RegistryKey<World> getWarpDimension() {
-        if (this.getWarpPos() == null)
-            return null;
-        if (this.warpDimension == null)
-            this.warpDimension = SewConfig.get(SewConfig.WARP_DIMENSION);
-        return this.warpDimension;
+    @Override
+    public void setWarp(@NotNull WarpUtils.Warp warp) {
+        this.warps.put(warp.name, warp);
     }
     @Override
-    public @Nullable ServerWorld getWarpWorld() {
-        return this.getServer()
-            .getWorld(this.warpDimension);
+    public void delWarp(@NotNull WarpUtils.Warp warp) {
+        this.delWarp(warp.name);
     }
     @Override
-    public @Nullable BlockPos getWarpPos() {
-        return this.warpPos;
+    public void delWarp(@NotNull String name) {
+        this.warps.remove(name);
     }
     @Override
-    public void setWarpPos(@Nullable BlockPos blockPos) {
-        if (blockPos == null)
-            this.warpDimension = null;
-        this.warpPos = blockPos;
-    }
-    @Override
-    public void setWarpDimension(@NotNull World world) {
-        this.warpDimension = world.getRegistryKey();
+    public @NotNull Map<String, WarpUtils.Warp> getWarps() {
+        return this.warps;
     }
     
     /*
@@ -428,14 +420,9 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
      */
     
     @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
-    public void onSavingData(CompoundTag tag, CallbackInfo callback) {
+    public void onSavingData(@NotNull CompoundTag tag, CallbackInfo callback) {
         // Save the player warp location for restarts
-        if (( this.warpPos != null ) && ( this.getWarpDimension() != null )) {
-            tag.putInt("playerWarpX", this.warpPos.getX());
-            tag.putInt("playerWarpY", this.warpPos.getY());
-            tag.putInt("playerWarpZ", this.warpPos.getZ());
-            tag.putString("playerWarpD", NbtUtils.worldToTag(this.getWarpDimension()));
-        }
+        tag.put("playerWarps", WarpUtils.toNBT(this.warps));
         
         // Store the players nickname
         if ( this.playerNickname != null )
@@ -460,9 +447,9 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         tag.putBoolean("chatMuted", this.isMuted());
     }
     @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
-    public void onReadingData(CompoundTag tag, CallbackInfo callback) {
+    public void onReadingData(@NotNull CompoundTag tag, CallbackInfo callback) {
         // Read the player warp location after restarting
-        if ( tag.contains( "playerWarpX" ) && tag.contains( "playerWarpY" ) && tag.contains( "playerWarpZ" ) ) {
+        /*if ( tag.contains( "playerWarpX" ) && tag.contains( "playerWarpY" ) && tag.contains( "playerWarpZ" ) ) {
             this.warpPos = new BlockPos(
                 tag.getInt("playerWarpX"),
                 tag.getInt("playerWarpY"),
@@ -470,7 +457,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             );
             if ( tag.contains( "playerWarpD" ) )
                 this.warpDimension = NbtUtils.worldRegistryFromTag(tag.get("playerWarpD"));
-        }
+        }*/
+        this.warps.putAll(WarpUtils.fromNBT(tag));
         
         // Get the nickname
         if (tag.contains("PlayerNickname", NbtType.STRING))
@@ -499,8 +487,9 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Inject(at = @At("TAIL"), method = "copyFrom")
     public void onCopyData(ServerPlayerEntity player, boolean alive, CallbackInfo callback) {
         // Copy the players warp over
-        this.warpPos = ((PlayerData) player).getWarpPos();
-        this.warpDimension = ((PlayerData) player).getWarpDimension();
+        this.warps.putAll(((PlayerData) player).getWarps());
+        /*this.warpPos = ((PlayerData) player).getWarpPos();
+        this.warpDimension = ((PlayerData) player).getWarpDimension();*/
         
         // Copy the players nick over
         this.playerNickname = ((Nicknamable) player).getPlayerNickname();

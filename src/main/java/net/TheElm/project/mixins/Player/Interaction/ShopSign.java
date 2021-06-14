@@ -158,7 +158,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     public void onRowUpdated(int lineNum, Text text, final CallbackInfo callback) {
         if (!( this.getEditor() == null )) {
             // Get the sign
-            ShopSignBuilder builder = ShopSignBuilder.create( this.getWorld(), this.getPos(), (SignBlockEntity)(BlockEntity)this );
+            ShopSignBuilder builder = ShopSignBuilder.create(this.getWorld(), this.getPos(), (SignBlockEntity)(BlockEntity)this);
             
             // Update the lines
             if ( builder.setLineText( lineNum, text ) ) {

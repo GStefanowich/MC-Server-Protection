@@ -23,31 +23,37 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.commands.ArgumentTypes;
+package net.TheElm.project.utilities.text;
 
-import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.Suggestions;
-import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.utilities.ColorUtils;
-import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.command.CommandSource;
+import net.minecraft.text.Style;
+import net.minecraft.text.TextColor;
+import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.concurrent.CompletableFuture;
+import java.util.function.UnaryOperator;
 
-public class ArgumentSuggestions {
+/**
+ * Created on Mar 24 2021 at 12:15 PM.
+ * By greg in SewingMachineMod
+ */
+public final class StyleApplicator implements UnaryOperator<Style> {
     
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestNodes(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(Permissions.keys(), builder);
+    private @Nullable TextColor color = null;
+    
+    public StyleApplicator(@Nullable TextColor color) {
+        this.color = color;
+    }
+    public StyleApplicator(@Nullable Formatting color) {
+        if (color.isColor())
+            this.color = TextColor.fromFormatting(color);
     }
     
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestRanks(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(RankUtils.getRanks(), builder);
-    }
-    
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestColors(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(ColorUtils.getSuggestedNames(), builder);
+    @Override
+    public @NotNull Style apply(@NotNull Style style) {
+        if (this.color != null)
+            style = style.withColor(this.color);
+        return style;
     }
     
 }

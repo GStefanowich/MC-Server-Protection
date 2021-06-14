@@ -81,10 +81,13 @@
   "warp.random.teleported": "You are now %d blocks from Spawn. Please do not lose this warp point, as it will help you return there.",
   "warp.random.teleported_world": "You are now in a different world than spawn. Please do not lose this warp point, as it will help you return there.",
   
+  "warp.notice.name.invalid": "Waystone names can only have upper or lowercase letters, spaces, or numbers.",
+  "warp.notice.name.too_long": "Waystone names cannot be longer than %d characters.",
+  "warp.notice.too_many": "You cannot have more than %d waystone(s).",
   "warp.notice.player.outside_spawn": "Warping is only allowed within spawn.",
   "warp.notice.target.outside_spawn": "That player isn't in spawn.",
   "warp.notice.no_request": "That player isn't trying to teleport to you. The request may have timed out, or you already accepted the request.",
-  "warp.notice.no_warp": "That player doesn't have a warp.",
+  "warp.notice.no_warp": "That warp doesn't exist.",
   "warp.notice.offline": "That player can't receive your teleport request while they're offline.",
   "warp.notice.player": "%s teleported to your warp.",
   

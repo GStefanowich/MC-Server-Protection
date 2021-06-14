@@ -16,4 +16,11 @@ public final class IntUtils {
     public static long timeToDays(World world) {
         return world.getTimeOfDay() / 24000L % 2147483647L;
     }
+    
+    public static boolean between(int lower, int middle, int upper) {
+        return IntUtils.between(lower, middle, upper, true);
+    }
+    public static boolean between(int lower, int middle, int upper, boolean inclusive) {
+        return (inclusive && (lower == middle || upper == middle)) || (lower < middle && middle < upper);
+    }
 }

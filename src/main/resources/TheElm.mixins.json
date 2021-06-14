@@ -6,6 +6,7 @@
   ],
   "server": [
     "Interfaces.WhitelistAccessor",
+    "Interfaces.LightningAccessor",
     
     "Commands.Ban",
     "Commands.Kick",
@@ -22,10 +23,13 @@
     "Blocks.LootChestEntity",
     "Blocks.Pistons",
     
+    "Items.LocatorPearls",
     "Items.RepairCost",
     "Items.Shovel",
     "Items.SpawnEggs",
     "Items.UsableItems",
+    
+    "Entities.Base",
     
     "Entities.Decorative.CatDye",
     "Entities.Decorative.WolfDye",
@@ -37,7 +41,6 @@
     "Entities.ArrowEffect",
     "Entities.Villager",
     
-    "Entities.ProjectileDamage",
     "Entities.PotionDamage",
     "Entities.Damage",
     "Entities.Tnt",

@@ -329,7 +329,7 @@ public final class MessageUtils {
         return MessageUtils.xzToString(pos, ", ");
     }
     public static @NotNull String xzToString(@NotNull final ChunkPos pos, final String separator) {
-        return MessageUtils.xzToString(separator, pos.getRegionX(), pos.getRegionZ());
+        return MessageUtils.xzToString(separator, pos.x, pos.z);
     }
     public static @NotNull String xzToString(@NotNull final String separator, final int x, final int z) {
         return String.join(separator,MessageUtils.posToString(x, z));
@@ -409,7 +409,7 @@ public final class MessageUtils {
         MutableText output = new LiteralText("")
             .append(detailedItem(stack.getItem()));
         
-        if (enchantments.size() > 0) {
+        if (!enchantments.isEmpty()) {
             // Add the opening bracket
             output.append(" (");
             

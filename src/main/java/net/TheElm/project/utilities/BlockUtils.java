@@ -75,10 +75,10 @@ public final class BlockUtils {
         return world.raycast(new RaycastContext( posVec, traceVec, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.ANY, entity));
     }
     
-    public static void igniteNearbyLightSources(@NotNull ServerWorld world) {
+    public static void igniteNearbyLightSources(@NotNull ServerWorld world, @NotNull BlockPos blockPos) {
         
     }
-    public static void extinguishNearbyLightSources(@NotNull ServerWorld world) {
+    public static void extinguishNearbyLightSources(@NotNull ServerWorld world, @NotNull BlockPos blockPos) {
         
     }
     

@@ -44,6 +44,7 @@ import net.minecraft.entity.vehicle.*;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
@@ -229,18 +230,18 @@ public final class EntityUtils {
      * Get Shop Permissions
      */
     public static boolean isValidShopContainer(BlockEntity block) {
-        return (block instanceof ChestBlockEntity || block instanceof BarrelBlockEntity);
+        return (block instanceof ChestBlockEntity || block instanceof BarrelBlockEntity) || (block instanceof ShulkerBoxBlockEntity);
     }
-    public static @Nullable ShopSignBlockEntity getAttachedShopSign(World world, BlockPos storagePos) {
+    public static @Nullable ShopSignBlockEntity getAttachedShopSign(@NotNull World world, @NotNull BlockPos storagePos) {
         Set<BlockPos> searchForSigns = new HashSet<>(Collections.singletonList(
             storagePos.up()
         ));
         
-        BlockState storageState = world.getBlockState( storagePos );
-        BlockEntity storageEntity = world.getBlockEntity( storagePos );
+        BlockState storageState = world.getBlockState(storagePos);
+        BlockEntity storageEntity = world.getBlockEntity(storagePos);
         
         // If is storage block
-        if (isValidShopContainer( storageEntity )) {
+        if (isValidShopContainer(storageEntity)) {
             // Chest if chest is a double block
             if ((storageEntity instanceof ChestBlockEntity) && (storageState.get(ChestBlock.CHEST_TYPE) != ChestType.SINGLE)) {
                 Direction facing = storageState.get(ChestBlock.FACING);
@@ -351,6 +352,7 @@ public final class EntityUtils {
             .append("."));
     }
     public static void wanderingTraderDeparture(@NotNull WanderingTraderEntity trader) {
+        BlockUtils.extinguishNearbyLightSources((ServerWorld) trader.world, trader.getBlockPos());
         MessageUtils.sendToAll(new LiteralText("The ")
             .formatted(Formatting.YELLOW)
             .append(new LiteralText("Wandering Trader").formatted(Formatting.BOLD, Formatting.BLUE))
