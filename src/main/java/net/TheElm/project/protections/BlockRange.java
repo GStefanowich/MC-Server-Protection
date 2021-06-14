@@ -26,12 +26,22 @@
 package net.TheElm.project.protections;
 
 import net.TheElm.project.utilities.text.MessageUtils;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.tag.Tag;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.world.WorldView;
 import org.jetbrains.annotations.NotNull;
 
-public final class BlockRange {
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.function.Predicate;
+
+public final class BlockRange implements Iterable<BlockPos> {
     
     final BlockPos firstPos;
     final BlockPos secondPos;
@@ -42,7 +52,7 @@ public final class BlockRange {
     
     final int volume;
     
-    public BlockRange(@NotNull final BlockPos firstPos, @NotNull final BlockPos secondPos) {
+    private BlockRange(@NotNull final BlockPos firstPos, @NotNull final BlockPos secondPos) {
         this.firstPos = firstPos;
         this.secondPos = secondPos;
         
@@ -69,7 +79,7 @@ public final class BlockRange {
     }
     
     // Volume
-    public MutableText formattedVolume() {
+    public @NotNull MutableText formattedVolume() {
         return MessageUtils.formatNumber(this.getVolume());
     }
     public int getVolume() {
@@ -81,7 +91,7 @@ public final class BlockRange {
         return (this.volume != (this.distEastWest + this.distNorthSouth + this.distEastWest));
     }
     
-    public boolean isWithin(BlockPos search) {
+    public boolean isWithin(@NotNull BlockPos search) {
         return (this.withinX(search.getX()) && this.withinY(search.getY()) && this.withinZ(search.getZ()));
     }
     
@@ -173,10 +183,92 @@ public final class BlockRange {
         );
     }
     
+    // World interaction
+    public @NotNull Collection<BlockPos> getBlocks(@NotNull WorldView world, @NotNull Block block) {
+        return this.getBlocks(world, (state) -> state.getBlock().equals(block));
+    }
+    public @NotNull Collection<BlockPos> getBlocks(@NotNull WorldView world, @NotNull Tag.Identified<Block> tag) {
+        return this.getBlocks(world, (state) -> state.isIn(tag));
+    }
+    public @NotNull Collection<BlockPos> getBlocks(@NotNull WorldView world, @NotNull Predicate<BlockState> predicate) {
+        List<BlockPos> list = new ArrayList<>();
+        for (BlockPos pos : this) {
+            if (predicate.test(world.getBlockState(pos)))
+                list.add(pos);
+        }
+        return list;
+    }
+    
+    public static @NotNull BlockRange radius(@NotNull BlockPos center, int radius) {
+        return BlockRange.radius(center, radius, radius);
+    }
+    public static @NotNull BlockRange radius(@NotNull BlockPos center, int radius, int height) {
+        return BlockRange.between(
+        new BlockPos(center.getX() - radius, center.getY() - height, center.getZ() - radius),
+        new BlockPos(center.getX() + radius, center.getY() + height, center.getZ() + radius)
+        );
+    }
     public static @NotNull BlockRange between(@NotNull BlockPos firstPos, @NotNull BlockPos secondPos) {
         return new BlockRange(firstPos, secondPos);
     }
     public static @NotNull BlockRange of(@NotNull BlockPos pos) {
         return new BlockRange(pos, pos);
+    }
+    
+    @Override
+    public @NotNull Iterator<BlockPos> iterator() {
+        return new BlockRangeIterator(this.getLower(), this.getUpper());
+    }
+    
+    public static class BlockRangeIterator implements Iterator<BlockPos> {
+        private final @NotNull BlockPos starts;
+        private final @NotNull BlockPos ends;
+        
+        private int x;
+        private int y;
+        private int z;
+        
+        private BlockRangeIterator(@NotNull BlockPos starting, @NotNull BlockPos ending) {
+            this.starts = starting;
+            this.ends = ending;
+            
+            this.x = starting.getX();
+            this.y = starting.getY();
+            this.z = starting.getZ();
+        }
+        
+        @Override
+        public boolean hasNext() {
+            return this.y <= this.ends.getY();
+        }
+        
+        @Override
+        public BlockPos next() {
+            BlockPos next = new BlockPos(this.x, this.y, this.z);
+            if (this.isAtEndRow()) {
+                this.y++;
+                this.x = this.starts.getX();
+                this.z = this.starts.getZ();
+            } else if (this.isAtEndX()) {
+                this.z++;
+                this.x = this.starts.getX();
+            } else {
+                this.x++;
+            }
+            return next;
+        }
+        
+        private boolean isAtEndRow() {
+            return this.isAtEndX() && this.isAtEndZ();
+        }
+        private boolean isAtEndX() {
+            return this.x == this.ends.getX();
+        }
+        private boolean isAtEndZ() {
+            return this.z == this.ends.getZ();
+        }
+        private boolean isAtEndY() {
+            return this.y == this.ends.getY();
+        }
     }
 }

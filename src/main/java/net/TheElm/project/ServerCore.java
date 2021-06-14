@@ -92,7 +92,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             WaystoneCommand.register(dispatcher);
             WhereCommand.register(dispatcher);
             WorldCommand.register(dispatcher);
-                        
+            
             if ( CoreMod.isDebugging() )
                 TeleportEffectCommand.register(dispatcher);
         });

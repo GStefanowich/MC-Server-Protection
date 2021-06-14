@@ -753,7 +753,7 @@ public final class ClaimCommand {
     private static int claimRegionAt(@NotNull CommandContext<ServerCommandSource> context, @NotNull UUID target) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         
-        BlockRange region = new BlockRange(
+        BlockRange region = BlockRange.between(
             BlockPosArgumentType.getBlockPos(context, "from"),
             BlockPosArgumentType.getBlockPos(context, "to")
         );
@@ -768,8 +768,8 @@ public final class ClaimCommand {
     }
     private static int unclaimRegionAt(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-
-        BlockRange region = new BlockRange(
+        
+        BlockRange region = BlockRange.between(
             BlockPosArgumentType.getBlockPos(context, "from"),
             BlockPosArgumentType.getBlockPos(context, "to")
         );

@@ -92,7 +92,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
             // Drop the backpack if we're not using death chests (And keep inventory is off)
             if (!keepInventory) {
                 DeathChestUtils.createDeathSnapshotFor((PlayerEntity)(LivingEntity) this);
-                this.backpack.dropAll();
+                this.backpack.dropAll(true);
             }
             return;
         }
@@ -105,7 +105,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
             // Check if player is in combat
             if (SewConfig.get(SewConfig.PVP_DISABLE_DEATH_CHEST) && (this.hitByOtherPlayerAt != null)) {
                 // Drop the backpack as well as the inventory
-                this.backpack.dropAll();
+                this.backpack.dropAll(true);
                 
                 // Tell the player that they didn't get a death chest
                 this.sendSystemMessage(

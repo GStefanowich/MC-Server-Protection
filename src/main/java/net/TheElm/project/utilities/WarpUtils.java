@@ -86,7 +86,7 @@ public final class WarpUtils {
             return false;
         
         this.createWarpAt = warpPos;
-        this.region = new BlockRange(
+        this.region = BlockRange.between(
             new BlockPos(this.createWarpAt.getX() - 4, this.createWarpAt.getY() - 4, this.createWarpAt.getZ() - 3),
             new BlockPos(this.createWarpAt.getX() + 4, this.createWarpAt.getY() + 4, this.createWarpAt.getZ() + 6)
         );

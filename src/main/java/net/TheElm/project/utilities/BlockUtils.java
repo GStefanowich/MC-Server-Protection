@@ -27,8 +27,14 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.protections.BlockRange;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.CampfireBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
+import net.minecraft.tag.BlockTags;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
@@ -42,7 +48,7 @@ import org.jetbrains.annotations.Nullable;
 public final class BlockUtils {
     
     private BlockUtils() {}
-
+    
     /**
      * Get the block that an entity is looking at
      * @param world The world
@@ -52,7 +58,7 @@ public final class BlockUtils {
     public static @NotNull BlockHitResult getLookingBlock(@NotNull BlockView world, @NotNull Entity entity) {
         return BlockUtils.getLookingBlock(world, entity, 8);
     }
-
+    
     /**
      * Get the block that an entity is looking at, up to a max distance
      * @param world The world
@@ -75,11 +81,37 @@ public final class BlockUtils {
         return world.raycast(new RaycastContext( posVec, traceVec, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.ANY, entity));
     }
     
-    public static void igniteNearbyLightSources(@NotNull ServerWorld world, @NotNull BlockPos blockPos) {
+    public static void igniteNearbyLightSources(@NotNull final ServerWorld world, @NotNull final BlockPos center) {
+        // Get the nearby range
+        BlockRange range = BlockRange.radius(center, 10, 4);
         
+        // For each matching campfire block
+        range.getBlocks(world, BlockTags.CAMPFIRES).forEach(pos -> {
+            // Get the current campfire state
+            BlockState state = world.getBlockState(pos);
+            
+            // Only if the campfire isn't currently lit
+            if (!state.get(CampfireBlock.LIT)) {
+                world.playSound(null, pos, SoundEvents.ITEM_FLINTANDSTEEL_USE, SoundCategory.BLOCKS, 1F, 1F);
+                world.setBlockState(pos, state.with(CampfireBlock.LIT, true));
+            }
+        });
     }
-    public static void extinguishNearbyLightSources(@NotNull ServerWorld world, @NotNull BlockPos blockPos) {
+    public static void extinguishNearbyLightSources(@NotNull final ServerWorld world, @NotNull final BlockPos center) {
+        // Get the nearby range
+        BlockRange range = BlockRange.radius(center, 10, 4);
         
+        // For each matching campfire block
+        range.getBlocks(world, BlockTags.CAMPFIRES).forEach(pos -> {
+            // Get the current campfire state
+            BlockState state = world.getBlockState(pos);
+            
+            // Only if the campfire isn't already lit
+            if (state.get(CampfireBlock.LIT)) {
+                world.playSound(null, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 1F, 1F);
+                world.setBlockState(pos, state.with(CampfireBlock.LIT, false));
+            }
+        });
     }
     
     /**

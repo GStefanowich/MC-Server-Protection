@@ -96,7 +96,7 @@ public final class RulerCommand {
             /*
              * Output RULER calculation
              */
-            BlockRange region = new BlockRange(firstPos, newPos);
+            BlockRange region = BlockRange.between(firstPos, newPos);
             
             MutableText distance = new LiteralText("Distance: ").formatted(Formatting.YELLOW)
                 .append(region.displayDimensions());

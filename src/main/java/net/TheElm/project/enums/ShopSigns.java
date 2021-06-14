@@ -682,8 +682,8 @@ public enum ShopSigns {
                         throw new ShopBuilderException(new LiteralText("Deed sign must be within a valid region. Use \"").append(new LiteralText("/ruler").formatted(Formatting.AQUA)).append("\" command to select two points"));
                     
                     // Check that the region contains the sign
-                    BlockRange region = new BlockRange( firstPos, secondPos );
-                    if (!region.isWithin( sign.getPos() ))
+                    BlockRange region = BlockRange.between(firstPos, secondPos);
+                    if (!region.isWithin(sign.getPos()))
                         throw new ShopBuilderException(new LiteralText("Deed sign must be within a valid region. Use \"").append(new LiteralText("/ruler").formatted(Formatting.AQUA)).append("\" command to select two points"));
                     
                     // Clear ruler area

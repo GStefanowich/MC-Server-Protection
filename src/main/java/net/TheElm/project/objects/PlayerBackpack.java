@@ -318,10 +318,14 @@ public class PlayerBackpack extends SimpleInventory {
     }
     
     public void dropAll() {
+        this.dropAll(false);
+    }
+    public void dropAll(boolean vanish) {
         List<ItemStack> list = this.clearToList();
         for (ItemStack itemStack : list) {
-            if (!itemStack.isEmpty() && !EnchantmentHelper.hasVanishingCurse(itemStack))
-                this.player.dropItem(itemStack, true, false);
+            if (itemStack.isEmpty() || (vanish && EnchantmentHelper.hasVanishingCurse(itemStack)))
+                continue;
+            this.player.dropItem(itemStack, true, false);
         }
     }
 }
