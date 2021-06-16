@@ -26,15 +26,23 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.PressurePlateBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.Biome;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -42,6 +50,11 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public final class StructureBuilderUtils {
+    public static final StructureBuilderMaterial DEFAULT_OVERWORLD = new StructureBuilderMaterial(Blocks.CHISELED_STONE_BRICKS, Blocks.SMOOTH_STONE, Blocks.REDSTONE_LAMP, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
+    public static final StructureBuilderMaterial DEFAULT_NETHER = new StructureBuilderMaterial(Blocks.CHISELED_POLISHED_BLACKSTONE, Blocks.POLISHED_BLACKSTONE, Blocks.SHROOMLIGHT);
+    public static final StructureBuilderMaterial DESERT = new StructureBuilderMaterial(Blocks.SMOOTH_SANDSTONE, Blocks.RED_SANDSTONE, Blocks.REDSTONE_LAMP, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
+    public static final StructureBuilderMaterial BEACH = new StructureBuilderMaterial(Blocks.DARK_PRISMARINE, Blocks.PRISMARINE_BRICKS, Blocks.SEA_LANTERN, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
+    public static final StructureBuilderMaterial END = new StructureBuilderMaterial(Blocks.PURPUR_BLOCK, Blocks.END_STONE_BRICKS, Blocks.PURPUR_PILLAR, Blocks.STONE_PRESSURE_PLATE, Blocks.END_ROD);
     
     private final String name;
     private final World world;
@@ -50,27 +63,27 @@ public final class StructureBuilderUtils {
     private HashMap<BlockPos, BlockState> structureBlocks = new LinkedHashMap<>();
     private HashMap<BlockPos, Supplier<BlockEntity>> structureEntity = new LinkedHashMap<>();
     
-    public StructureBuilderUtils(World world, String structureName) {
+    public StructureBuilderUtils(@NotNull World world, @NotNull String structureName) {
         this.world = world;
         this.name = structureName;
-        CoreMod.logInfo( "Building new " + structureName );
+        CoreMod.logInfo("Building new " + structureName);
     }
     
     public String getName() {
         return this.name;
     }
     
-    public void addBlock(BlockPos blockPos, BlockState blockState) {
-        this.structureBlocks.put( blockPos, blockState );
+    public void addBlock(@NotNull BlockPos blockPos, @NotNull BlockState blockState) {
+        this.structureBlocks.put(blockPos, blockState);
     }
-    public void addEntity(BlockPos blockPos, Supplier<BlockEntity> blockEntity) {
+    public void addEntity(@NotNull BlockPos blockPos, @NotNull Supplier<BlockEntity> blockEntity) {
         this.structureEntity.put( blockPos, blockEntity );
     }
     
     public void destroy(boolean dropBlocks) throws InterruptedException {
         for (BlockPos blockPos : this.structureBlocks.keySet()) {
             this.world.breakBlock(blockPos, dropBlocks);
-            Thread.sleep( this.delay );
+            Thread.sleep(this.delay);
         }
     }
     public void build() throws InterruptedException {
@@ -98,7 +111,7 @@ public final class StructureBuilderUtils {
                 .setBlockEntity( blockPos, entity );
         }
     }
-    public <T extends ParticleEffect> void particlesSounds(T particle, SoundEvent sound, double deltaX, double deltaY, double deltaZ, double speed, int count, BlockPos... blockPositions) throws InterruptedException {
+    public <T extends ParticleEffect> void particlesSounds(T particle, SoundEvent sound, double deltaX, double deltaY, double deltaZ, double speed, int count, @NotNull BlockPos... blockPositions) throws InterruptedException {
         for (BlockPos blockPos : blockPositions) {
             // Spawn the particles
             ((ServerWorld) this.world).spawnParticles(
@@ -114,11 +127,92 @@ public final class StructureBuilderUtils {
             );
             
             // Play the sound effect
-            world.playSound( null, blockPos, sound, SoundCategory.MASTER, 1.0f, 1.0f );
+            world.playSound(null, blockPos, sound, SoundCategory.MASTER, 1.0f, 1.0f);
             
             // Sleep
             Thread.sleep(this.delay * 10);
         }
     }
     
+    public @NotNull StructureBuilderMaterial forBiome(@NotNull RegistryKey<World> dimension, @NotNull RegistryKey<Biome> biome) {
+        Identifier identifier = biome.getValue();
+        String path = identifier.getPath();
+        
+        if (dimension.equals(World.OVERWORLD)) {
+            if (path.contains("desert"))
+                return DESERT;
+            /*if (path.contains("snow"))
+                return COLD;*/
+            if (path.contains("ocean") || path.contains("beach"))
+                return BEACH;
+        }
+        else if (dimension.equals(World.NETHER)) {
+            
+            return DEFAULT_NETHER;
+        }
+        else if (dimension.equals(World.END)) {
+            return END;
+        }
+        return DEFAULT_OVERWORLD;
+    }
+    
+    public static class StructureBuilderMaterial {
+        private final @NotNull Block mainBlock;
+        private final @NotNull Block decoratingBlock;
+        private final @NotNull Block pressurePlateBlock;
+        
+        private final @NotNull Block lightingBlock;
+        private final @Nullable Block coveringBlock;
+        private final @Nullable Block supportBlock;
+        
+        private final @NotNull Block structureBlock;
+        
+        private StructureBuilderMaterial(@NotNull Block main, @NotNull Block decorating, @NotNull Block lightSource) {
+            this(main, decorating, lightSource, null);
+        }
+        private StructureBuilderMaterial(@NotNull Block main, @NotNull Block decorating, @NotNull Block lightSource, @Nullable Block plate) {
+            this(main, decorating, lightSource, plate, null);
+        }
+        private StructureBuilderMaterial(@NotNull Block main, @NotNull Block decorating, @NotNull Block lightSource, @Nullable Block plate, @Nullable Block coveringBlock) {
+            this(main, decorating, lightSource, plate, coveringBlock, lightSource.equals(Blocks.REDSTONE_LAMP) ? Blocks.REDSTONE_BLOCK : null);
+        }
+        private StructureBuilderMaterial(@NotNull Block main, @NotNull Block decorating, @NotNull Block lightSource, @Nullable Block plate, @Nullable Block coveringBlock, @Nullable Block supportingBlock) {
+            this.mainBlock = main;
+            this.decoratingBlock = decorating;
+            this.lightingBlock = lightSource;
+            this.pressurePlateBlock = (plate instanceof PressurePlateBlock ? plate : Blocks.STONE_PRESSURE_PLATE);
+            this.coveringBlock = coveringBlock;
+            this.supportBlock = supportingBlock;
+            this.structureBlock = Blocks.BEDROCK;
+        }
+        
+        public @NotNull BlockState getMainBlock() {
+            return this.mainBlock.getDefaultState();
+        }
+        public @NotNull BlockState getDecoratingBlock() {
+            return this.decoratingBlock.getDefaultState();
+        }
+        public @NotNull BlockState getPressurePlateBlock() {
+            return this.pressurePlateBlock.getDefaultState();
+        }
+        public @NotNull BlockState getLightSourceBlock() {
+            return this.lightingBlock.getDefaultState();
+        }
+        public @Nullable BlockState getCoveringBlock() {
+            return this.coveringBlock == null ? null : this.coveringBlock.getDefaultState();
+        }
+        public @Nullable BlockState getSupportingBlock() {
+            return this.supportBlock == null ? null : this.supportBlock.getDefaultState();
+        }
+        public @NotNull BlockState getStructureBlock() {
+            return this.structureBlock.getDefaultState();
+        }
+        public @NotNull BlockState getAirBlock(@NotNull RegistryKey<World> world) {
+            if (world.equals(World.END))
+                return Blocks.VOID_AIR.getDefaultState();
+            if (world.equals(World.NETHER))
+                return Blocks.CAVE_AIR.getDefaultState();
+            return Blocks.AIR.getDefaultState();
+        }
+    }
 }

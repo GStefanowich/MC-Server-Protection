@@ -39,6 +39,7 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.nbt.NbtUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
@@ -130,43 +131,18 @@ public final class PlayerNameUtils {
      * Message Components
      */
     public static @NotNull MutableText formattedWorld(@Nullable World world) {
-        return PlayerNameUtils.formattedWorld(world == null ? null : world.getRegistryKey());
+        return PlayerNameUtils.formattedWorld(world == null ? null : world.getRegistryKey(), false);
     }
-    public static @NotNull MutableText formattedWorld(@Nullable RegistryKey<World> world) {
-        String name = null;
-        String ico = null;
-        
-        Formatting color = Formatting.OBFUSCATED;
-        if (world == null) {
-            name = "Server";
-            color = Formatting.WHITE;
-            ico = "-";
-        } else if (world == World.OVERWORLD) {
-            name = "Surface";
-            color = Formatting.GREEN;
-        } else if (world == World.END) {
-            name = "End";
-            color = Formatting.DARK_GRAY;
-        } else if (world == World.NETHER) {
-            name = "Nether";
-            color = Formatting.RED;
-        }
-        
-        if (ico == null)
-            ico = name == null ? "~" : name.substring( 0, 1 );
-        
+    public static @NotNull MutableText formattedWorld(@Nullable RegistryKey<World> world, boolean showAsLong) {
         // Create the text
-        MutableText text = new LiteralText(ico)
-            .formatted(color);
+        MutableText longer = DimensionUtils.longDimensionName(world);
         
-        // Set the hover event
-        if ( name != null ) {
-            // Create the hover event
-            final HoverEvent hover = new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText(name).formatted(color));
-            
-            text.styled((style) -> style.withHoverEvent( hover ));
-        }
-        return text;
+        // Create the hover event
+        Formatting formatting = DimensionUtils.dimensionColor(world);
+        
+        return (showAsLong ? longer : DimensionUtils.shortDimensionName(world))
+            .formatted(formatting)
+            .styled(MessageUtils.simpleHoverText(longer.formatted(formatting)));
     }
     public static @NotNull MutableText formattedChat(ChatRooms chatRoom) {
         String name = CasingUtils.Sentence( chatRoom.name() );

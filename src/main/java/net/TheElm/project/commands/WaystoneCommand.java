@@ -41,7 +41,6 @@ import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.WarpUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
-import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
@@ -225,12 +224,12 @@ public class WaystoneCommand {
     
     private static @NotNull CompletableFuture<Suggestions> getPlayerEntityLocations(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-        return CommandSource.suggestMatching(WarpUtils.getWarpNames(player), builder);
+        return WarpUtils.buildSuggestions(player, builder);
     }
     private static @NotNull CompletableFuture<Suggestions> getPlayersToLocations(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "to");
         GameProfile target = profiles.stream().findAny()
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
-        return CommandSource.suggestMatching(WarpUtils.getWarpNames(target.getId()), builder);
+        return WarpUtils.buildSuggestions(target.getId(), builder);
     }
 }

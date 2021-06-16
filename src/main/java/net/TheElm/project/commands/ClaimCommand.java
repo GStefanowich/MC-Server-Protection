@@ -248,7 +248,7 @@ public final class ClaimCommand {
             // Set a friends rank
             .then(CommandManager.literal("set")
                 .then(CommandManager.argument("rank", StringArgumentType.word())
-                    .suggests(EnumArgumentType.enumerate(ClaimRanks.class))
+                    .suggests(EnumArgumentType.enumerate(ClaimRanks.class, ClaimRanks::rankSetterDescription))
                     .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtils::getAllPlayerNames)
                         .executes(ClaimCommand::addRank)
@@ -306,7 +306,7 @@ public final class ClaimCommand {
                 )
             )
             .then(CommandManager.literal("leave")
-                .requires((source) -> ClaimCommand.sourceInTown( source ) && ClaimCommand.sourceNotMayor( source ))
+                .requires((source) -> ClaimCommand.sourceInTown(source) && ClaimCommand.sourceNotMayor(source))
                 .executes(ClaimCommand::playerPartsTown)
             )
             .then(CommandManager.literal("set")
@@ -348,15 +348,15 @@ public final class ClaimCommand {
             // Update claim permissions
             .then(CommandManager.literal("permissions")
                 .then(CommandManager.argument("permission", StringArgumentType.word())
-                    .suggests(EnumArgumentType.enumerate(ClaimPermissions.class))
+                    .suggests(EnumArgumentType.enumerate(ClaimPermissions.class, ClaimPermissions::getDescription))
                     .then(CommandManager.argument("rank", StringArgumentType.word())
-                        .suggests(EnumArgumentType.enumerate(ClaimRanks.class))
+                        .suggests(EnumArgumentType.enumerate(ClaimRanks.class, ClaimRanks::rankNormalDescription))
                         .executes(ClaimCommand::updateSetting)
                     )
                 )
                 .then(CommandManager.literal("*")
                     .then(CommandManager.argument( "rank", StringArgumentType.word())
-                        .suggests(EnumArgumentType.enumerate(ClaimRanks.class))
+                        .suggests(EnumArgumentType.enumerate(ClaimRanks.class, ClaimRanks::rankNormalDescription))
                         .executes(ClaimCommand::updateSettings)
                     )
                 )
@@ -368,7 +368,7 @@ public final class ClaimCommand {
             // Chunk settings
             .then(CommandManager.literal("settings")
                 .then(CommandManager.argument("setting", StringArgumentType.word())
-                    .suggests(EnumArgumentType.enumerate(ClaimSettings.class))
+                    .suggests(EnumArgumentType.enumerate(ClaimSettings.class, ClaimSettings::getDescription))
                     .then(CommandManager.argument("bool", BoolArgumentType.bool())
                         .executes(ClaimCommand::updateBoolean)
                     )
@@ -1040,8 +1040,8 @@ public final class ClaimCommand {
     
     private static int updateSetting(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get enums
-        ClaimPermissions permissions = EnumArgumentType.getEnum( ClaimPermissions.class, StringArgumentType.getString( context, "permission" ) );
-        ClaimRanks rank = EnumArgumentType.getEnum( ClaimRanks.class, StringArgumentType.getString( context, "rank" ) );
+        ClaimPermissions permissions = EnumArgumentType.getEnum(ClaimPermissions.class, StringArgumentType.getString(context, "permission"));
+        ClaimRanks rank = EnumArgumentType.getEnum(ClaimRanks.class, StringArgumentType.getString(context, "rank"));
         
         // Get the player
         ServerPlayerEntity player = context.getSource().getPlayer();

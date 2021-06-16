@@ -41,6 +41,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
@@ -92,23 +93,28 @@ public final class MiscCommands {
         return MiscCommands.playerSendsMessageAndData(player, message, new LiteralText( main ));
     }
     public static int playerSendsMessageAndData(@NotNull ServerPlayerEntity player, @NotNull String message, @NotNull Text main) {
-        // Create the player display for chat
-        MutableText text = PlayerNameUtils.getPlayerChatDisplay( player, ((PlayerChat) player).getChatRoom() )
-            .append(new LiteralText( ": " ).formatted(Formatting.GRAY));
-        
-        // Append the users message
-        if ( !"".equals( message ) )
-            text.append( message )
-                .append( " " );
-        
-        // Append the main information
-        text.append( main );
+        MutableText text;
+        if (SewConfig.get(SewConfig.CHAT_MODIFY)) {
+            // Create the player display for chat
+            text = PlayerNameUtils.getPlayerChatDisplay(player, ((PlayerChat) player).getChatRoom())
+                .append(new LiteralText(": ").formatted(Formatting.GRAY));
+            
+            // Append the users message
+            if (!"".equals(message))
+                text.append(message)
+                    .append(" ");
+            
+            // Append the main information
+            text.append(main);
+        } else {
+            text = new TranslatableText("chat.type.text", player.getDisplayName(), main);
+        }
         
         // Send to all players
         MessageUtils.sendTo(
-            ((PlayerChat) player).getChatRoom(),
-            player,
-            text
+        ((PlayerChat) player).getChatRoom(),
+        player,
+        text
         );
         
         return Command.SINGLE_SUCCESS;

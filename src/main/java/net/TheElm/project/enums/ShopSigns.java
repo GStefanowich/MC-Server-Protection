@@ -596,11 +596,8 @@ public enum ShopSigns {
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignBlockEntity sign) {
             try {
-                if (!MoneyUtils.takePlayerMoney(player, SewConfig.get(SewConfig.WARP_WAYSTONE_COST)))
-                    return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
-                
                 ServerWorld world = player.getServerWorld();
-                if (DimensionUtils.isOutOfBuildLimitVertically(world, signPos) || !ChunkUtils.canPlayerBreakInChunk(player, signPos))
+                if (DimensionUtils.isOutOfBuildLimitVertically(world, signPos) || DimensionUtils.isWithinProtectedZone(world, signPos) || !ChunkUtils.canPlayerBreakInChunk(player, signPos))
                     return Either.left(new LiteralText("Can't build that here"));
                 
                 final String warpName = sign.getSignLine(1)
@@ -608,6 +605,9 @@ public enum ShopSigns {
                 
                 if (WarpUtils.getWarps(player).size() >= 3 && (WarpUtils.getWarp(player, warpName) == null))
                     return Either.left(new LiteralText("Too many waystones. Can't build any more."));
+                
+                if (!MoneyUtils.takePlayerMoney(player, SewConfig.get(SewConfig.WARP_WAYSTONE_COST)))
+                    return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                 
                 (new Thread(() -> {
                     WarpUtils warp = new WarpUtils(warpName, player, signPos.down());

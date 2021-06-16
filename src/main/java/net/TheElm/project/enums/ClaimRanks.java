@@ -25,21 +25,36 @@
 
 package net.TheElm.project.enums;
 
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
 public enum ClaimRanks {
-    OWNER( 2, Formatting.DARK_GREEN ),
-    ALLY( 1, Formatting.DARK_GREEN ),
-    PASSIVE( 0, Formatting.YELLOW ),
-    ENEMY( -1, Formatting.DARK_RED );
+    OWNER(2, "Restrict to Owners only", "Let this player do everything", Formatting.DARK_GREEN),
+    ALLY(1, "Restrict to Allies and Owners", "Make this player your Ally", Formatting.DARK_GREEN),
+    PASSIVE(0, "Restrict to anyone but Enemies", "This player is Nothing to you", Formatting.YELLOW),
+    ENEMY(-1, "Anyone can do this", "Make this player your Enemy", Formatting.DARK_RED);
     
     private final Formatting[] color;
     public final int power;
     
-    ClaimRanks( int power, Formatting... formatting ) {
+    private final String baseDescription;
+    private final String setterDescription;
+    
+    ClaimRanks(int power, String desc, String setter, Formatting... formatting ) {
         this.power = power;
         this.color = formatting;
+        
+        this.baseDescription = desc;
+        this.setterDescription = setter;
+    }
+    
+    public @NotNull Text rankNormalDescription() {
+        return new LiteralText(this.baseDescription);
+    }
+    public @NotNull Text rankSetterDescription() {
+        return new LiteralText(this.setterDescription);
     }
     
     public boolean canPerform( @NotNull ClaimRanks userRank ) {

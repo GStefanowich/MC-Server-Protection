@@ -42,7 +42,6 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.*;
 import net.TheElm.project.utilities.WarpUtils.Warp;
 import net.TheElm.project.utilities.text.MessageUtils;
-import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.entity.Entity;
@@ -273,13 +272,13 @@ public final class TeleportsCommand {
     
     private static @NotNull CompletableFuture<Suggestions> playerHomeNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        return CommandSource.suggestMatching(WarpUtils.getWarpNames(source.getPlayer()), builder);
+        return WarpUtils.buildSuggestions(source.getPlayer(), builder);
     }
     private static @NotNull CompletableFuture<Suggestions> playerHomeNamesOfPlayer(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
         GameProfile target = profiles.stream().findAny()
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
-        return CommandSource.suggestMatching(WarpUtils.getWarpNames(target.getId()), builder);
+        return WarpUtils.buildSuggestions(target.getId(), builder);
     }
     
     private static int tpaCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -418,7 +417,7 @@ public final class TeleportsCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static void feedback(@NotNull PlayerEntity porter, @NotNull PlayerEntity target, @Nullable String location) {
+    public static void feedback(@NotNull PlayerEntity porter, @NotNull PlayerEntity target, @Nullable String location) {
         TeleportsCommand.feedback(porter, target.getGameProfile(), location);
     }
     public static void feedback(@NotNull PlayerEntity porter, @NotNull GameProfile target, @Nullable String location) {

@@ -25,6 +25,8 @@
 
 package net.TheElm.project.utilities;
 
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
@@ -34,6 +36,7 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.objects.MaskSet;
 import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.utilities.nbt.NbtUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -41,6 +44,7 @@ import net.minecraft.block.Material;
 import net.minecraft.block.MushroomBlock;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
+import net.minecraft.command.CommandSource;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.MobEntity;
@@ -54,14 +58,20 @@ import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.*;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
+import net.minecraft.world.biome.Biome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
@@ -180,14 +190,20 @@ public final class WarpUtils {
         
         // Claim the defined slices in the name of Spawn
         ChunkUtils.claimSlices(world, CoreMod.SPAWN_ID, this.region);
+
+        Biome biome = world.getBiome(this.createWarpAt);
+        RegistryKey<Biome> biomeKey = RegistryUtils.getFromRegistry(world.getServer(), Registry.BIOME_KEY, biome);
         
         // Create the structure
-        StructureBuilderUtils structure = new StructureBuilderUtils( world, "waystone" );
+        StructureBuilderUtils structure = new StructureBuilderUtils(world, "waystone");
+        StructureBuilderUtils.StructureBuilderMaterial material = structure.forBiome(world.getRegistryKey(), biomeKey);
         
-        final BlockState air = Blocks.AIR.getDefaultState();
+        final BlockState air = material.getAirBlock(world.getRegistryKey());
         
         // Light-source blocks
-        final BlockState decLight = Blocks.SHROOMLIGHT.getDefaultState();
+        final BlockState decLight = material.getLightSourceBlock();
+        final BlockState ovrLight = material.getCoveringBlock();
+        final BlockState undLight = material.getSupportingBlock();
         BlockPos[] decLightBlocks = new BlockPos[]{
             new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() + 1),
             new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1),
@@ -195,13 +211,15 @@ public final class WarpUtils {
             new BlockPos(this.createWarpAt.getX() - 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1)
         };
         for ( BlockPos blockPos : decLightBlocks ) {
-            structure.addBlock(blockPos.up( 1 ), air);
-            structure.addBlock(blockPos.up( 2 ), air);
+            structure.addBlock(blockPos.up(1), ovrLight == null ? air : ovrLight);
+            structure.addBlock(blockPos.up(2), air);
             structure.addBlock(blockPos, decLight);
+            if (undLight != null)
+                structure.addBlock(blockPos.down(), undLight);
         }
         
         // Andesite blocks
-        final BlockState decJewel = Blocks.POLISHED_BLACKSTONE.getDefaultState();
+        final BlockState decJewel = material.getDecoratingBlock();
         BlockPos[] decJewelBlocks = new BlockPos[]{
             this.createWarpAt.offset(Direction.NORTH),
             this.createWarpAt.offset(Direction.SOUTH),
@@ -215,7 +233,7 @@ public final class WarpUtils {
         }
         
         // Diorite blocks
-        final BlockState decBelowPlate = Blocks.CHISELED_POLISHED_BLACKSTONE.getDefaultState();
+        final BlockState decBelowPlate = material.getMainBlock();
         BlockPos[] decBelowPlateBlocks = new BlockPos[]{
             this.createWarpAt
         };
@@ -226,7 +244,7 @@ public final class WarpUtils {
         }
         
         // Bedrock blocks
-        final BlockState decSupport = Blocks.BEDROCK.getDefaultState();
+        final BlockState decSupport = material.getStructureBlock();
         BlockPos[] bedrockBlocks = new BlockPos[]{
             this.createWarpAt.down(2),
             new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY() - 1, this.createWarpAt.getZ()),
@@ -260,12 +278,12 @@ public final class WarpUtils {
         }
         
         // Pressure plate
-        final BlockState plate = Blocks.STONE_PRESSURE_PLATE.getDefaultState();
+        final BlockState plate = material.getPressurePlateBlock();
         BlockPos[] pressurePlates = new BlockPos[]{
             this.createWarpAt.up()
         };
         for ( BlockPos blockPos : pressurePlates ) {
-            structure.addBlock( blockPos, plate );
+            structure.addBlock(blockPos, plate);
         }
         
         try {
@@ -586,6 +604,36 @@ public final class WarpUtils {
     public static @NotNull BlockPos getWorldSpawn(@NotNull final ServerWorld world) {
         WorldProperties properties = world.getLevelProperties();
         return new BlockPos(properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ());
+    }
+    
+    public static CompletableFuture<Suggestions> buildSuggestions(@NotNull ServerPlayerEntity player, @NotNull SuggestionsBuilder builder) {
+        return WarpUtils.buildSuggestions(WarpUtils.getWarps(player), builder);
+    }
+    public static CompletableFuture<Suggestions> buildSuggestions(@NotNull UUID uuid, @NotNull SuggestionsBuilder builder) {
+        return WarpUtils.buildSuggestions(WarpUtils.getWarps(uuid), builder);
+    }
+    private static CompletableFuture<Suggestions> buildSuggestions(@NotNull Map<String, Warp> warps, @NotNull SuggestionsBuilder builder) {
+        String remainder = builder.getRemaining().toLowerCase(Locale.ROOT);
+        
+        for (Map.Entry<String, Warp> iterator : warps.entrySet()) {
+            String name = iterator.getKey();
+            if (name.contains(" "))
+                name = "\"" + name + "\"";
+            
+            if (CommandSource.method_27136(remainder, name.toLowerCase(Locale.ROOT))) {
+                Warp warp = iterator.getValue();
+                Text position = new LiteralText(" [").formatted(Formatting.WHITE)
+                    .append(MessageUtils.xyzToText(warp.warpPos))
+                    .append("]");
+                
+                // Add the suggestion to the builder
+                builder.suggest(name, DimensionUtils.longDimensionName(warp.world)
+                    .formatted(DimensionUtils.dimensionColor(warp.world))
+                    .append(position));
+            }
+        }
+        
+        return builder.buildFuture();
     }
     
     public static class Warp {

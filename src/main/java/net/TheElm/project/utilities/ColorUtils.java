@@ -200,13 +200,13 @@ public final class ColorUtils {
         COLORS = colors;
     }
     
-    public static MutableText format(Text text, Formatting... formatting) {
+    public static @NotNull MutableText format(@NotNull Text text, @NotNull Formatting... formatting) {
         if (text instanceof MutableText)
             return ((MutableText)text).formatted(formatting);
         return ColorUtils.format(new LiteralText("")
             .append(text), formatting);
     }
-    public static MutableText format(Text text, TextColor color) {
+    public static @NotNull MutableText format(@NotNull Text text, @NotNull TextColor color) {
         if (text instanceof MutableText)
             return ((MutableText)text).styled((style) -> style.withColor(color));
         return ColorUtils.format(new LiteralText("")

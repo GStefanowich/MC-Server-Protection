@@ -38,13 +38,13 @@ import org.jetbrains.annotations.NotNull;
 
 public final class SleepUtils {
     
-    public static void entityBedToggle(final LivingEntity entity, final boolean isInBed, final boolean isSleeping) {
+    public static void entityBedToggle(@NotNull final LivingEntity entity, final boolean isInBed, final boolean isSleeping) {
         if (!( entity instanceof ServerPlayerEntity))
             return;
         
-        SleepUtils.playerBedToggle( (ServerPlayerEntity)entity, isInBed, isSleeping );
+        SleepUtils.playerBedToggle((ServerPlayerEntity)entity, isInBed, isSleeping );
     }
-    public static void playerBedToggle(final PlayerEntity player, final boolean isInBed, final boolean isSleeping) {
+    public static void playerBedToggle(@NotNull final PlayerEntity player, final boolean isInBed, final boolean isSleeping) {
         // Get the server object
         MinecraftServer server = player.getServer();
         if ( server != null ) {
@@ -57,7 +57,7 @@ public final class SleepUtils {
                 
                 if ( world.getPlayers().size() > 1 ) {
                     TitleUtils.showPlayerAlert((ServerWorld) player.world,
-                        ColorUtils.format(player.getDisplayName(), Formatting.AQUA),
+                        new LiteralText(player.getDisplayName().asString()).formatted(Formatting.AQUA),
                         new LiteralText(isSleeping ? " is now sleeping (" + percentage + "%)." : " is now in bed")
                     );
                 }
@@ -100,7 +100,7 @@ public final class SleepUtils {
         return percentage;
     }
     
-    public static String timeFromMillis(long millis) {
+    public static @NotNull String timeFromMillis(long millis) {
         if (millis >= 23000)
             return "sunrise";
         if (millis >= 18000)

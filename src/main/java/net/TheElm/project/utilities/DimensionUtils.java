@@ -29,6 +29,9 @@ import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.WorldBorderS2CPacket;
 import net.minecraft.network.packet.s2c.play.WorldBorderS2CPacket.Type;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
@@ -36,6 +39,7 @@ import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.border.WorldBorderListener;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class DimensionUtils {
     
@@ -58,6 +62,46 @@ public final class DimensionUtils {
     }
     public static boolean isOutOfBuildLimitVertically(@NotNull DimensionType dimension, int y) {
         return y < 0 || y >= dimension.getLogicalHeight();
+    }
+    
+    public static boolean isWithinProtectedZone(@NotNull World world, BlockPos pos) {
+        return DimensionUtils.isWithinProtectedZone(world.getRegistryKey(), pos);
+    }
+    public static boolean isWithinProtectedZone(@NotNull RegistryKey<World> world, BlockPos pos) {
+        if (world.equals(World.END)) {
+            int x = Math.abs(pos.getX());
+            int z = Math.abs(pos.getZ());
+            return x <= 200 & z <= 200;
+        }
+        return false;
+    }
+    
+    public static @NotNull MutableText longDimensionName(@Nullable RegistryKey<World> world) {
+        if (World.OVERWORLD.equals(world))
+            return new LiteralText("Surface");
+        if (World.NETHER.equals(world))
+            return new LiteralText("Nether");
+        if (World.END.equals(world))
+            return new LiteralText("The End");
+        return new LiteralText("Server");
+    }
+    public static @NotNull MutableText shortDimensionName(@Nullable RegistryKey<World> world) {
+        if (World.OVERWORLD.equals(world))
+            return new LiteralText("S");
+        if (World.NETHER.equals(world))
+            return new LiteralText("N");
+        if (World.END.equals(world))
+            return new LiteralText("E");
+        return new LiteralText("~");
+    }
+    public static @NotNull Formatting dimensionColor(@Nullable RegistryKey<World> world) {
+        if (World.OVERWORLD.equals(world))
+            return Formatting.GREEN;
+        if (World.NETHER.equals(world))
+            return Formatting.RED;
+        if (World.END.equals(world))
+            return Formatting.DARK_GRAY;
+        return Formatting.WHITE;
     }
     
     private static final class IndividualWorldListener implements WorldBorderListener {

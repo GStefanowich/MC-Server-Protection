@@ -28,38 +28,41 @@ package net.TheElm.project.enums;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.BoolEnums;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
 public enum ClaimSettings implements BoolEnums {
     // "False positives"
-    ENDERMAN_GRIEFING( false, true, false ) {
+    ENDERMAN_GRIEFING("Allow Endermen to pickup blocks", false, true, false) {
         @Override
         public boolean isEnabled() {
             return SewConfig.get(SewConfig.CLAIM_ALLOW_GRIEFING_ENDERMAN);
         }
     },
-    CREEPER_GRIEFING( false, true, false ) {
+    CREEPER_GRIEFING("Allow Creepers to destroy blocks", false, true, false) {
         @Override
         public boolean isEnabled() {
             return SewConfig.get(SewConfig.CLAIM_ALLOW_GRIEFING_CREEPER);
         }
     },
-    GHAST_GRIEFING( false, true, false ) {
+    GHAST_GRIEFING("Allow Ghasts to destroy blocks", false, true, false) {
         @Override
         public boolean isEnabled() {
             return SewConfig.get(SewConfig.CLAIM_ALLOW_GRIEFING_GHAST);
         }
     },
-    PLAYER_COMBAT( false, true, false ) {
+    PLAYER_COMBAT("Allow Player vs Player", false, true, false) {
         @Override
         public boolean isEnabled() {
             return SewConfig.get(SewConfig.CLAIM_ALLOW_PLAYER_COMBAT);
         }
     },
-    HURT_TAMED( false, false, false ) {
+    HURT_TAMED("Allow Players to harm Wolves, Cats and other tamed pets", false, false, false) {
         @Override
         public boolean isEnabled() {
             return true;
@@ -67,33 +70,39 @@ public enum ClaimSettings implements BoolEnums {
     },
     
     // "True positives"
-    CROP_AUTOREPLANT( true, false, true ) {
+    CROP_AUTOREPLANT("Automatically replant harvested crops", true, false, true) {
         @Override
         public boolean isEnabled() {
             return SewConfig.get(SewConfig.CLAIM_ALLOW_CROP_AUTOREPLANT);
         }
     },
-    TREE_CAPACITATE(true, false, false ) {
+    TREE_CAPACITATE("Automatically knock down entire trees", true, false, false) {
         @Override
         public boolean isEnabled() {
             return SewConfig.get(SewConfig.CLAIM_ALLOW_TREE_CAPACITATOR);
         }
     },
-    VEIN_MINER( true, false, false ) {
+    VEIN_MINER("Automatically mine entire ore veins", true, false, false) {
         @Override
         public boolean isEnabled() {
             return SewConfig.get(SewConfig.CLAIM_ALLOW_VEIN_MINER);
         }
     };
     
+    private final @NotNull Text description;
     private final boolean valueShouldBe;
     private final boolean playrDef;
     private final boolean spawnDef;
     
-    ClaimSettings( boolean valueShouldBe, boolean playerDefault, boolean spawnDefault ) {
+    ClaimSettings(@NotNull String description, boolean valueShouldBe, boolean playerDefault, boolean spawnDefault) {
         this.valueShouldBe = valueShouldBe;
         this.playrDef = playerDefault;
         this.spawnDef = spawnDefault;
+        this.description = new LiteralText(description)
+            .append(" (Default: ")
+            .append(new LiteralText(Boolean.toString(this.playrDef))
+                .formatted(this.getAttributeColor(this.playrDef)))
+            .append(")");
     }
     
     public boolean isTruePositive() {
@@ -119,5 +128,7 @@ public enum ClaimSettings implements BoolEnums {
             return this.getSpawnDefault();
         return this.getPlayerDefault();
     }
-    
+    public @NotNull Text getDescription() {
+        return this.description;
+    }
 }

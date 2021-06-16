@@ -29,12 +29,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonSerializationContext;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ChatRooms;
+import net.TheElm.project.utilities.DimensionUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
@@ -51,7 +50,7 @@ public final class ChatFormat {
         this.raw = raw;
         
         // Debug
-        CoreMod.logDebug( raw );
+        CoreMod.logDebug(raw);
     }
     
     @Nullable
@@ -60,39 +59,16 @@ public final class ChatFormat {
     }
     
     private Text worldText(@NotNull RegistryKey<World> dimension, boolean showAsLong) {
-        String longKey = null, shortKey = null;
-        
-        // Set keys based on the world
-        if (World.OVERWORLD.equals(dimension)) {
-            longKey = "generator.minecraft.surface";
-            shortKey = "S";
-        } else if (World.NETHER.equals(dimension)) {
-            longKey = "biome.minecraft.nether";
-            shortKey = "N";
-        } else if (World.END.equals(dimension)) {
-            longKey = "biome.minecraft.the_end";
-            shortKey = "E";
-        }
-        
         // Create the text
-        MutableText longer = ( longKey == null ? new LiteralText("Server") : new TranslatableText( longKey ));
-        MutableText shorter = new LiteralText( shortKey == null ? "~" : shortKey );
+        MutableText longer = DimensionUtils.longDimensionName(dimension);
+        MutableText shorter = DimensionUtils.shortDimensionName(dimension);
         
         // Create the hover event
-        Formatting formatting = this.worldColor(dimension);
+        Formatting formatting = DimensionUtils.dimensionColor(dimension);
         
         return ( showAsLong ? longer : shorter )
             .formatted(formatting)
-            .styled(MessageUtils.simpleHoverText(longer.formatted( formatting )));
-    }
-    private Formatting worldColor(@NotNull RegistryKey<World> world) {
-        if (World.OVERWORLD.equals(world))
-            return Formatting.GREEN;
-        if (World.NETHER.equals(world))
-            return Formatting.RED;
-        if (World.END.equals(world))
-            return Formatting.DARK_GRAY;
-        return Formatting.WHITE;
+            .styled(MessageUtils.simpleHoverText(longer.formatted(formatting)));
     }
     
     @Override

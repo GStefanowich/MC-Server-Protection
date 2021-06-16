@@ -34,34 +34,59 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.TheElm.project.interfaces.BoolEnums;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.EnumSet;
+import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Function;
 
 public class EnumArgumentType<E extends Enum<E>> {
     public static final DynamicCommandExceptionType INVALID_COMPONENT_EXCEPTION = new DynamicCommandExceptionType((object_1) -> new TranslatableText("argument.component.invalid", object_1));
-    private final EnumSet<E> enumValues;
     
-    private EnumArgumentType( final Class<E> enumClass ) {
-        this.enumValues = EnumSet.allOf( enumClass );
+    private final EnumSet<E> enumValues;
+    private final Function<E, String> nameFormatter;
+    private final Function<E, Text> tooltipFormatter;
+    
+    private EnumArgumentType(@NotNull final Class<E> enumClass) {
+        this(enumClass, null);
+    }
+    private EnumArgumentType(@NotNull final Class<E> enumClass, @Nullable Function<E, Text> tooltips) {
+        this(enumClass, tooltips, (enumValue) -> enumValue.name().toLowerCase());
+    }
+    private EnumArgumentType(@NotNull final Class<E> enumClass, @Nullable Function<E, Text> tooltips, @NotNull Function<E, String> names) {
+        this.enumValues = EnumSet.allOf(enumClass);
+        this.nameFormatter = names;
+        this.tooltipFormatter = tooltips;
     }
     
     public static <T extends Enum<T>> T getEnum(Class<T> tClass, String search) throws CommandSyntaxException {
-        return EnumSet.allOf( tClass ).stream().filter((enumValue) -> {
-            return enumValue.name().equalsIgnoreCase( search );
+        return EnumSet.allOf(tClass).stream().filter((enumValue) -> {
+            return enumValue.name().equalsIgnoreCase(search);
         }).findFirst().orElseThrow(() -> INVALID_COMPONENT_EXCEPTION.create(search));
     }
     
-    public <S> CompletableFuture<Suggestions> suggests(CommandContext<S> context, SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(
-            this.enumValues.stream()
-                .filter((val) -> ((!(val instanceof BoolEnums)) || ((BoolEnums)val).isEnabled()))
-                .map((enumValue) -> enumValue.name().toLowerCase()),
-            builder
-        );
+    public @NotNull <S> CompletableFuture<Suggestions> suggests(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
+        final String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
+        this.enumValues.stream()
+            .filter((eVal) -> ((!(eVal instanceof BoolEnums)) || ((BoolEnums)eVal).isEnabled()))
+            .filter((eName) -> CommandSource.method_27136(remaining, eName.name().toLowerCase(Locale.ROOT)))
+            .forEach((eVal) -> {
+                Text text = this.tooltipFormatter != null ? this.tooltipFormatter.apply(eVal) : null;
+                builder.suggest(this.nameFormatter.apply(eVal), text);
+            });
+        return builder.buildFuture();
     }
-    public static <E extends Enum<E>> SuggestionProvider<ServerCommandSource> enumerate(Class<E> claimRanksClass) {
-        return new EnumArgumentType<>( claimRanksClass )::suggests;
+    public static @NotNull <E extends Enum<E>> SuggestionProvider<ServerCommandSource> enumerate(@NotNull Class<E> claimRanksClass) {
+        return new EnumArgumentType<>(claimRanksClass)::suggests;
+    }
+    public static @NotNull <E extends Enum<E>> SuggestionProvider<ServerCommandSource> enumerate(@NotNull Class<E> claimRanksClass, @NotNull Function<E, Text> tooltips) {
+        return new EnumArgumentType<>(claimRanksClass, tooltips)::suggests;
+    }
+    public static @NotNull <E extends Enum<E>> SuggestionProvider<ServerCommandSource> enumerate(@NotNull Class<E> claimRanksClass, @NotNull Function<E, Text> tooltips, @NotNull Function<E, String> names) {
+        return new EnumArgumentType<>(claimRanksClass, tooltips, names)::suggests;
     }
 }

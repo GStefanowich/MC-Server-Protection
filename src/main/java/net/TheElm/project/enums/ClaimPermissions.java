@@ -25,27 +25,41 @@
 
 package net.TheElm.project.enums;
 
+import net.TheElm.project.utilities.CasingUtils;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import org.jetbrains.annotations.NotNull;
+
 public enum ClaimPermissions {
     
-    CREATURES( ClaimRanks.PASSIVE ), // Harm passive mods
-    HARVEST( ClaimRanks.ALLY ), // Harvest plants
-    BLOCKS( ClaimRanks.ALLY ), // Break or Place blocks
-    STORAGE( ClaimRanks.ALLY ), // Access storage containers
-    DOORS( ClaimRanks.PASSIVE ), // Open doors and gates
-    PICKUP( ClaimRanks.ALLY ), // Pickup entities
-    RIDING( ClaimRanks.ALLY ), // Ride carts and animals
-    WARP( ClaimRanks.OWNER ), // Warp to the players warp location
-    TRADING( ClaimRanks.PASSIVE ), // Trade with villagers
-    CRAFTING( ClaimRanks.PASSIVE ) // Open crafting benches
+    CREATURES(ClaimRanks.PASSIVE, "Harm or kill passive mobs"), // Harm passive mods
+    HARVEST(ClaimRanks.ALLY, "Harvest crops that are fully grown"), // Harvest plants
+    BLOCKS(ClaimRanks.ALLY, "Place or break any block"), // Break or Place blocks
+    STORAGE(ClaimRanks.ALLY, "Access shared inventories: chests, hoppers, furnaces, etc"), // Access storage containers
+    DOORS(ClaimRanks.PASSIVE, "Open or close doors"), // Open doors and gates
+    PICKUP(ClaimRanks.ALLY, "Pickup dropped items"), // Pickup entities
+    RIDING(ClaimRanks.ALLY, "Ride on horses and llamas"), // Ride carts and animals
+    WARP(ClaimRanks.OWNER, "Teleport to waystones"), // Warp to the players warp location
+    TRADING(ClaimRanks.PASSIVE, "Make trades with villagers"), // Trade with villagers
+    CRAFTING(ClaimRanks.PASSIVE, "Access non-shared inventories: crafting tables, looms, etc") // Open crafting benches
     ;
     
-    private final ClaimRanks defaultRank;
+    private final @NotNull ClaimRanks defaultRank;
+    private final @NotNull Text description;
     
-    ClaimPermissions(ClaimRanks defaultRank) {
+    ClaimPermissions(@NotNull ClaimRanks defaultRank, @NotNull String description) {
         this.defaultRank = defaultRank;
+        this.description = new LiteralText(description)
+            .append(" (Default: ")
+            .append(new LiteralText(CasingUtils.Sentence(this.defaultRank.name()))
+                .formatted(this.defaultRank.getColor()))
+            .append(")");
     }
     
-    public ClaimRanks getDefault() {
+    public @NotNull Text getDescription() {
+        return this.description;
+    }
+    public @NotNull ClaimRanks getDefault() {
         return this.defaultRank;
     }
 }
