@@ -81,6 +81,11 @@ public final class BlockUtils {
         return world.raycast(new RaycastContext( posVec, traceVec, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.ANY, entity));
     }
     
+    /**
+     * Find and light nearby campfires
+     * @param world The world to search in
+     * @param center The position in which to search
+     */
     public static void igniteNearbyLightSources(@NotNull final ServerWorld world, @NotNull final BlockPos center) {
         // Get the nearby range
         BlockRange range = BlockRange.radius(center, 10, 4);
@@ -97,6 +102,12 @@ public final class BlockUtils {
             }
         });
     }
+    
+    /**
+     * Find and extinguish nearby campfires
+     * @param world The world to search in
+     * @param center The position in which to search
+     */
     public static void extinguishNearbyLightSources(@NotNull final ServerWorld world, @NotNull final BlockPos center) {
         // Get the nearby range
         BlockRange range = BlockRange.radius(center, 10, 4);

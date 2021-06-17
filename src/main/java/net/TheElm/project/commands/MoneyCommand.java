@@ -66,7 +66,7 @@ public final class MoneyCommand {
     
     private MoneyCommand() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         /*
          * Player Pay
          */
@@ -86,24 +86,24 @@ public final class MoneyCommand {
         ServerCore.register(dispatcher, "money", builder -> builder
             .requires((source) -> SewConfig.get(SewConfig.DO_MONEY))
             // Admin GIVE money (Adds money)
-            .then( CommandManager.literal("give" )
+            .then(CommandManager.literal("give")
                 // If player is OP
                 .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
-                .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
-                    .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                        .suggests( CommandUtils::getAllPlayerNames )
-                        .executes( MoneyCommand::commandAdminGive )
+                .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
+                    .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                        .suggests(CommandUtils::getAllPlayerNames)
+                        .executes(MoneyCommand::commandAdminGive)
                     )
                 )
             )
             // Admin TAKES money (Removes money)
-            .then( CommandManager.literal( "take" )
+            .then( CommandManager.literal("take")
                 // If player is OP
                 .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
-                .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
-                    .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                        .suggests( CommandUtils::getAllPlayerNames )
-                        .executes( MoneyCommand::commandAdminTake )
+                .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
+                    .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                        .suggests(CommandUtils::getAllPlayerNames)
+                        .executes(MoneyCommand::commandAdminTake)
                     )
                 )
             )
@@ -147,7 +147,7 @@ public final class MoneyCommand {
     /*
      * Admin commands
      */
-    private static int commandAdminGive(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int commandAdminGive(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the reference of the player to modify
         Collection<GameProfile> argumentType = GameProfileArgumentType.getProfileArgument( context, "player" );
         GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
@@ -181,7 +181,7 @@ public final class MoneyCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int commandAdminTake(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int commandAdminTake(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the reference of the player to modify
         Collection<GameProfile> argumentType = GameProfileArgumentType.getProfileArgument( context, "player" );
         GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
@@ -218,7 +218,7 @@ public final class MoneyCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int commandAdminSet(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int commandAdminSet(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the reference of the player to modify
         Collection<GameProfile> argumentType = GameProfileArgumentType.getProfileArgument( context, "player" );
         GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
@@ -252,7 +252,7 @@ public final class MoneyCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int commandAdminReset(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int commandAdminReset(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the reference of the player to modify
         Collection<GameProfile> argumentType = GameProfileArgumentType.getProfileArgument( context, "player" );
         GameProfile target = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
@@ -281,7 +281,7 @@ public final class MoneyCommand {
     /*
      * Player commands
      */
-    private static int commandMoneyPay(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int commandMoneyPay(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource commandSource = context.getSource();
         
         // Get the reference of the player to pay
@@ -319,7 +319,7 @@ public final class MoneyCommand {
         return MoneyCommand.commandMoneyGet( context );
     }
     
-    private static int commandMoneyRequest(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int commandMoneyRequest(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         
         // Get the reference of the player to request money from
@@ -331,7 +331,7 @@ public final class MoneyCommand {
         ServerPlayerEntity target = source.getMinecraftServer().getPlayerManager().getPlayer( targetProfile.getId() );
         
         // Get the amount to request
-        int amount = IntegerArgumentType.getInteger( context, "amount" );
+        int amount = IntegerArgumentType.getInteger(context, "amount");
         if (target == null) {
             // Player not online
             throw PLAYER_NOT_FOUND.create( player );
@@ -354,7 +354,7 @@ public final class MoneyCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int commandMoneyGet(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int commandMoneyGet(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource commandSource = context.getSource();
         
         // Get our player reference

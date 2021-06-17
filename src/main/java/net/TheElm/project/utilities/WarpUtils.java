@@ -59,7 +59,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.*;
 import net.minecraft.util.registry.Registry;
@@ -180,17 +180,24 @@ public final class WarpUtils {
             && ( world.getBlockState( pos.up() ).isAir() ) ? pos : null;
     }
     
-    public boolean build(final ServerPlayerEntity player, final ServerWorld world) {
-        return this.build(player, world, true);
+    public boolean claimAndBuild(@NotNull final ServerPlayerEntity player, @NotNull final ServerWorld world) {
+        return this.claimAndBuild(player, world, false);
     }
-    public boolean build(final ServerPlayerEntity player, final ServerWorld world, final boolean dropBlocks) {
+    public boolean claimAndBuild(@NotNull final ServerPlayerEntity player, @NotNull final ServerWorld world, final boolean dropBlocks) {
         // Get the area of blocks to claim
         if (!ChunkUtils.canPlayerClaimSlices(world, this.region))
             return false;
-        
+
         // Claim the defined slices in the name of Spawn
         ChunkUtils.claimSlices(world, CoreMod.SPAWN_ID, this.region);
-
+        
+        return this.build(player, world, dropBlocks);
+    }
+    
+    public boolean build(@NotNull final ServerPlayerEntity player, @NotNull final ServerWorld world) {
+        return this.build(player, world, true);
+    }
+    public boolean build(@NotNull final ServerPlayerEntity player, @NotNull final ServerWorld world, final boolean dropBlocks) {
         Biome biome = world.getBiome(this.createWarpAt);
         RegistryKey<Biome> biomeKey = RegistryUtils.getFromRegistry(world.getServer(), Registry.BIOME_KEY, biome);
         
@@ -204,7 +211,7 @@ public final class WarpUtils {
         final BlockState decLight = material.getLightSourceBlock();
         final BlockState ovrLight = material.getCoveringBlock();
         final BlockState undLight = material.getSupportingBlock();
-        BlockPos[] decLightBlocks = new BlockPos[]{
+        BlockPos[] decLightBlocks = new BlockPos[] {
             new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() + 1),
             new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1),
             new BlockPos(this.createWarpAt.getX() - 1, this.createWarpAt.getY(), this.createWarpAt.getZ() + 1),
@@ -606,15 +613,16 @@ public final class WarpUtils {
         return new BlockPos(properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ());
     }
     
-    public static CompletableFuture<Suggestions> buildSuggestions(@NotNull ServerPlayerEntity player, @NotNull SuggestionsBuilder builder) {
-        return WarpUtils.buildSuggestions(WarpUtils.getWarps(player), builder);
+    public static CompletableFuture<Suggestions> buildSuggestions(@Nullable UUID untrusted, @NotNull ServerPlayerEntity warpOwner, @NotNull SuggestionsBuilder builder) {
+        return WarpUtils.buildSuggestions(warpOwner.getUuid(), untrusted, WarpUtils.getWarps(warpOwner), builder);
     }
-    public static CompletableFuture<Suggestions> buildSuggestions(@NotNull UUID uuid, @NotNull SuggestionsBuilder builder) {
-        return WarpUtils.buildSuggestions(WarpUtils.getWarps(uuid), builder);
+    public static CompletableFuture<Suggestions> buildSuggestions(@Nullable UUID untrusted, @NotNull UUID warpOwner, @NotNull SuggestionsBuilder builder) {
+        return WarpUtils.buildSuggestions(warpOwner, untrusted, WarpUtils.getWarps(warpOwner), builder);
     }
-    private static CompletableFuture<Suggestions> buildSuggestions(@NotNull Map<String, Warp> warps, @NotNull SuggestionsBuilder builder) {
+    private static CompletableFuture<Suggestions> buildSuggestions(@NotNull UUID warpOwner, @Nullable UUID untrusted, @NotNull Map<String, Warp> warps, @NotNull SuggestionsBuilder builder) {
         String remainder = builder.getRemaining().toLowerCase(Locale.ROOT);
         
+        boolean canViewCoordinates = untrusted != null && (warpOwner.equals(untrusted) || ChunkUtils.canPlayerWarpTo(untrusted, warpOwner));
         for (Map.Entry<String, Warp> iterator : warps.entrySet()) {
             String name = iterator.getKey();
             if (name.contains(" "))
@@ -622,14 +630,22 @@ public final class WarpUtils {
             
             if (CommandSource.method_27136(remainder, name.toLowerCase(Locale.ROOT))) {
                 Warp warp = iterator.getValue();
-                Text position = new LiteralText(" [").formatted(Formatting.WHITE)
-                    .append(MessageUtils.xyzToText(warp.warpPos))
-                    .append("]");
+                MutableText world;
+                MutableText position;
+                if (canViewCoordinates) {
+                    position = MessageUtils.xyzToText(warp.warpPos);
+                    world = DimensionUtils.longDimensionName(warp.world)
+                        .styled(DimensionUtils.dimensionColor(warp.world));
+                } else {
+                    position = MessageUtils.dimensionToTextComponent(", ", 999, 999, 999, Formatting.AQUA, Formatting.OBFUSCATED);
+                    world = new LiteralText("").append(new LiteralText("Server")
+                        .formatted(Formatting.GRAY, Formatting.OBFUSCATED));
+                }
                 
                 // Add the suggestion to the builder
-                builder.suggest(name, DimensionUtils.longDimensionName(warp.world)
-                    .formatted(DimensionUtils.dimensionColor(warp.world))
-                    .append(position));
+                builder.suggest(name, world.append(new LiteralText(" [").formatted(Formatting.WHITE)
+                    .append(position)
+                    .append("]")));
             }
         }
         

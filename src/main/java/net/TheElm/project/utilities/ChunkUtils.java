@@ -171,19 +171,27 @@ public final class ChunkUtils {
      * @param target The destination to teleport to
      * @return If the player is a high enough rank to teleport to the target
      */
-    public static boolean canPlayerWarpTo(PlayerEntity player, UUID target) {
+    public static boolean canPlayerWarpTo(@NotNull PlayerEntity player, @NotNull UUID target) {
         if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator())))
             return SewConfig.get(SewConfig.COMMAND_WARP_TPA);
-        
+        return ChunkUtils.canPlayerWarpTo(player.getUuid(), target);
+    }
+    
+    /**
+     * @param player The player that wants to teleport
+     * @param target The destination to teleport to
+     * @return If the player is a high enough rank to teleport to the target
+     */
+    public static boolean canPlayerWarpTo(@NotNull UUID player, @NotNull UUID target) {
         // Check our chunk permissions
         ClaimantPlayer permissions = ClaimantPlayer.get(target);
-        
+
         // Get the ranks of the user and the rank required for performing
-        ClaimRanks userRank = permissions.getFriendRank(player.getUuid());
+        ClaimRanks userRank = permissions.getFriendRank(player);
         ClaimRanks permReq = permissions.getPermissionRankRequirement(ClaimPermissions.WARP);
-        
+
         // Return the test if the user can perform the action
-        return permReq.canPerform( userRank );
+        return permReq.canPerform(userRank);
     }
     
     public static boolean isSetting(@NotNull ClaimSettings setting, @NotNull World world, @NotNull BlockPos blockPos) {

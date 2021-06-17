@@ -40,7 +40,9 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
+import net.TheElm.project.utilities.text.StyleApplicator;
 import net.fabricmc.fabric.api.util.NbtType;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -118,6 +120,9 @@ public final class PlayerNameUtils {
             player
         ));
     }
+    public static @NotNull MutableText getPlayerRawName(@NotNull PlayerEntity player) {
+        return new LiteralText(player.getDisplayName().getString());
+    }
     private static @NotNull MutableText applyPlayerNameStyle(@NotNull MutableText text, @NotNull ServerPlayerEntity player) {
         final String name = player.getGameProfile().getName();
         
@@ -138,13 +143,13 @@ public final class PlayerNameUtils {
         MutableText longer = DimensionUtils.longDimensionName(world);
         
         // Create the hover event
-        Formatting formatting = DimensionUtils.dimensionColor(world);
+        StyleApplicator formatting = DimensionUtils.dimensionColor(world);
         
         return (showAsLong ? longer : DimensionUtils.shortDimensionName(world))
-            .formatted(formatting)
-            .styled(MessageUtils.simpleHoverText(longer.formatted(formatting)));
+            .styled(formatting)
+            .styled(MessageUtils.simpleHoverText(longer.styled(formatting)));
     }
-    public static @NotNull MutableText formattedChat(ChatRooms chatRoom) {
+    public static @NotNull MutableText formattedChat(@NotNull ChatRooms chatRoom) {
         String name = CasingUtils.Sentence( chatRoom.name() );
         return new LiteralText( name.substring( 0, 1 ) )
             .formatted( Formatting.DARK_GRAY )

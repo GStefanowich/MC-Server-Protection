@@ -63,7 +63,7 @@ public abstract class ItemPickup extends Entity {
         if (!this.world.isClient) {
             if ( this.pickupDelay == 0 ) {
                 // Check if the entity is owned by the player (They dropped it)
-                if (player.getUuid().equals( this.thrower ) || player.getUuid().equals( this.owner ) || (player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)))
+                if (player.getUuid().equals(this.thrower) || player.getUuid().equals(this.owner) || (player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)))
                     return;
                 
                 // Check if the player can pickup items in the chunk
@@ -79,9 +79,9 @@ public abstract class ItemPickup extends Entity {
         ItemEntity entity = ((ItemEntity)(Entity)this);
         ItemStack stack = entity.getStack();
         if ((damageSource == DamageSource.LAVA) && (Items.GUNPOWDER.equals(stack.getItem()))) {
-            float volume = ((float) stack.getCount() / stack.getMaxCount() );
+            float volume = ((float) stack.getCount() / stack.getMaxCount());
             if (volume > 0)
-                this.world.playSound( null, this.getBlockPos(), SoundEvents.ENTITY_FIREWORK_ROCKET_BLAST, SoundCategory.MASTER, volume, 1.0f );
+                this.world.playSound(null, this.getBlockPos(), SoundEvents.ENTITY_FIREWORK_ROCKET_BLAST, SoundCategory.MASTER, volume, 1.0f);
         }
     }
     

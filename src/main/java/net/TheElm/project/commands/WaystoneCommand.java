@@ -60,6 +60,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static net.TheElm.project.commands.TeleportsCommand.TARGET_NO_WARP;
@@ -223,13 +224,19 @@ public class WaystoneCommand {
     }
     
     private static @NotNull CompletableFuture<Suggestions> getPlayerEntityLocations(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
+        Entity entity = context.getSource().getEntity();
+        UUID untrusted = entity instanceof ServerPlayerEntity ? entity.getUuid() : null;
+        
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-        return WarpUtils.buildSuggestions(player, builder);
+        return WarpUtils.buildSuggestions(untrusted, player, builder);
     }
     private static @NotNull CompletableFuture<Suggestions> getPlayersToLocations(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
+        Entity entity = context.getSource().getEntity();
+        UUID untrusted = entity instanceof ServerPlayerEntity ? entity.getUuid() : null;
+        
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "to");
         GameProfile target = profiles.stream().findAny()
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
-        return WarpUtils.buildSuggestions(target.getId(), builder);
+        return WarpUtils.buildSuggestions(untrusted, target.getId(), builder);
     }
 }

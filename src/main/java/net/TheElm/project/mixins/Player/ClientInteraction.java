@@ -286,7 +286,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                     // If player is in spawn protection
                     if (locationOwner.equals(CoreMod.SPAWN_ID)) {
                         popupText.append(
-                            owner.getName( player )
+                            owner.getName(player)
                         );
                         return;
                     }

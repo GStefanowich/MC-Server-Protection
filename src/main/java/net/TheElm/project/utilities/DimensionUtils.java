@@ -25,6 +25,7 @@
 
 package net.TheElm.project.utilities;
 
+import net.TheElm.project.utilities.text.StyleApplicator;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.WorldBorderS2CPacket;
 import net.minecraft.network.packet.s2c.play.WorldBorderS2CPacket.Type;
@@ -42,6 +43,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class DimensionUtils {
+    
+    private static final StyleApplicator OVERWORLD_APPLICATOR = new StyleApplicator(ColorUtils.getRawTextColor("LightSkyBlue"));
+    private static final StyleApplicator NETHER_APPLICATOR = new StyleApplicator(ColorUtils.getRawTextColor("FireBrick"));
+    private static final StyleApplicator END_APPLICATOR = new StyleApplicator(ColorUtils.getRawTextColor("PaleGoldenRod"));
+    private static final StyleApplicator DEFAULT_APPLICATOR = new StyleApplicator(ColorUtils.getNearestTextColor(Formatting.WHITE));
     
     private DimensionUtils() {}
     
@@ -94,14 +100,14 @@ public final class DimensionUtils {
             return new LiteralText("E");
         return new LiteralText("~");
     }
-    public static @NotNull Formatting dimensionColor(@Nullable RegistryKey<World> world) {
+    public static @NotNull StyleApplicator dimensionColor(@Nullable RegistryKey<World> world) {
         if (World.OVERWORLD.equals(world))
-            return Formatting.GREEN;
+            return OVERWORLD_APPLICATOR;
         if (World.NETHER.equals(world))
-            return Formatting.RED;
+            return NETHER_APPLICATOR;
         if (World.END.equals(world))
-            return Formatting.DARK_GRAY;
-        return Formatting.WHITE;
+            return END_APPLICATOR;
+        return DEFAULT_APPLICATOR;
     }
     
     private static final class IndividualWorldListener implements WorldBorderListener {

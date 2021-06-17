@@ -284,16 +284,19 @@ public final class MessageUtils {
         return out;
     }
     public static MutableText xyzToText(@NotNull final BlockPos pos, @NotNull final String separator) {
-        return MessageUtils.dimensionToTextComponent(separator, pos.getX(), pos.getY(), pos.getZ() );
+        return MessageUtils.dimensionToTextComponent(separator, pos.getX(), pos.getY(), pos.getZ());
     }
     public static MutableText dimensionToTextComponent(@NotNull final String separator, final int x, final int y, final int z) {
+        return MessageUtils.dimensionToTextComponent(separator, x, y, z, Formatting.AQUA);
+    }
+    public static MutableText dimensionToTextComponent(@NotNull final String separator, final int x, final int y, final int z, Formatting... formatting) {
         String[] pos = MessageUtils.posToString(x, y, z);
         return new LiteralText("")
-            .append(new LiteralText(pos[0]).formatted(Formatting.AQUA))
+            .append(new LiteralText(pos[0]).formatted(formatting))
             .append(separator)
-            .append(new LiteralText(pos[1]).formatted(Formatting.AQUA))
+            .append(new LiteralText(pos[1]).formatted(formatting))
             .append(separator)
-            .append(new LiteralText(pos[2]).formatted(Formatting.AQUA));
+            .append(new LiteralText(pos[2]).formatted(formatting));
     }
     
     public static @NotNull <O> MutableText listToTextComponent(@NotNull final Collection<O> list, @NotNull Function<O, Text> function) {

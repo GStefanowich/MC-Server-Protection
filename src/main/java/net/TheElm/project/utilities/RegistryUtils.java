@@ -43,7 +43,7 @@ public class RegistryUtils {
         return server.getRegistryManager().get(registry)
             .getEntries()
             .stream()
-            .filter(registryKeyBiomeEntry -> registryKeyBiomeEntry.getValue().equals(type))
+            .filter(entry -> entry.getValue().equals(type))
             .map(Map.Entry::getKey)
             .findFirst()
             .orElse(null);

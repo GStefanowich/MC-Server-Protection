@@ -525,7 +525,7 @@ public enum ShopSigns {
                 WarpUtils newWarp = new WarpUtils(warpName, player, spawnPos);
                 BlockPos warpToPos;
                 
-                while (((warpToPos = newWarp.getWarpPositionIn(world)) == null) || (!newWarp.build(player, world)));
+                while (((warpToPos = newWarp.getWarpPositionIn(world)) == null) || (!newWarp.claimAndBuild(player, world)));
                 
                 // Get the distance
                 int distance = warpToPos.getManhattanDistance(spawnPos);
@@ -611,7 +611,7 @@ public enum ShopSigns {
                 
                 (new Thread(() -> {
                     WarpUtils warp = new WarpUtils(warpName, player, signPos.down());
-                    if (!warp.build(player, player.getServerWorld())) {
+                    if (!warp.claimAndBuild(player, player.getServerWorld())) {
                         // Notify the player
                         player.sendMessage(
                             new LiteralText("Can't build that here").formatted(Formatting.RED),
@@ -622,7 +622,7 @@ public enum ShopSigns {
                         // Refund the player
                         MoneyUtils.givePlayerMoney(player, SewConfig.get(SewConfig.WARP_WAYSTONE_COST));
                         
-                        // Cancel the build
+                        // Cancel the save
                         return;
                     }
                     

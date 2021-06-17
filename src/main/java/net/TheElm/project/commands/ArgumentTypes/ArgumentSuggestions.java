@@ -31,13 +31,20 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.utilities.ColorUtils;
 import net.TheElm.project.utilities.RankUtils;
+import net.TheElm.project.utilities.text.StyleApplicator;
 import net.minecraft.command.CommandSource;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.AbstractMap;
+import java.util.Collection;
+import java.util.Locale;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
 
 public class ArgumentSuggestions {
-    
     public static @NotNull <S> CompletableFuture<Suggestions> suggestNodes(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
         return CommandSource.suggestMatching(Permissions.keys(), builder);
     }
@@ -47,7 +54,32 @@ public class ArgumentSuggestions {
     }
     
     public static @NotNull <S> CompletableFuture<Suggestions> suggestColors(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return CommandSource.suggestMatching(ColorUtils.getSuggestedNames(), builder);
+        return ArgumentSuggestions.suggest(ColorUtils.COLORS.entrySet().stream().map(stringColorEntry -> {
+            Text tooltip = new LiteralText(stringColorEntry.getKey())
+                .styled(new StyleApplicator(ColorUtils.getNearestTextColor(stringColorEntry.getValue())));
+            return new AbstractMap.SimpleEntry<>(stringColorEntry.getKey(), tooltip);
+        }), builder);
     }
     
+    public static @NotNull CompletableFuture<Suggestions> suggest(@NotNull Collection<Map.Entry<String, Text>> suggestions, @NotNull SuggestionsBuilder builder) {
+        String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
+        
+        for (Map.Entry<String, Text> suggestion : suggestions) {
+            String name = suggestion.getKey();
+            if (CommandSource.method_27136(remaining, name.toLowerCase(Locale.ROOT)))
+                builder.suggest(name);
+        }
+        
+        return builder.buildFuture();
+    }
+    public static @NotNull CompletableFuture<Suggestions> suggest(@NotNull Stream<Map.Entry<String, Text>> suggestions, @NotNull SuggestionsBuilder builder) {
+        String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
+        
+        suggestions.filter((suggestion) -> {
+            String name = suggestion.getKey();
+            return CommandSource.method_27136(remaining, name.toLowerCase(Locale.ROOT));
+        }).forEach(pair -> builder.suggest(pair.getKey(), pair.getValue()));
+        
+        return builder.buildFuture();
+    }
 }

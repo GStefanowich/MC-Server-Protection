@@ -190,11 +190,11 @@ public final class ClaimantPlayer extends Claimant {
         ClaimantPlayer player;
         
         // If contained in the cache
-        if ((player = CoreMod.getFromCache( ClaimantPlayer.class, playerUUID )) != null)
+        if ((player = CoreMod.getFromCache(ClaimantPlayer.class, playerUUID)) != null)
             return player;
         
         // Create new object
-        return new ClaimantPlayer( playerUUID );
+        return new ClaimantPlayer(playerUUID);
     }
     public static @NotNull ClaimantPlayer get(@NotNull GameProfile profile) {
         return ClaimantPlayer.get(profile.getId());

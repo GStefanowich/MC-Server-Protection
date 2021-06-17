@@ -260,7 +260,7 @@ public class PlayerBackpack extends SimpleInventory {
     }
     
     public Text getName() {
-        return new LiteralText(this.player.getDisplayName().asString() + "'s Backpack");
+        return new LiteralText(this.player.getDisplayName().getString() + "'s Backpack");
     }
     
     public @Nullable GenericContainerScreenHandler createContainer(int syncId, @NotNull PlayerInventory playerInventory) {

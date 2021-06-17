@@ -47,7 +47,7 @@ public abstract class CatDye extends TameableEntity {
     @Inject(at = @At("HEAD"), method = "setCollarColor")
     public void onUpdateCollar(DyeColor dye, CallbackInfo callback) {
         if (this.hasCustomName())
-            this.setCustomName(new LiteralText(this.getCustomName().asString())
+            this.setCustomName(new LiteralText(this.getCustomName().getString())
                 .formatted(ColorUtils.getNearestFormatting(dye)));
     }
     

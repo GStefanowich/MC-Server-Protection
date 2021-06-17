@@ -31,10 +31,10 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.utilities.DimensionUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
+import net.TheElm.project.utilities.text.StyleApplicator;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
@@ -64,11 +64,11 @@ public final class ChatFormat {
         MutableText shorter = DimensionUtils.shortDimensionName(dimension);
         
         // Create the hover event
-        Formatting formatting = DimensionUtils.dimensionColor(dimension);
+        StyleApplicator formatting = DimensionUtils.dimensionColor(dimension);
         
         return ( showAsLong ? longer : shorter )
-            .formatted(formatting)
-            .styled(MessageUtils.simpleHoverText(longer.formatted(formatting)));
+            .styled(formatting)
+            .styled(MessageUtils.simpleHoverText(longer.styled(formatting)));
     }
     
     @Override

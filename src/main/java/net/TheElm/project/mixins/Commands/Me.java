@@ -26,7 +26,7 @@ public final class Me {
      */
     @Overwrite
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal( "me" )
+        dispatcher.register(CommandManager.literal("me")
             .then( CommandManager.argument( "action", StringArgumentType.greedyString())
                 .executes((context) -> {
                     // Get player

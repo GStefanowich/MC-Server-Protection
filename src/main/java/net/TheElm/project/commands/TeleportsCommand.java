@@ -272,13 +272,20 @@ public final class TeleportsCommand {
     
     private static @NotNull CompletableFuture<Suggestions> playerHomeNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        return WarpUtils.buildSuggestions(source.getPlayer(), builder);
+        return WarpUtils.buildSuggestions(source.getPlayer().getUuid(), source.getPlayer(), builder);
     }
     private static @NotNull CompletableFuture<Suggestions> playerHomeNamesOfPlayer(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
+        // Get the uuid of the executor
+        Entity entity = context.getSource().getEntity();
+        UUID untrusted = entity instanceof ServerPlayerEntity ? entity.getUuid() : null;
+        
+        // Get the matching player being looked up
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
         GameProfile target = profiles.stream().findAny()
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
-        return WarpUtils.buildSuggestions(target.getId(), builder);
+        
+        // Build the suggestions
+        return WarpUtils.buildSuggestions(untrusted, target.getId(), builder);
     }
     
     private static int tpaCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

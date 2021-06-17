@@ -55,7 +55,7 @@ public final class PermissionCommand {
                     .suggests(ArgumentSuggestions::suggestRanks)
                     .then(CommandManager.argument("permission", StringArgumentType.word())
                         .suggests(ArgumentSuggestions::suggestNodes)
-                        .executes(PermissionCommand::addNodeToRank )
+                        .executes(PermissionCommand::addNodeToRank)
                     )
                     .executes(PermissionCommand::addRank)
                 )

@@ -58,7 +58,7 @@ public abstract class FullInventory implements Inventory, Nameable {
     @Inject(at = @At(value = "INVOKE", target = "net/minecraft/entity/player/PlayerEntity.dropItem(Lnet/minecraft/item/ItemStack;Z)Lnet/minecraft/entity/ItemEntity;"), method = "offerOrDrop", cancellable = true)
     private void setDropOwner(World world, ItemStack itemStack, CallbackInfo callback) {
         // Drop the item from the player
-        ItemEntity drop = this.player.dropItem( itemStack, true );
+        ItemEntity drop = this.player.dropItem(itemStack, true);
         
         // Set the dropped items owner
         if ( drop != null ) drop.setOwner(this.player.getUuid());

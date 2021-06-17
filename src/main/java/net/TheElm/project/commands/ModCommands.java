@@ -52,7 +52,7 @@ public final class ModCommands {
     }
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
-        ServerCore.register(dispatcher, "SewingMachine", (builder) -> builder
+        ServerCore.register(dispatcher, CoreMod.MOD_ID, (builder) -> builder
             .requires(CommandUtils.requires(OpLevels.STOP))
             .then(CommandManager.literal("reload")
                 .then(CommandManager.literal("config")
@@ -63,9 +63,9 @@ public final class ModCommands {
                     .executes(ModCommands::reloadPermissions)
                 )
             )
-            .then(CommandManager.literal("fix-shop")
+            /*.then(CommandManager.literal("fix-shop")
                 .executes(ModCommands::repairShopSign)
-            )
+            )*/
         );
     }
     

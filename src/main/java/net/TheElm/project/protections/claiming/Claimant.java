@@ -39,6 +39,7 @@ import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.ChunkPos;
@@ -124,12 +125,12 @@ public abstract class Claimant {
         return this.id;
     }
     public abstract MutableText getName();
-    public final MutableText getName(@NotNull PlayerEntity player) {
+    public final @NotNull MutableText getName(@NotNull PlayerEntity player) {
         return this.getName(player.getUuid());
     }
-    public final MutableText getName(@Nullable UUID player) {
+    public final @NotNull MutableText getName(@Nullable UUID player) {
         ClaimRanks playerRank = this.getFriendRank(player);
-        return this.getName().formatted( playerRank.getColor() );
+        return new LiteralText(this.getName().getString()).formatted(playerRank.getColor());
     }
     
     /* Send Messages */

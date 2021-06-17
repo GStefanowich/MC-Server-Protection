@@ -42,8 +42,8 @@ import java.util.Random;
 import java.util.Set;
 
 public final class ColorUtils {
-    
-    private static final Map<String, Color> COLORS;
+
+    public static final Map<String, Color> COLORS;
     private static final Random RANDOM;
     private ColorUtils() {}
     
