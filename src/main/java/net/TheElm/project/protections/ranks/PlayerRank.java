@@ -32,20 +32,21 @@ import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 public final class PlayerRank implements Comparable<PlayerRank> {
     
-    private final SortedSet<String> nodes = new TreeSet<>();
-    private String parent;
+    private final @NotNull SortedSet<String> nodes = new TreeSet<>();
+    private @Nullable String parent;
     
-    private final String iden;
-    private final Text display;
+    private final @NotNull String iden;
+    private final @Nullable Text display;
     
     public PlayerRank(@NotNull String iden, @Nullable String display) {
         this.iden = iden;
-        this.display = (display == null ? null : FormattingUtils.stringToText( display ));
+        this.display = (display == null ? null : FormattingUtils.stringToText(display));
         this.parent = ( "*".equals(iden) ? null : "*" );
     }
     
@@ -64,8 +65,19 @@ public final class PlayerRank implements Comparable<PlayerRank> {
      */
     public void setParent(@NotNull String parent) {
         if (parent.equals(this.iden))
-            throw new IllegalArgumentException("Rank \"" + iden + "\" cannot inherit from itself");
+            throw new IllegalArgumentException("Rank \"" + this.iden + "\" cannot inherit from itself");
         this.parent = parent;
+    }
+    public @Nullable String getParent() {
+        return this.parent;
+    }
+    public @Nullable PlayerRank getParentReference() {
+        if (!Objects.equals(this.parent, this.iden)) {
+            PlayerRank rank = RankUtils.getRank(this.parent);
+            if (rank != this)
+                return rank;
+        }
+        return null;
     }
     
     /*
@@ -77,7 +89,7 @@ public final class PlayerRank implements Comparable<PlayerRank> {
     private boolean hasNode(String node) {
         boolean contains = this.nodes.contains(node);
         PlayerRank parent;
-        if ((!contains) && ((parent = RankUtils.getRank( this.parent )) != null))
+        if ((!contains) && ((parent = this.getParentReference()) != null))
             return parent.hasNode(node);
         return contains;
     }

@@ -26,10 +26,7 @@
 package net.TheElm.project.mixins.Player;
 
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.interfaces.BackpackCarrier;
-import net.TheElm.project.interfaces.BlockPlaceCallback;
-import net.TheElm.project.interfaces.MoneyHolder;
-import net.TheElm.project.interfaces.Nicknamable;
+import net.TheElm.project.interfaces.*;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.utilities.DeathChestUtils;
 import net.TheElm.project.utilities.InventoryUtils;
@@ -39,6 +36,7 @@ import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
@@ -153,10 +151,16 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
                 // Remove player from combat
                 this.hitByOtherPlayerAt = null;
                 
+                // Send message about being out of combat
                 this.sendSystemMessage(
                     new LiteralText("You are no longer in combat.").formatted(Formatting.YELLOW),
                     Util.NIL_UUID
                 );
+                
+                // Clear players from the health bar
+                ServerBossBar healthBar = ((PlayerData) this).getHealthBar(false);
+                if (healthBar != null)
+                    healthBar.clearPlayers();
             }
         }
     }

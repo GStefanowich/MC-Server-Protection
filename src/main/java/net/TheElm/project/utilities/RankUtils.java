@@ -30,16 +30,20 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.interfaces.PlayerPermissions;
 import net.TheElm.project.permissions.PermissionNode;
 import net.TheElm.project.protections.ranks.PlayerRank;
+import net.TheElm.project.utilities.text.TextUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,39 +52,60 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class RankUtils {
     
-    private static HashMap<String, PlayerRank> RANKS = new LinkedHashMap<>();
+    private static final HashMap<String, PlayerRank> RANKS = new LinkedHashMap<>();
+    private static final ConcurrentHashMap<UUID, PlayerRank[]> PLAYER_RANKS = new ConcurrentHashMap<>();
     private static final String GLOBAL_RANK = "*";
     
     private RankUtils() {}
+    
+    public static @NotNull CompletableFuture<Suggestions> getSuggestions(@NotNull SuggestionsBuilder builder) {
+        Set<Map.Entry<String, PlayerRank>> ranks = RankUtils.RANKS.entrySet();
+        for (Map.Entry<String, PlayerRank> entry : ranks) {
+            String name = entry.getKey();
+            PlayerRank rank = entry.getValue();
+            
+            String inherits = rank.getParent();
+            Text tooltip = new LiteralText("Inherits: ")
+                .append(new LiteralText(inherits == null ? "*" : inherits).formatted(Formatting.AQUA));
+            builder.suggest(name.equals("*") ? TextUtils.quoteWrap(name) : name, tooltip);
+        }
+        
+        return builder.buildFuture();
+    }
     
     /*
      * Stored ranks
      */
     public static @Nullable PlayerRank getRank(@Nullable String identifier) {
         if (identifier == null) return null;
-        return RankUtils.RANKS.get( identifier );
+        return RankUtils.RANKS.get(identifier);
     }
     public static @NotNull Set<String> getRanks() {
-        return RANKS.keySet();
+        return RankUtils.RANKS.keySet();
     }
     
     /*
      * Get player ranks
      */
+    public static @NotNull PlayerRank[] getPlayerRanks(@NotNull UUID uuid) {
+        return RankUtils.PLAYER_RANKS.computeIfAbsent(uuid, RankUtils::loadPlayerRanks);
+    }
     public static @NotNull PlayerRank[] getPlayerRanks(@NotNull GameProfile profile) {
-        ServerPlayerEntity player = ServerCore.getPlayer( profile.getId() );
-        if (player == null)
-            return new PlayerRank[0];
-        return RankUtils.getPlayerRanks(player);
+        return RankUtils.getPlayerRanks(profile.getId());
     }
     public static @NotNull PlayerRank[] getPlayerRanks(@NotNull ServerPlayerEntity player) {
-        return ((PlayerPermissions) player).getRanks();
+        return RankUtils.getPlayerRanks(player.getUuid());
     }
     public static @NotNull PlayerRank[] loadPlayerRanks(@NotNull GameProfile profile) {
-        String uuid = profile.getId().toString();
+        return RankUtils.loadPlayerRanks(profile);
+    }
+    public static @NotNull PlayerRank[] loadPlayerRanks(@NotNull UUID profile) {
+        String uuid = profile.toString();
         try {
             JsonObject json = RankUtils.filePlayers();
             List<PlayerRank> ranks = new ArrayList<>();
@@ -110,6 +135,11 @@ public final class RankUtils {
             return new PlayerRank[0];
         }
     }
+    
+    public static void clearRanks() {
+        RankUtils.PLAYER_RANKS.clear();
+    }
+    
     public static boolean hasPermission(@NotNull ServerCommandSource source, @Nullable PermissionNode permission) {
         if ((!SewConfig.get(SewConfig.HANDLE_PERMISSIONS)) || (permission == null))
             return false;
@@ -222,5 +252,4 @@ public final class RankUtils {
         return element.getAsJsonObject();
     }
     static { reload(); }
-    
 }

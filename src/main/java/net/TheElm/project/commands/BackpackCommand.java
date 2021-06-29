@@ -36,8 +36,11 @@ import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.argument.ItemStackArgumentType;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Item;
 import net.minecraft.network.MessageType;
+import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -45,6 +48,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.OptionalInt;
 
 public final class BackpackCommand {
     
@@ -52,19 +59,19 @@ public final class BackpackCommand {
     
     private BackpackCommand() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("backpack")
             .requires((context) -> SewConfig.get(SewConfig.ALLOW_BACKPACKS))
             .then(CommandManager.literal("pickup")
                 .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
-                    .executes(BackpackCommand::AutoPickup)
+                    .executes(BackpackCommand::autoPickup)
                 )
             )
-            .executes(BackpackCommand::OpenBackpack)
+            .executes(BackpackCommand::openBackpack)
         );
     }
     
-    private static int AutoPickup(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int autoPickup(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
@@ -86,19 +93,26 @@ public final class BackpackCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int OpenBackpack(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int openBackpack(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
+        // Check if the player has a backpack
         PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
         if (backpack == null)
-            throw PLAYERS_NO_BACKPACK.create( player );
+            throw PLAYERS_NO_BACKPACK.create(player);
         
-        player.openHandledScreen(new SimpleNamedScreenHandlerFactory((i, playerInventory, playerEntityx) ->
-            backpack.createContainer(i, playerInventory),
-        backpack.getName()));
+        // Open the backpack screen on the client
+        OptionalInt i = player.openHandledScreen(new SimpleNamedScreenHandlerFactory(BackpackCommand::openBackpack, backpack.getName()));
         
-        return Command.SINGLE_SUCCESS;
+        // Success!
+        return i.isPresent() ? Command.SINGLE_SUCCESS : 0;
     }
     
+    private static @Nullable ScreenHandler openBackpack(int i, @NotNull PlayerInventory inventory, @NotNull PlayerEntity player) {
+        PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
+        if (backpack == null)
+            return null;
+        return backpack.createContainer(i, inventory);
+    }
 }

@@ -27,16 +27,9 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.utilities.ChunkUtils;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.passive.AnimalEntity;
-import net.minecraft.entity.passive.CatEntity;
-import net.minecraft.entity.passive.CowEntity;
-import net.minecraft.entity.passive.MooshroomEntity;
-import net.minecraft.entity.passive.OcelotEntity;
-import net.minecraft.entity.passive.ParrotEntity;
-import net.minecraft.entity.passive.PigEntity;
-import net.minecraft.entity.passive.SheepEntity;
-import net.minecraft.entity.passive.WolfEntity;
+import net.minecraft.entity.passive.*;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -53,10 +46,10 @@ public abstract class AnimalInteract extends AnimalEntity {
     }
     
     @Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
-    private void playerInteractMod(final PlayerEntity player, final Hand hand, CallbackInfoReturnable<Boolean> callback) {
+    private void playerInteractMod(final PlayerEntity player, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         BlockPos mobPositioning = this.getBlockPos();
         if (!ChunkUtils.canPlayerInteractFriendlies( player, mobPositioning ))
-            callback.setReturnValue( false );
+            callback.setReturnValue(ActionResult.FAIL);
     }
     
 }

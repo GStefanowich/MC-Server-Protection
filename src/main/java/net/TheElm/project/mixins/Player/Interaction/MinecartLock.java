@@ -25,7 +25,6 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
-import net.TheElm.project.CoreMod;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
@@ -54,31 +53,30 @@ public abstract class MinecartLock extends AbstractMinecartEntity {
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     public void cartInteraction(PlayerEntity player, Hand hand, CallbackInfoReturnable<Boolean> callback) {
+        // Get the type of minecart that this is
         Type minecartType = this.getMinecartType();
-        CoreMod.logInfo( minecartType.name() );
         
-        if ( minecartType.equals( Type.RIDEABLE ) )
-            return;
-        
-        /*
-         * Entity contains a storage and should be treated as a block
-         */
-        if (ChunkUtils.canPlayerLootChestsInChunk(player, this.getBlockPos()))
+        if (minecartType.equals(Type.RIDEABLE)) { // If the Cart type is RIDEABLE, allow if riding is enabled
+            if (ChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
+                return;
+            
+        } else if (ChunkUtils.canPlayerLootChestsInChunk(player, this.getBlockPos())) // Entity contains a storage and should be treated as a lootable block
             return;
         
         // Play sound to player
         this.playSound(EntityUtils.getLockSound( this ), 1, 1);
         
-        WorldChunk chunk = world.getWorldChunk( this.getBlockPos() );
+        // Get the world chunk that the minecart is in
+        WorldChunk chunk = this.world.getWorldChunk(this.getBlockPos());
         
         // Display that this item can't be opened
         TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
-            EntityUtils.getLockedName( this ),
-            ( chunk == null ? new LiteralText( "unknown player" ).formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName( player, this.getBlockPos() ) )
+            EntityUtils.getLockedName(this),
+            ( chunk == null ? new LiteralText("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, this.getBlockPos()))
         ));
         
         // Cancel the event
-        callback.setReturnValue( false );
+        callback.setReturnValue(false);
     }
     
 }

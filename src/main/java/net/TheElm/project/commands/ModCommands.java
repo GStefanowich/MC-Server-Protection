@@ -25,6 +25,7 @@
 
 package net.TheElm.project.commands;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
@@ -33,19 +34,25 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
-import net.TheElm.project.interfaces.PlayerPermissions;
+import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.RankUtils;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.command.argument.BlockPosArgumentType;
+import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.util.Collection;
 
 public final class ModCommands {
     private ModCommands() {
@@ -63,9 +70,16 @@ public final class ModCommands {
                     .executes(ModCommands::reloadPermissions)
                 )
             )
-            /*.then(CommandManager.literal("fix-shop")
-                .executes(ModCommands::repairShopSign)
-            )*/
+            .then(CommandManager.literal("shops")
+                .then(CommandManager.literal("change-owner")
+                    .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
+                        .then(CommandManager.argument("owner", GameProfileArgumentType.gameProfile())
+                            .suggests(CommandUtils::getAllPlayerNames)
+                            .executes(ModCommands::shopSignChangeOwner)
+                        )
+                    )
+                )
+            )
         );
     }
     
@@ -104,20 +118,41 @@ public final class ModCommands {
     private static void reloadCommandTree(@NotNull MinecraftServer server, boolean reloadPermissions) {
         PlayerManager playerManager = server.getPlayerManager();
         
-        // For all players
-        for (ServerPlayerEntity player : playerManager.getPlayerList()) {
-            // Clear permissions
-            if (reloadPermissions)
-                ((PlayerPermissions) player).resetRanks();
-            
-            // Resend the player the command tree
+        // Clear permissions
+        if (reloadPermissions)
+            RankUtils.clearRanks();
+
+        // Resend the player the command tree
+        for (ServerPlayerEntity player : playerManager.getPlayerList())
             playerManager.sendCommandTree(player);
-        }
     }
     
-    private static int repairShopSign(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int shopSignChangeOwner(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerWorld world = source.getWorld();
+        
+        BlockPos signPos = BlockPosArgumentType.getBlockPos(context, "pos");
+        BlockEntity blockEntity = world.getBlockEntity(signPos);
+        
+        // Get the target player
+        Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context, "owner");
+        GameProfile targetPlayer = gameProfiles.stream().findAny()
+            .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        
+        // If the shop sign block was not found
+        if (!(blockEntity instanceof ShopSignBlockEntity)) {
+            source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
+            return 0;
+        }
+        
+        ShopSignBlockEntity shop = (ShopSignBlockEntity) blockEntity;
+        
+        // Update the owner of the shop to the target
+        shop.setShopOwner(targetPlayer.getId());
+        
+        // Re-Render the sign after updating the owner
+        shop.renderSign(targetPlayer);
+        ServerCore.markDirty(world, signPos);
         
         return Command.SINGLE_SUCCESS;
     }

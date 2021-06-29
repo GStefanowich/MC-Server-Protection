@@ -197,10 +197,10 @@ public final class PlayerNameUtils {
                     content.append(line);
                 }
                 
-                JsonArray nameHistory = new JsonParser().parse( content.toString() ).getAsJsonArray();
+                JsonArray nameHistory = new JsonParser().parse(content.toString()).getAsJsonArray();
                 JsonObject nameLatest = nameHistory.get( nameHistory.size() - 1 ).getAsJsonObject();
                 
-                playerName = new LiteralText( nameLatest.get( "name" ).getAsString() );
+                playerName = new LiteralText(nameLatest.get( "name" ).getAsString());
                 
                 // Save the player name to the cache
                 ServerCore.get().getUserCache().add(new GameProfile(
@@ -216,8 +216,8 @@ public final class PlayerNameUtils {
             if (connection != null)
                 connection.disconnect();
             if ( playerName == null )
-                CoreMod.logInfo( "Player name of " + uuid.toString() + " [LOOKUP FAILED]" );
-            else CoreMod.logInfo( "Player name of " + uuid.toString() + " is " + playerName.getString() );
+                CoreMod.logInfo("Player name of " + uuid.toString() + " [LOOKUP FAILED]");
+            else CoreMod.logInfo("Player name of " + uuid.toString() + " is " + playerName.getString());
         }
         
         return ( playerName == null ? new LiteralText("Unknown player") : playerName );

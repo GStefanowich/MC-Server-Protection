@@ -25,6 +25,7 @@
 
 package net.TheElm.project.utilities.text;
 
+import net.TheElm.project.utilities.ColorUtils;
 import net.minecraft.text.Style;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
@@ -44,9 +45,14 @@ public final class StyleApplicator implements UnaryOperator<Style> {
     public StyleApplicator(@Nullable TextColor color) {
         this.color = color;
     }
-    public StyleApplicator(@Nullable Formatting color) {
+    public StyleApplicator(@NotNull Formatting color) {
         if (color.isColor())
             this.color = TextColor.fromFormatting(color);
+    }
+    public StyleApplicator(@NotNull String color) {
+        TextColor textColor = ColorUtils.getRawTextColor(color);
+        if (textColor != null)
+            this.color = textColor;
     }
     
     @Override
@@ -55,5 +61,4 @@ public final class StyleApplicator implements UnaryOperator<Style> {
             style = style.withColor(this.color);
         return style;
     }
-    
 }

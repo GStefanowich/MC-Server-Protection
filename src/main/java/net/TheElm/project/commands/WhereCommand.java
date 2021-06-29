@@ -47,21 +47,24 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import org.jetbrains.annotations.NotNull;
 
 public final class WhereCommand {
     private WhereCommand() {
     }
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
-        ServerCore.register(dispatcher, "where", builder -> builder
+    public static final @NotNull String NAME = "Where";
+    
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
+        ServerCore.register(dispatcher, WhereCommand.NAME, builder -> builder
             .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.LOCATE_PLAYERS))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                    .executes(WhereCommand::locatePlayer)
+                .executes(WhereCommand::locatePlayer)
             )
         );
     }
     
-    private static int locatePlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int locatePlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
         BlockPos pos = player.getBlockPos();

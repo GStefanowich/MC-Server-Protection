@@ -82,5 +82,4 @@ public abstract class PlayerList {
         // Set the return value
         callback.setReturnValue(displayName);
     }
-    
 }

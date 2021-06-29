@@ -197,7 +197,7 @@ public final class DeathChestUtils {
         entityData.putBoolean("Invisible", true);
         entityData.putBoolean("NoGravity", true);
         entityData.putInt("DisabledSlots", 2039583);
-
+        
         // Create the armor stands entity
         ArmorStandEntity corpse = new ArmorStandEntity(
             world,

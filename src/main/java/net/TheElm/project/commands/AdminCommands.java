@@ -44,19 +44,25 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.stream.Stream;
 
 public final class AdminCommands {
     
+    public static final @NotNull String FLIGHT = "Fly";
+    public static final @NotNull String GOD = "God";
+    public static final @NotNull String HEAL = "Heal";
+    public static final @NotNull String REPAIR = "Repair";
+    
     private static final ExceptionTranslatableServerSide PLAYERS_NOT_FOUND_EXCEPTION = TranslatableServerSide.exception("player.none_found");
     
     private AdminCommands() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         // Register the FLY command
-        ServerCore.register(dispatcher, "Fly", (builder) -> builder
+        ServerCore.register(dispatcher, AdminCommands.FLIGHT, (builder) -> builder
             .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_FLY))
             .then( CommandManager.argument( "target", EntityArgumentType.players())
                 .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_FLY.onOther()))
@@ -66,7 +72,7 @@ public final class AdminCommands {
         );
         
         // Register the GOD command
-        ServerCore.register(dispatcher, "God", (builder) -> builder
+        ServerCore.register(dispatcher, AdminCommands.GOD, (builder) -> builder
             .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GODMODE))
             .then( CommandManager.argument( "target", EntityArgumentType.players())
                 .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GODMODE.onOther()))
@@ -76,7 +82,7 @@ public final class AdminCommands {
         );
         
         // Register the HEAL command
-        ServerCore.register(dispatcher, "Heal", (builder) -> builder
+        ServerCore.register(dispatcher, AdminCommands.HEAL, (builder) -> builder
             .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_HEAL))
             .then( CommandManager.argument( "target", EntityArgumentType.players())
                 .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_HEAL.onOther()))
@@ -86,7 +92,7 @@ public final class AdminCommands {
         );
         
         // Register the HEAL command
-        ServerCore.register(dispatcher, "Repair", (builder) -> builder
+        ServerCore.register(dispatcher, AdminCommands.REPAIR, (builder) -> builder
             .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_REPAIR))
             .executes(AdminCommands::selfRepair)
         );
@@ -106,23 +112,23 @@ public final class AdminCommands {
         }
     }
     
-    private static int selfFlying(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int selfFlying(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         AdminCommands.toggleFlying(source.getPlayer());
         return Command.SINGLE_SUCCESS;
     }
-    private static int targetFlying(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int targetFlying(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
         if (players.size() <= 0)
             throw PLAYERS_NOT_FOUND_EXCEPTION.create( source );
         return AdminCommands.toggleFlying(source, players.stream());
     }
-    private static int toggleFlying(ServerCommandSource source, Stream<ServerPlayerEntity> players) {
+    private static int toggleFlying(@NotNull ServerCommandSource source, @NotNull Stream<ServerPlayerEntity> players) {
         players.forEach(player -> TranslatableServerSide.send(source, "player.abilities.flying_other." + (AdminCommands.toggleFlying(player) ? "enabled" : "disabled"), player.getDisplayName()));
         return Command.SINGLE_SUCCESS;
     }
-    private static boolean toggleFlying(ServerPlayerEntity player) {
+    private static boolean toggleFlying(@NotNull ServerPlayerEntity player) {
         // Toggle flying for the player
         player.abilities.allowFlying = !player.abilities.allowFlying;
         player.setNoGravity(false);
@@ -138,12 +144,12 @@ public final class AdminCommands {
         return player.abilities.allowFlying;
     }
     
-    private static int selfGod(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int selfGod(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         AdminCommands.toggleGod(source.getPlayer());
         return Command.SINGLE_SUCCESS;
     }
-    private static int targetGod(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int targetGod(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         
         Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
@@ -151,7 +157,7 @@ public final class AdminCommands {
             throw PLAYERS_NOT_FOUND_EXCEPTION.create( source );
         return AdminCommands.toggleGod(source, players.stream());
     }
-    private static int toggleGod(ServerCommandSource source, Stream<ServerPlayerEntity> players) {
+    private static int toggleGod(@NotNull ServerCommandSource source, @NotNull Stream<ServerPlayerEntity> players) {
         players.forEach(player -> TranslatableServerSide.send(source, "player.abilities.godmode_other." + (AdminCommands.toggleGod(player) ? "enabled" : "disabled"), player.getDisplayName()));
         return Command.SINGLE_SUCCESS;
     }
@@ -165,12 +171,12 @@ public final class AdminCommands {
         return player.abilities.invulnerable;
     }
     
-    private static int selfHeal(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int selfHeal(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         AdminCommands.healPlayer(source.getPlayer());
         return Command.SINGLE_SUCCESS;
     }
-    private static int targetHeal(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int targetHeal(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         
         Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
@@ -178,11 +184,11 @@ public final class AdminCommands {
             throw PLAYERS_NOT_FOUND_EXCEPTION.create( source );
         return AdminCommands.healPlayer(source, players.stream());
     }
-    private static int healPlayer(ServerCommandSource source, Stream<ServerPlayerEntity> players) {
+    private static int healPlayer(@NotNull ServerCommandSource source, @NotNull Stream<ServerPlayerEntity> players) {
         players.forEach(player -> TranslatableServerSide.send(source, (AdminCommands.healPlayer(player)? "player.abilities.healed_other" : "player.abilities.healed_dead"), player.getDisplayName()));
         return Command.SINGLE_SUCCESS;
     }
-    private static boolean healPlayer(ServerPlayerEntity player) {
+    private static boolean healPlayer(@NotNull ServerPlayerEntity player) {
         boolean alive;
         if (alive = player.isAlive()) {
             // Heal the player
@@ -194,7 +200,7 @@ public final class AdminCommands {
         return alive;
     }
     
-    private static int selfRepair(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int selfRepair(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         

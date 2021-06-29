@@ -25,6 +25,7 @@
 
 package net.TheElm.project.protections.events;
 
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.interfaces.ItemUseCallback;
 import net.TheElm.project.interfaces.PlayerData;
@@ -143,10 +144,13 @@ public final class ItemUse {
         return false;
     }
     private static boolean simpleBlockRotation(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state) {
-        return world.setBlockState(pos, state, ItemUse.BLOCK_UPDATE_ROTATION_FLAG, ItemUse.BLOCK_UPDATE_MAX_DEPTH);
+        boolean rotated = world.setBlockState(pos, state, ItemUse.BLOCK_UPDATE_ROTATION_FLAG, ItemUse.BLOCK_UPDATE_MAX_DEPTH);
+        if (rotated)
+            ServerCore.markDirty(world, pos);
+        return rotated;
     }
     
-    private static @Nullable Direction findNewRotation(WorldView world, BlockPos blockPos, @NotNull Block block, @NotNull BlockState blockState) {
+    private static @Nullable Direction findNewRotation(@NotNull WorldView world, @NotNull BlockPos blockPos, @NotNull Block block, @NotNull BlockState blockState) {
         Direction starting = blockState.get(HorizontalFacingBlock.FACING), rotation = starting.rotateYClockwise();
         do {
             if (block.canPlaceAt(blockState.with(HorizontalFacingBlock.FACING, rotation), world, blockPos))

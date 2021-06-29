@@ -37,6 +37,7 @@ import net.TheElm.project.objects.MaskSet;
 import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
+import net.TheElm.project.utilities.text.TextUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
@@ -626,7 +627,7 @@ public final class WarpUtils {
         for (Map.Entry<String, Warp> iterator : warps.entrySet()) {
             String name = iterator.getKey();
             if (name.contains(" "))
-                name = "\"" + name + "\"";
+                name = TextUtils.quoteWrap(name);
             
             if (CommandSource.method_27136(remainder, name.toLowerCase(Locale.ROOT))) {
                 Warp warp = iterator.getValue();

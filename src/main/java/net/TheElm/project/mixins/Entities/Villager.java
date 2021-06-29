@@ -49,6 +49,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.stat.Stats;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
@@ -79,8 +80,8 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
     @Shadow public abstract VillagerData getVillagerData();
     
     @Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
-    public void onAttemptInteract(PlayerEntity player, Hand hand, CallbackInfoReturnable<Boolean> callback) {
-        if (!ChunkUtils.canPlayerTradeAt( player, this.getBlockPos() )) {
+    public void onAttemptInteract(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
+        if (!ChunkUtils.canPlayerTradeAt(player, this.getBlockPos())) {
             // Shake head
             this.sayNo();
             
@@ -88,7 +89,7 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
             player.incrementStat(Stats.TALKED_TO_VILLAGER);
             
             // Set return value
-            callback.setReturnValue( true );
+            callback.setReturnValue(ActionResult.FAIL);
         }
     }
     

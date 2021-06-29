@@ -96,6 +96,7 @@ public interface PlayerData {
      */
     
     @NotNull ServerBossBar getHealthBar();
+    @Nullable ServerBossBar getHealthBar(boolean create);
     
     /*
      * Path Finding

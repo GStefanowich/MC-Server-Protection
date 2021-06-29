@@ -30,6 +30,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.exceptions.ShopBuilderException;
+import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.enchantment.Enchantment;
@@ -56,7 +57,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public final class ShopSignBuilder {
+public final class ShopSignBuilder implements ShopSignBlockEntity {
     
     /*
      * Builder information
@@ -96,26 +97,53 @@ public final class ShopSignBuilder {
     public SignBlockEntity getSign() {
         return this.sign;
     }
+    @Override
+    public @Nullable Text getSignLine(int line) {
+        return this.lines[line];
+    }
+    @Override
+    public void setTextOnRow(int row, @Nullable Text text) {
+        this.getSign().setTextOnRow(row, text);
+    }
     
-    public Identifier getItemIdentifier() {
+    @Override
+    public @Nullable ShopSigns getShopType() {
+        return this.signType;
+    }
+    @Override
+    public @Nullable Identifier getShopItemIdentifier() {
         return this.tradeItemIdentifier;
     }
-    public Item getItem() {
-        return Registry.ITEM.get(this.getItemIdentifier());
+    @Override
+    public @NotNull Item getShopItem() {
+        return Registry.ITEM.get(this.getShopItemIdentifier());
     }
-    public UUID shopOwner() {
+    @Override
+    public @Nullable Map<Enchantment, Integer> getShopItemEnchantments() {
+        return this.tradeItemEnchants;
+    }
+    @Override
+    public void setShopOwner(@Nullable UUID uuid) {
+        this.ownerUUID = uuid;
+    }
+    @Override
+    public @Nullable UUID getShopOwner() {
         return this.ownerUUID;
     }
-    public int shopPrice() {
+    @Override
+    public @NotNull Integer getShopItemPrice() {
         return this.tradePrice;
     }
-    public int itemSize() {
+    @Override
+    public @NotNull Integer getShopItemCount() {
         return this.stackSize;
     }
-    public BlockPos regionPosA() {
+    @Override
+    public @Nullable BlockPos getFirstPos() {
         return this.regionPosA;
     }
-    public BlockPos regionPosB() {
+    @Override
+    public @Nullable BlockPos getSecondPos() {
         return this.regionPosB;
     }
     
@@ -159,11 +187,11 @@ public final class ShopSignBuilder {
             this.signType = ShopSigns.valueOf(this.lines[0]);
             if ((this.signType == null) || (!this.signType.isEnabled()))
                 return false;
-            this.formatOrBreak( player );
+            this.formatOrBreak(player);
             return true;
         } finally {
             // Remove from the map
-            buildingSigns.remove( createIdentifier( this.world, this.blockPos ) );
+            buildingSigns.remove(createIdentifier(this.world, this.blockPos));
         }
     }
     private void formatOrBreak(@NotNull final ServerPlayerEntity creator) {
@@ -211,7 +239,7 @@ public final class ShopSignBuilder {
                 return false;
             }
             
-            return (this.tradeItem = this.getItem()) != Items.AIR;
+            return (this.tradeItem = this.getShopItem()) != Items.AIR;
         }
     }
     public boolean textMatchCount(@NotNull Text text) {
@@ -228,27 +256,30 @@ public final class ShopSignBuilder {
             str = str.substring( 1 );
         
         try {
-            this.tradePrice = Integer.parseUnsignedInt( str );
+            this.tradePrice = Integer.parseUnsignedInt(str);
             return true;
         } catch ( NumberFormatException e ) {
             return false;
         }
     }
-    public MutableText textParseOwner(@NotNull Text text, @NotNull ServerPlayerEntity player) {
+    public void setTradePrice(int tradePrice) {
+        this.tradePrice = tradePrice;
+    }
+    public void textParseOwner(@NotNull Text text, @NotNull ServerPlayerEntity player) {
         String str = text.getString();
         if ( "server".equalsIgnoreCase(str) && player.isCreative() ) {
             // Set the owner
             this.ownerUUID = CoreMod.SPAWN_ID;
-            return new LiteralText( "" );
+            //return new LiteralText("");
         } else {
             // Set the owner
             this.ownerUUID = player.getUuid();
-            return ((MutableText)player.getName()).formatted(Formatting.DARK_GRAY);
+            //return ((MutableText)player.getName()).formatted(Formatting.DARK_GRAY);
         }
     }
     public MutableText textParseItem() {
-        MutableText baseText = new LiteralText(this.itemSize() == 1 ? "" : (this.itemSize() + " "));
-        TranslatableText translatable = new TranslatableText(this.getItem().getTranslationKey());
+        MutableText baseText = new LiteralText(this.getShopItemCount() == 1 ? "" : (this.getShopItemCount() + " "));
+        TranslatableText translatable = new TranslatableText(this.getShopItem().getTranslationKey());
         
         if (Items.ENCHANTED_BOOK.equals(this.tradeItem) && this.tradeItemEnchants.size() == 1) {
             Optional<Map.Entry<Enchantment, Integer>> optional = this.tradeItemEnchants.entrySet().stream()

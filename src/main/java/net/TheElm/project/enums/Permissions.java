@@ -25,15 +25,23 @@
 
 package net.TheElm.project.enums;
 
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.commands.AdminCommands;
+import net.TheElm.project.commands.WhereCommand;
 import net.TheElm.project.permissions.InflictableNode;
 import net.TheElm.project.permissions.OtherInflictableNode;
 import net.TheElm.project.permissions.PermissionNode;
+import net.TheElm.project.utilities.text.TextUtils;
+import net.minecraft.text.LiteralText;
 import net.minecraft.world.GameMode;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public class Permissions {
@@ -55,26 +63,26 @@ public class Permissions {
     public static final @NotNull OtherInflictableNode PLAYER_GAMEMODE_ADVENTURE = addInflictableOther(GameMode.ADVENTURE);
     public static final @NotNull OtherInflictableNode PLAYER_GAMEMODE_SPECTATOR = addInflictableOther(GameMode.SPECTATOR);
     
-    public static final @NotNull OtherInflictableNode PLAYER_GODMODE = addInflictableOther("player.cheat.god", "Allows players to use God Mode with /god");
-    public static final @NotNull OtherInflictableNode PLAYER_FLY = addInflictableOther("player.cheat.fly", "Allows players to enable Flight with /fly");
-    public static final @NotNull OtherInflictableNode PLAYER_HEAL = addInflictableOther("player.cheat.heal", "Allows players to /heal themselves");
+    public static final @NotNull OtherInflictableNode PLAYER_GODMODE = addInflictableOther("player.cheat.god", "Allows god mode with /" + AdminCommands.GOD.toLowerCase(Locale.ROOT), "Allow using /" + AdminCommands.GOD.toLowerCase(Locale.ROOT) + " on other players");
+    public static final @NotNull OtherInflictableNode PLAYER_FLY = addInflictableOther("player.cheat.fly", "Allows flying with /" + AdminCommands.FLIGHT.toLowerCase(Locale.ROOT), "Allows using /" + AdminCommands.FLIGHT.toLowerCase(Locale.ROOT) + " on other players");
+    public static final @NotNull OtherInflictableNode PLAYER_HEAL = addInflictableOther("player.cheat.heal", "Allows healing self with /" + AdminCommands.HEAL.toLowerCase(Locale.ROOT), "Allows using /" + AdminCommands.HEAL.toLowerCase(Locale.ROOT) + " on other players");
     
-    public static final @NotNull InflictableNode PLAYER_REPAIR = addInflictable("player.cheat.repair", "Allows players to use the /repair command");
+    public static final @NotNull InflictableNode PLAYER_REPAIR = addInflictable("player.cheat.repair", "Allows players to use the /" + AdminCommands.REPAIR.toLowerCase(Locale.ROOT) + " command");
     
-    public static final @NotNull PermissionNode LOCATE_PLAYERS = addPermission("player.cheat.locate", "Allows players to locate other players with /locate");
+    public static final @NotNull PermissionNode LOCATE_PLAYERS = addPermission("player.cheat.locate", "Allows players to locate other players with /" + WhereCommand.NAME.toLowerCase(Locale.ROOT));
     
     /*
      * Moderator permissions
      */
     
-    public static final @NotNull InflictableNode VANILLA_COMMAND_KICK = addInflictable("minecraft.command.kick", "");
+    public static final @NotNull InflictableNode VANILLA_COMMAND_KICK = addInflictable("minecraft.command.kick", "Allows kicking players");
     public static final @NotNull PermissionNode VANILLA_COMMAND_KICK_EXEMPT = addPermission("minecraft.command.kick.exempt", "Exempts players from the /kick command");
-    public static final @NotNull InflictableNode VANILLA_COMMAND_BAN = addInflictable("minecraft.command.ban", "");
-    public static final @NotNull InflictableNode VANILLA_COMMAND_UNBAN = addInflictable("minecraft.command.unban", "");
-    public static final @NotNull InflictableNode VANILLA_COMMAND_WHITELIST = addInflictable("minecraft.command.whitelist", "Allows ");
+    public static final @NotNull InflictableNode VANILLA_COMMAND_BAN = addInflictable("minecraft.command.ban", "Allows banning players");
+    public static final @NotNull InflictableNode VANILLA_COMMAND_UNBAN = addInflictable("minecraft.command.unban", "Allows unbanning players");
+    public static final @NotNull InflictableNode VANILLA_COMMAND_WHITELIST = addInflictable("minecraft.command.whitelist", "Allows adding players to the whitelist");
     
-    public static final @NotNull InflictableNode CHAT_COMMAND_MUTE = addInflictable("minecraft.chat.mute", "");
-    public static final @NotNull PermissionNode CHAT_COMMAND_MUTE_EXEMPT = addPermission("minecraft.chat.mute.exempt", "");
+    public static final @NotNull InflictableNode CHAT_COMMAND_MUTE = addInflictable("minecraft.chat.mute", "Allows muting other players from talking in chat");
+    public static final @NotNull PermissionNode CHAT_COMMAND_MUTE_EXEMPT = addPermission("minecraft.chat.mute.exempt", "Exempts player from being muted");
     
     public static @NotNull PermissionNode addPermission(@NotNull String node, @NotNull String description) {
         return storePermission(new PermissionNode(node, description));
@@ -82,20 +90,37 @@ public class Permissions {
     public static @NotNull InflictableNode addInflictable(@NotNull String node, @NotNull String description) {
         return storePermission(new InflictableNode(node, description));
     }
-    public static @NotNull OtherInflictableNode addInflictableOther(@NotNull String node, @NotNull String description) {
-        return storePermission(new OtherInflictableNode(node, description));
+    public static @NotNull OtherInflictableNode addInflictableOther(@NotNull String node, @NotNull String thisDescription, @NotNull String otherDescription) {
+        return storePermission(new OtherInflictableNode(node, thisDescription, otherDescription));
     }
     public static @NotNull OtherInflictableNode addInflictableOther(@NotNull GameMode mode) {
         String name = mode.getName().toLowerCase();
-        return addInflictableOther("player.gamemode." + name, "Allows players to update their gamemode to " + name + ".");
+        return addInflictableOther("player.gamemode." + name,
+        "Allows players to update their gamemode to " + name + ".",
+        "Allows players to update others gamemode to " + name + "."
+        );
     }
     
     private static @NotNull <T extends PermissionNode> T storePermission(@NotNull T permission) {
+        // Store the permission in the Set
         Permissions.PERMISSIONS.add(permission);
+        
+        // Warn if the description is empty
         if (permission.getDescription().isEmpty()) CoreMod.logDebug("Permission \"" + permission.getNode() + "\"'s description is empty.");
+        
+        // Store the secondary permission in the Set
+        if (permission instanceof OtherInflictableNode)
+            Permissions.storePermission(((OtherInflictableNode)permission).onOther());
+        
+        // Return the stored permission
         return permission;
     }
     public static @NotNull Stream<String> keys() {
-        return PERMISSIONS.stream().map(PermissionNode::getNode).sorted();
+        return Permissions.PERMISSIONS.stream().map(PermissionNode::getNode).sorted();
+    }
+    
+    public static @NotNull CompletableFuture<Suggestions> getSuggestions(@NotNull SuggestionsBuilder builder) {
+        Permissions.PERMISSIONS.forEach(node -> builder.suggest(node.isWildcard() ? TextUtils.quoteWrap(node.getNode()) : node.getNode(), new LiteralText(node.getDescription())));
+        return builder.buildFuture();
     }
 }

@@ -26,6 +26,7 @@
 package net.TheElm.project.enums;
 
 import com.google.gson.JsonSyntaxException;
+import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
@@ -44,6 +45,7 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.*;
 import net.TheElm.project.utilities.text.MessageUtils;
+import net.TheElm.project.utilities.text.StyleApplicator;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.HorizontalFacingBlock;
 import net.minecraft.block.WallSignBlock;
@@ -62,10 +64,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
+import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -77,16 +76,16 @@ import org.jetbrains.annotations.Nullable;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 public enum ShopSigns {
     /*
      * Chest is BUYING
      */
-    SELL(Formatting.DARK_RED) {
+    SELL(ShopSignBlockEntity.APPLICATOR_RED) {
         @Override
         public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-            super.formatSign(signBuilder, creator);
-            
             if ((!signBuilder.textMatchItem(creator, signBuilder.getLines()[1])) || (!signBuilder.textMatchPrice(signBuilder.getLines()[2])))
                 throw new ShopBuilderException(new LiteralText("Sign not formatted correctly.").formatted(Formatting.RED));
             
@@ -97,22 +96,27 @@ public enum ShopSigns {
             if (container != null && !ChunkUtils.canPlayerLootChestsInChunk(creator, container.getPos()))
                 throw new ShopBuilderException(new LiteralText("Missing permission to access that container.").formatted(Formatting.RED));
             
-            SignBlockEntity sign = signBuilder.getSign();
-            
-            // Second row Count - Item Name
-            sign.setTextOnRow(1, signBuilder.textParseItem());
-            // Third Row - Price
-            sign.setTextOnRow(2,
-                new LiteralText("for ").formatted(Formatting.BLACK)
-                    .append(new LiteralText("$" + signBuilder.shopPrice()).formatted(Formatting.DARK_BLUE))
-            );
-            // Fourth Row - Owner
-            sign.setTextOnRow(3,
-                signBuilder.textParseOwner(signBuilder.getLines()[3], creator).formatted(Formatting.DARK_GRAY)
-            );
+            // Parse the owner of the sign
+            signBuilder.textParseOwner(signBuilder.getLines()[3], creator);
             
             ShopSigns.printCompletedSign(creator, signBuilder, SewConfig.get(SewConfig.SERVER_SALES_TAX));
-            return true;
+            return this.renderSign(signBuilder, creator);
+        }
+        @Override
+        public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
+            // Second row Count - Item Name
+            shop.setTextOnRow(1, shop.textParseItem());
+            // Third Row - Price
+            shop.setTextOnRow(2,
+            new LiteralText("for ").formatted(Formatting.BLACK)
+                  .append(new LiteralText("$" + shop.getShopItemPrice()).styled(ShopSignBlockEntity.APPLICATOR_GREEN))
+            );
+            // Fourth Row - Owner
+            shop.setTextOnRow(3,
+                shop.textParseOwner().formatted(Formatting.DARK_GRAY)
+            );
+            
+            return super.renderSign(shop, creator);
         }
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignBlockEntity sign) {
@@ -204,11 +208,9 @@ public enum ShopSigns {
     /*
      * Chest is SELLING
      */
-    BUY(Formatting.DARK_BLUE) {
+    BUY(ShopSignBlockEntity.APPLICATOR_GREEN) {
         @Override
         public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-            super.formatSign( signBuilder, creator);
-            
             if ((!signBuilder.textMatchItem(creator, signBuilder.getLines()[1])) || (!signBuilder.textMatchPrice(signBuilder.getLines()[2])))
                 throw new ShopBuilderException(new LiteralText("Sign not formatted correctly."));
             
@@ -219,28 +221,33 @@ public enum ShopSigns {
             if (container != null && !ChunkUtils.canPlayerLootChestsInChunk(creator, container.getPos()))
                 throw new ShopBuilderException(new LiteralText("Missing permission to access that container."));
             
-            SignBlockEntity sign = signBuilder.getSign();
-            if ( signBuilder.shopPrice() == 0 ) {
-                // Update the sign to FREE
-                sign.setTextOnRow( 0, new LiteralText("[FREE]").formatted(FREE.getFormatting()));
-                return FREE.formatSign( signBuilder, creator);
-            }
+            // Update the sign to FREE (Because cost is 0)
+            if ( signBuilder.getShopItemPrice() == 0 )
+                return FREE.formatSign(signBuilder, creator);
             
-            // Second row Count - Item Name
-            sign.setTextOnRow(1, signBuilder.textParseItem());
-            
-            // Third Row - Price
-            sign.setTextOnRow(2,
-                new LiteralText("for ").formatted(Formatting.BLACK)
-                    .append(new LiteralText("$" + signBuilder.shopPrice()).formatted(Formatting.DARK_BLUE))
-            );
-            // Fourth Row - Owner
-            sign.setTextOnRow(3,
-                signBuilder.textParseOwner(signBuilder.getLines()[3], creator).formatted(Formatting.DARK_GRAY)
-            );
+            // Parse the owner of the sign
+            signBuilder.textParseOwner(signBuilder.getLines()[3], creator);
             
             ShopSigns.printCompletedSign(creator, signBuilder, SewConfig.get(SewConfig.SERVER_SALES_TAX));
-            return true;
+            return this.renderSign(signBuilder, creator);
+        }
+        @Override
+        public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
+            // Second row Count - Item Name
+            shop.setTextOnRow(1, shop.textParseItem());
+            
+            // Third Row - Price
+            shop.setTextOnRow(2,
+                new LiteralText("for ").formatted(Formatting.BLACK)
+                    .append(new LiteralText("$" + shop.getShopItemPrice()).styled(ShopSignBlockEntity.APPLICATOR_RED))
+            );
+            
+            // Fourth Row - Owner
+            shop.setTextOnRow(3,
+                shop.textParseOwner().formatted(Formatting.DARK_GRAY)
+            );
+            
+            return super.renderSign(shop, creator);
         }
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignBlockEntity sign) {
@@ -334,11 +341,9 @@ public enum ShopSigns {
     /*
      * Chest is FREE
      */
-    FREE(Formatting.DARK_BLUE) {
+    FREE(ShopSignBlockEntity.APPLICATOR_GREEN) {
         @Override
         public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-            super.formatSign( signBuilder, creator);
-            
             if (!signBuilder.textMatchItem(creator, signBuilder.getLines()[1]))
                 throw new ShopBuilderException(new LiteralText("Sign not formatted correctly."));
             
@@ -349,20 +354,27 @@ public enum ShopSigns {
             if (container != null && !ChunkUtils.canPlayerLootChestsInChunk(creator, container.getPos()))
                 throw new ShopBuilderException(new LiteralText("Missing permission to access that container."));
             
+            // Parse the owner of the sign
+            signBuilder.textParseOwner(signBuilder.getLines()[3], creator);
+            
+            return this.renderSign(signBuilder, creator);
+        }
+        @Override
+        public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
             // Second row Count - Item Name
-            signBuilder.getSign().setTextOnRow(1, signBuilder.textParseItem());
+            shop.setTextOnRow(1, shop.textParseItem());
             // Third Row - Price
-            signBuilder.getSign().setTextOnRow(2,
+            shop.setTextOnRow(2,
                 new LiteralText("for ").formatted(Formatting.BLACK)
-                    .append(new LiteralText("Free").formatted(Formatting.DARK_BLUE))
+                    .append(new LiteralText("Free").styled(ShopSignBlockEntity.APPLICATOR_GREEN))
                     .append("!")
             );
             // Fourth Row - Owner
-            signBuilder.getSign().setTextOnRow(3,
-                signBuilder.textParseOwner(signBuilder.getLines()[3], creator).formatted(Formatting.DARK_GRAY)
+            shop.setTextOnRow(3,
+                shop.textParseOwner().formatted(Formatting.DARK_GRAY)
             );
             
-            return true;
+            return super.renderSign(shop, creator);
         }
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignBlockEntity sign) {
@@ -422,18 +434,18 @@ public enum ShopSigns {
     BALANCE(Formatting.GOLD) {
         @Override
         public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-            super.formatSign(signBuilder, creator);
-            
-            // Reset the other lines
-            SignBlockEntity sign = signBuilder.getSign();
-            sign.setTextOnRow( 1, new LiteralText(""));
-            sign.setTextOnRow( 2, new LiteralText(""));
-            sign.setTextOnRow( 3, new LiteralText(""));
-            
             // Set the sign owner to SPAWN
-            signBuilder.shopOwner( CoreMod.SPAWN_ID);
+            signBuilder.shopOwner(CoreMod.SPAWN_ID);
             
-            return true;
+            return this.renderSign(signBuilder, creator);
+        }
+        @Override
+        public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
+            shop.setTextOnRow(1, new LiteralText(""));
+            shop.setTextOnRow(2, new LiteralText(""));
+            shop.setTextOnRow(3, new LiteralText(""));
+            
+            return super.renderSign(shop, creator);
         }
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignBlockEntity sign) {
@@ -459,23 +471,24 @@ public enum ShopSigns {
     WARP(Formatting.DARK_PURPLE) {
         @Override
         public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-            super.formatSign(signBuilder, creator);
-            
             // Break if not in creative mode
             if (!creator.isCreative())
                 return false;
             
-            SignBlockEntity sign = signBuilder.getSign();
-            sign.setTextOnRow(1, new LiteralText("Teleport to ").formatted(Formatting.DARK_GRAY)
-                .append( new LiteralText( "Biome" ).formatted(Formatting.OBFUSCATED, Formatting.RED) )
-            );
-            sign.setTextOnRow(2, new LiteralText(""));
-            sign.setTextOnRow(3, new LiteralText(""));
-            
             // Set the sign owner to SPAWN
-            signBuilder.shopOwner( CoreMod.SPAWN_ID);
+            signBuilder.shopOwner(CoreMod.SPAWN_ID);
             
-            return true;
+            return this.renderSign(signBuilder, creator);
+        }
+        @Override
+        public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
+            shop.setTextOnRow(1, new LiteralText("Teleport to ").formatted(Formatting.DARK_GRAY)
+                .append(new LiteralText("Biome").formatted(Formatting.OBFUSCATED, Formatting.RED))
+            );
+            shop.setTextOnRow(2, new LiteralText(""));
+            shop.setTextOnRow(3, new LiteralText(""));
+            
+            return super.renderSign(shop, creator);
         }
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignBlockEntity sign) {
@@ -565,16 +578,14 @@ public enum ShopSigns {
     WAYSTONE(Formatting.DARK_PURPLE) {
         @Override
         public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-            super.formatSign(signBuilder, creator);
-            
             SignBlockEntity sign = signBuilder.getSign();
             
             // Set the signs price
-            Text priceText = new LiteralText("$" + FormattingUtils.number(SewConfig.get(SewConfig.WARP_WAYSTONE_COST))).formatted(Formatting.DARK_BLUE);
-            signBuilder.textMatchPrice(priceText);
+            signBuilder.setTradePrice(SewConfig.get(SewConfig.WARP_WAYSTONE_COST));
             
-            String name = signBuilder.getLines()[1].getString();
-            if (name == null || name.isEmpty())
+            String name;
+            Text nameText = signBuilder.getSignLine(1);
+            if (nameText == null || (name = nameText.getString()) == null || name.isEmpty())
                 name = WarpUtils.PRIMARY_DEFAULT_HOME;
             else {
                 if (!IntUtils.between(1, name.length(), 15))
@@ -584,14 +595,24 @@ public enum ShopSigns {
                     throw new ShopBuilderException(TranslatableServerSide.text(creator, "warp.notice.name.invalid"));
             }
             
-            // Set the text for the sign
-            sign.setTextOnRow(1, new LiteralText(name).formatted(Formatting.GREEN));
-            sign.setTextOnRow(2, new LiteralText("Build here").formatted(Formatting.BLACK));
-            sign.setTextOnRow(3, new LiteralText("for ").formatted(Formatting.BLACK).append(priceText));
-            
             // Set the sign owner to SPAWN
             signBuilder.shopOwner(CoreMod.SPAWN_ID);
-            return true;
+            return this.renderSign(signBuilder, creator);
+        }
+        @Override
+        public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
+            Text name = shop.getSignLine(1);
+            if (name == null)
+                return false;
+
+            Text priceText = new LiteralText("$" + FormattingUtils.number(shop.getShopItemPrice())).formatted(Formatting.DARK_BLUE);
+            
+            // Set the text for the sign
+            shop.setTextOnRow(1, new LiteralText(name.getString()).formatted(Formatting.GREEN));
+            shop.setTextOnRow(2, new LiteralText("Build here").formatted(Formatting.BLACK));
+            shop.setTextOnRow(3, new LiteralText("for ").formatted(Formatting.BLACK).append(priceText));
+            
+            return super.renderSign(shop, creator);
         }
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignBlockEntity sign) {
@@ -641,8 +662,6 @@ public enum ShopSigns {
     DEED(Formatting.DARK_GRAY) {
         @Override
         public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-            super.formatSign(signBuilder, creator);
-            
             SignBlockEntity sign = signBuilder.getSign();
             
             // Get the cost for the DEED
@@ -669,8 +688,8 @@ public enum ShopSigns {
                     // Check who placed the sign
                     if (!(creator.getUuid().equals(town.getOwner())) && creator.getUuid().equals(((IClaimedChunk) chunk).getOwner()))
                         throw new ShopBuilderException(new LiteralText("Deed signs may only be placed in chunks belonging to the town owner, by the town owner."));
-    
-                    sign.setTextOnRow( 1, new LiteralText(CasingUtils.Sentence( deedType )));
+                    
+                    sign.setTextOnRow(1, new LiteralText(CasingUtils.Sentence(deedType)));
                     break;
                 }
                 case "region": {
@@ -687,8 +706,8 @@ public enum ShopSigns {
                         throw new ShopBuilderException(new LiteralText("Deed sign must be within a valid region. Use \"").append(new LiteralText("/ruler").formatted(Formatting.AQUA)).append("\" command to select two points"));
                     
                     // Clear ruler area
-                    ((PlayerData) creator).setRulerA( null );
-                    ((PlayerData) creator).setRulerB( null );
+                    ((PlayerData) creator).setRulerA(null);
+                    ((PlayerData) creator).setRulerB(null);
                     
                     // Validate the minimum and maximum widths
                     int maxWidth = SewConfig.get(SewConfig.MAXIMUM_REGION_WIDTH);
@@ -701,7 +720,7 @@ public enum ShopSigns {
                         throw new ShopBuilderException(new LiteralText("Deed region is too small."));
                     
                     // Update the sign to display the width
-                    sign.setTextOnRow( 1, region.displayDimensions());
+                    sign.setTextOnRow(1, region.displayDimensions());
                     signBuilder.regionPositioning(firstPos, secondPos);
                     break;
                 }
@@ -711,13 +730,17 @@ public enum ShopSigns {
             
             // Update the text on the sign
             sign.setTextOnRow( 2, new LiteralText("for ").formatted(Formatting.BLACK).append(
-                new LiteralText("$" + signBuilder.shopPrice()).formatted(Formatting.DARK_BLUE)
+                new LiteralText("$" + signBuilder.getShopItemPrice()).formatted(Formatting.DARK_BLUE)
             ));
             sign.setTextOnRow( 3, (town == null ? new LiteralText("") : town.getName()).formatted(Formatting.DARK_GRAY));
             
             // Set the sign owner
             signBuilder.shopOwner(creator.getUuid());
             return true;
+        }
+        @Override
+        public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
+            return super.renderSign(shop, creator);
         }
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignBlockEntity sign) {
@@ -743,8 +766,6 @@ public enum ShopSigns {
     PLOTS(Formatting.GREEN) {
         @Override
         public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-            super.formatSign(signBuilder, creator);
-            
             // Break if not in creative mode
             if (!creator.isCreative())
                 return false;
@@ -753,20 +774,23 @@ public enum ShopSigns {
             if ((!signBuilder.textMatchCount(signBuilder.getLines()[1])) || (!signBuilder.textMatchPrice(signBuilder.getLines()[2])))
                 return false;
             
+            // Set the sign owner to SPAWN
+            signBuilder.shopOwner(CoreMod.SPAWN_ID);
+            
+            return this.renderSign(signBuilder, creator);
+        }
+        @Override
+        public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
             NumberFormat formatter = NumberFormat.getInstance();
             
-            SignBlockEntity sign = signBuilder.getSign();
-            sign.setTextOnRow( 1, new LiteralText(formatter.format(signBuilder.itemSize()) + " chunks"));
-            sign.setTextOnRow( 2,
-                new LiteralText("for ").formatted(Formatting.BLACK)
-                    .append(new LiteralText("$" + signBuilder.shopPrice()).formatted(Formatting.DARK_BLUE))
+            shop.setTextOnRow(1, new LiteralText(formatter.format(shop.getShopItemCount()) + " chunks"));
+            shop.setTextOnRow(2,
+            new LiteralText("for ").formatted(Formatting.BLACK)
+                .append(new LiteralText("$" + shop.getShopItemPrice()).formatted(Formatting.DARK_BLUE))
             );
-            sign.setTextOnRow( 3, new LiteralText(""));
+            shop.setTextOnRow(3, new LiteralText(""));
             
-            // Set the sign owner to SPAWN
-            signBuilder.shopOwner( CoreMod.SPAWN_ID);
-            
-            return true;
+            return super.renderSign(shop, creator);
         }
         @Override
         public Either<Text, Boolean> onInteract(@NotNull ServerPlayerEntity player, @NotNull BlockPos signPos, ShopSignBlockEntity sign) {
@@ -819,23 +843,27 @@ public enum ShopSigns {
     GUIDES(Formatting.DARK_GREEN) {
         @Override
         public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-            super.formatSign(signBuilder, creator);
-            
             SignBlockEntity sign = signBuilder.getSign();
             
             if (creator.isCreative()) {
                 // Set the sign owner
                 signBuilder.shopOwner(CoreMod.SPAWN_ID);
                 
-                String guideName = CasingUtils.Sentence(signBuilder.getLines()[1].asString());
-                
-                sign.setTextOnRow(1, new LiteralText(guideName));
-                sign.setTextOnRow(2, new LiteralText(""));
-                sign.setTextOnRow(3, new LiteralText(""));
-                
-                return true;
+                return this.renderSign(signBuilder, creator);
             }
             return false;
+        }
+        @Override
+        public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
+            Text guideName = shop.getSignLine(1);
+            if (guideName == null)
+                return false;
+            
+            shop.setTextOnRow(1, new LiteralText(guideName.getString()));
+            shop.setTextOnRow(2, new LiteralText(""));
+            shop.setTextOnRow(3, new LiteralText(""));
+            
+            return super.renderSign(shop, creator);
         }
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignBlockEntity sign) {
@@ -871,8 +899,6 @@ public enum ShopSigns {
     BACKPACK(Formatting.YELLOW) {
         @Override
         public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-            super.formatSign(signBuilder, creator);
-            
             if (!creator.isCreative())
                 return false;
             
@@ -880,23 +906,27 @@ public enum ShopSigns {
             if ((!signBuilder.textMatchCount(signBuilder.getLines()[1])) || (!signBuilder.textMatchPrice(signBuilder.getLines()[2])))
                 return false;
             
-            if ((signBuilder.itemSize() % 9 != 0 ) || signBuilder.itemSize() > 54)
+            if ((signBuilder.getShopItemCount() % 9 != 0 ) || signBuilder.getShopItemCount() > 54)
                 throw new ShopBuilderException(new LiteralText("Backpack size must be multiples of 9, no larger than 54."));
             
+            // Set the sign owner to SPAWN
+            signBuilder.shopOwner(CoreMod.SPAWN_ID);
+            
+            // Render the sign
+            return this.renderSign(signBuilder, creator);
+        }
+        @Override
+        public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
             NumberFormat formatter = NumberFormat.getInstance();
             
-            SignBlockEntity sign = signBuilder.getSign();
-            sign.setTextOnRow( 1, new LiteralText(formatter.format(signBuilder.itemSize()) + " slots"));
-            sign.setTextOnRow( 2,
-                new LiteralText("for ").formatted(Formatting.BLACK)
-                    .append(new LiteralText("$" + signBuilder.shopPrice()).formatted(Formatting.DARK_BLUE))
+            shop.setTextOnRow(1, new LiteralText(formatter.format(shop.getShopItemCount()) + " slots"));
+            shop.setTextOnRow(2,
+            new LiteralText("for ").formatted(Formatting.BLACK)
+                .append(new LiteralText("$" + shop.getShopItemPrice()).formatted(Formatting.DARK_BLUE))
             );
-            sign.setTextOnRow( 3, new LiteralText(""));
+            shop.setTextOnRow(3, new LiteralText(""));
             
-            // Set the sign owner to SPAWN
-            signBuilder.shopOwner( CoreMod.SPAWN_ID);
-            
-            return true;
+            return super.renderSign(shop, creator);
         }
         @Override
         public Either<Text, Boolean> onInteract(@NotNull ServerPlayerEntity player, @NotNull BlockPos signPos, ShopSignBlockEntity sign) {
@@ -956,16 +986,25 @@ public enum ShopSigns {
         }
     };
     
-    private final Formatting[] formattings;
+    private final @NotNull StyleApplicator applicator;
     
-    ShopSigns(Formatting... formatting) {
-        this.formattings = formatting;
+    ShopSigns(@NotNull String color) {
+        this(ColorUtils.getRawTextColor(color));
+    }
+    ShopSigns(@NotNull Formatting color) {
+        this(TextColor.fromFormatting(color));
+    }
+    ShopSigns(@Nullable TextColor color) {
+        this(new StyleApplicator(color == null ? Objects.requireNonNull(TextColor.fromFormatting(Formatting.WHITE)) : color));
+    }
+    ShopSigns(@NotNull StyleApplicator applicator) {
+        this.applicator = applicator;
     }
     
     public boolean isEnabled() { return true; }
     
-    public final Formatting[] getFormatting() {
-        return this.formattings;
+    public final @NotNull StyleApplicator getApplicator() {
+        return this.applicator;
     }
     public final @Nullable LootableContainerBlockEntity getAttachedChest(@NotNull final World world, @NotNull final BlockPos signPos) {
         List<BlockPos> checkPositions = new ArrayList<>();
@@ -1009,18 +1048,18 @@ public enum ShopSigns {
     }
     
     public static int printCompletedSign(@NotNull final ServerPlayerEntity player, @NotNull final ShopSignBuilder signBuilder, final int serverTaxPerc) {
-        int returnVal = signBuilder.shopPrice();
+        int returnVal = signBuilder.getShopItemPrice();
         MutableText output = new LiteralText("Created new shop for ").formatted(Formatting.YELLOW)
-            .append(MessageUtils.formatNumber(signBuilder.itemSize()))
+            .append(MessageUtils.formatNumber(signBuilder.getShopItemCount()))
             .append(" ")
-            .append(MessageUtils.formatObject(signBuilder.getItem()));
+            .append(MessageUtils.formatObject(signBuilder.getShopItem()));
         
         // Try getting the located town
         ServerWorld world = player.getServerWorld();
         ClaimantTown town = ((IClaimedChunk)world.getChunk(signBuilder.getSign().getPos()))
             .getTown();
-        int townTaxVal = (town == null ? 0 : signBuilder.shopPrice() * (town.getTaxRate() / 100));
-        int serverTaxVal = signBuilder.shopPrice() * (serverTaxPerc / 100);
+        int townTaxVal = (town == null ? 0 : signBuilder.getShopItemPrice() * (town.getTaxRate() / 100));
+        int serverTaxVal = signBuilder.getShopItemPrice() * (serverTaxPerc / 100);
         
         if (serverTaxVal > 0) {
             output.append("\n| Server tax is ")
@@ -1053,12 +1092,17 @@ public enum ShopSigns {
     }
     
     public abstract Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignBlockEntity sign);
-    public boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
-        SignBlockEntity sign = signBuilder.getSign();
-        
+    public abstract boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException;
+    public boolean renderSign(@NotNull final ShopSignBlockEntity shop, @NotNull final GameProfile creator) {
         // Set the first row formatting
-        sign.setTextOnRow( 0, new LiteralText( "[" + this.name() + "]" ).formatted(this.getFormatting()) );
-        
+        shop.setTextOnRow(0, new LiteralText( "[" + this.name() + "]" ).styled(this.getApplicator()));
         return true;
+    }
+    public final boolean renderSign(@NotNull final ShopSignBlockEntity shop, @NotNull final UUID creator) {
+        GameProfile profile = shop.getShopOwnerProfile();
+        return profile != null && this.renderSign(shop, profile);
+    }
+    public final boolean renderSign(@NotNull final ShopSignBlockEntity shop, @NotNull final ServerPlayerEntity player) {
+        return this.renderSign(shop, player.getGameProfile());
     }
 }

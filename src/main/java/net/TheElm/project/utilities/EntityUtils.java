@@ -310,7 +310,7 @@ public final class EntityUtils {
             EntityUtils.resendInventory((ServerPlayerEntity)player);
     }
     public static void resendInventory(@NotNull ServerPlayerEntity player) {
-        player.updateCursorStack();
+        player.refreshScreenHandler(player.playerScreenHandler);
     }
     
     /*

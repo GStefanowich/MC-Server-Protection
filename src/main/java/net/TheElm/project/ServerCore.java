@@ -25,6 +25,7 @@
 
 package net.TheElm.project;
 
+import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
@@ -44,6 +45,7 @@ import net.minecraft.server.dedicated.MinecraftDedicatedServer;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.UserCache;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
@@ -53,6 +55,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -92,6 +95,8 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             WaystoneCommand.register(dispatcher);
             WhereCommand.register(dispatcher);
             WorldCommand.register(dispatcher);
+            
+            ScoreboardCommand.modify(dispatcher);
             
             if ( CoreMod.isDebugging() )
                 TeleportEffectCommand.register(dispatcher);
@@ -145,8 +150,15 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             .left()
             .orElseGet(ClientCore::getServer);
     }
-    public static @Nullable ServerPlayerEntity getPlayer(UUID playerUUID) {
-        return ServerCore.get().getPlayerManager().getPlayer( playerUUID );
+    public static @Nullable ServerPlayerEntity getPlayer(@NotNull UUID uuid) {
+        return ServerCore.get().getPlayerManager().getPlayer(uuid);
+    }
+    public static @Nullable GameProfile getGameProfile(@NotNull UUID uuid) {
+        if (Objects.equals(uuid, CoreMod.SPAWN_ID))
+            return new GameProfile(uuid, "Server");
+        MinecraftServer server = ServerCore.get();
+        UserCache cache = server.getUserCache();
+        return cache.getByUuid(uuid);
     }
     
     public static @NotNull RegistryKey<World> defaultWorldKey() {
@@ -210,6 +222,17 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         if (!world.isPresent())
             world = Optional.ofNullable(server.getWorld(World.OVERWORLD));
         return world.orElseThrow(NullPointerException::new);
+    }
+    
+    public static void markDirty(@NotNull ServerWorld world, @NotNull BlockPos pos) {
+        world.getChunkManager().markForUpdate(pos);
+    }
+    public static void markDirty(@NotNull World world, @NotNull BlockPos pos) {
+        if (world instanceof ServerWorld)
+            ServerCore.markDirty((ServerWorld) world, pos);
+    }
+    public static void markDirty(@NotNull RegistryKey<World> key, @NotNull BlockPos pos) {
+        ServerCore.markDirty(ServerCore.getWorld(key), pos);
     }
     
     public static boolean isIntegratedServer() {

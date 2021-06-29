@@ -1092,15 +1092,15 @@ public final class ClaimCommand {
     }
     private static int updateBoolean(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get enums
-        ClaimSettings setting = EnumArgumentType.getEnum( ClaimSettings.class, StringArgumentType.getString( context, "setting" ) );
-        boolean enabled = BoolArgumentType.getBool( context, "bool" );
+        ClaimSettings setting = EnumArgumentType.getEnum(ClaimSettings.class, StringArgumentType.getString(context, "setting"));
+        boolean enabled = BoolArgumentType.getBool(context, "bool");
         
         // Get the player
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         // Update the runtime
         ((PlayerData) player).getClaim()
-            .updateSetting( setting, enabled );
+            .updateSetting(setting, enabled);
         
         // Notify other players
         if (ClaimSettings.PLAYER_COMBAT.equals(setting)) {

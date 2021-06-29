@@ -41,9 +41,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.InvalidIdentifierException;
 import net.minecraft.util.math.BlockPos;
@@ -88,6 +86,10 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
      */
     
     @Override
+    public void setShopOwner(@Nullable UUID uuid) {
+        this.shopSign_Owner = uuid;
+    }
+    @Override
     public @Nullable UUID getShopOwner() {
         return this.shopSign_Owner;
     }
@@ -106,13 +108,6 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     @Override
     public @Nullable Identifier getShopItemIdentifier() {
         return this.shopSign_item;
-    }
-    @Override
-    public @Nullable Text getShopItemDisplay() {
-        Item item = this.getShopItem();
-        if (item == null)
-            return new LiteralText("");
-        return new TranslatableText(item.getTranslationKey());
     }
     @Override
     public @Nullable Integer getShopItemCount() {
@@ -161,7 +156,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
             ShopSignBuilder builder = ShopSignBuilder.create(this.getWorld(), this.getPos(), (SignBlockEntity)(BlockEntity)this);
             
             // Update the lines
-            if ( builder.setLineText( lineNum, text ) ) {
+            if ( builder.setLineText(lineNum, text) ) {
                 // If last line came through, call build
                 if (lineNum != 3)
                     return;
@@ -176,15 +171,15 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                 CoreMod.logInfo("Built new shop sign " + this.shopSign_Type.name() + " at " + this.pos.getX() + ", " + this.pos.getY() + ", " + this.pos.getZ());
                 
                 // Update the parameters here from the builder
-                this.shopSign_Owner = builder.shopOwner();
-                this.shopSign_item = builder.getItemIdentifier();
+                this.shopSign_Owner = builder.getShopOwner();
+                this.shopSign_item = builder.getShopItemIdentifier();
                 
-                this.shopSign_itemCount = builder.itemSize();
-                this.shopSign_itemPrice = builder.shopPrice();
+                this.shopSign_itemCount = builder.getShopItemCount();
+                this.shopSign_itemPrice = builder.getShopItemPrice();
                 
                 if (this.shopSign_Type == ShopSigns.DEED) {
-                    this.shopSign_posA = builder.regionPosA();
-                    this.shopSign_posB = builder.regionPosB();
+                    this.shopSign_posA = builder.getFirstPos();
+                    this.shopSign_posB = builder.getSecondPos();
                 }
             }
         }
@@ -248,6 +243,9 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                 
                 // Get the Item PRICE
                 NbtUtils.tryGet(tag, NbtGet.INT, "shop_price", this::setShopItemPrice);
+                
+                // Re-Render the sign when loaded
+                this.shopSign_Type.renderSign(this, uuid);
             });
         }
     }

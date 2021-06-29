@@ -107,17 +107,9 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
     /*
      * Ranks
      */
-    private PlayerRank[] ranks = null;
-    
     @Override
     public @NotNull PlayerRank[] getRanks() {
-        if (this.ranks == null)
-            this.ranks = RankUtils.loadPlayerRanks(this.player.getGameProfile());
-        return this.ranks;
-    }
-    @Override
-    public void resetRanks() {
-        this.ranks = null;
+        return RankUtils.getPlayerRanks(this.player);
     }
     
     @Inject(at = @At("HEAD"), method = "processBlockBreakingAction", cancellable = true)

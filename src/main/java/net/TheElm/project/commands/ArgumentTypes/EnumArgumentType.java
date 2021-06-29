@@ -44,8 +44,8 @@ import java.util.Locale;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
-public class EnumArgumentType<E extends Enum<E>> {
-    public static final DynamicCommandExceptionType INVALID_COMPONENT_EXCEPTION = new DynamicCommandExceptionType((object_1) -> new TranslatableText("argument.component.invalid", object_1));
+public class EnumArgumentType<E extends Enum<E>> implements SuggestionProvider<ServerCommandSource> {
+    public static final DynamicCommandExceptionType INVALID_COMPONENT_EXCEPTION = new DynamicCommandExceptionType((obj) -> new TranslatableText("argument.component.invalid", obj));
     
     private final EnumSet<E> enumValues;
     private final Function<E, String> nameFormatter;
@@ -55,7 +55,7 @@ public class EnumArgumentType<E extends Enum<E>> {
         this(enumClass, null);
     }
     private EnumArgumentType(@NotNull final Class<E> enumClass, @Nullable Function<E, Text> tooltips) {
-        this(enumClass, tooltips, (enumValue) -> enumValue.name().toLowerCase());
+        this(enumClass, tooltips, (enumValue) -> enumValue.name().toLowerCase().replace('_', '-'));
     }
     private EnumArgumentType(@NotNull final Class<E> enumClass, @Nullable Function<E, Text> tooltips, @NotNull Function<E, String> names) {
         this.enumValues = EnumSet.allOf(enumClass);
@@ -65,11 +65,12 @@ public class EnumArgumentType<E extends Enum<E>> {
     
     public static <T extends Enum<T>> T getEnum(Class<T> tClass, String search) throws CommandSyntaxException {
         return EnumSet.allOf(tClass).stream().filter((enumValue) -> {
-            return enumValue.name().equalsIgnoreCase(search);
+            return enumValue.name().replace('_', '-').equalsIgnoreCase(search);
         }).findFirst().orElseThrow(() -> INVALID_COMPONENT_EXCEPTION.create(search));
     }
     
-    public @NotNull <S> CompletableFuture<Suggestions> suggests(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
+    @Override
+    public @NotNull CompletableFuture<Suggestions> getSuggestions(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) {
         final String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
         this.enumValues.stream()
             .filter((eVal) -> ((!(eVal instanceof BoolEnums)) || ((BoolEnums)eVal).isEnabled()))
@@ -81,12 +82,12 @@ public class EnumArgumentType<E extends Enum<E>> {
         return builder.buildFuture();
     }
     public static @NotNull <E extends Enum<E>> SuggestionProvider<ServerCommandSource> enumerate(@NotNull Class<E> claimRanksClass) {
-        return new EnumArgumentType<>(claimRanksClass)::suggests;
+        return new EnumArgumentType<>(claimRanksClass);
     }
     public static @NotNull <E extends Enum<E>> SuggestionProvider<ServerCommandSource> enumerate(@NotNull Class<E> claimRanksClass, @NotNull Function<E, Text> tooltips) {
-        return new EnumArgumentType<>(claimRanksClass, tooltips)::suggests;
+        return new EnumArgumentType<>(claimRanksClass, tooltips);
     }
     public static @NotNull <E extends Enum<E>> SuggestionProvider<ServerCommandSource> enumerate(@NotNull Class<E> claimRanksClass, @NotNull Function<E, Text> tooltips, @NotNull Function<E, String> names) {
-        return new EnumArgumentType<>(claimRanksClass, tooltips, names)::suggests;
+        return new EnumArgumentType<>(claimRanksClass, tooltips, names);
     }
 }

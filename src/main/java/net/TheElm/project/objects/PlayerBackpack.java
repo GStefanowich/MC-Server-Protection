@@ -60,16 +60,16 @@ public class PlayerBackpack extends SimpleInventory {
     
     // Create an entirely new backpack
     public PlayerBackpack(@NotNull PlayerEntity player, int rows) {
-        super( rows * 9 );
+        super(rows * 9);
         this.rows = rows;
         this.player = player;
     }
     // Copy items to the backpack from the previous
     public PlayerBackpack(@NotNull PlayerBackpack backpack) {
-        this( backpack, backpack.getRows() + 1 );
+        this( backpack, backpack.getRows() + 1);
     }
     public PlayerBackpack(@NotNull PlayerBackpack backpack, int rows) {
-        this( backpack.getPlayer(), rows );
+        this(backpack.getPlayer(), rows);
         
         // Transfer the contents of the inventory
         this.readTags(backpack.getTags());

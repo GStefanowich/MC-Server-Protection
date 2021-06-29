@@ -75,7 +75,7 @@
     "Player.AnvilCost",
     "Player.FullInventory",
     "Player.DeathChest",
-
+    
     "Player.ClientInteraction",
     "Player.ServerInteraction",
     "Player.WorldInteraction",

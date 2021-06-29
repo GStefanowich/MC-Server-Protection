@@ -42,8 +42,10 @@ import java.util.Random;
 import java.util.Set;
 
 public final class ColorUtils {
-
-    public static final Map<String, Color> COLORS;
+    
+    public static final @NotNull Map<String, Color> COLORS;
+    public static final @NotNull String LEGACY_TAG = "§";
+    
     private static final Random RANDOM;
     private ColorUtils() {}
     
@@ -346,12 +348,12 @@ public final class ColorUtils {
         return ColorUtils.getNearestFormatting(ColorUtils.dyeToColor( color ));
     }
     public static @NotNull Formatting getNearestFormatting(@NotNull String hex) {
-        return ColorUtils.getNearestFormatting(Color.decode( hex ));
+        return ColorUtils.getNearestFormatting(Color.decode(hex));
     }
     public static @NotNull Formatting getNearestFormatting(float r, float g, float b) {
         return ColorUtils.getNearestFormatting(new Color(r, g, b));
     }
-    public static @NotNull Formatting getNearestFormatting(Color color) {
+    public static @NotNull Formatting getNearestFormatting(@NotNull Color color) {
         HashMap<Formatting, Double> list = new HashMap<>();
         Formatting nearest = null;
         
@@ -374,6 +376,121 @@ public final class ColorUtils {
         }
         
         return nearest;
+    }
+    public static @NotNull Formatting getNearestFormatting(@NotNull TextColor color) {
+        String name = color.toString();
+        if (name.startsWith("#"))
+            return ColorUtils.getNearestFormatting(name);
+        switch (name) {
+            case "black":
+                return Formatting.BLACK;
+            case "dark_blue":
+                return Formatting.DARK_BLUE;
+            case "dark_green":
+                return Formatting.DARK_GREEN;
+            case "dark_aqua":
+                return Formatting.DARK_AQUA;
+            case "dark_red":
+                return Formatting.DARK_RED;
+            case "dark_purple":
+                return Formatting.DARK_PURPLE;
+            case "gold":
+                return Formatting.GOLD;
+            case "gray":
+                return Formatting.GRAY;
+            case "dark_gray":
+                return Formatting.DARK_GRAY;
+            case "blue":
+                return Formatting.BLUE;
+            case "green":
+                return Formatting.GREEN;
+            case "aqua":
+                return Formatting.AQUA;
+            case "red":
+                return Formatting.RED;
+            case "light_purple":
+                return Formatting.LIGHT_PURPLE;
+            case "yellow":
+                return Formatting.YELLOW;
+            case "white":
+                return Formatting.WHITE;
+            default: return Formatting.RESET;
+        }
+    }
+    
+    public static @NotNull String getLegacyTag(@NotNull Formatting formatting) {
+        char letter;
+        switch (formatting) {
+            case BLACK:
+                letter = '0';
+                break;
+            case DARK_BLUE:
+                letter = '1';
+                break;
+            case DARK_GREEN:
+                letter = '2';
+                break;
+            case DARK_AQUA:
+                letter = '3';
+                break;
+            case DARK_RED:
+                letter = '4';
+                break;
+            case DARK_PURPLE:
+                letter = '5';
+                break;
+            case GOLD:
+                letter = '6';
+                break;
+            case GRAY:
+                letter = '7';
+                break;
+            case DARK_GRAY:
+                letter = '8';
+                break;
+            case BLUE:
+                letter = '9';
+                break;
+            case GREEN:
+                letter = 'a';
+                break;
+            case AQUA:
+                letter = 'b';
+                break;
+            case RED:
+                letter = 'c';
+                break;
+            case LIGHT_PURPLE:
+                letter = 'd';
+                break;
+            case YELLOW:
+                letter = 'e';
+                break;
+            case WHITE:
+                letter = 'f';
+                break;
+            case OBFUSCATED:
+                letter = 'k';
+                break;
+            case BOLD:
+                letter = 'l';
+                break;
+            case STRIKETHROUGH:
+                letter = 'm';
+                break;
+            case UNDERLINE:
+                letter = 'n';
+                break;
+            case ITALIC:
+                letter = 'o';
+                break;
+            case RESET:
+                letter = 'r';
+                break;
+            default:
+                return "";
+        }
+        return ColorUtils.LEGACY_TAG + letter;
     }
     
     public static @NotNull DyeColor getRandomDye() {

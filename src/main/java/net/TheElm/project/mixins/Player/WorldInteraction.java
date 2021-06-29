@@ -73,6 +73,7 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.ChunkCache;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -107,9 +108,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     private Long lastJoinedAt = null;
     
     // Warps
-    private Map<String, WarpUtils.Warp> warps = new ConcurrentHashMap<>();
-    private RegistryKey<World> warpDimension = null;
-    private BlockPos warpPos = null;
+    private final @NotNull Map<String, WarpUtils.Warp> warps = new ConcurrentHashMap<>();
     
     // Nickname
     private Text playerNickname = null;
@@ -144,39 +143,38 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Inject(at = @At("TAIL"), method = "tick")
     public void onTick(CallbackInfo callback) {
         // Handle Health Bar
-        if ((this.healthBar != null) && (!this.notInAnyWorld) && ((++this.healthTick) >= 60)) {
+        if ((this.healthBar != null) && (!this.notInAnyWorld)) {
             // Get players from the health bar
-            Set<ServerPlayerEntity> enemies = new HashSet<>(this.healthBar.getPlayers());
-            
-            // Remove players from the healthbar
-            if (!enemies.isEmpty()) {
-                // Get the area around the player
-                Box searchRegion = new Box(
-                    new BlockPos(this.getX() + 20, this.getY() + 10, this.getZ() + 20),
-                    new BlockPos(this.getX() - 20, this.getY() - 10, this.getZ() - 20)
-                );
-                
+            Collection<ServerPlayerEntity> cache = this.healthBar.getPlayers();
+            if (!cache.isEmpty()) {
                 // Get local players
                 if (!this.isAlive())
                     this.healthBar.clearPlayers();
-                else {
+                else if ((++this.healthTick) >= 60) {
+                    // Get the area around the player
+                    Box searchRegion = new Box(
+                        new BlockPos(this.getX() + 20, this.getY() + 10, this.getZ() + 20),
+                        new BlockPos(this.getX() - 20, this.getY() - 10, this.getZ() - 20)
+                    );
                     List<ServerPlayerEntity> players = this.world.getEntitiesByClass(ServerPlayerEntity.class, searchRegion, (nearby) -> (!nearby.getUuid().equals(this.getUuid())));
                     
                     // Remove all locale players
+                    List<ServerPlayerEntity> enemies = new ArrayList<>(cache);
                     enemies.removeAll(players);
                     
                     // Remove if not nearby
                     if (!enemies.isEmpty()) {
-                        for (ServerPlayerEntity enemy : enemies) this.healthBar.removePlayer(enemy);
+                        for (ServerPlayerEntity enemy : enemies)
+                            this.healthBar.removePlayer(enemy);
                     }
+                    
+                    // Set the health percentage
+                    this.updateHealthBar();
+                    
+                    // Reset the tick
+                    this.healthTick = 0;
                 }
-                
-                // Set the health percentage
-                this.updateHealthBar();
             }
-            
-            // Reset the tick
-            this.healthTick = 0;
         }
         
         // Handle location finder
@@ -240,12 +238,17 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             );
         }
     }
+    @Override
     public @NotNull ServerBossBar getHealthBar() {
-        if (this.healthBar != null)
+        return this.getHealthBar(true);
+    }
+    @Override
+    public @Contract("true -> !null") ServerBossBar getHealthBar(boolean create) {
+        if (this.healthBar != null || !create)
             return this.healthBar;
         // Create the health bar
         return (this.healthBar = new ServerBossBar(
-            new LiteralText("Player ").append(ColorUtils.format(this.getDisplayName(), Formatting.AQUA)).formatted(Formatting.WHITE),
+            new LiteralText("Player ").append(this.getDisplayName()).formatted(Formatting.WHITE),
             BossBar.Color.RED,
             BossBar.Style.NOTCHED_10
         ));
@@ -267,10 +270,6 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Override
     public @NotNull PlayerRank[] getRanks() {
         return ((PlayerPermissions)this.interactionManager).getRanks();
-    }
-    @Override
-    public void resetRanks() {
-        ((PlayerPermissions)this.interactionManager).resetRanks();
     }
     
     /*
@@ -322,17 +321,15 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     public void setOverworldPortal(@Nullable BlockPos portalPos) {
         this.overworldPortal = portalPos;
     }
-    @Nullable
-    public BlockPos getNetherPortal() {
+    public @Nullable BlockPos getNetherPortal() {
         return this.theNetherPortal;
     }
-    @Nullable
-    public BlockPos getOverworldPortal() {
+    public @Nullable BlockPos getOverworldPortal() {
         return this.overworldPortal;
     }
     
     @Inject(at = @At("HEAD"), method = "moveToWorld")
-    public void onChangeDimension(ServerWorld world, CallbackInfoReturnable<Entity> callback) {
+    public void onChangeDimension(@NotNull ServerWorld world, @NotNull final CallbackInfoReturnable<Entity> callback) {
         RegistryKey<World> dimension = world.getRegistryKey();
         
         if (SewConfig.get(SewConfig.OVERWORLD_PORTAL_LOC) && dimension.equals(World.OVERWORLD)) this.setNetherPortal(this.getBlockPos());
@@ -348,7 +345,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
      */
     
     @Inject(at = @At("RETURN"), method = "trySleep")
-    public void onBedEntered(final BlockPos blockPos, final CallbackInfoReturnable<Either<PlayerEntity.SleepFailureReason, Unit>> callback) {
+    public void onBedEntered(final BlockPos blockPos, @NotNull final CallbackInfoReturnable<Either<PlayerEntity.SleepFailureReason, Unit>> callback) {
         if (!SewConfig.get(SewConfig.DO_SLEEP_VOTE))
             return;
         
@@ -360,7 +357,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     
     @Inject(at = @At("HEAD"), method = "setSpawnPoint", cancellable = true)
-    public void onSetSpawnPoint(final RegistryKey<World> dimension, @Nullable final BlockPos blockPos, final float angle, final boolean overrideGlobal, final boolean showPlayerMessage, CallbackInfo callback) {
+    public void onSetSpawnPoint(@NotNull final RegistryKey<World> dimension, @Nullable final BlockPos blockPos, final float angle, final boolean overrideGlobal, final boolean showPlayerMessage, CallbackInfo callback) {
         ServerPlayerEntity player = ((ServerPlayerEntity)(LivingEntity) this);
         
         // If the bed the player slept in is different 
@@ -485,11 +482,9 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             this.toggleMute(tag.getBoolean("chatMuted"));
     }
     @Inject(at = @At("TAIL"), method = "copyFrom")
-    public void onCopyData(ServerPlayerEntity player, boolean alive, CallbackInfo callback) {
+    public void onCopyData(@NotNull ServerPlayerEntity player, boolean alive, CallbackInfo callback) {
         // Copy the players warp over
         this.warps.putAll(((PlayerData) player).getWarps());
-        /*this.warpPos = ((PlayerData) player).getWarpPos();
-        this.warpDimension = ((PlayerData) player).getWarpDimension();*/
         
         // Copy the players nick over
         this.playerNickname = ((Nicknamable) player).getPlayerNickname();
@@ -524,6 +519,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     @Override
     public void setPlayerNickname(@Nullable Text nickname) {
         this.playerNickname = nickname;
+        if (this.healthBar != null)
+            this.healthBar.setName(new LiteralText("Player ").append(this.getDisplayName()).formatted(Formatting.WHITE));
     }
     @Nullable @Override
     public Text getPlayerNickname() {

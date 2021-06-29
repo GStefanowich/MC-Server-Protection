@@ -31,8 +31,12 @@ import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 
 public final class EffectUtils {
@@ -153,6 +157,63 @@ public final class EffectUtils {
     }
     
     public static <T extends ParticleEffect> void summonBreadcrumbs(@NotNull final T particle, @NotNull final ServerPlayerEntity player, @NotNull Path path) {
+        BlockPos end = path.getTarget();
+        BlockPos now = player.getBlockPos();
+        
+        int elevationChange = end.getY() - now.getY();
+        int xDirChange = end.getX() - now.getX();
+        int zDirChange = end.getZ() - now.getZ();
+        
+        int absX = Math.abs(xDirChange);
+        int absY = (int)(Math.abs((float) elevationChange) / 1.5);
+        int absZ = Math.abs(zDirChange);
+        
+        String helper = null,
+            prefix = null,
+            suffix = null;
+        if (absY > absX && absY > absZ && absY != 0)
+            helper = elevationChange > 0 ? "Ascend" : "Descend";
+        else {
+            double angle = (player.yaw + BlockUtils.angleBetween(end, now)) % 360;
+            if (angle < 0)
+                angle += 360;
+            
+            int force = 0;
+            if (angle >= 165 && angle <= 195)
+                helper = "Go Forward";
+            else if (angle >= 0 && angle < 165) {
+                force = (int)((180 - angle) / 30);
+                helper = "Go Right";
+                suffix = StringUtils.repeat(">", force);
+            } else if (angle <= 360 && angle > 195) {
+                force = (int)((angle - 180) / 30);
+                helper = "Go Left";
+                prefix = StringUtils.repeat("<", force);
+            }
+        }
+        
+        // Send text to the players hotbar
+        if (helper != null) {
+            MutableText bar = new LiteralText("")
+                .formatted(Formatting.YELLOW);
+            
+            // Append the prefix
+            if (prefix != null)
+                bar.append(new LiteralText(prefix + " ")
+                    .formatted(Formatting.AQUA));
+            
+            // Append the normal text
+            bar.append(helper);
+            
+            // Append the suffix
+            if (suffix != null)
+                bar.append(new LiteralText(" " + suffix)
+                    .formatted(Formatting.AQUA));
+            
+            player.sendMessage(bar, true);
+        }
+        
+        // Spawn obsidian particles for each node of the path
         for (int i = 0; i < path.getLength(); i++) {
             BlockPos navPos = path.method_31031(i);
             player.networkHandler.sendPacket(new ParticleS2CPacket(

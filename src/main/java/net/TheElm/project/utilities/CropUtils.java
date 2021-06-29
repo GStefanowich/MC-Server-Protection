@@ -25,18 +25,11 @@
 
 package net.TheElm.project.utilities;
 
-import net.minecraft.block.BeetrootsBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.CarrotsBlock;
-import net.minecraft.block.CropBlock;
-import net.minecraft.block.Material;
-import net.minecraft.block.NetherWartBlock;
-import net.minecraft.block.PillarBlock;
-import net.minecraft.block.PotatoesBlock;
+import net.minecraft.block.*;
 import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.state.property.IntProperty;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 
@@ -44,7 +37,7 @@ public final class CropUtils {
     
     private CropUtils() {}
     
-    public static boolean isTree(BlockState blockState) {
+    public static boolean isTree(@NotNull BlockState blockState) {
         Block block = blockState.getBlock();
         if (!(block instanceof PillarBlock))
             return false;
@@ -56,7 +49,7 @@ public final class CropUtils {
         return block instanceof CropBlock || block instanceof NetherWartBlock;
     }
     
-    public static boolean isMature(BlockState state) {
+    public static boolean isMature(@NotNull BlockState state) {
         IntProperty property = CropUtils.getAgeProperty(state.getBlock());
         if (property == null)
             return false;
@@ -65,7 +58,7 @@ public final class CropUtils {
         return stage >= max;
     }
     
-    public static BlockState withAge(Block block, int age) {
+    public static BlockState withAge(@NotNull Block block, int age) {
         return block.getDefaultState().with(CropUtils.getAgeProperty(block), age);
     }
     

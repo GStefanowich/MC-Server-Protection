@@ -25,25 +25,19 @@
 
 package net.TheElm.project.mixins.Server;
 
-import com.mojang.bridge.game.GameVersion;
+import com.mojang.authlib.GameProfile;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.utilities.CasingUtils;
-import net.TheElm.project.utilities.FormattingUtils;
-import net.TheElm.project.utilities.SleepUtils;
-import net.minecraft.SharedConstants;
-import net.minecraft.server.MinecraftServer;
+import net.TheElm.project.protections.ranks.PlayerRank;
+import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.text.TextUtils;
 import net.minecraft.server.ServerMetadata;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
-import net.minecraft.world.Difficulty;
-import net.minecraft.world.SaveProperties;
-import net.minecraft.world.World;
 import org.apache.commons.lang3.Validate;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -59,83 +53,54 @@ import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.StreamSupport;
 
 @Mixin(ServerMetadata.class)
 public abstract class MOTD {
     
-    private final Map<String, Callable<String>> motdVariables = new HashMap<>();
     private final List<CharBuffer> base64 = new ArrayList<>();
     
     @Shadow private ServerMetadata.Players players;
     @Shadow private ServerMetadata.Version version;
     
     @Inject(at = @At("RETURN"), method = "<init> *")
-    public void onConstruct(CallbackInfo callback) {
-        /*
-         * Save our Variables to parse
-         */
-        
-        // Version
-        this.motdVariables.put( "version", () -> {
-            GameVersion version = SharedConstants.getGameVersion();
-            if (version == null)
-                return "1.??.??";
-            return version.getId();
-        });
-        // Time
-        this.motdVariables.put( "time", () -> {
-            MinecraftServer server = ServerCore.get();
-            ServerWorld world = server.getWorld(World.OVERWORLD);
-            if (world == null) return "time";
-            return SleepUtils.timeFromMillis(world.getTimeOfDay());
-        });
-        // Difficulty
-        this.motdVariables.put( "difficulty", () -> {
-            MinecraftServer server = ServerCore.get();
-            SaveProperties properties = server.getSaveProperties();
-            if (properties.isHardcore())
-                return "hardcore";
-            Difficulty difficulty = properties.getDifficulty();
-            ServerWorld world = StreamSupport.stream(server.getWorlds().spliterator(), false).findFirst().orElse(null);
-            if (world != null)
-                difficulty = world.getLevelProperties().getDifficulty();
-            return difficulty.getName();
-        });
-        
+    public void onConstruct(@NotNull CallbackInfo callback) {
         /*
          * Process the randomized server icons
          */
         for( String iconName : SewConfig.get(SewConfig.SERVER_ICON_LIST) ) {
             File iconFile = new File(".", iconName + ".png");
             if (iconFile.isFile()) {
-                ByteBuf byteBuf_1 = Unpooled.buffer();
-        
+                ByteBuf icoByteBuffer = Unpooled.buffer();
+                
                 try {
-                    BufferedImage bufferedImage_1 = ImageIO.read(iconFile);
-                    Validate.validState(bufferedImage_1.getWidth() == 64, "Must be 64 pixels wide");
-                    Validate.validState(bufferedImage_1.getHeight() == 64, "Must be 64 pixels high");
-                    ImageIO.write(bufferedImage_1, "PNG", new ByteBufOutputStream(byteBuf_1));
-                    ByteBuffer byteBuffer_1 = Base64.getEncoder().encode(byteBuf_1.nioBuffer());
+                    BufferedImage icoBufferedImage = ImageIO.read(iconFile);
+                    
+                    // Validate the icon size
+                    Validate.validState(icoBufferedImage.getWidth() == 64, "Must be 64 pixels wide");
+                    Validate.validState(icoBufferedImage.getHeight() == 64, "Must be 64 pixels high");
+                    
+                    // Write the read buffer to the stream
+                    ImageIO.write(icoBufferedImage, "PNG", new ByteBufOutputStream(icoByteBuffer));
+                    
+                    ByteBuffer byteBuffer_1 = Base64.getEncoder().encode(icoByteBuffer.nioBuffer());
                     this.base64.add(StandardCharsets.UTF_8.decode(byteBuffer_1));
                 } catch (Exception e) {
                     CoreMod.logError("Couldn't load server icon", e);
                 } finally {
-                    byteBuf_1.release();
+                    icoByteBuffer.release();
                 }
             }
         }
     }
     
-    @Inject(at = @At("TAIL"), method = "getDescription", cancellable = true)
-    public void onGetDescription(CallbackInfoReturnable<Text> callback) {
+    @Inject(at = @At("HEAD"), method = "getDescription", cancellable = true)
+    public void onGetDescription(@NotNull CallbackInfoReturnable<Text> callback) {
         // Get MOTDs and if empty, cancel
         List<String> configMOTD = SewConfig.get(SewConfig.SERVER_MOTD_LIST);
         if (configMOTD.size() <= 0) return;
@@ -149,8 +114,38 @@ public abstract class MOTD {
         }
     }
     
+    @Inject(at = @At("RETURN"), method = "getPlayers", cancellable = true)
+    public void onGetPlayers(@NotNull CallbackInfoReturnable<ServerMetadata.Players> callback) {
+        ServerMetadata.Players players = callback.getReturnValue();
+        GameProfile[] profiles = players.getSample();
+        if (profiles == null)
+            return;
+        
+        for (int i = 0; i < profiles.length; i++) {
+            GameProfile profile = profiles[i];
+            String name = PlayerNameUtils.fetchPlayerNick(profile.getId())
+                .getString();
+            
+            // If the player has any rank
+            for (PlayerRank rank : RankUtils.getPlayerRanks(profile)) {
+                Text display;
+                if ((display = rank.getDisplay()) != null) {
+                    name += " [" + TextUtils.legacyConvert(display) + "]";
+                    break;
+                }
+            }
+            
+            profiles[i] = new GameProfile(
+            profile.getId(),
+            name
+            );
+        }
+        
+        players.setSample(profiles);
+    }
+    
     @Inject(at = @At("HEAD"), method = "getFavicon", cancellable = true)
-    public void getFavicon(CallbackInfoReturnable<String> callback) {
+    public void getFavicon(@NotNull CallbackInfoReturnable<String> callback) {
         if (this.base64.isEmpty())
             return;
         CharBuffer random = this.base64.get(ThreadLocalRandom.current().nextInt(this.base64.size()));
@@ -160,7 +155,7 @@ public abstract class MOTD {
     private String descriptionReplaceVariables(String description) {
         if (description != null) {
             // For all keys
-            for (Map.Entry<String, Callable<String>> row : this.motdVariables.entrySet()) {
+            for (Map.Entry<String, Callable<String>> row : ServerVariables.entrySet()) {
                 // If description contains
                 Pattern pattern = Pattern.compile("\\$\\{(" + row.getKey() + "[\\^_]{0,2})}");
                 Matcher matcher = pattern.matcher(description);
@@ -188,5 +183,4 @@ public abstract class MOTD {
         }
         return description;
     }
-    
 }

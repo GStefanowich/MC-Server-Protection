@@ -26,13 +26,13 @@
 package net.TheElm.project.utilities.text;
 
 import net.TheElm.project.utilities.ColorUtils;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
+import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
+import java.util.Iterator;
 import java.util.Objects;
 
 /**
@@ -72,5 +72,52 @@ public final class TextUtils {
         }
         
         return Objects.requireNonNull(main);
+    }
+    
+    public static @NotNull String legacyConvert(@NotNull Text text) {
+        StringBuilder out = new StringBuilder();
+        Formatting formatting = null;
+        
+        Text i = text;
+        Iterator<Text> iterator = text.getSiblings().iterator();
+        do {
+            Style style = i.getStyle();
+            
+            // Apply any styling to the given text
+            if (style.isObfuscated())
+                out.append(ColorUtils.getLegacyTag(Formatting.OBFUSCATED));
+            if (style.isBold())
+                out.append(ColorUtils.getLegacyTag(Formatting.BOLD));
+            if (style.isStrikethrough())
+                out.append(ColorUtils.getLegacyTag(Formatting.STRIKETHROUGH));
+            if (style.isUnderlined())
+                out.append(ColorUtils.getLegacyTag(Formatting.UNDERLINE));
+            if (style.isItalic())
+                out.append(ColorUtils.getLegacyTag(Formatting.ITALIC));
+            
+            TextColor color = style.getColor();
+            if (color != null) {
+                formatting = ColorUtils.getNearestFormatting(color);
+                out.append(ColorUtils.getLegacyTag(formatting));
+            } else if (formatting != null) {
+                out.append(ColorUtils.LEGACY_TAG + "r");
+                formatting = null;
+            }
+            
+            out.append(i.asString());
+        } while (iterator.hasNext() && (i = iterator.next()) != null);
+        
+        // Final formatting reset
+        if (formatting != null)
+            out.append(ColorUtils.LEGACY_TAG + "r");
+        
+        return out.toString();
+    }
+    
+    public static @NotNull String quoteWrap(@NotNull String text) {
+        return "\"" + text + "\"";
+    }
+    public static @NotNull MutableText quoteWrap(@NotNull MutableText text) {
+        return new LiteralText("\"").append(text).append("\"");
     }
 }

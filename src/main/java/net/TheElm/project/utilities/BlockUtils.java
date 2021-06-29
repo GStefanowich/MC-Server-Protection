@@ -142,4 +142,13 @@ public final class BlockUtils {
         return ((IClaimedChunk) protectedChunk).canPlayerDo(protectedPos, ((IClaimedChunk) sourceChunk).getOwner(sourcePos), permission);
     }
     
+    public static double angleBetween(@NotNull BlockPos pos1, @NotNull BlockPos pos2) {
+        return BlockUtils.angleBetween(pos1.getX(), pos1.getZ(), pos2.getX(), pos2.getZ());
+    }
+    
+    public static double angleBetween(int x1, int z1, int x2, int z2) {
+        double angle = Math.toDegrees(Math.atan2(x2 - x1, z2 - z1));
+        return angle + Math.ceil( -angle / 360 ) * 360;
+    }
+    
 }

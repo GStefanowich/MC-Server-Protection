@@ -38,6 +38,7 @@ import net.minecraft.entity.passive.HorseEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
@@ -55,7 +56,7 @@ public abstract class HorseRide extends HorseBaseEntity {
     }
     
     @Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
-    private void tryHorseMount(PlayerEntity player, Hand hand, CallbackInfoReturnable<Boolean> callback) {
+    private void tryHorseMount(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         // If the player is in creative, allow
         if ((player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
             return;
@@ -85,16 +86,16 @@ public abstract class HorseRide extends HorseBaseEntity {
         }
         
         // Horse makes an angry sound at the player
-        this.playSound( EntityUtils.getLockSound( this ),0.5f, 1f );
+        this.playSound(EntityUtils.getLockSound( this ),0.5f, 1f);
         
         // Display that this item can't be ridden
-        TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
-            EntityUtils.getLockedName( this ),
+        TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
+            EntityUtils.getLockedName(this),
             owner
         ));
         
         // Disallow
-        callback.setReturnValue( false );
+        callback.setReturnValue(ActionResult.FAIL);
     }
     
 }

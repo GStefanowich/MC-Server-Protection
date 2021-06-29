@@ -2,22 +2,43 @@ package net.TheElm.project.permissions;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Objects;
+
 public class PermissionNode {
     
-    private final String node;
-    private final String description;
+    private final @NotNull String node;
+    private final @NotNull String description;
     
     public PermissionNode(@NotNull String node, @NotNull String description) {
         this.node = node;
         this.description = description;
     }
     
-    public String getNode() {
+    public @NotNull String getNode() {
         return this.node;
     }
-    
-    public String getDescription() {
+    public @NotNull String getDescription() {
         return this.description;
     }
     
+    public boolean isWildcard() {
+        return this.node.equals("*");
+    }
+    
+    @Override
+    public int hashCode() {
+        return this.node.hashCode();
+    }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof PermissionNode)
+            return Objects.equals(this.node, obj.toString());
+        return false;
+    }
+    
+    @Override
+    public String toString() {
+        return this.node;
+    }
 }

@@ -145,7 +145,7 @@ public final class ChatroomCommands {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int playerMute(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int playerMute(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         if (!SewConfig.get(SewConfig.CHAT_MUTE_SELF))
             return ChatroomCommands.opMute( context );
         

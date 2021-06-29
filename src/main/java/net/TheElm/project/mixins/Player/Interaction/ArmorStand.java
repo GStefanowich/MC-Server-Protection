@@ -26,14 +26,12 @@
 package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.enums.ArmorStandPose;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerCorpse;
 import net.TheElm.project.objects.PlayerBackpack;
-import net.TheElm.project.utilities.ChunkUtils;
-import net.TheElm.project.utilities.EntityUtils;
-import net.TheElm.project.utilities.TitleUtils;
-import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.*;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.Block;
@@ -94,6 +92,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     /*
      * Armor Stand Modifications
      */
+    
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/block/Block.dropStack(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/item/ItemStack;)V"), method = "breakAndDropItem")
     private void onDropSelf(World world, BlockPos blockPos, ItemStack itemStack) {
         boolean showArms = this.shouldShowArms();
@@ -147,7 +146,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
             
             if (!this.shouldHideBasePlate()) {
                 if (player.isSneaking() && handStack.isEmpty() && (vec3d.y < 0.5D)) {
-                    this.setHideBasePlate( true );
+                    this.setHideBasePlate(true);
                     
                     this.dropStack(new ItemStack(Items.SMOOTH_STONE_SLAB, 1));
                     
@@ -155,8 +154,8 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
                     return;
                 }
             } else if (handStack.getItem().equals(Items.SMOOTH_STONE_SLAB)) {
-                handStack.decrement( 1 );
-                this.setHideBasePlate( false );
+                handStack.decrement(1);
+                this.setHideBasePlate(false);
                 
                 callback.setReturnValue(ActionResult.SUCCESS);
                 return;
@@ -164,8 +163,23 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
             
             // Take away the arms
             if (this.shouldShowArms()) {
-                if (player.isSneaking() && handStack.isEmpty()) {
-                    this.setShowArms( false );
+                if (!player.isSneaking() && handStack.getItem().equals(Items.STICK)) {
+                    // Get the next pose after the current
+                    ArmorStandPose pose = ArmorStandPose.getCurrent(this)
+                        .next();
+                    
+                    // Apply that pose
+                    ArmorStandPose.apply(pose, this);
+                    
+                    // Tell the player
+                    player.sendMessage(new LiteralText(CasingUtils.Words(pose.name()
+                        .replace('_', ' '))).formatted(Formatting.YELLOW), true);
+                    
+                    // Eat the interaction
+                    callback.setReturnValue(ActionResult.SUCCESS);
+                    return;
+                } else if (player.isSneaking() && handStack.isEmpty()) {
+                    this.setShowArms(false);
                     
                     ItemStack mainHand = this.getStackInHand(Hand.MAIN_HAND);
                     ItemStack offHand = this.getStackInHand(Hand.OFF_HAND);

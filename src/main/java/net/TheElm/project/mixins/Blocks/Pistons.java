@@ -25,6 +25,7 @@
 
 package net.TheElm.project.mixins.Blocks;
 
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.utilities.BlockUtils;
 import net.minecraft.block.BlockState;
@@ -48,8 +49,10 @@ public class Pistons {
         if (!callback.getReturnValue())
             return;
         
+        boolean pushing = pistonDir == moveDir;
+        
         // If pushing
-        if (pistonDir == moveDir) {
+        if (pushing) {
             pistonPos = blockPos.offset(pistonDir.getOpposite());
             movePos = blockState.isAir() ? blockPos // If AIR, don't offset
                 : blockPos.offset(moveDir); // Move block position to where it is GOING to be
@@ -60,11 +63,14 @@ public class Pistons {
             movePos = blockPos;
         }
         
-        // TODO: Fix desync when pulling blocks that suddenly vanish
-        
         // Check that first chunk owner can modify the next chunk
-        if (!BlockUtils.canBlockModifyBlock(world, movePos, pistonPos, ClaimPermissions.BLOCKS ))
+        if (!BlockUtils.canBlockModifyBlock(world, movePos, pistonPos, ClaimPermissions.BLOCKS )) {
+            // Send the ghost block update
+            if (!pushing)
+                ServerCore.markDirty(world, movePos);
+            // Cancel the block movement
             callback.setReturnValue(false);
+        }
     }
     
 }

@@ -266,7 +266,7 @@ public abstract class CoreMod {
     /*
      * Get the name of our ENUMs for entry into the database
      */
-    private static <T extends Enum<T>> String getDatabaseReadyEnumerators( Class<T> enumClass ) {
+    private static @NotNull <T extends Enum<T>> String getDatabaseReadyEnumerators(@NotNull Class<T> enumClass) {
         Enum[] values = enumClass.getEnumConstants();
         List<String> out = new ArrayList<>();
         for ( Enum e : values ) {
@@ -279,38 +279,38 @@ public abstract class CoreMod {
      * Our logger
      */
     public static final String logPrefix = "[SEW] ";
-    public static void logInfo(@Nullable Text message ) {
+    public static void logInfo(@Nullable Text message) {
         MutableText out = new LiteralText(logPrefix);
         if (message == null) out.append("NULL");
         else out.append(message);
         logger.info(out.getString());
     }
-    public static void logInfo(@Nullable String message ) {
+    public static void logInfo(@Nullable String message) {
         CoreMod.logInfo(new LiteralText(message == null ? "NULL" : message));
     }
-    public static void logInfo(@Nullable Object message ) {
+    public static void logInfo(@Nullable Object message) {
         CoreMod.logInfo( message == null ? "NULL" : message.toString() );
     }
     
-    public static void logDebug(@Nullable String message ) {
+    public static void logDebug(@Nullable String message) {
         if (CoreMod.isDebugging())
             CoreMod.logInfo( message );
     }
-    public static void logDebug(@Nullable Text message ) {
+    public static void logDebug(@Nullable Text message) {
         if (message == null) CoreMod.logDebug("NULL");
         else if (CoreMod.isDebugging()) CoreMod.logInfo(message);
     }
     
-    public static void logError( String message ) {
+    public static void logError(String message) {
         logger.error( logPrefix + message );
     }
-    public static void logError( Text message ) {
+    public static void logError(@NotNull Text message) {
         logError( message.getString() );
     }
-    public static void logError( Throwable t ) {
-        logger.catching( t );
+    public static void logError(Throwable t) {
+        logger.catching(t);
     }
-    public static void logError( String message, Throwable error ) {
+    public static void logError(String message, Throwable error) {
         logger.error( logPrefix + message, error );
     }
     public static void logError(@Nullable Object message ) {

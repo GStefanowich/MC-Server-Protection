@@ -4,15 +4,15 @@ import org.jetbrains.annotations.NotNull;
 
 public class OtherInflictableNode extends InflictableNode {
     
-    private final InflictableNode onOther;
+    private final @NotNull InflictableNode onOther;
     
-    public OtherInflictableNode(@NotNull String node, @NotNull String description) {
-        super(node, description);
+    public OtherInflictableNode(@NotNull String node, @NotNull String thisDescription, @NotNull String otherDescription) {
+        super(node, thisDescription);
         
-        this.onOther = new InflictableNode(node + ".other", description);
+        this.onOther = new InflictableNode(node + ".other", otherDescription);
     }
     
-    public InflictableNode onOther() {
+    public @NotNull InflictableNode onOther() {
         return this.onOther;
     }
     
