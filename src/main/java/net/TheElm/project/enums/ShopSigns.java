@@ -105,14 +105,14 @@ public enum ShopSigns {
         @Override
         public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
             // Second row Count - Item Name
-            shop.setTextOnRow(1, shop.textParseItem());
+            shop.setSignLine(1, shop.textParseItem());
             // Third Row - Price
-            shop.setTextOnRow(2,
+            shop.setSignLine(2,
             new LiteralText("for ").formatted(Formatting.BLACK)
                   .append(new LiteralText("$" + shop.getShopItemPrice()).styled(ShopSignBlockEntity.APPLICATOR_GREEN))
             );
             // Fourth Row - Owner
-            shop.setTextOnRow(3,
+            shop.setSignLine(3,
                 shop.textParseOwner().formatted(Formatting.DARK_GRAY)
             );
             
@@ -234,16 +234,16 @@ public enum ShopSigns {
         @Override
         public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
             // Second row Count - Item Name
-            shop.setTextOnRow(1, shop.textParseItem());
+            shop.setSignLine(1, shop.textParseItem());
             
             // Third Row - Price
-            shop.setTextOnRow(2,
+            shop.setSignLine(2,
                 new LiteralText("for ").formatted(Formatting.BLACK)
                     .append(new LiteralText("$" + shop.getShopItemPrice()).styled(ShopSignBlockEntity.APPLICATOR_RED))
             );
             
             // Fourth Row - Owner
-            shop.setTextOnRow(3,
+            shop.setSignLine(3,
                 shop.textParseOwner().formatted(Formatting.DARK_GRAY)
             );
             
@@ -362,15 +362,15 @@ public enum ShopSigns {
         @Override
         public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
             // Second row Count - Item Name
-            shop.setTextOnRow(1, shop.textParseItem());
+            shop.setSignLine(1, shop.textParseItem());
             // Third Row - Price
-            shop.setTextOnRow(2,
+            shop.setSignLine(2,
                 new LiteralText("for ").formatted(Formatting.BLACK)
                     .append(new LiteralText("Free").styled(ShopSignBlockEntity.APPLICATOR_GREEN))
                     .append("!")
             );
             // Fourth Row - Owner
-            shop.setTextOnRow(3,
+            shop.setSignLine(3,
                 shop.textParseOwner().formatted(Formatting.DARK_GRAY)
             );
             
@@ -441,9 +441,9 @@ public enum ShopSigns {
         }
         @Override
         public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
-            shop.setTextOnRow(1, new LiteralText(""));
-            shop.setTextOnRow(2, new LiteralText(""));
-            shop.setTextOnRow(3, new LiteralText(""));
+            shop.setSignLine(1, new LiteralText(""));
+            shop.setSignLine(2, new LiteralText(""));
+            shop.setSignLine(3, new LiteralText(""));
             
             return super.renderSign(shop, creator);
         }
@@ -482,11 +482,11 @@ public enum ShopSigns {
         }
         @Override
         public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
-            shop.setTextOnRow(1, new LiteralText("Teleport to ").formatted(Formatting.DARK_GRAY)
+            shop.setSignLine(1, new LiteralText("Teleport to ").formatted(Formatting.DARK_GRAY)
                 .append(new LiteralText("Biome").formatted(Formatting.OBFUSCATED, Formatting.RED))
             );
-            shop.setTextOnRow(2, new LiteralText(""));
-            shop.setTextOnRow(3, new LiteralText(""));
+            shop.setSignLine(2, new LiteralText(""));
+            shop.setSignLine(3, new LiteralText(""));
             
             return super.renderSign(shop, creator);
         }
@@ -608,9 +608,9 @@ public enum ShopSigns {
             Text priceText = new LiteralText("$" + FormattingUtils.number(shop.getShopItemPrice())).formatted(Formatting.DARK_BLUE);
             
             // Set the text for the sign
-            shop.setTextOnRow(1, new LiteralText(name.getString()).formatted(Formatting.GREEN));
-            shop.setTextOnRow(2, new LiteralText("Build here").formatted(Formatting.BLACK));
-            shop.setTextOnRow(3, new LiteralText("for ").formatted(Formatting.BLACK).append(priceText));
+            shop.setSignLine(1, new LiteralText(name.getString()).formatted(Formatting.GREEN));
+            shop.setSignLine(2, new LiteralText("Build here").formatted(Formatting.BLACK));
+            shop.setSignLine(3, new LiteralText("for ").formatted(Formatting.BLACK).append(priceText));
             
             return super.renderSign(shop, creator);
         }
@@ -783,12 +783,12 @@ public enum ShopSigns {
         public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
             NumberFormat formatter = NumberFormat.getInstance();
             
-            shop.setTextOnRow(1, new LiteralText(formatter.format(shop.getShopItemCount()) + " chunks"));
-            shop.setTextOnRow(2,
+            shop.setSignLine(1, new LiteralText(formatter.format(shop.getShopItemCount()) + " chunks"));
+            shop.setSignLine(2,
             new LiteralText("for ").formatted(Formatting.BLACK)
                 .append(new LiteralText("$" + shop.getShopItemPrice()).formatted(Formatting.DARK_BLUE))
             );
-            shop.setTextOnRow(3, new LiteralText(""));
+            shop.setSignLine(3, new LiteralText(""));
             
             return super.renderSign(shop, creator);
         }
@@ -859,9 +859,9 @@ public enum ShopSigns {
             if (guideName == null)
                 return false;
             
-            shop.setTextOnRow(1, new LiteralText(guideName.getString()));
-            shop.setTextOnRow(2, new LiteralText(""));
-            shop.setTextOnRow(3, new LiteralText(""));
+            shop.setSignLine(1, new LiteralText(guideName.getString()));
+            shop.setSignLine(2, new LiteralText(""));
+            shop.setSignLine(3, new LiteralText(""));
             
             return super.renderSign(shop, creator);
         }
@@ -919,12 +919,12 @@ public enum ShopSigns {
         public boolean renderSign(@NotNull ShopSignBlockEntity shop, @NotNull GameProfile creator) {
             NumberFormat formatter = NumberFormat.getInstance();
             
-            shop.setTextOnRow(1, new LiteralText(formatter.format(shop.getShopItemCount()) + " slots"));
-            shop.setTextOnRow(2,
+            shop.setSignLine(1, new LiteralText(formatter.format(shop.getShopItemCount()) + " slots"));
+            shop.setSignLine(2,
             new LiteralText("for ").formatted(Formatting.BLACK)
                 .append(new LiteralText("$" + shop.getShopItemPrice()).formatted(Formatting.DARK_BLUE))
             );
-            shop.setTextOnRow(3, new LiteralText(""));
+            shop.setSignLine(3, new LiteralText(""));
             
             return super.renderSign(shop, creator);
         }
@@ -1095,7 +1095,7 @@ public enum ShopSigns {
     public abstract boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException;
     public boolean renderSign(@NotNull final ShopSignBlockEntity shop, @NotNull final GameProfile creator) {
         // Set the first row formatting
-        shop.setTextOnRow(0, new LiteralText( "[" + this.name() + "]" ).styled(this.getApplicator()));
+        shop.setSignLine(0, new LiteralText( "[" + this.name() + "]" ).styled(this.getApplicator()));
         return true;
     }
     public final boolean renderSign(@NotNull final ShopSignBlockEntity shop, @NotNull final UUID creator) {

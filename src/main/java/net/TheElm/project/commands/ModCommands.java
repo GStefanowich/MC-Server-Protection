@@ -38,6 +38,7 @@ import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.MinecraftServer;
@@ -145,6 +146,11 @@ public final class ModCommands {
             return 0;
         }
         
+        // Clear the editor of the sign (Causes re-rendering issues)
+        if (blockEntity instanceof SignBlockEntity)
+            ((SignBlockEntity) blockEntity).setEditor(null);
+        
+        // Get the entity as the shop sign
         ShopSignBlockEntity shop = (ShopSignBlockEntity) blockEntity;
         
         // Update the owner of the shop to the target

@@ -102,7 +102,7 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
         return this.lines[line];
     }
     @Override
-    public void setTextOnRow(int row, @Nullable Text text) {
+    public void setSignLine(int row, @Nullable Text text) {
         this.getSign().setTextOnRow(row, text);
     }
     

@@ -97,6 +97,10 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     public Text getSignLine(int line) {
         return this.text[line];
     }
+    @Override
+    public void setSignLine(int row, @Nullable Text text) {
+        ((SignBlockEntity)(BlockEntity) this).setTextOnRow(row, text);
+    }
     
     @Override
     public @Nullable Item getShopItem() {

@@ -51,7 +51,7 @@ public interface ShopSignBlockEntity {
     @NotNull StyleApplicator APPLICATOR_RED = new StyleApplicator("#B22222");
     
     @Nullable Text getSignLine(int line);
-    void setTextOnRow(int row, @Nullable Text text);
+    void setSignLine(int row, @Nullable Text text);
     
     void setShopOwner(@Nullable UUID uuid);
     @Nullable UUID getShopOwner();
