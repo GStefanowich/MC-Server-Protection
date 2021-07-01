@@ -32,9 +32,11 @@ import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.exceptions.ShopBuilderException;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.text.MessageUtils;
+import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -62,20 +64,20 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
     /*
      * Builder information
      */
-    private final SignBlockEntity sign;
-    private final World world;
-    private final BlockPos blockPos;
+    private final @NotNull SignBlockEntity sign;
+    private final @NotNull World world;
+    private final @NotNull BlockPos blockPos;
     private Text[] lines = new Text[4];
     
     /* 
      * Shop information
      */
-    private UUID ownerUUID = null;
-    private ShopSigns signType = null;
+    private @Nullable UUID ownerUUID = null;
+    private @Nullable ShopSigns signType = null;
     
-    private Identifier tradeItemIdentifier = null;
-    private Map<Enchantment, Integer> tradeItemEnchants = Maps.newLinkedHashMap();
-    private Item tradeItem = null;
+    private @Nullable Identifier tradeItemIdentifier = null;
+    private final @NotNull Map<Enchantment, Integer> tradeItemEnchants = Maps.newLinkedHashMap();
+    private @Nullable Item tradeItem = null;
     private int tradePrice = 0;
     private int stackSize = 0;
     
@@ -94,9 +96,7 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
     public Text[] getLines() {
         return this.lines;
     }
-    public SignBlockEntity getSign() {
-        return this.sign;
-    }
+    
     @Override
     public @Nullable Text getSignLine(int line) {
         return this.lines[line];
@@ -104,6 +104,27 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
     @Override
     public void setSignLine(int row, @Nullable Text text) {
         this.getSign().setTextOnRow(row, text);
+    }
+    
+    @Override
+    public @Nullable UUID getShopOwner() {
+        return this.ownerUUID;
+    }
+    @Override
+    public void setShopOwner(@Nullable UUID uuid) {
+        this.ownerUUID = uuid;
+    }
+    
+    @Override
+    public @NotNull Item getShopItem() {
+        return Registry.ITEM.get(this.getShopItemIdentifier());
+    }
+    @Override
+    public boolean setItem(@NotNull ItemStack stack) {
+        this.tradeItemIdentifier = Registry.ITEM.getId(stack.getItem());
+        this.tradeItemEnchants.putAll(EnchantmentHelper.get(stack));
+        // Return if the item is AIR
+        return !Items.AIR.equals(this.tradeItem = stack.getItem());
     }
     
     @Override
@@ -115,20 +136,8 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
         return this.tradeItemIdentifier;
     }
     @Override
-    public @NotNull Item getShopItem() {
-        return Registry.ITEM.get(this.getShopItemIdentifier());
-    }
-    @Override
     public @Nullable Map<Enchantment, Integer> getShopItemEnchantments() {
         return this.tradeItemEnchants;
-    }
-    @Override
-    public void setShopOwner(@Nullable UUID uuid) {
-        this.ownerUUID = uuid;
-    }
-    @Override
-    public @Nullable UUID getShopOwner() {
-        return this.ownerUUID;
     }
     @Override
     public @NotNull Integer getShopItemPrice() {
@@ -138,6 +147,21 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
     public @NotNull Integer getShopItemCount() {
         return this.stackSize;
     }
+    
+    @Override
+    public @Nullable LootableContainerBlockEntity getContainer() {
+        return InventoryUtils.getAttachedChest(this.world, this.blockPos);
+    }
+    @Override
+    public @NotNull SignBlockEntity getSign() {
+        return this.sign;
+    }
+    @Override
+    public @Nullable Inventory getInventory() {
+        LootableContainerBlockEntity container = this.getContainer();
+        return container == null ? null : InventoryUtils.getInventoryOf(this.world, container.getPos());
+    }
+    
     @Override
     public @Nullable BlockPos getFirstPos() {
         return this.regionPosA;
@@ -147,14 +171,11 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
         return this.regionPosB;
     }
     
-    public World getWorld() {
+    public @NotNull World getWorld() {
         return this.world;
     }
     
-    public void shopOwner(UUID newOwner) {
-        this.ownerUUID = newOwner;
-    }
-    public void regionPositioning(BlockPos first, BlockPos second) {
+    public void regionPositioning(@Nullable BlockPos first, @Nullable BlockPos second) {
         this.regionPosA = first;
         this.regionPosB = second;
     }
@@ -220,18 +241,23 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
         if ( !m.find() )
             return false;
         
-        this.stackSize = Integer.parseUnsignedInt( m.group( 1 ) );
-        String itemName = m.group( 2 ).replace( " ", "_" ).toLowerCase();
+        this.stackSize = Integer.parseUnsignedInt(m.group(1));
+        String itemName = m.group(2).replace(" ", "_")
+            .toLowerCase();
         
         if ( "hand".equals(itemName)) {
-            ItemStack handStack = player.getOffHandStack();
-            this.tradeItemIdentifier = Registry.ITEM.getId(handStack.getItem());
-            this.tradeItemEnchants.putAll(EnchantmentHelper.get(handStack));
+            // Get the item being held by the player
+            return this.setItem(player.getOffHandStack());
+        } else if ( "inventory".equals(itemName) ) {
+            // Get the item from the attached chest
+            Inventory inventory = this.getInventory();
             
-            return (this.tradeItem = handStack.getItem()) != Items.AIR;
-            
+            // If an item was found in the container that isn't AIR
+            return inventory != null && this.setItem(InventoryUtils.getFirstStack(inventory));
         } else {
+            // Try to get the trade identifier
             try {
+                // Get the identifier from the sign
                 if (!itemName.contains(":"))
                     this.tradeItemIdentifier = new Identifier("minecraft:" + itemName);
                 else this.tradeItemIdentifier = new Identifier(itemName);
@@ -239,7 +265,8 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
                 return false;
             }
             
-            return (this.tradeItem = this.getShopItem()) != Items.AIR;
+            // If the item identifier is not AIR
+            return !Items.AIR.equals(this.tradeItem = this.getShopItem());
         }
     }
     public boolean textMatchCount(@NotNull Text text) {

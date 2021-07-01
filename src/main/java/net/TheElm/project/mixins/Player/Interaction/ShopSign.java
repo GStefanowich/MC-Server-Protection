@@ -25,9 +25,11 @@
 
 package net.TheElm.project.mixins.Player.Interaction;
 
+import com.google.common.collect.Maps;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.ShopSignBuilder;
 import net.TheElm.project.utilities.nbt.NbtGet;
 import net.TheElm.project.utilities.nbt.NbtUtils;
@@ -35,9 +37,14 @@ import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -55,6 +62,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Mixin(SignBlockEntity.class)
@@ -66,24 +74,40 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     /*
      * Mixin variables
      */
+    
     // Shop Owner (Necessary to be a shop sign)
-    private UUID shopSign_Owner = null;
-    private ShopSigns shopSign_Type = null;
+    private @Nullable UUID shopSign_Owner = null;
+    private @Nullable ShopSigns shopSign_Type = null;
     
     // Item being traded
-    private Identifier shopSign_item = null;
+    private @Nullable Identifier shopSign_item = null;
+    private final @NotNull Map<Enchantment, Integer> tradeItemEnchants = Maps.newLinkedHashMap();
     
     // Price / Count of item transactioning
-    private Integer shopSign_itemCount = null;
-    private Integer shopSign_itemPrice = null;
+    private @Nullable Integer shopSign_itemCount = null;
+    private @Nullable Integer shopSign_itemPrice = null;
     
     // Region Sign Information
-    private BlockPos shopSign_posA = null;
-    private BlockPos shopSign_posB = null;
+    private @Nullable BlockPos shopSign_posA = null;
+    private @Nullable BlockPos shopSign_posB = null;
     
     /*
      * Mixin Getters
      */
+    
+    @Override
+    public @Nullable LootableContainerBlockEntity getContainer() {
+        return InventoryUtils.getAttachedChest(this.world, this.pos);
+    }
+    @Override
+    public @NotNull SignBlockEntity getSign() {
+        return (SignBlockEntity)(BlockEntity) this;
+    }
+    @Override
+    public @Nullable Inventory getInventory() {
+        LootableContainerBlockEntity container = this.getContainer();
+        return container == null ? null : InventoryUtils.getInventoryOf(container);
+    }
     
     @Override
     public void setShopOwner(@Nullable UUID uuid) {
@@ -93,6 +117,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     public @Nullable UUID getShopOwner() {
         return this.shopSign_Owner;
     }
+    
     @Override
     public Text getSignLine(int line) {
         return this.text[line];
@@ -103,9 +128,15 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     }
     
     @Override
+    public boolean setItem(@NotNull ItemStack stack) {
+        this.shopSign_item = Registry.ITEM.getId(stack.getItem());
+        this.tradeItemEnchants.putAll(EnchantmentHelper.get(stack));
+        return !Items.AIR.equals(stack.getItem());
+    }
+    @Override
     public @Nullable Item getShopItem() {
         Item tradeItem;
-        if (( tradeItem = Registry.ITEM.get( this.shopSign_item ) ) != Items.AIR )
+        if ((tradeItem = Registry.ITEM.get(this.shopSign_item)) != Items.AIR )
             return tradeItem;
         return null;
     }
@@ -113,6 +144,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     public @Nullable Identifier getShopItemIdentifier() {
         return this.shopSign_item;
     }
+    
     @Override
     public @Nullable Integer getShopItemCount() {
         return this.shopSign_itemCount;
@@ -120,12 +152,18 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     private void setShopItemCount(@Nullable Integer count) {
         this.shopSign_itemCount = count;
     }
+    
     @Override
     public @Nullable Integer getShopItemPrice() {
         return this.shopSign_itemPrice;
     }
     private void setShopItemPrice(@Nullable Integer price) {
         this.shopSign_itemPrice = price;
+    }
+    
+    @Override
+    public @Nullable Map<Enchantment, Integer> getShopItemEnchantments() {
+        return this.tradeItemEnchants;
     }
     
     @Override
@@ -145,6 +183,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     /*
      * Constructor
      */
+    
     public ShopSign(BlockEntityType<?> blockEntityType_1) {
         super(blockEntityType_1);
     }
@@ -200,7 +239,10 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
         if ( this.shopSign_Owner == null )
             return;
         
+        // Add shop owner
         tag.putUuid("shop_owner", this.getShopOwner());
+        
+        // Add item information
         if ( this.shopSign_item != null )
             tag.putString("shop_item", this.getShopItemIdentifier().toString());
         if (this.shopSign_itemCount != null)
@@ -208,6 +250,11 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
         if (this.shopSign_itemPrice != null)
             tag.putInt("shop_price", this.getShopItemPrice());
         
+        // Add enchantments
+        if (!this.tradeItemEnchants.isEmpty())
+            tag.put("shop_item_enchants", NbtUtils.enchantsToTag(this.tradeItemEnchants));
+        
+        // Add block ranges
         if ((this.getFirstPos() != null) && (this.getSecondPos() != null)) {
             tag.putLong("shop_blockPosA", this.getFirstPos().asLong());
             tag.putLong("shop_blockPosB", this.getSecondPos().asLong());
@@ -238,6 +285,10 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                     this.shopSign_posB = BlockPos.fromLong(tag.getLong("shop_blockPosB"));
                 }
                 
+                // Load the enchantments from the tag
+                if (tag.contains("shop_item_enchants", NbtType.LIST))
+                    this.tradeItemEnchants.putAll(NbtUtils.enchantsFromTag(tag.getList("shop_item_enchants", NbtType.COMPOUND)));
+                
                 // Save the shop owner UUID
                 this.shopSign_Owner = uuid;
                 
@@ -249,7 +300,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                 NbtUtils.tryGet(tag, NbtGet.INT, "shop_price", this::setShopItemPrice);
                 
                 // Re-Render the sign when loaded
-                this.shopSign_Type.renderSign(this, uuid);
+                this.renderSign();
             });
         }
     }

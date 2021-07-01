@@ -4,12 +4,13 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.objects.WeightedReward;
 import net.TheElm.project.utilities.IntUtils;
 import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentLevelEntry;
 import net.minecraft.enchantment.Enchantments;
+import net.minecraft.item.EnchantedBookItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import org.jetbrains.annotations.NotNull;
@@ -122,15 +123,7 @@ public final class DragonLoot {
     private static @NotNull WeightedReward bookReward(int weight, Enchantment enchantment, final int level) {
         final Identifier enchantmentId = Registry.ENCHANTMENT.getId(enchantment);
         return DragonLoot.itemReward(weight, Items.ENCHANTED_BOOK, (book) -> {
-            CompoundTag nbt = book.getOrCreateTag();
-            ListTag enchantments = new ListTag();
-            CompoundTag enchantmentTag = new CompoundTag();
-            
-            enchantments.add(enchantmentTag);
-            nbt.put("StoredEnchantments", enchantments);
-            
-            enchantmentTag.putString("id", enchantmentId.toString());
-            enchantmentTag.putInt("lvl", level);
+            EnchantedBookItem.addEnchantment(book, new EnchantmentLevelEntry(enchantment, level));
         });
     }
     

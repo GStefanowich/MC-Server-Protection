@@ -29,11 +29,17 @@ import com.mojang.authlib.GameProfile;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ShopSigns;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.TheElm.project.utilities.text.StyleApplicator;
+import net.minecraft.block.entity.LootableContainerBlockEntity;
+import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -50,16 +56,24 @@ public interface ShopSignBlockEntity {
     @NotNull StyleApplicator APPLICATOR_GREEN = new StyleApplicator("#32CD32");
     @NotNull StyleApplicator APPLICATOR_RED = new StyleApplicator("#B22222");
     
+    @Nullable LootableContainerBlockEntity getContainer();
+    @NotNull SignBlockEntity getSign();
+    
     @Nullable Text getSignLine(int line);
     void setSignLine(int row, @Nullable Text text);
     
     void setShopOwner(@Nullable UUID uuid);
     @Nullable UUID getShopOwner();
+    
     default @Nullable GameProfile getShopOwnerProfile() {
         return this.getShopOwner() == null ? null : ServerCore.getGameProfile(this.getShopOwner());
     }
     @Nullable Item getShopItem();
     @Nullable Identifier getShopItemIdentifier();
+    default @NotNull String getShopItemTranslationKey() {
+        Item item = this.getShopItem();
+        return (item == null ? Items.AIR : item).getTranslationKey();
+    }
     default @Nullable Map<Enchantment, Integer> getShopItemEnchantments() {
         return new HashMap<>();
     }
@@ -72,10 +86,12 @@ public interface ShopSignBlockEntity {
     @Nullable Integer getShopItemCount();
     @Nullable Integer getShopItemPrice();
     
+    boolean setItem(@NotNull ItemStack stack);
+    
     @Nullable BlockPos getFirstPos();
     @Nullable BlockPos getSecondPos();
     
-    /*@Nullable Inventory getInventory();*/
+    @Nullable Inventory getInventory();
     
     @Nullable ShopSigns getShopType();
     
@@ -116,16 +132,46 @@ public interface ShopSignBlockEntity {
         return profile == null || Objects.equals(CoreMod.SPAWN_ID, profile.getId()) ? new LiteralText("") : new LiteralText(profile.getName());
     }
     
-    default boolean renderSign(@NotNull final UUID creator) {
+    default boolean renderSign() {
         ShopSigns type = this.getShopType();
-        return type != null && type.renderSign(this, creator);
+        return type != null && type.renderSign(this);
     }
-    default boolean renderSign(@NotNull final GameProfile creator) {
-        ShopSigns type = this.getShopType();
-        return type != null && type.renderSign(this, creator);
+    default void removeEditor() {
+        SignBlockEntity sign = this.getSign();
+        
+        PlayerEntity editor = sign.getEditor();
+        
+        // Close the sign editor screen if still editing the sign
+        if (editor != null) {
+            // TODO: Check if the player is editing the sign and exit it
+        }
+        
+        sign.setEditor(null);
     }
-    default boolean renderSign(@NotNull final ServerPlayerEntity creator) {
-        ShopSigns type = this.getShopType();
-        return type != null && type.renderSign(this, creator);
+    
+    default boolean itemMatchPredicate(@NotNull ItemStack stack) {
+        // Items must be equals
+        if (!Objects.equals(this.getShopItem(), stack.getItem()))
+            return false;
+        
+        // Don't accept damaged goods
+        if (stack.isDamaged())
+            return false;
+        
+        // Make sure the enchantments match
+        Map<Enchantment, Integer> enchantments = this.getShopItemEnchantments();
+        return enchantments == null || NbtUtils.enchantsEquals(enchantments, EnchantmentHelper.get(stack));
+    }
+    default ItemStack createItemStack(int count) {
+        Item item = this.getShopItem();
+        if (item == null)
+            item = Items.AIR;
+        ItemStack stack = new ItemStack(item, Collections.min(Arrays.asList(count, item.getMaxCount())));
+        
+        Map<Enchantment, Integer> enchantments = this.getShopItemEnchantments();
+        if (enchantments != null && !enchantments.isEmpty())
+            EnchantmentHelper.set(enchantments, stack);
+        
+        return stack;
     }
 }

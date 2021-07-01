@@ -34,6 +34,8 @@ import net.TheElm.project.objects.WorldPos;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.utilities.LegacyConverter;
 import net.fabricmc.fabric.api.util.NbtType;
+import net.minecraft.enchantment.Enchantment;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityType;
 import net.minecraft.nbt.*;
 import net.minecraft.server.world.ServerWorld;
@@ -383,13 +385,13 @@ public final class NbtUtils {
     /*
      * Lists
      */
-    public static @NotNull <T> ListTag toList(Collection<T> collection, Function<T, String> function) {
+    public static @NotNull <T> ListTag toList(@NotNull Collection<T> collection, @NotNull Function<T, String> function) {
         ListTag list = new ListTag();
         for (T obj : collection)
             list.add(StringTag.of(function.apply(obj)));
         return list;
     }
-    public static @NotNull <T> Collection<T> fromList(ListTag list, Function<String, T> function) {
+    public static @NotNull <T> Collection<T> fromList(@NotNull ListTag list, @NotNull Function<String, T> function) {
         List<T> collection = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
             T obj = function.apply(list.getString(i));
@@ -428,7 +430,7 @@ public final class NbtUtils {
     /*
      * File Erasure
      */
-    public static boolean delete(Claimant claimant) {
+    public static boolean delete(@NotNull Claimant claimant) {
         File file = Paths.get(
             NbtUtils.levelNameFolder().getAbsolutePath(),
             "sewing-machine",
@@ -443,7 +445,7 @@ public final class NbtUtils {
     /*
      * Spawner Lore
      */
-    public static CompoundTag getSpawnerDisplay(ListTag entityIdTag) {
+    public static @NotNull CompoundTag getSpawnerDisplay(@NotNull ListTag entityIdTag) {
         // Create the lore tag
         ListTag loreTag = new ListTag();
         for (Tag entityTag : entityIdTag) {
@@ -467,4 +469,30 @@ public final class NbtUtils {
         return displayTag;
     }
     
+    /*
+     * Enchantment Tags
+     */
+    public static @NotNull ListTag enchantsToTag(@NotNull Map<Enchantment, Integer> enchantments) {
+        ListTag list = new ListTag();
+        enchantments.entrySet().stream()
+            .map(entry -> {
+                CompoundTag tag = new CompoundTag();
+                tag.putString("id", String.valueOf(Registry.ENCHANTMENT.getId(entry.getKey())));
+                tag.putInt("lvl", entry.getValue());
+                return tag;
+            }).forEach(list::add);
+        
+        return list;
+    }
+    public static @NotNull Map<Enchantment, Integer> enchantsFromTag(@NotNull ListTag tag) {
+        return EnchantmentHelper.fromTag(tag);
+    }
+    public static boolean enchantsEquals(@NotNull final Map<Enchantment, Integer> first, @NotNull final Map<Enchantment, Integer> second) {
+        if (first.isEmpty() && second.isEmpty())
+            return true;
+        if (first.size() != second.size())
+            return false;
+        return first.entrySet().stream()
+            .allMatch(e -> Objects.equals(e.getValue(), second.get(e.getKey())));
+    }
 }

@@ -36,6 +36,9 @@ import net.minecraft.block.*;
 import net.minecraft.block.entity.*;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.boss.BossBar;
+import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.mob.PiglinEntity;
 import net.minecraft.entity.passive.*;
@@ -48,6 +51,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
@@ -292,6 +296,52 @@ public final class EntityUtils {
     public static Text getLockedName(@NotNull Entity entity) {
         return entity.getName().copy()
             .formatted(Formatting.AQUA);
+    }
+    
+    /*
+     * Boss Bars
+     */
+    public static @NotNull BossBar.Color getHealthColor(@NotNull LivingEntity entity) {
+        return EntityUtils.getHealthColor(entity.getHealth() / entity.getMaxHealth());
+    }
+    public static @NotNull BossBar.Color getHealthColor(float percentage) {
+        if (percentage >= 0.6)
+            return BossBar.Color.GREEN;
+        if (percentage >= 0.3)
+            return BossBar.Color.YELLOW;
+        return BossBar.Color.RED;
+    }
+    public static void updateHealthBar(@NotNull LivingEntity entity, @NotNull BossBar bossBar) {
+        float percentage = entity.getHealth() / entity.getMaxHealth();
+        if (percentage != bossBar.getPercent()) {
+            // Update the bar
+            bossBar.setPercent(percentage);
+            
+            // Update the color of the bar
+            bossBar.setColor(EntityUtils.getHealthColor(percentage));
+        }
+    }
+    public static @NotNull ServerBossBar createHealthBar(@NotNull LivingEntity entity) {
+        float percentage = entity.getHealth() / entity.getMaxHealth();
+        
+        MutableText name = null;
+        if (entity instanceof PlayerEntity)
+            name = new LiteralText("Player ")
+                .append(entity.getDisplayName())
+                .formatted(Formatting.WHITE);
+        else name = FormattingUtils.deepCopy(entity.getDisplayName());
+        
+        // Create the health bar
+        ServerBossBar healthBar = new ServerBossBar(
+            name,
+            EntityUtils.getHealthColor(percentage),
+            BossBar.Style.NOTCHED_10 // Set the notches to the hearts count
+        );
+        
+        // Set the health bar percentage
+        healthBar.setPercent(percentage);
+        
+        return healthBar;
     }
     
     /*

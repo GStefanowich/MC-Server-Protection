@@ -48,7 +48,6 @@ import net.minecraft.entity.ai.pathing.Path;
 import net.minecraft.entity.ai.pathing.PathNodeMaker;
 import net.minecraft.entity.ai.pathing.PathNodeNavigator;
 import net.minecraft.entity.attribute.EntityAttributes;
-import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.MobEntity;
@@ -223,20 +222,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     private void updateHealthBar() {
         // Get the health percentage
-        float percentage = this.getHealth() / this.getMaxHealth();
-        
-        if (percentage != this.getHealthBar().getPercent()) {
-            // Update the bar
-            this.getHealthBar().setPercent( percentage );
-            
-            // Update the color of the bar
-            this.getHealthBar().setColor(
-                percentage >= 0.6 ? BossBar.Color.GREEN
-                    : ( percentage >= 0.3 ? BossBar.Color.YELLOW
-                        : BossBar.Color.RED
-                    )
-            );
-        }
+        EntityUtils.updateHealthBar(this, this.getHealthBar());
     }
     @Override
     public @NotNull ServerBossBar getHealthBar() {
@@ -246,12 +232,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     public @Contract("true -> !null") ServerBossBar getHealthBar(boolean create) {
         if (this.healthBar != null || !create)
             return this.healthBar;
-        // Create the health bar
-        return (this.healthBar = new ServerBossBar(
-            new LiteralText("Player ").append(this.getDisplayName()).formatted(Formatting.WHITE),
-            BossBar.Color.RED,
-            BossBar.Style.NOTCHED_10
-        ));
+        return (this.healthBar = EntityUtils.createHealthBar(this));
     }
     
     /*

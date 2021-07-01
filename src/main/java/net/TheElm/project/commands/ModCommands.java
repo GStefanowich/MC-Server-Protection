@@ -36,11 +36,17 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.interfaces.ShopSignBlockEntity;
 import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.SignBlockEntity;
+import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.GameProfileArgumentType;
+import net.minecraft.command.argument.ItemStackArgument;
+import net.minecraft.command.argument.ItemStackArgumentType;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
@@ -48,12 +54,14 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Objects;
 
 public final class ModCommands {
     private ModCommands() {
@@ -72,11 +80,24 @@ public final class ModCommands {
                 )
             )
             .then(CommandManager.literal("shops")
-                .then(CommandManager.literal("change-owner")
-                    .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
-                        .then(CommandManager.argument("owner", GameProfileArgumentType.gameProfile())
-                            .suggests(CommandUtils::getAllPlayerNames)
-                            .executes(ModCommands::shopSignChangeOwner)
+                .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
+                    .then(CommandManager.literal("change")
+                        .then(CommandManager.literal("item")
+                            .then(CommandManager.literal("hand")
+                                .executes(ModCommands::shopSignChangeItemToHand)
+                            )
+                            .then(CommandManager.literal("inventory")
+                                .executes(ModCommands::shopSignChangeItemToContainer)
+                            )
+                            .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
+                                .executes(ModCommands::shopSignChangeItem)
+                            )
+                        )
+                        .then(CommandManager.literal("owner")
+                            .then(CommandManager.argument("owner", GameProfileArgumentType.gameProfile())
+                                .suggests(CommandUtils::getAllPlayerNames)
+                                .executes(ModCommands::shopSignChangeOwner)
+                            )
                         )
                     )
                 )
@@ -146,10 +167,6 @@ public final class ModCommands {
             return 0;
         }
         
-        // Clear the editor of the sign (Causes re-rendering issues)
-        if (blockEntity instanceof SignBlockEntity)
-            ((SignBlockEntity) blockEntity).setEditor(null);
-        
         // Get the entity as the shop sign
         ShopSignBlockEntity shop = (ShopSignBlockEntity) blockEntity;
         
@@ -157,9 +174,85 @@ public final class ModCommands {
         shop.setShopOwner(targetPlayer.getId());
         
         // Re-Render the sign after updating the owner
-        shop.renderSign(targetPlayer);
+        shop.renderSign();
         ServerCore.markDirty(world, signPos);
         
+        source.sendFeedback(new LiteralText("Updated shop owner.").formatted(Formatting.GREEN), false);
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int shopSignChangeItemToHand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        // Change the item to that of the offhand
+        return ModCommands.shopSignChangeItem(context, player.getOffHandStack());
+    }
+    private static int shopSignChangeItemToContainer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerWorld world = source.getWorld();
+
+        BlockPos signPos = BlockPosArgumentType.getBlockPos(context, "pos");
+        BlockEntity blockEntity = world.getBlockEntity(signPos);
+        
+        // If the shop sign block was not found
+        if (!(blockEntity instanceof ShopSignBlockEntity)) {
+            source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
+            return 0;
+        }
+        
+        // Get the entity as the shop sign
+        ShopSignBlockEntity shop = (ShopSignBlockEntity) blockEntity;
+        if (Objects.equals(shop.getShopOwner(), CoreMod.SPAWN_ID)) {
+            source.sendError(new LiteralText("Cannot get attached containers of infinite Shop Signs."));
+            return 0;
+        }
+        
+        LootableContainerBlockEntity attachedChest = InventoryUtils.getAttachedChest(shop);
+        Inventory inventory;
+        if (attachedChest == null || (inventory = InventoryUtils.getInventoryOf(attachedChest)) == null) {
+            source.sendError(new LiteralText("Could not find attached storage container."));
+            return 0;
+        }
+        
+        return ModCommands.shopSignChangeItem(context, InventoryUtils.getFirstStack(inventory));
+    }
+    private static int shopSignChangeItem(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ItemStackArgument item = ItemStackArgumentType.getItemStackArgument(context, "item");
+        return ModCommands.shopSignChangeItem(context, item.createStack(1, false));
+    }
+    private static int shopSignChangeItem(@NotNull CommandContext<ServerCommandSource> context, @NotNull ItemStack stack) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerWorld world = source.getWorld();
+        
+        BlockPos signPos = BlockPosArgumentType.getBlockPos(context, "pos");
+        BlockEntity blockEntity = world.getBlockEntity(signPos);
+        
+        // If the shop sign block was not found
+        if (!(blockEntity instanceof ShopSignBlockEntity)) {
+            source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
+            return 0;
+        }
+        
+        // If the item that is being set is AIR
+        if (Items.AIR.equals(stack.getItem())) {
+            source.sendError(new LiteralText("Cannot change the Shop Sign to that item."));
+            return 0;
+        }
+        
+        // Get the entity as the shop sign
+        ShopSignBlockEntity shop = (ShopSignBlockEntity) blockEntity;
+        
+        // Update the item of the shop
+        shop.setItem(stack);
+        
+        // Re-Render the sign after updating the owner
+        shop.renderSign();
+        ServerCore.markDirty(world, signPos);
+        
+        source.sendFeedback(new LiteralText("Updated shop item to ")
+            .formatted(Formatting.GREEN)
+            .append(new TranslatableText(shop.getShopItemTranslationKey()).formatted(Formatting.AQUA))
+            .append("."), false);
         return Command.SINGLE_SUCCESS;
     }
 }

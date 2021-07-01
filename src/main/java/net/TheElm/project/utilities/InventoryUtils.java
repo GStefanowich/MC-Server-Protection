@@ -25,11 +25,10 @@
 
 package net.TheElm.project.utilities;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.ChestBlock;
-import net.minecraft.block.entity.BarrelBlockEntity;
+import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerInventory;
@@ -43,44 +42,126 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Predicate;
 
 public final class InventoryUtils {
     
     /*
      * Get the inventory of a block
      */
-    @Nullable
-    public static Inventory getInventoryOf(@NotNull World world, @NotNull BlockPos blockPos) {
-        BlockEntity blockEntity = world.getBlockEntity( blockPos );
-        BlockState blockState = world.getBlockState( blockPos );
+    public static @Nullable Inventory getInventoryOf(@NotNull World world, @NotNull BlockPos blockPos) {
+        BlockEntity blockEntity = world.getBlockEntity(blockPos);
+        return blockEntity instanceof LootableContainerBlockEntity ? InventoryUtils.getInventoryOf(world, (LootableContainerBlockEntity) blockEntity) : null;
+    }
+    public static @Nullable Inventory getInventoryOf(@NotNull LootableContainerBlockEntity container) {
+        World world = container.getWorld();
+        return world == null ? null : InventoryUtils.getInventoryOf(world, container);
+    }
+    public static @Nullable Inventory getInventoryOf(@NotNull World world, @NotNull LootableContainerBlockEntity container) {
+        BlockState blockState = world.getBlockState(container.getPos());
         Block block = blockState.getBlock();
         
-        if ( block instanceof ChestBlock )
-            return ChestBlock.getInventory( (ChestBlock)block, blockState, world, blockPos, true );
-        if ( blockEntity instanceof BarrelBlockEntity )
-            return (BarrelBlockEntity) blockEntity;
+        if (block instanceof ChestBlock)
+            return ChestBlock.getInventory((ChestBlock)block, blockState, world, container.getPos(), true);
+        return container;
+    }
+    public static @NotNull ItemStack getFirstStack(@NotNull Inventory inventory) {
+        return InventoryUtils.getFirstStack(inventory, InventoryUtils::notEmpty);
+    }
+    public static @NotNull ItemStack getFirstStack(@NotNull Inventory inventory, @NotNull Predicate<ItemStack> predicate) {
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack slot = inventory.getStack(i);
+            if (predicate.test(slot))
+                return slot;
+        }
+        return new ItemStack(Items.AIR);
+    }
+    
+    /*
+     * Get the inventory that is attached to a shop sign
+     */
+    
+    public static @Nullable LootableContainerBlockEntity getAttachedChest(@NotNull final World world, @NotNull final BlockPos signPos) {
+        List<BlockPos> checkPositions = new ArrayList<>();
+        
+        // Add the blockPos BELOW the sign
+        checkPositions.add(signPos.offset(Direction.DOWN, 1));
+        
+        // Add the blockPos BEHIND the sign
+        BlockState signBlockState = world.getBlockState( signPos );
+        if ( signBlockState.getBlock() instanceof WallSignBlock) {
+            Direction signFacing = signBlockState.get(HorizontalFacingBlock.FACING).getOpposite();
+            checkPositions.add(signPos.offset(signFacing, 1));
+        }
+        
+        for ( BlockPos blockPos : checkPositions ) {
+            BlockEntity chestBlockEntity = world.getBlockEntity(blockPos);
+            if ( chestBlockEntity instanceof LootableContainerBlockEntity && EntityUtils.isValidShopContainer(chestBlockEntity) )
+                return (LootableContainerBlockEntity) chestBlockEntity;
+        }
+        
         return null;
+    }
+    public static @Nullable LootableContainerBlockEntity getAttachedChest(@NotNull final ShopSignBlockEntity signBuilder) {
+        return InventoryUtils.getAttachedChest(Objects.requireNonNull(signBuilder.getSign().getWorld()), signBuilder.getSign().getPos());
+    }
+    public static boolean hasAttachedChest(@NotNull final ShopSignBlockEntity signBuilder) {
+        return InventoryUtils.getAttachedChest(signBuilder) != null;
+    }
+    
+    /*
+     * Get count of an item inside an inventory
+     */
+    public static int getInventoryCount(@NotNull Inventory inventory, @NotNull Item item) {
+        return InventoryUtils.getInventoryCount(inventory, stack -> Objects.equals(stack.getItem(), item));
+    }
+    public static int getInventoryCount(@NotNull Inventory inventory, @NotNull Predicate<ItemStack> predicate) {
+        int count = 0;
+        
+        for (int i = 0; i < inventory.size(); i++) {
+            ItemStack stack = inventory.getStack(i);
+            if (predicate.test(stack))
+                count += stack.getCount();
+        }
+        
+        return count;
+    }
+    
+    /*
+     * Check if stacks are empty or not
+     */
+    
+    public static boolean isEmpty(@NotNull ItemStack stack) {
+        return stack.isEmpty();
+    }
+    public static boolean notEmpty(@NotNull ItemStack stack) {
+        return !stack.isEmpty();
     }
     
     /*
      * Transfer items from a player to a chest
      */
     public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Item item, final int count) {
-        return InventoryUtils.playerToChest( player, sourcePos, playerInventory, chestInventory, item, count, false );
+        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> Objects.equals(s.getItem(), item), count);
     }
     public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Item item, final int count, final boolean required) {
+        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> Objects.equals(s.getItem(), item), count, required);
+    }
+    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Predicate<ItemStack> predicate, final int count) {
+        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, predicate, count, false);
+    }
+    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Predicate<ItemStack> predicate, final int count, final boolean required) {
         // World
         ServerWorld world = player.getServerWorld();
         
         // Check if enough in player inventory
-        if ( required && ( playerInventory.count( item ) < count ) )
+        if ( required && (InventoryUtils.getInventoryCount(playerInventory, predicate) < count) )
             return false;
         
         // Get stack size to take from player up to 64
@@ -89,13 +170,13 @@ public final class InventoryUtils {
         boolean success;
         
         // If chest has item on the frame
-        if ( playerInventory.count(item) > 0) {
+        if ( InventoryUtils.getInventoryCount(playerInventory, predicate) > 0) {
             final int invSize = playerInventory.size(); // Get the inventory size to iterate over
             
             // Get stack sizes
             for ( int i = 0; i < invSize; i++ ) {
                 final ItemStack invItem = playerInventory.getStack( i );
-                if ( invItem.getItem().equals( item ) ) {
+                if ( predicate.test(invItem) ) {
                     int putable = count - itemStackSize; // The amount of items remaining to take a stack from the player
                     // If stack size is full
                     if ( putable <= 0 )
@@ -123,7 +204,7 @@ public final class InventoryUtils {
                             final Item chestItem = chestItemStack.getItem();
                             
                             // If the slot is AIR or matching type
-                            if (chestItem.equals(Items.AIR) || ((chestItemStack.getCount() < chestItem.getMaxCount()) && chestItem.equals(item))) {
+                            if (chestItem.equals(Items.AIR) || ((chestItemStack.getCount() < chestItem.getMaxCount()) && predicate.test(chestItemStack))) {
                                 final int put = Collections.min(Arrays.asList(chestItem.getMaxCount() - chestItemStack.getCount(), invItem.getCount(), putable));
                                 if (chestItem.equals(Items.AIR)) {
                                     // Put a copy of the item from the players inventory
@@ -149,7 +230,7 @@ public final class InventoryUtils {
                                 if (putable <= 0) {
                                     success = ( put > 0 );
                                     if (success)
-                                        world.playSound( null, sourcePos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
+                                        world.playSound(null, sourcePos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f);
                                     return success;
                                 }
                             }
@@ -169,44 +250,53 @@ public final class InventoryUtils {
      * Transfer items from a chest to the player
      */
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Item item, final int count) {
-        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, item, count, false);
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, s -> Objects.equals(s.getItem(), item), count);
     }
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Item item, final int count, final boolean required) {
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, s -> Objects.equals(s.getItem(), item), count, required);
+    }
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> predicate, final int count) {
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, predicate, count, false);
+    }
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> predicate, final int count, final boolean required) {
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, predicate, count, required, null);
+    }
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> predicate, final int count, @Nullable ItemStackGenerator spawner) {
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, predicate, count, false, spawner);
+    }
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> predicate, final int count, final boolean required, @Nullable ItemStackGenerator spawner) {
         // World
         ServerWorld world = player.getServerWorld();
         
         // Check if enough in the chest
-        if (required && (chestInventory != null) && (chestInventory.count(item) < count))
+        if (required && (chestInventory != null) && (InventoryUtils.getInventoryCount(chestInventory, predicate) < count))
             return false;
         
         // Get stack size to give to player up to 64
         int stackSize = 0;
         
         if ( chestInventory == null ) {
-            final int maxStack = item.getMaxCount();
-            while ( stackSize < count ) {
-                int giveCount = Collections.min(Arrays.asList( count - stackSize, maxStack ));
-                
-                // Create the new itemstack
-                ItemStack clone = new ItemStack( item );
-                clone.setCount( giveCount );
-                
-                // Insert items into player inventory
-                playerInventory.offerOrDrop( player.getEntityWorld(), clone );
-                
-                // Send amount given
-                stackSize += giveCount;
+            if (spawner != null) {
+                while ( stackSize < count ) {
+                    // Create the new itemstack
+                    ItemStack clone = spawner.create(count - stackSize);
+                    
+                    // Set amount given
+                    stackSize += clone.getCount();
+                    
+                    // Insert items into player inventory
+                    playerInventory.offerOrDrop(player.getEntityWorld(), clone);
+                }
             }
-            
         } else {
             // If chest has item on the frame
-            if (chestInventory.count(item) > 0) {
+            if (InventoryUtils.getInventoryCount(chestInventory, predicate) > 0) {
                 final int invSize = chestInventory.size(); // Get the inventory size to iterate over
                 
                 // Get stack sizes
                 for (int i = invSize; i > 0; i--) {
                     final ItemStack chestItem = chestInventory.getStack(i - 1);
-                    if (chestItem.getItem().equals(item)) {
+                    if (predicate.test(chestItem)) {
                         int collectible = count - stackSize; // The amount of items remaining to give the player a full stack
                         // If stack size is full
                         if (collectible <= 0)
@@ -226,7 +316,7 @@ public final class InventoryUtils {
                         } else {
                             final ItemStack inInv = playerInventory.getStack(slot);
                             int invStackSize = inInv.getCount();
-                            collect = Collections.min(Arrays.asList( collect, inInv.getItem().getMaxCount() - invStackSize ));
+                            collect = Collections.min(Arrays.asList( collect, inInv.getItem().getMaxCount() - invStackSize));
                             inInv.setCount( invStackSize + collect );
                         }
                         
@@ -241,7 +331,7 @@ public final class InventoryUtils {
         
         boolean success = ( required ? stackSize >= count : stackSize > 0 );
         if ( success )
-            world.playSound( null, sourcePos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
+            world.playSound(null, sourcePos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f);
         return success;
     }
     
@@ -255,7 +345,7 @@ public final class InventoryUtils {
     /*
      * Advanced enchanted books prevent combining
      */
-    public static boolean areBooksAtMaximum(@NotNull Enchantment enchantment, ItemStack... stacks) {
+    public static boolean areBooksAtMaximum(@NotNull Enchantment enchantment, @NotNull ItemStack... stacks) {
         int level = 0;
         
         // Loop through all of the items
@@ -272,11 +362,11 @@ public final class InventoryUtils {
         return level > enchantment.getMaxLevel();
     }
     
-    public static ItemRarity getItemRarity(ItemStack stack) {
+    public static @NotNull ItemRarity getItemRarity(@NotNull ItemStack stack) {
         float rarity = 0;
         
         // Get all enchantments
-        Map<Enchantment, Integer> enchantments = EnchantmentHelper.get( stack );
+        Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(stack);
         for ( Map.Entry<Enchantment, Integer> e : enchantments.entrySet() ) {
             Enchantment enchantment = e.getKey();
             
@@ -293,7 +383,7 @@ public final class InventoryUtils {
             (stack.getItem().equals(Items.ENCHANTED_BOOK))
         );
     }
-    private static float getEnchantmentRarity(Enchantment enchantment, int level) {
+    private static float getEnchantmentRarity(@NotNull Enchantment enchantment, int level) {
         int min = (level - enchantment.getMinLevel()),
             max = (enchantment.getMaxLevel() - enchantment.getMinLevel());
         
@@ -304,7 +394,7 @@ public final class InventoryUtils {
         Enchantment.Rarity weight = enchantment.getRarity();
         return ((float)(10 / weight.getWeight()) * rarity);
     }
-    private static ItemRarity getItemRarity(final float rarity, final int enchantments, boolean isBook) {
+    private static @NotNull ItemRarity getItemRarity(final float rarity, final int enchantments, boolean isBook) {
         // Offset the levels by TWO for books
         int o = ( isBook ? 2 : 1 );
         
@@ -333,5 +423,9 @@ public final class InventoryUtils {
         ItemRarity(Formatting... formatting) {
             this.formatting = formatting;
         }
+    }
+    @FunctionalInterface
+    public interface ItemStackGenerator {
+        ItemStack create(int count);
     }
 }

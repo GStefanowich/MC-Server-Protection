@@ -71,14 +71,18 @@ public final class DeathChestUtils {
     public static @Nullable BlockPos getChestPosition(@NotNull final World world, @NotNull final BlockPos deathPoint) {
         BlockPos out;
         
-        int maxX = SewConfig.get(SewConfig.MAX_DEATH_SCAN);
-        int maxI = 1 + ((maxX * maxX) * 4) + (maxX * 4);
-        
+        // Get the max Y (Spawn Height)
         int maxY = SewConfig.get(SewConfig.MAX_DEATH_ELEVATION);
         if (maxY < 0)
             maxY = world.getDimensionHeight();
         
-        int upper = Collections.min(Arrays.asList(world.getDimensionHeight(), deathPoint.getY() + maxX));
+        // Get the max upper height of the death spawn point
+        int upper = Collections.min(Arrays.asList(world.getDimensionHeight(), deathPoint.getY() + maxY));
+        
+        // Get the max X/Z (Spawn Radius)
+        int maxX = SewConfig.get(SewConfig.MAX_DEATH_SCAN);
+        int maxI = 1 + ((maxX * maxX) * 4) + (maxX * 4);
+        
         for ( int y = deathPoint.getY(); y < upper; y++ ) {
             int x = 0;
             int z = 0;
