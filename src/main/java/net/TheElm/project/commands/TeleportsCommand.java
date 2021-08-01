@@ -330,7 +330,7 @@ public final class TeleportsCommand {
         if ( ChunkUtils.canPlayerWarpTo(porter, target.getId()) ) {
             WarpUtils.teleportPlayer(warp, porter);
             
-            TeleportsCommand.feedback(porter, target, warp.name);
+            TeleportsCommand.feedback(porter, target, warp);
             
             // Notify the player
             if (!porter.isSpectator()) {
@@ -393,7 +393,7 @@ public final class TeleportsCommand {
         
         source.sendFeedback(new LiteralText("Teleport request accepted").formatted(Formatting.GREEN), false);
         
-        TeleportsCommand.feedback(porter, target, warp.name);
+        TeleportsCommand.feedback(porter, target, warp);
         
         CoreMod.PLAYER_WARP_INVITES.remove(porter);
         return Command.SINGLE_SUCCESS;
@@ -424,17 +424,19 @@ public final class TeleportsCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    public static void feedback(@NotNull PlayerEntity porter, @NotNull PlayerEntity target, @Nullable String location) {
+    public static void feedback(@NotNull PlayerEntity porter, @NotNull PlayerEntity target, @Nullable Warp location) {
         TeleportsCommand.feedback(porter, target.getGameProfile(), location);
     }
-    public static void feedback(@NotNull PlayerEntity porter, @NotNull GameProfile target, @Nullable String location) {
+    public static void feedback(@NotNull PlayerEntity porter, @NotNull GameProfile target, @Nullable Warp location) {
         MutableText feedback = new LiteralText("")
             .append(porter.getDisplayName().shallowCopy())
             .append(" was teleported to ");
+        
         if (porter.getUuid().equals(target.getId())) feedback.append("their");
         else feedback.append(PlayerNameUtils.fetchPlayerNick(target.getId())).append("'s");
+        
         feedback.append(" '")
-            .append(location == null ? WarpUtils.PRIMARY_DEFAULT_HOME : location)
+            .append(location == null ? WarpUtils.PRIMARY_DEFAULT_HOME : location.name)
             .append("' warp");
         
         MessageUtils.consoleToOps(feedback);

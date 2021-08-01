@@ -25,7 +25,6 @@
 
 package net.TheElm.project;
 
-import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
@@ -45,7 +44,6 @@ import net.minecraft.server.dedicated.MinecraftDedicatedServer;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.UserCache;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
@@ -55,7 +53,6 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
@@ -152,13 +149,6 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     }
     public static @Nullable ServerPlayerEntity getPlayer(@NotNull UUID uuid) {
         return ServerCore.get().getPlayerManager().getPlayer(uuid);
-    }
-    public static @Nullable GameProfile getGameProfile(@NotNull UUID uuid) {
-        if (Objects.equals(uuid, CoreMod.SPAWN_ID))
-            return new GameProfile(uuid, "Server");
-        MinecraftServer server = ServerCore.get();
-        UserCache cache = server.getUserCache();
-        return cache.getByUuid(uuid);
     }
     
     public static @NotNull RegistryKey<World> defaultWorldKey() {

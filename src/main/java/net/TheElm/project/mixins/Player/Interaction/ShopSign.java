@@ -28,7 +28,7 @@ package net.TheElm.project.mixins.Player.Interaction;
 import com.google.common.collect.Maps;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ShopSigns;
-import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.TheElm.project.interfaces.ShopSignData;
 import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.ShopSignBuilder;
 import net.TheElm.project.utilities.nbt.NbtGet;
@@ -66,7 +66,7 @@ import java.util.Map;
 import java.util.UUID;
 
 @Mixin(SignBlockEntity.class)
-public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntity {
+public abstract class ShopSign extends BlockEntity implements ShopSignData {
     
     @Shadow public Text[] text;
     @Shadow public abstract PlayerEntity getEditor();
@@ -81,7 +81,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     
     // Item being traded
     private @Nullable Identifier shopSign_item = null;
-    private final @NotNull Map<Enchantment, Integer> tradeItemEnchants = Maps.newLinkedHashMap();
+    private final @NotNull Map<Enchantment, Integer> shopSign_itemEnchants = Maps.newLinkedHashMap();
     
     // Price / Count of item transactioning
     private @Nullable Integer shopSign_itemCount = null;
@@ -90,6 +90,9 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     // Region Sign Information
     private @Nullable BlockPos shopSign_posA = null;
     private @Nullable BlockPos shopSign_posB = null;
+    
+    // Where to play sounds from
+    private @Nullable BlockPos shopSign_soundSourcePlayFromPos = null;
     
     /*
      * Mixin Getters
@@ -130,7 +133,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     @Override
     public boolean setItem(@NotNull ItemStack stack) {
         this.shopSign_item = Registry.ITEM.getId(stack.getItem());
-        this.tradeItemEnchants.putAll(EnchantmentHelper.get(stack));
+        this.shopSign_itemEnchants.putAll(EnchantmentHelper.get(stack));
         return !Items.AIR.equals(stack.getItem());
     }
     @Override
@@ -163,7 +166,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     
     @Override
     public @Nullable Map<Enchantment, Integer> getShopItemEnchantments() {
-        return this.tradeItemEnchants;
+        return this.shopSign_itemEnchants;
     }
     
     @Override
@@ -180,6 +183,15 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
         return this.shopSign_Type;
     }
     
+    @Override
+    public @Nullable BlockPos getSoundSourcePosition() {
+        return this.shopSign_soundSourcePlayFromPos;
+    }
+    @Override
+    public void setSoundSourcePosition(@Nullable BlockPos pos) {
+        this.shopSign_soundSourcePlayFromPos = pos;
+    }
+    
     /*
      * Constructor
      */
@@ -194,9 +206,9 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
     
     @Inject(at = @At("RETURN"), method = "setTextOnRow")
     public void onRowUpdated(int lineNum, Text text, final CallbackInfo callback) {
-        if (!( this.getEditor() == null )) {
+        if ( this.getEditor() != null ) {
             // Get the sign
-            ShopSignBuilder builder = ShopSignBuilder.create(this.getWorld(), this.getPos(), (SignBlockEntity)(BlockEntity)this);
+            ShopSignBuilder builder = ShopSignBuilder.create(this.world, this.getPos(), (SignBlockEntity)(BlockEntity)this);
             
             // Update the lines
             if ( builder.setLineText(lineNum, text) ) {
@@ -217,9 +229,14 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                 this.shopSign_Owner = builder.getShopOwner();
                 this.shopSign_item = builder.getShopItemIdentifier();
                 
+                // Copy the enchantments to the sign from the builder
+                this.shopSign_itemEnchants.putAll(builder.getShopItemEnchantments());
+                
+                // Get the item information
                 this.shopSign_itemCount = builder.getShopItemCount();
                 this.shopSign_itemPrice = builder.getShopItemPrice();
                 
+                // Copy the block ranges
                 if (this.shopSign_Type == ShopSigns.DEED) {
                     this.shopSign_posA = builder.getFirstPos();
                     this.shopSign_posB = builder.getSecondPos();
@@ -251,14 +268,18 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
             tag.putInt("shop_price", this.getShopItemPrice());
         
         // Add enchantments
-        if (!this.tradeItemEnchants.isEmpty())
-            tag.put("shop_item_enchants", NbtUtils.enchantsToTag(this.tradeItemEnchants));
+        if (!this.shopSign_itemEnchants.isEmpty())
+            tag.put("shop_item_enchants", NbtUtils.enchantsToTag(this.shopSign_itemEnchants));
         
         // Add block ranges
         if ((this.getFirstPos() != null) && (this.getSecondPos() != null)) {
             tag.putLong("shop_blockPosA", this.getFirstPos().asLong());
             tag.putLong("shop_blockPosB", this.getSecondPos().asLong());
         }
+        
+        // Put where to play the sound from
+        if (this.shopSign_soundSourcePlayFromPos != null)
+            tag.putLong("shop_sound_location", this.shopSign_soundSourcePlayFromPos.asLong());
         
         callback.setReturnValue(tag);
     }
@@ -285,9 +306,13 @@ public abstract class ShopSign extends BlockEntity implements ShopSignBlockEntit
                     this.shopSign_posB = BlockPos.fromLong(tag.getLong("shop_blockPosB"));
                 }
                 
+                // Get the BLOCK POSITION to play sounds from
+                if (tag.contains("shop_sound_location", NbtType.LONG))
+                    this.shopSign_soundSourcePlayFromPos = BlockPos.fromLong(tag.getLong("shop_sound_location"));
+                
                 // Load the enchantments from the tag
                 if (tag.contains("shop_item_enchants", NbtType.LIST))
-                    this.tradeItemEnchants.putAll(NbtUtils.enchantsFromTag(tag.getList("shop_item_enchants", NbtType.COMPOUND)));
+                    this.shopSign_itemEnchants.putAll(NbtUtils.enchantsFromTag(tag.getList("shop_item_enchants", NbtType.COMPOUND)));
                 
                 // Save the shop owner UUID
                 this.shopSign_Owner = uuid;

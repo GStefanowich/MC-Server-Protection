@@ -43,6 +43,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.network.MessageType;
 import net.minecraft.predicate.entity.EntityPredicates;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -238,19 +239,17 @@ public final class MessageUtils {
     }
     public static void consoleToOps(@NotNull Text player, @NotNull Text event) {
         MinecraftServer server = ServerCore.get();
+        GameRules gameRules = server.getGameRules();
         
         Text send = (new TranslatableText("chat.type.admin", player, event)).formatted(Formatting.GRAY, Formatting.ITALIC);
-        if (server.getGameRules().getBoolean(GameRules.SEND_COMMAND_FEEDBACK)) {
-            Iterator iterator = server.getPlayerManager().getPlayerList().iterator();
-            
-            while ( iterator.hasNext() ) {
-                ServerPlayerEntity serverPlayerEntity = (ServerPlayerEntity)iterator.next();
-                if (server.getPlayerManager().isOperator(serverPlayerEntity.getGameProfile()))
-                    serverPlayerEntity.sendSystemMessage(send, ServerCore.SPAWN_ID);
-            }
+        if (gameRules.getBoolean(GameRules.SEND_COMMAND_FEEDBACK)) {
+            PlayerManager playerManager = server.getPlayerManager();
+            for (ServerPlayerEntity op : playerManager.getPlayerList())
+                if (playerManager.isOperator(op.getGameProfile()))
+                    op.sendSystemMessage(send, ServerCore.SPAWN_ID);
         }
         
-        if (server.getGameRules().getBoolean(GameRules.LOG_ADMIN_COMMANDS))
+        if (gameRules.getBoolean(GameRules.LOG_ADMIN_COMMANDS))
             server.sendSystemMessage(send, Util.NIL_UUID);
     }
     

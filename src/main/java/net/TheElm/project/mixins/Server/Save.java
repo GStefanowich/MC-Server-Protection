@@ -40,6 +40,7 @@ import net.minecraft.server.ServerTask;
 import net.minecraft.server.WorldGenerationProgressListener;
 import net.minecraft.server.command.CommandOutput;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.util.registry.SimpleRegistry;
@@ -106,8 +107,13 @@ public abstract class Save extends ReentrantThreadExecutor<ServerTask> implement
      * Override what world is loaded when the server first starts
      */
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/MinecraftServer.getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "prepareStartRegion")
-    private ServerWorld onPreparingStartRegion(MinecraftServer server, WorldGenerationProgressListener worldGenerationProgressListener) {
-        return server.getWorld(SewConfig.get(SewConfig.DEFAULT_WORLD));
+    private ServerWorld onPreparingStartRegion(@NotNull MinecraftServer server, WorldGenerationProgressListener worldGenerationProgressListener) {
+        RegistryKey<World> registryKey = SewConfig.get(SewConfig.DEFAULT_WORLD);
+        Identifier identifier = registryKey.getValue();
+        ServerWorld world = server.getWorld(registryKey);
+        if (world == null)
+            throw new NullPointerException("Could not find default world \"" + identifier.getNamespace() + ":" + identifier.getPath() + "\", please update " + CoreMod.MOD_ID + "/config.json");
+        return world;
     }
     
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/util/registry/SimpleRegistry.getEntries()Ljava/util/Set;"), method = "createWorlds")

@@ -116,18 +116,18 @@ public final class ClaimantPlayer extends Claimant {
     
     /* Nickname Override */
     @Override
-    public final MutableText getName() {
+    public final @NotNull MutableText getName() {
         if (this.name == null)
             return FormattingUtils.deepCopy(this.name = this.updateName());
         return FormattingUtils.deepCopy(this.name);
     }
-    public final MutableText updateName() {
+    public final @NotNull MutableText updateName() {
         return PlayerNameUtils.fetchPlayerNick(this.getId());
     }
     
     /* Send Messages */
     @Override
-    public final void send(Text text, MessageType type, UUID from) {
+    public final void send(@NotNull Text text, @NotNull MessageType type, @Nullable UUID from) {
         UUID playerId = this.getId();
         ServerPlayerEntity player = ServerCore.getPlayer(playerId);
         if (player != null) player.sendMessage(text, type, from);
@@ -148,7 +148,7 @@ public final class ClaimantPlayer extends Claimant {
     }
     public final boolean canClaim(WorldChunk chunk) {
         // If chunk is already claimed, allow
-        if (this.CLAIMED_CHUNKS.contains(new ClaimTag(chunk)))
+        if (this.CLAIMED_CHUNKS.contains(ClaimTag.of(chunk)))
             return true;
         return (SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT) != 0) && (((this.getCount() + 1) <= this.getMaxChunkLimit()) || (SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT) <= 0));
     }

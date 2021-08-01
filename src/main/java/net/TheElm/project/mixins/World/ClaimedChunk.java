@@ -228,7 +228,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         ClaimRanks permReq = this.chunkPlayer.getPermissionRankRequirement(perm);
         
         // Return the test if the user can perform the action (If friend of chunk owner OR if friend of town and chunk owned by town owner)
-        return permReq.canPerform( userRank ) || ((town != null) && (this.chunkPlayer.getId().equals( town.getOwner() )) && permReq.canPerform(town.getFriendRank( player )));
+        return permReq.canPerform(userRank) || ((town != null) && (this.chunkPlayer.getId().equals(town.getOwner())) && permReq.canPerform(town.getFriendRank(player)));
     }
     @Override
     public boolean canPlayerDo(@NotNull BlockPos pos, @Nullable UUID player, @Nullable ClaimPermissions perm) {

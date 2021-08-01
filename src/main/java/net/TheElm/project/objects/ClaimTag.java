@@ -39,7 +39,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class ClaimTag extends CompoundTag {
-    public ClaimTag() {
+    private ClaimTag() {
         super();
     }
     public ClaimTag(@NotNull World world, @NotNull ChunkPos chunk) {
@@ -60,6 +60,19 @@ public final class ClaimTag extends CompoundTag {
     }
     public int getZ() {
         return this.getInt("z");
+    }
+    
+    public int getLowerX() {
+        return this.getX() << 4;
+    }
+    public int getLowerZ() {
+        return this.getZ() << 4;
+    }
+    public int getUpperX() {
+        return this.getLowerX() + 15;
+    }
+    public int getUpperZ() {
+        return this.getLowerZ() + 15;
     }
     
     public @Nullable RegistryKey<World> getDimension() {
@@ -97,5 +110,12 @@ public final class ClaimTag extends CompoundTag {
         tag.putInt("z", array[2]);
         
         return tag;
+    }
+    
+    public static @NotNull ClaimTag of(@NotNull WorldChunk chunk) {
+        return new ClaimTag(chunk);
+    }
+    public static @NotNull ClaimTag of(@NotNull World world, @NotNull ChunkPos chunkPos) {
+        return new ClaimTag(world, chunkPos);
     }
 }

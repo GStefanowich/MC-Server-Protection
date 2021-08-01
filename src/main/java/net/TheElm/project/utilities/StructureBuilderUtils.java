@@ -26,11 +26,9 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.PressurePlateBlock;
+import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -81,8 +79,27 @@ public final class StructureBuilderUtils {
     }
     
     public void destroy(boolean dropBlocks) throws InterruptedException {
-        for (BlockPos blockPos : this.structureBlocks.keySet()) {
-            this.world.breakBlock(blockPos, dropBlocks);
+        for (Map.Entry<BlockPos, BlockState> pair : this.structureBlocks.entrySet()) {
+            BlockPos blockPos = pair.getKey();
+            BlockState newBlockState = pair.getValue();
+            BlockState oldBlockState = this.world.getBlockState(blockPos);
+            
+            BlockEntity blockEntity = dropBlocks && oldBlockState.getBlock().hasBlockEntity() ? this.world.getBlockEntity(blockPos) : null;
+            
+            // Change the block state
+            if (newBlockState.getBlock() == Blocks.AIR)
+                this.world.breakBlock(blockPos, dropBlocks);
+            else {
+                if (!(oldBlockState.getBlock() instanceof AbstractFireBlock))
+                    this.world.syncWorldEvent(2001, blockPos, Block.getRawIdFromState(oldBlockState));
+                
+                this.world.setBlockState(blockPos, Blocks.BARRIER.getDefaultState());
+                
+                // If the old BlockEntity has any drops
+                if (blockEntity != null)
+                    Block.dropStacks(oldBlockState, this.world, blockPos, blockEntity, null, ItemStack.EMPTY);
+            }
+            
             Thread.sleep(this.delay);
         }
     }

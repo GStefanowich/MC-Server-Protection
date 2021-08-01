@@ -59,7 +59,7 @@ public final class ChunkUtils {
      * Check the database if a user can perform an action within the specified chunk
      */
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( perm, player, player.getEntityWorld().getWorldChunk( blockPos ), blockPos);
+        return ChunkUtils.canPlayerDoInChunk(perm, player, player.getEntityWorld().getWorldChunk(blockPos), blockPos);
     }
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // If claims are disabled
@@ -67,7 +67,7 @@ public final class ChunkUtils {
             return true;
         
         // Check if player can do action in chunk
-        return ChunkUtils.canPlayerDoInChunk( perm, EntityUtils.getUUID(player), chunk, blockPos );
+        return ChunkUtils.canPlayerDoInChunk(perm, EntityUtils.getUUID(player), chunk, blockPos);
     }
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable UUID playerId, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // Return false (Chunks should never BE null, but this is our catch)
@@ -84,7 +84,7 @@ public final class ChunkUtils {
      * @return If the player can ride entities
      */
     public static boolean canPlayerRideInChunk(PlayerEntity player, BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.RIDING, player, blockPos );
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.RIDING, player, blockPos);
     }
     
     /**
@@ -143,7 +143,7 @@ public final class ChunkUtils {
      * @return If player can harm or loot friendly entities
      */
     public static boolean canPlayerInteractFriendlies(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.CREATURES, player, blockPos );
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.CREATURES, player, blockPos);
     }
     
     /**

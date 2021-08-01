@@ -29,13 +29,14 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.TheElm.project.interfaces.ShopSignData;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.*;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
@@ -50,6 +51,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.tag.BlockTags;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -74,6 +76,15 @@ public final class EntityUtils {
     // Default lock sound
     public static SoundEvent getDefaultLockSound() {
         return SoundEvents.BLOCK_WOODEN_DOOR_OPEN;
+    }
+    
+    public static boolean hasClientBlockData(@NotNull BlockState blockState) {
+        Block block = blockState.getBlock();
+        if (!block.hasBlockEntity())
+            return false;
+        return block.isIn(BlockTags.SIGNS)
+            || block == Blocks.PLAYER_HEAD
+            || block == Blocks.PLAYER_WALL_HEAD;
     }
     
     /*
@@ -236,7 +247,7 @@ public final class EntityUtils {
     public static boolean isValidShopContainer(BlockEntity block) {
         return (block instanceof ChestBlockEntity || block instanceof BarrelBlockEntity) || (block instanceof ShulkerBoxBlockEntity);
     }
-    public static @Nullable ShopSignBlockEntity getAttachedShopSign(@NotNull World world, @NotNull BlockPos storagePos) {
+    public static @Nullable ShopSignData getAttachedShopSign(@NotNull World world, @NotNull BlockPos storagePos) {
         Set<BlockPos> searchForSigns = new HashSet<>(Collections.singletonList(
             storagePos.up()
         ));
@@ -277,7 +288,7 @@ public final class EntityUtils {
                 BlockEntity blockEntity = world.getBlockEntity(searchPos);
                 if (!(blockEntity instanceof SignBlockEntity))
                     continue;
-                ShopSignBlockEntity shopSign = (ShopSignBlockEntity) blockEntity;
+                ShopSignData shopSign = (ShopSignData) blockEntity;
                 if (shopSign.getShopType() != null)
                     return shopSign;
             }
@@ -342,6 +353,23 @@ public final class EntityUtils {
         healthBar.setPercent(percentage);
         
         return healthBar;
+    }
+    
+    /*
+     * Mob spawners
+     */
+    public static <T extends Entity> boolean canBeSpawnered(@NotNull EntityType<T> type) {
+        return type.isSummonable() && !EntityUtils.preventSpawnered(type);
+    }
+    public static <T extends Entity> boolean preventSpawnered(@NotNull EntityType<T> type) {
+        return type == EntityType.WANDERING_TRADER
+            || EntityUtils.isBossEntity(type);
+    }
+    public static <T extends Entity> boolean isBossEntity(@NotNull EntityType<T> type) {
+        return type == EntityType.ELDER_GUARDIAN
+            || type == EntityType.WITHER
+            || type == EntityType.WITHER_SKULL
+            || type == EntityType.ENDER_DRAGON;
     }
     
     /*

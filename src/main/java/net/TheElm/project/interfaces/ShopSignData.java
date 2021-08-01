@@ -40,19 +40,24 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.UserCache;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
-public interface ShopSignBlockEntity {
+public interface ShopSignData {
     @NotNull StyleApplicator APPLICATOR_GREEN = new StyleApplicator("#32CD32");
     @NotNull StyleApplicator APPLICATOR_RED = new StyleApplicator("#B22222");
     
@@ -66,7 +71,14 @@ public interface ShopSignBlockEntity {
     @Nullable UUID getShopOwner();
     
     default @Nullable GameProfile getShopOwnerProfile() {
-        return this.getShopOwner() == null ? null : ServerCore.getGameProfile(this.getShopOwner());
+        UUID uuid = this.getShopOwner();
+        if (uuid == null)
+            return null;
+        if (Objects.equals(uuid, CoreMod.SPAWN_ID))
+            return new GameProfile(uuid, "Server");
+        UserCache cache = ServerCore.get()
+            .getUserCache();
+        return cache.getByUuid(uuid);
     }
     @Nullable Item getShopItem();
     @Nullable Identifier getShopItemIdentifier();
@@ -147,6 +159,20 @@ public interface ShopSignBlockEntity {
         }
         
         sign.setEditor(null);
+    }
+    
+    default void setSoundSourcePosition(@Nullable BlockPos pos) {
+    }
+    default @Nullable BlockPos getSoundSourcePosition() {
+        return null;
+    }
+    default void playSound(@NotNull ServerPlayerEntity player, @NotNull SoundEvent event, @NotNull SoundCategory category) {
+        ServerWorld world = player.getServerWorld();
+        BlockPos source;
+        if (world == null || (source = this.getSoundSourcePosition()) == null)
+            player.playSound(event, category, 1.0f, 1.0f);
+        else
+            world.playSound(null, source, event, category, 1.0f, 1.0f);
     }
     
     default boolean itemMatchPredicate(@NotNull ItemStack stack) {

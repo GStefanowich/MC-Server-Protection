@@ -143,7 +143,7 @@ public abstract class Claimant {
     
     public final void addToCount(@NotNull WorldChunk... chunks) {
         for (WorldChunk chunk : chunks)
-            this.CLAIMED_CHUNKS.add(new ClaimTag(chunk));
+            this.CLAIMED_CHUNKS.add(ClaimTag.of(chunk));
         this.markDirty();
     }
     public final void removeFromCount(@NotNull WorldChunk... chunks) {
@@ -168,7 +168,7 @@ public abstract class Claimant {
         for (ClaimTag it : new LinkedHashSet<>(this.CLAIMED_CHUNKS))
             action.accept(it);
     }
-    public final Iterator<ClaimTag> getChunks() {
+    public final @NotNull Iterator<ClaimTag> getChunks() {
         return this.CLAIMED_CHUNKS.iterator();
     }
     

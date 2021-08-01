@@ -28,21 +28,15 @@ package net.TheElm.project.protections.events;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimSettings;
-import net.TheElm.project.interfaces.BlockBreakCallback;
-import net.TheElm.project.interfaces.BlockBreakEventCallback;
-import net.TheElm.project.interfaces.ConstructableEntity;
-import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.interfaces.OwnableEntity;
+import net.TheElm.project.interfaces.*;
 import net.TheElm.project.protections.logging.BlockEvent;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.protections.logging.EventLogger.BlockAction;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.CropUtils;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.MelonBlock;
-import net.minecraft.block.PumpkinBlock;
-import net.minecraft.block.SugarCaneBlock;
+import net.TheElm.project.utilities.EntityUtils;
+import net.minecraft.block.*;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.TntEntity;
 import net.minecraft.entity.mob.CreeperEntity;
@@ -95,7 +89,9 @@ public final class BlockBreak {
     private static ActionResult blockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         ActionResult result;
         if (((result = BlockBreak.canBlockBreak( entity, world, hand, blockPos, blockFace, action)) != ActionResult.FAIL) && SewConfig.get(SewConfig.LOG_BLOCKS_BREAKING) && (action == Action.STOP_DESTROY_BLOCK))
-            BlockBreak.onSucceedBreak( entity, world, hand, blockPos, blockFace );
+            BlockBreak.onSucceedBreak(entity, world, hand, blockPos, blockFace);
+        else if (result == ActionResult.FAIL)
+            BlockBreak.onFailedBreak(entity, world, hand, blockPos, blockFace);
         return result;
     }
     
@@ -224,7 +220,7 @@ public final class BlockBreak {
              */
             UUID entitySource = ((ConstructableEntity)entity).getEntityOwner();
             Optional<UUID> chunkOwner = ChunkUtils.getPosOwner(world, blockPos);
-            if (chunkOwner.isPresent() && !ChunkUtils.canPlayerBreakInChunk( entitySource, world, blockPos ))
+            if (chunkOwner.isPresent() && !ChunkUtils.canPlayerBreakInChunk(entitySource, world, blockPos))
                 return ActionResult.FAIL;
         }
         else if (entity instanceof ExplosiveProjectileEntity) {
@@ -249,11 +245,11 @@ public final class BlockBreak {
     
     /**
      * When a block is successfully run, perform actions based on the block
-     * @param entity 
-     * @param world 
-     * @param hand 
-     * @param blockPos 
-     * @param blockFace 
+     * @param entity The entity responsible for breaking the block
+     * @param world The world that the block was broken in
+     * @param hand The hand used to break the block
+     * @param blockPos The position that the block was broken at
+     * @param blockFace The block face that was broken
      */
     private static void onSucceedBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace) {
         // Log the block being broken
@@ -262,6 +258,23 @@ public final class BlockBreak {
         // Take additional actions if the entity breaking is a player
         if (entity instanceof ServerPlayerEntity)
             BlockBreakEventCallback.EVENT.invoker().activate((ServerPlayerEntity) entity, world, hand, blockPos, blockFace);
+    }
+    
+    /**
+     * When a block break is failed, perform actions based on the block
+     * @param entity The entity responsible for breaking the block
+     * @param world The world that the block was broken in
+     * @param hand The hand used to break the block
+     * @param blockPos The position that the block was broken at
+     * @param blockFace The block face that was broken
+     */
+    private static void onFailedBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace) {
+        BlockState blockState = world.getBlockState(blockPos);
+        if (entity instanceof ServerPlayerEntity && EntityUtils.hasClientBlockData(blockState)) {
+            BlockEntity blockEntity = world.getBlockEntity(blockPos);
+            if (blockEntity != null)
+                ((ServerPlayerEntity) entity).networkHandler.sendPacket(blockEntity.toUpdatePacket());
+        }
     }
     
     /**

@@ -34,7 +34,8 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
-import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.TheElm.project.interfaces.ShopSignData;
+import net.TheElm.project.utilities.BlockUtils;
 import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.RankUtils;
@@ -44,6 +45,7 @@ import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.command.argument.ItemStackArgument;
 import net.minecraft.command.argument.ItemStackArgumentType;
+import net.minecraft.entity.Entity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -56,6 +58,8 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
@@ -80,23 +84,28 @@ public final class ModCommands {
                 )
             )
             .then(CommandManager.literal("shops")
-                .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
-                    .then(CommandManager.literal("change")
-                        .then(CommandManager.literal("item")
-                            .then(CommandManager.literal("hand")
-                                .executes(ModCommands::shopSignChangeItemToHand)
-                            )
-                            .then(CommandManager.literal("inventory")
-                                .executes(ModCommands::shopSignChangeItemToContainer)
-                            )
-                            .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
-                                .executes(ModCommands::shopSignChangeItem)
-                            )
+                .then(CommandManager.literal("change")
+                    .then(CommandManager.literal("item")
+                        .then(CommandManager.literal("hand")
+                            .executes(ModCommands::shopSignChangeItemToHand)
                         )
-                        .then(CommandManager.literal("owner")
-                            .then(CommandManager.argument("owner", GameProfileArgumentType.gameProfile())
-                                .suggests(CommandUtils::getAllPlayerNames)
-                                .executes(ModCommands::shopSignChangeOwner)
+                        .then(CommandManager.literal("inventory")
+                            .executes(ModCommands::shopSignChangeItemToContainer)
+                        )
+                        .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
+                            .executes(ModCommands::shopSignChangeItem)
+                        )
+                    )
+                    .then(CommandManager.literal("owner")
+                        .then(CommandManager.argument("owner", GameProfileArgumentType.gameProfile())
+                            .suggests(CommandUtils::getAllPlayerNames)
+                            .executes(ModCommands::shopSignChangeOwner)
+                        )
+                    )
+                    .then(CommandManager.literal("trader")
+                        .then(CommandManager.literal("source")
+                            .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
+                                .executes(ModCommands::shopSignChangeSoundSourceLocation)
                             )
                         )
                     )
@@ -151,9 +160,15 @@ public final class ModCommands {
     
     private static int shopSignChangeOwner(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
+        Entity entity = source.getEntityOrThrow();
         ServerWorld world = source.getWorld();
         
-        BlockPos signPos = BlockPosArgumentType.getBlockPos(context, "pos");
+        BlockHitResult hitResult = BlockUtils.getLookingBlock(world, entity);
+        if (hitResult.getType() == HitResult.Type.MISS) {
+            source.sendError(new LiteralText("Could not find targetted block."));
+            return 0;
+        }
+        BlockPos signPos = hitResult.getBlockPos();
         BlockEntity blockEntity = world.getBlockEntity(signPos);
         
         // Get the target player
@@ -162,13 +177,13 @@ public final class ModCommands {
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // If the shop sign block was not found
-        if (!(blockEntity instanceof ShopSignBlockEntity)) {
+        if (!(blockEntity instanceof ShopSignData)) {
             source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
             return 0;
         }
         
         // Get the entity as the shop sign
-        ShopSignBlockEntity shop = (ShopSignBlockEntity) blockEntity;
+        ShopSignData shop = (ShopSignData) blockEntity;
         
         // Update the owner of the shop to the target
         shop.setShopOwner(targetPlayer.getId());
@@ -195,13 +210,13 @@ public final class ModCommands {
         BlockEntity blockEntity = world.getBlockEntity(signPos);
         
         // If the shop sign block was not found
-        if (!(blockEntity instanceof ShopSignBlockEntity)) {
+        if (!(blockEntity instanceof ShopSignData)) {
             source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
             return 0;
         }
         
         // Get the entity as the shop sign
-        ShopSignBlockEntity shop = (ShopSignBlockEntity) blockEntity;
+        ShopSignData shop = (ShopSignData) blockEntity;
         if (Objects.equals(shop.getShopOwner(), CoreMod.SPAWN_ID)) {
             source.sendError(new LiteralText("Cannot get attached containers of infinite Shop Signs."));
             return 0;
@@ -222,13 +237,19 @@ public final class ModCommands {
     }
     private static int shopSignChangeItem(@NotNull CommandContext<ServerCommandSource> context, @NotNull ItemStack stack) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
+        Entity entity = source.getEntityOrThrow();
         ServerWorld world = source.getWorld();
         
-        BlockPos signPos = BlockPosArgumentType.getBlockPos(context, "pos");
+        BlockHitResult hitResult = BlockUtils.getLookingBlock(world, entity);
+        if (hitResult.getType() == HitResult.Type.MISS) {
+            source.sendError(new LiteralText("Could not find targetted block."));
+            return 0;
+        }
+        BlockPos signPos = hitResult.getBlockPos();
         BlockEntity blockEntity = world.getBlockEntity(signPos);
         
         // If the shop sign block was not found
-        if (!(blockEntity instanceof ShopSignBlockEntity)) {
+        if (!(blockEntity instanceof ShopSignData)) {
             source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
             return 0;
         }
@@ -240,7 +261,7 @@ public final class ModCommands {
         }
         
         // Get the entity as the shop sign
-        ShopSignBlockEntity shop = (ShopSignBlockEntity) blockEntity;
+        ShopSignData shop = (ShopSignData) blockEntity;
         
         // Update the item of the shop
         shop.setItem(stack);
@@ -253,6 +274,34 @@ public final class ModCommands {
             .formatted(Formatting.GREEN)
             .append(new TranslatableText(shop.getShopItemTranslationKey()).formatted(Formatting.AQUA))
             .append("."), false);
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int shopSignChangeSoundSourceLocation(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        Entity entity = source.getEntityOrThrow();
+        ServerWorld world = source.getWorld();
+        
+        BlockPos setSoundSource = BlockPosArgumentType.getBlockPos(context, "pos");
+        
+        BlockHitResult hitResult = BlockUtils.getLookingBlock(world, entity);
+        if (hitResult.getType() == HitResult.Type.MISS) {
+            source.sendError(new LiteralText("Could not find targetted block."));
+            return 0;
+        }
+        BlockPos signPos = hitResult.getBlockPos();
+        BlockEntity blockEntity = world.getBlockEntity(signPos);
+        
+        // If the shop sign block was not found
+        if (!(blockEntity instanceof ShopSignData)) {
+            source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
+            return 0;
+        }
+        
+        // Get the entity as the shop sign
+        ShopSignData shop = (ShopSignData) blockEntity;
+        shop.setSoundSourcePosition(setSoundSource);
+        
+        source.sendFeedback(new LiteralText("Updated sound location.").formatted(Formatting.GREEN), false);
         return Command.SINGLE_SUCCESS;
     }
 }

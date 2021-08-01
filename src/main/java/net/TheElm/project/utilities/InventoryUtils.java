@@ -25,7 +25,7 @@
 
 package net.TheElm.project.utilities;
 
-import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.TheElm.project.interfaces.ShopSignData;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
@@ -108,10 +108,10 @@ public final class InventoryUtils {
         
         return null;
     }
-    public static @Nullable LootableContainerBlockEntity getAttachedChest(@NotNull final ShopSignBlockEntity signBuilder) {
+    public static @Nullable LootableContainerBlockEntity getAttachedChest(@NotNull final ShopSignData signBuilder) {
         return InventoryUtils.getAttachedChest(Objects.requireNonNull(signBuilder.getSign().getWorld()), signBuilder.getSign().getPos());
     }
-    public static boolean hasAttachedChest(@NotNull final ShopSignBlockEntity signBuilder) {
+    public static boolean hasAttachedChest(@NotNull final ShopSignData signBuilder) {
         return InventoryUtils.getAttachedChest(signBuilder) != null;
     }
     
@@ -152,6 +152,12 @@ public final class InventoryUtils {
     }
     public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Item item, final int count, final boolean required) {
         return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> Objects.equals(s.getItem(), item), count, required);
+    }
+    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final ItemStack stack, final int count) {
+        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> ItemStack.areEqual(s, stack), count);
+    }
+    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final ItemStack stack, final int count, final boolean required) {
+        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> ItemStack.areEqual(s, stack), count, required);
     }
     public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Predicate<ItemStack> predicate, final int count) {
         return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, predicate, count, false);
@@ -242,18 +248,18 @@ public final class InventoryUtils {
         
         success = ( itemStackSize > 0 );
         if (success)
-            world.playSound( null, sourcePos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f );
+            world.playSound(null, sourcePos, SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.MASTER,1.0f, 1.0f);
         return success;
     }
     
     /*
      * Transfer items from a chest to the player
      */
-    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Item item, final int count) {
-        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, s -> Objects.equals(s.getItem(), item), count);
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final ItemStack stack, final int count) {
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, s -> ItemStack.areEqual(s, stack), count);
     }
-    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Item item, final int count, final boolean required) {
-        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, s -> Objects.equals(s.getItem(), item), count, required);
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final ItemStack stack, final int count, final boolean required) {
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, s -> ItemStack.areEqual(s, stack), count, required);
     }
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> predicate, final int count) {
         return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, predicate, count, false);

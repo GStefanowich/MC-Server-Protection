@@ -26,12 +26,23 @@
 package net.TheElm.project.utilities;
 
 import de.bluecolored.bluemap.api.BlueMapAPI;
+import de.bluecolored.bluemap.api.BlueMapMap;
+import de.bluecolored.bluemap.api.BlueMapWorld;
 import de.bluecolored.bluemap.api.marker.MarkerAPI;
+import de.bluecolored.bluemap.api.marker.MarkerSet;
 import net.TheElm.project.CoreMod;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.Optional;
+import java.util.Queue;
+import java.util.function.BiPredicate;
+import java.util.function.Consumer;
 
 /**
  * Created on Mar 14 2021 at 3:37 PM.
@@ -42,6 +53,7 @@ public final class MapUtils {
     public static void init() {}
     
     private static @Nullable MarkerAPI MARKERS;
+    public static @NotNull Queue<Consumer<BlueMapAPI>> RUN = new ArrayDeque<>();
     
     static {
         // When the API is made available
@@ -51,14 +63,46 @@ public final class MapUtils {
             try {
                 MapUtils.MARKERS = api.getMarkerAPI();
                 CoreMod.logInfo("BlueMap Integration detected");
+                
+                Consumer<BlueMapAPI> consumer;
+                while ((consumer = MapUtils.RUN.poll()) != null)
+                    consumer.accept(api);
             } catch (IOException e) {
                 CoreMod.logError(e);
             }
         });
     }
     
+    public static void withMarker(@NotNull RegistryKey<World> worldKey, @NotNull String name, @NotNull final BiPredicate<BlueMapMap, MarkerSet> action) {
+        if (MapUtils.MARKERS == null)
+            return;
+        MapUtils.getWorldMap(worldKey).ifPresent(world -> {
+            if (action.test(world, MapUtils.MARKERS.createMarkerSet(name)))
+                MapUtils.saveBlueMap();
+        });
+    }
+    
+    public static void saveBlueMap() {
+        try {
+            MapUtils.MARKERS.save();
+        } catch (IOException e) {
+            CoreMod.logError(e);
+        }
+    }
     public static Optional<BlueMapAPI> getBlueMap() {
         return BlueMapAPI.getInstance();
     }
-    
+    public static Optional<BlueMapMap> getWorldMap(@NotNull RegistryKey<World> worldKey) {
+        return MapUtils.getBlueMap().map(blueMapAPI -> {
+            Identifier identifier = worldKey.getValue();
+            String search = "world/dimensions/" + identifier.getNamespace() + "/" + identifier.getPath();
+            for (BlueMapMap map : blueMapAPI.getMaps()) {
+                BlueMapWorld world = map.getWorld();
+                if (world.getSaveFolder().endsWith(search))
+                    return map;
+            }
+            CoreMod.logError("Could not find BlueMapWorld \"" + search + "\"");
+            return null;
+        });
+    }
 }

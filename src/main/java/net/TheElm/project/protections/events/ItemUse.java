@@ -49,6 +49,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
 import org.jetbrains.annotations.NotNull;
@@ -78,7 +79,7 @@ public final class ItemUse {
             /*
              * If item is stick and player has build permission
              */
-            BlockHitResult hitResult = BlockUtils.getLookingBlock(world, player);
+            BlockHitResult hitResult = BlockUtils.getLookingBlock(world, player, 10, RaycastContext.FluidHandling.NONE);
             if ((hitResult.getType() != HitResult.Type.MISS) && ChunkUtils.canPlayerBreakInChunk(player, hitResult.getBlockPos()) && ItemUse.stickBlockInteraction(player, world, hitResult))
                 return ActionResult.SUCCESS;
         }

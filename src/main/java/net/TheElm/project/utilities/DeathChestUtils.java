@@ -187,10 +187,10 @@ public final class DeathChestUtils {
             && corpse.addStatusEffect(new StatusEffectInstance(StatusEffects.WITHER, 1000000, 1, false, true )); // Apply a visual appearance to the Armor stand
     }
     public static void createDeathSnapshotFor(@NotNull final PlayerEntity player) {
-        final String deathName = player.getEntityName() + System.currentTimeMillis() + "_" + MessageUtils.xyzToString(player.getBlockPos(), "_");
+        /*final String deathName = player.getEntityName() + System.currentTimeMillis() + "_" + MessageUtils.xyzToString(player.getBlockPos(), "_");
         MessageUtils.consoleToOps(new LiteralText("Created new Death Chest for player ")
             .append(player.getDisplayName().shallowCopy())
-            .append(" (" + deathName + ")"));
+            .append(" (" + deathName + ")"));*/
     }
     
     private static @NotNull ArmorStandEntity createFakeCorpse(@NotNull final World world, @NotNull final BlockPos chestPos, @NotNull final LivingEntity copyOf) {

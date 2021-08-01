@@ -30,7 +30,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.exceptions.ShopBuilderException;
-import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.TheElm.project.interfaces.ShopSignData;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
@@ -59,7 +59,7 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public final class ShopSignBuilder implements ShopSignBlockEntity {
+public final class ShopSignBuilder implements ShopSignData {
     
     /*
      * Builder information
@@ -136,7 +136,7 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
         return this.tradeItemIdentifier;
     }
     @Override
-    public @Nullable Map<Enchantment, Integer> getShopItemEnchantments() {
+    public @NotNull Map<Enchantment, Integer> getShopItemEnchantments() {
         return this.tradeItemEnchants;
     }
     @Override
@@ -169,10 +169,6 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
     @Override
     public @Nullable BlockPos getSecondPos() {
         return this.regionPosB;
-    }
-    
-    public @NotNull World getWorld() {
-        return this.world;
     }
     
     public void regionPositioning(@Nullable BlockPos first, @Nullable BlockPos second) {
@@ -349,8 +345,7 @@ public final class ShopSignBuilder implements ShopSignBlockEntity {
         
         return builder;
     }
-    private static String createIdentifier(@NotNull final World world, @NotNull final BlockPos blockPos) {
+    private static @NotNull String createIdentifier(@NotNull final World world, @NotNull final BlockPos blockPos) {
         return IdUtils.get(world) + ":" + MessageUtils.xyzToString(blockPos);
     }
-    
 }

@@ -67,6 +67,18 @@ public final class BlockUtils {
      * @return The hit result
      */
     public static @NotNull BlockHitResult getLookingBlock(@NotNull BlockView world, @NotNull Entity entity, int distance) {
+        return BlockUtils.getLookingBlock(world, entity, distance, RaycastContext.FluidHandling.ANY);
+    }
+    
+    /**
+     * Get the block that an entity is looking at, up to a max distance
+     * @param world The world
+     * @param entity The entity
+     * @param distance How far to check
+     * @param fluids Whether to collide with fluids or not
+     * @return The hit result
+     */
+    public static @NotNull BlockHitResult getLookingBlock(@NotNull BlockView world, @NotNull Entity entity, int distance, RaycastContext.FluidHandling fluids) {
         // Get the direction the entity is facing
         Vec3d posVec = entity.getCameraPosVec(1.0F); // Get camera pos
         Vec3d lookVec = entity.getRotationVec(1.0F); // Get looking dir
@@ -78,7 +90,7 @@ public final class BlockUtils {
             lookVec.z * distance
         );
         
-        return world.raycast(new RaycastContext( posVec, traceVec, RaycastContext.ShapeType.OUTLINE, RaycastContext.FluidHandling.ANY, entity));
+        return world.raycast(new RaycastContext( posVec, traceVec, RaycastContext.ShapeType.OUTLINE, fluids, entity));
     }
     
     /**

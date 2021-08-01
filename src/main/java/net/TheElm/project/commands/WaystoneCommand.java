@@ -205,7 +205,7 @@ public class WaystoneCommand {
         for (ServerPlayerEntity porter : players) {
             WarpUtils.teleportPlayer(warp, porter);
             
-            TeleportsCommand.feedback(porter, target, warp.name);
+            TeleportsCommand.feedback(porter, target, warp);
             
             // Notify the player
             if (!porter.isSpectator()) {

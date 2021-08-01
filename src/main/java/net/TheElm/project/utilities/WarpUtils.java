@@ -235,8 +235,8 @@ public final class WarpUtils {
             this.createWarpAt.offset(Direction.WEST)
         };
         for ( BlockPos blockPos : decJewelBlocks ) {
-            structure.addBlock(blockPos.up( 1 ), air);
-            structure.addBlock(blockPos.up( 2 ), air);
+            structure.addBlock(blockPos.up(1), air);
+            structure.addBlock(blockPos.up(2), air);
             structure.addBlock(blockPos, decJewel);
         }
         

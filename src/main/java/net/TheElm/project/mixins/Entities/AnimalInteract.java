@@ -38,6 +38,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Objects;
+
 @Mixin({SheepEntity.class, MooshroomEntity.class, CowEntity.class, PigEntity.class, OcelotEntity.class, WolfEntity.class, ParrotEntity.class, CatEntity.class})
 public abstract class AnimalInteract extends AnimalEntity {
     
@@ -48,8 +50,15 @@ public abstract class AnimalInteract extends AnimalEntity {
     @Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
     private void playerInteractMod(final PlayerEntity player, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         BlockPos mobPositioning = this.getBlockPos();
-        if (!ChunkUtils.canPlayerInteractFriendlies( player, mobPositioning ))
+        
+        // Check if the mob is owned by the player interacting
+        if (((AnimalEntity)this) instanceof TameableEntity) {
+            TameableEntity tameable = (TameableEntity)(AnimalEntity) this;
+            if (Objects.equals(tameable.getOwnerUuid(), player.getUuid()))
+                return;
+        }
+        
+        if (!ChunkUtils.canPlayerInteractFriendlies(player, mobPositioning))
             callback.setReturnValue(ActionResult.FAIL);
     }
-    
 }

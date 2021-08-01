@@ -27,6 +27,7 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.WarpUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
@@ -101,8 +102,13 @@ public abstract class Death extends Entity {
         if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getTag()) == null) || ((spawnerTag = spawnerTag.copy()) == null) || (!spawnerTag.contains("EntityIds", NbtType.LIST)))
             return;
         
+        // Check if mob type is allowed to be spawned
+        EntityType<?> type = this.getType();
+        if (!EntityUtils.canBeSpawnered(type))
+            return;
+        
         // Get the identifier of the mob we killed
-        StringTag mobId = StringTag.of(EntityType.getId(this.getType()).toString());
+        StringTag mobId = StringTag.of(EntityType.getId(type).toString());
         
         // Get current entity IDs
         ListTag entityIds = spawnerTag.getList("EntityIds", NbtType.STRING);

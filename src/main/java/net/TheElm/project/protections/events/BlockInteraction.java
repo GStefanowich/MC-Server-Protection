@@ -31,7 +31,7 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.interfaces.BlockInteractionCallback;
 import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.interfaces.ShopSignBlockEntity;
+import net.TheElm.project.interfaces.ShopSignData;
 import net.TheElm.project.protections.logging.BlockEvent;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.ChunkUtils;
@@ -80,9 +80,9 @@ public final class BlockInteraction {
         final BlockEntity blockEntity = world.getBlockEntity(blockPos);
         
         // Check if the block interacted with is a sign (For shop signs)
-        if ( blockEntity instanceof ShopSignBlockEntity && blockEntity instanceof SignBlockEntity) {
+        if ( blockEntity instanceof ShopSignData && blockEntity instanceof SignBlockEntity) {
             SignBlockEntity sign = (SignBlockEntity) blockEntity;
-            ShopSignBlockEntity shopSign = (ShopSignBlockEntity) sign;
+            ShopSignData shopSign = (ShopSignData) sign;
             
             ShopSigns shopSignType;
             // Interact with the sign
@@ -90,13 +90,15 @@ public final class BlockInteraction {
                 shopSignType.onInteract(player, blockPos, shopSign)
                     // Literal Text (Error)
                     .ifLeft((text) -> {
-                        player.playSound(SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.MASTER, 1.0f, 1.0f);
-                        TitleUtils.showPlayerAlert( player, Formatting.RED, text );
+                        shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.NEUTRAL);
+                        TitleUtils.showPlayerAlert(player, Formatting.RED, text);
                     })
                     // Boolean if success/fail
                     .ifRight((bool) -> {
                         if (!bool)
-                            player.playSound(SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.MASTER, 1.0f, 1.0f);
+                            shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.NEUTRAL);
+                        else if (shopSign.getSoundSourcePosition() != null && world.random.nextInt(12) == 0)
+                            shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_YES, SoundCategory.NEUTRAL);
                     });
                 return ActionResult.SUCCESS;
             }
@@ -154,7 +156,7 @@ public final class BlockInteraction {
                 // Check if allowed to open storages in this location
                 if (ChunkUtils.canPlayerDoInChunk(blockPermission, player, claimedChunkInfo, blockPos)) {
                     // Check if the chest is NOT part of a shop, Or the player owns that shop
-                    ShopSignBlockEntity shopSign;
+                    ShopSignData shopSign;
                     if ((!EntityUtils.isValidShopContainer(blockEntity)) || ((shopSign = EntityUtils.getAttachedShopSign(world, blockPos)) == null) || player.getUuid().equals(shopSign.getShopOwner()))
                         return ActionResult.PASS;
                 }

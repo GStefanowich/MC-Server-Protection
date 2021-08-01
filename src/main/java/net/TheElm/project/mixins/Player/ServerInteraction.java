@@ -37,6 +37,7 @@ import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket.Action;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
+import net.minecraft.network.packet.s2c.play.PlayerActionResponseS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.server.world.ServerWorld;
@@ -59,6 +60,8 @@ import java.util.UUID;
 
 @Mixin(ServerPlayerInteractionManager.class)
 public abstract class ServerInteraction implements PlayerPermissions, PlayerChat {
+    
+    @Shadow private BlockPos miningPos;
     
     @Shadow public ServerWorld world;
     @Shadow public ServerPlayerEntity player;
@@ -114,15 +117,25 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
     
     @Inject(at = @At("HEAD"), method = "processBlockBreakingAction", cancellable = true)
     private void onBlockBreakChange(BlockPos blockPos, Action action, Direction direction, int i, CallbackInfo info) {
-        ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this.player, this.world, Hand.MAIN_HAND, blockPos, direction, action);
+        ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this.player, this.world, this.player.preferredHand, blockPos, direction, action);
         if ( result != ActionResult.PASS ) {
+            // Send the player a failed notice
+            this.player.networkHandler.sendPacket(new PlayerActionResponseS2CPacket(blockPos, this.world.getBlockState(blockPos), action, false, "may not interact"));
+            
+            // Update the neighboring blocks on the client
             this.updateNeighboringBlockStates(blockPos);
+            
+            // Update the players mining position
+            // Must to set to prevent (Block Mismatch) messages
+            this.miningPos = blockPos;
+            
+            // Cancel the rest of the event
             info.cancel();
         }
     }
     
     @Inject(at = @At("HEAD"), method = "interactItem", cancellable = true)
-    private void beforeItemInteract(final ServerPlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
+    private void beforeItemInteract(@NotNull final ServerPlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         if (!player.world.isClient) {
             ActionResult result = ItemUseCallback.EVENT.invoker().use(player, world, hand, itemStack);
             if (result != ActionResult.PASS)
@@ -131,7 +144,7 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
     }
     
     @Inject(at = @At("HEAD"), method = "interactBlock", cancellable = true)
-    private void beforeBlockInteract(final ServerPlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, final BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> callback) {
+    private void beforeBlockInteract(@NotNull final ServerPlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, final BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> callback) {
         if (!player.world.isClient) {
             ActionResult result = BlockInteractionCallback.EVENT.invoker().interact(player, world, hand, itemStack, blockHitResult);
             if (result != ActionResult.PASS) {

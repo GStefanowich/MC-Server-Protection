@@ -73,12 +73,11 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
     }
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
-    public void onPlayerInteract(final PlayerEntity player, final Hand hand, final @NotNull CallbackInfoReturnable<ActionResult> callback) {
-        ItemFrameEntity entity = (ItemFrameEntity)(AbstractDecorationEntity) this;
+    public void onPlayerInteract(@NotNull final PlayerEntity player, @NotNull final Hand hand, final @NotNull CallbackInfoReturnable<ActionResult> callback) {
+        ItemFrameEntity itemFrame = (ItemFrameEntity)(AbstractDecorationEntity) this;
         
         // Do special item frame interaction if NOT CROUCHING and HOLDING A TOOL
-        if (( entity instanceof ItemFrameEntity) && (!( player.isSneaking() && player.getStackInHand( hand ).isDamageable() ))) {
-            ItemFrameEntity itemFrame = (ItemFrameEntity) entity;
+        if (!( player.isSneaking() && player.getStackInHand(hand).isDamageable() )) {
             Direction direction = itemFrame.getHorizontalFacing().getOpposite();
             
             // Get the item in the item frame
@@ -101,7 +100,7 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
                     // The amount the player wants to take
                     int putStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
                     
-                    InventoryUtils.playerToChest((ServerPlayerEntity) player, itemFrame.getBlockPos(), player.inventory, chestInventory, itemStack.getItem(), putStackSize);
+                    InventoryUtils.playerToChest((ServerPlayerEntity) player, itemFrame.getBlockPos(), player.inventory, chestInventory, itemStack, putStackSize);
                     callback.setReturnValue(ActionResult.SUCCESS);
                 }
             }
