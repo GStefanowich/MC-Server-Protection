@@ -470,10 +470,11 @@ public final class WarpUtils {
     public static boolean isPlayerCreating(@NotNull final ServerPlayerEntity player) {
         return WarpUtils.GENERATING_PLAYERS.contains( player.getUuid() );
     }
-    public static void teleportPlayer(@NotNull ServerPlayerEntity player, @Nullable String location) {
+    public static Warp teleportPlayer(@NotNull ServerPlayerEntity player, @Nullable String location) {
         Warp warp = WarpUtils.getWarp(player, location);
         if (warp != null)
             WarpUtils.teleportPlayer( warp, player );
+        return warp;
     }
     public static void teleportPlayer(@NotNull final Warp warp, @NotNull final ServerPlayerEntity player) {
         WarpUtils.teleportPlayer(warp.world, player, warp.warpPos);

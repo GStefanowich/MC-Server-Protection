@@ -170,7 +170,10 @@ public class WaystoneCommand {
             }
             
             // Teleport the player to their warp
-            WarpUtils.teleportPlayer(player, null);
+            WarpUtils.Warp warp = WarpUtils.teleportPlayer(player, null);
+            
+            // Provide feedback about the teleport
+            TeleportsCommand.feedback(player, warp);
         }
         
         return Command.SINGLE_SUCCESS;

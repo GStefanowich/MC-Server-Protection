@@ -424,6 +424,9 @@ public final class TeleportsCommand {
         return Command.SINGLE_SUCCESS;
     }
     
+    public static void feedback(@NotNull PlayerEntity porter, @Nullable Warp location) {
+        TeleportsCommand.feedback(porter, porter, location);
+    }
     public static void feedback(@NotNull PlayerEntity porter, @NotNull PlayerEntity target, @Nullable Warp location) {
         TeleportsCommand.feedback(porter, target.getGameProfile(), location);
     }
