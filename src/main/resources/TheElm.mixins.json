@@ -68,6 +68,7 @@
     "Player.Interaction.HorseRide",
     "Player.Interaction.ItemFrames",
     "Player.Interaction.LeadProtection",
+    "Player.Interaction.TamedLead",
     "Player.Interaction.MinecartLock",
     "Player.Interaction.MinecartRide",
     "Player.Interaction.ShopSign",

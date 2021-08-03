@@ -35,6 +35,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 public final class ItemUtils {
     private ItemUtils() {}
@@ -60,6 +61,14 @@ public final class ItemUtils {
         if (item instanceof LeadItem)
             return ClaimPermissions.CREATURES;
         return ClaimPermissions.BLOCKS;
+    }
+    
+    public static boolean areEqualStacks(@NotNull ItemStack stack1, @NotNull ItemStack stack2) {
+        if (stack1.isEmpty() && stack2.isEmpty())
+            return true;
+        return !stack1.isEmpty() && !stack2.isEmpty() // Neither stack is empty
+            && stack1.getItem() == stack2.getItem() // Items are both the same
+            && Objects.equals(stack1.getTag(), stack2.getTag()); // Tags are both equal
     }
     
     @Contract("_, _ -> new")

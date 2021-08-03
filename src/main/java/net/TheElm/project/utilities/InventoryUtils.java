@@ -151,23 +151,23 @@ public final class InventoryUtils {
         return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> Objects.equals(s.getItem(), item), count);
     }
     public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Item item, final int count, final boolean required) {
-        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> Objects.equals(s.getItem(), item), count, required);
+        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> s.getItem() == item, count, required);
     }
     public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final ItemStack stack, final int count) {
-        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> ItemStack.areEqual(s, stack), count);
+        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> s.getItem() == stack.getItem(), count);
     }
     public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final ItemStack stack, final int count, final boolean required) {
-        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> ItemStack.areEqual(s, stack), count, required);
+        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, s -> s.getItem() == stack.getItem(), count, required);
     }
-    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Predicate<ItemStack> predicate, final int count) {
-        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, predicate, count, false);
+    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Predicate<ItemStack> loosePredicate, final int count) {
+        return InventoryUtils.playerToChest(player, sourcePos, playerInventory, chestInventory, loosePredicate, count, false);
     }
-    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Predicate<ItemStack> predicate, final int count, final boolean required) {
+    public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Predicate<ItemStack> loosePredicate, final int count, final boolean required) {
         // World
         ServerWorld world = player.getServerWorld();
         
         // Check if enough in player inventory
-        if ( required && (InventoryUtils.getInventoryCount(playerInventory, predicate) < count) )
+        if ( required && (InventoryUtils.getInventoryCount(playerInventory, loosePredicate) < count) )
             return false;
         
         // Get stack size to take from player up to 64
@@ -176,13 +176,13 @@ public final class InventoryUtils {
         boolean success;
         
         // If chest has item on the frame
-        if ( InventoryUtils.getInventoryCount(playerInventory, predicate) > 0) {
+        if ( InventoryUtils.getInventoryCount(playerInventory, loosePredicate) > 0) {
             final int invSize = playerInventory.size(); // Get the inventory size to iterate over
             
             // Get stack sizes
             for ( int i = 0; i < invSize; i++ ) {
                 final ItemStack invItem = playerInventory.getStack( i );
-                if ( predicate.test(invItem) ) {
+                if ( loosePredicate.test(invItem) ) {
                     int putable = count - itemStackSize; // The amount of items remaining to take a stack from the player
                     // If stack size is full
                     if ( putable <= 0 )
@@ -210,7 +210,7 @@ public final class InventoryUtils {
                             final Item chestItem = chestItemStack.getItem();
                             
                             // If the slot is AIR or matching type
-                            if (chestItem.equals(Items.AIR) || ((chestItemStack.getCount() < chestItem.getMaxCount()) && predicate.test(chestItemStack))) {
+                            if (chestItem.equals(Items.AIR) || ((chestItemStack.getCount() < chestItem.getMaxCount()) && ItemUtils.areEqualStacks(invItem, chestItemStack))) {
                                 final int put = Collections.min(Arrays.asList(chestItem.getMaxCount() - chestItemStack.getCount(), invItem.getCount(), putable));
                                 if (chestItem.equals(Items.AIR)) {
                                     // Put a copy of the item from the players inventory
@@ -256,26 +256,32 @@ public final class InventoryUtils {
      * Transfer items from a chest to the player
      */
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final ItemStack stack, final int count) {
-        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, s -> ItemStack.areEqual(s, stack), count);
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, s -> s.getItem() == stack.getItem(), s -> ItemUtils.areEqualStacks(s, stack), count);
     }
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final ItemStack stack, final int count, final boolean required) {
-        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, s -> ItemStack.areEqual(s, stack), count, required);
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, s -> s.getItem() == stack.getItem(), s -> ItemUtils.areEqualStacks(s, stack), count, required);
     }
-    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> predicate, final int count) {
-        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, predicate, count, false);
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> loosePredicate, @NotNull final Predicate<ItemStack> strictPredicate, final int count) {
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, loosePredicate, strictPredicate, count, false);
     }
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> predicate, final int count, final boolean required) {
-        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, predicate, count, required, null);
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, predicate, predicate, count, required);
+    }
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> loosePredicate, @NotNull final Predicate<ItemStack> strictPredicate, final int count, final boolean required) {
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, loosePredicate, strictPredicate, count, required, null);
     }
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> predicate, final int count, @Nullable ItemStackGenerator spawner) {
         return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, predicate, count, false, spawner);
     }
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> predicate, final int count, final boolean required, @Nullable ItemStackGenerator spawner) {
+        return InventoryUtils.chestToPlayer(player, sourcePos, chestInventory, playerInventory, predicate, predicate, count, required, spawner);
+    }
+    public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> loosePredicate, @NotNull final Predicate<ItemStack> strictPredicate, final int count, final boolean required, @Nullable ItemStackGenerator spawner) {
         // World
         ServerWorld world = player.getServerWorld();
         
         // Check if enough in the chest
-        if (required && (chestInventory != null) && (InventoryUtils.getInventoryCount(chestInventory, predicate) < count))
+        if (required && (chestInventory != null) && (InventoryUtils.getInventoryCount(chestInventory, loosePredicate) < count))
             return false;
         
         // Get stack size to give to player up to 64
@@ -296,13 +302,13 @@ public final class InventoryUtils {
             }
         } else {
             // If chest has item on the frame
-            if (InventoryUtils.getInventoryCount(chestInventory, predicate) > 0) {
+            if (InventoryUtils.getInventoryCount(chestInventory, loosePredicate) > 0) {
                 final int invSize = chestInventory.size(); // Get the inventory size to iterate over
                 
                 // Get stack sizes
                 for (int i = invSize; i > 0; i--) {
                     final ItemStack chestItem = chestInventory.getStack(i - 1);
-                    if (predicate.test(chestItem)) {
+                    if (loosePredicate.test(chestItem)) {
                         int collectible = count - stackSize; // The amount of items remaining to give the player a full stack
                         // If stack size is full
                         if (collectible <= 0)
@@ -312,10 +318,9 @@ public final class InventoryUtils {
                         // Create a copy of the item
                         final ItemStack clone = chestItem.copy();
                         
-                        int slot;
                         // Get a slot for the item
-                        slot = playerInventory.getOccupiedSlotWithRoomForStack( clone );
-                        if ( slot == -1 ) {
+                        int slot = playerInventory.getOccupiedSlotWithRoomForStack( clone );
+                        if ( slot == -1 || !strictPredicate.test(chestItem) ) {
                             clone.setCount(collect);
                             if (!playerInventory.insertStack( clone ))
                                 break;

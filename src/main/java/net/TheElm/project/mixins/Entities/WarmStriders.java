@@ -31,7 +31,9 @@ import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.WorldView;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
 
 @Mixin(targets = "net/minecraft/entity/passive/StriderEntity$GoBackToLavaGoal")
 public abstract class WarmStriders extends MoveToTargetPosGoal {
@@ -47,8 +49,8 @@ public abstract class WarmStriders extends MoveToTargetPosGoal {
      * @param pos
      * @return
      */
-    @Override
-    public boolean isTargetPos(WorldView world, BlockPos pos) {
+    @Overwrite
+    public boolean isTargetPos(@NotNull WorldView world, @NotNull BlockPos pos) {
         return world.getBlockState(pos).isIn(BlockTags.STRIDER_WARM_BLOCKS) && world.getBlockState(pos.up()).canPathfindThrough(world, pos, NavigationType.LAND);
     }
 }

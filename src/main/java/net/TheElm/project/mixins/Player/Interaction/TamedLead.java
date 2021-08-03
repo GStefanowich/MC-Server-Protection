@@ -26,9 +26,9 @@
 package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
@@ -38,19 +38,26 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.HorseBaseEntity;
+import net.minecraft.entity.passive.StriderEntity;
 import net.minecraft.entity.passive.TameableEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.network.packet.s2c.play.EntityAttachS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Hand;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 
@@ -70,13 +77,14 @@ public abstract class TamedLead extends LivingEntity {
         return null;
     }
     
-    @Inject(at = @At("HEAD"), method = "attachLeash", cancellable = true)
-    private void attachLeash(final Entity entity, final boolean bool, final CallbackInfo callback) {
-        if (!( entity instanceof ServerPlayerEntity ))
-            return;
-        
-        ServerPlayerEntity player = (ServerPlayerEntity) entity;
-        
+    /**
+     * Control attaching of leashes to this mob
+     * @param player The entity to attach to
+     * @param hand The hand the player interacted with
+     * @param callback The callback
+     */
+    @Inject(at = @At("HEAD"), method = "method_29506", cancellable = true)
+    private void attachLeash(@NotNull final PlayerEntity player, @NotNull final Hand hand, @NotNull final CallbackInfoReturnable<ActionResult> callback) {
         // If player is in creative mode, bypass permissions
         if ((player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
             return;
@@ -85,42 +93,78 @@ public abstract class TamedLead extends LivingEntity {
         if ((this.getOwnerUuid() != null) && (player.getUuid().equals(this.getOwnerUuid())))
             return;
         
-        WorldChunk chunk = this.getEntityWorld().getWorldChunk( this.getBlockPos() );
-        
         // If player can interact with tameable
-        if (( chunk != null ) && ((IClaimedChunk) chunk).isSetting( this.getBlockPos(), ClaimSettings.HURT_TAMED ))
+        if (ChunkUtils.canPlayerInteractFriendlies(player, this.getBlockPos()))
             return;
         
-        Text owner;
-        if ( this.getOwnerUuid() != null ) {
-            // Get the name of the HORSES OWNER
-            owner = ClaimantPlayer.get( this.getOwnerUuid() )
-                .getName();
-        } else {
-            // Get the name of the CHUNK OWNER
-            if ( chunk != null )
-                owner = ((IClaimedChunk) chunk).getOwnerName( player, this.getBlockPos() );
-            else
-                owner = new LiteralText( "unknown player" )
-                    .formatted(Formatting.LIGHT_PURPLE);
+        ActionResult result;
+        ItemStack stack = player.getStackInHand(hand);
+        
+        if (!(stack.getItem() == Items.LEAD || stack.getItem() == Items.NAME_TAG))
+            result = ActionResult.PASS;
+        else {
+            result = ActionResult.CONSUME;
+            
+            Text owner;
+            if ( this.getOwnerUuid() != null ) {
+                // Get the name of the HORSES OWNER
+                owner = ClaimantPlayer.get(this.getOwnerUuid())
+                    .getName();
+            } else {
+                // Get the name of the CHUNK OWNER
+                WorldChunk chunk = this.getEntityWorld().getWorldChunk(this.getBlockPos());
+                if ( chunk != null )
+                    owner = ((IClaimedChunk) chunk).getOwnerName( player, this.getBlockPos() );
+                else
+                    owner = new LiteralText( "unknown player" )
+                        .formatted(Formatting.LIGHT_PURPLE);
+            }
+            
+            // Horse makes an angry sound at the player
+            this.playSound(EntityUtils.getLockSound(this),0.5f, 1f);
+
+            // Display that this item can't be opened
+            TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
+                EntityUtils.getLockedName(this),
+                owner
+            ));
+            
+            // Make sure the client knows that they are not leashing
+            if (player instanceof ServerPlayerEntity && stack.getItem() == Items.LEAD) {
+                EntityUtils.resendInventory(player);
+                
+                ((ServerPlayerEntity) player).networkHandler.sendPacket(
+                    new EntityAttachS2CPacket(this, null)
+                );
+            }
         }
         
-        // Horse makes an angry sound at the player
-        this.playSound( EntityUtils.getLockSound( this ),0.5f, 1f );
-        
-        // Display that this item can't be opened
-        TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
-            EntityUtils.getLockedName( this ),
-            owner
-        ));
-        
-        // Make sure the client knows that they are not leashing
-        player.networkHandler.sendPacket(
-            new EntityAttachS2CPacket(this, null)
-        );
-        
         // Decline allowing leading
-        callback.cancel();
+        callback.setReturnValue(result);
     }
     
+    /**
+     * Try to dismount mobs out of vehicles
+     * @param player The player that interacted with this mob
+     * @param hand The hand the player uses
+     * @param callback The callback
+     */
+    @Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
+    private void interactMob(@NotNull PlayerEntity player, @NotNull Hand hand, @NotNull final CallbackInfoReturnable<ActionResult> callback) {
+        // If the player is not sneaking or is holding an item
+        if (!player.isSneaking() || !player.getStackInHand(hand).isEmpty())
+            return;
+        Entity vehicle;
+        if ((vehicle = this.getVehicle()) != null) {
+            // Prevent removing baby striders from their parents
+            if (((LivingEntity) this) instanceof StriderEntity && this.isBaby() && vehicle instanceof StriderEntity)
+                return;
+            // If mob is riding a player (Ie; a parrot) don't let other players dismount it
+            if (vehicle instanceof PlayerEntity && player != vehicle)
+                return;
+            
+            this.stopRiding();
+            callback.setReturnValue(ActionResult.SUCCESS);
+        }
+    }
 }
