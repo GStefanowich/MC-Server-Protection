@@ -39,7 +39,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.Callable;
+import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
 /**
@@ -47,15 +47,15 @@ import java.util.stream.StreamSupport;
  * By greg in SewingMachineMod
  */
 public class ServerVariables {
-    private static final @NotNull Map<String, Callable<String>> VARIABLES;
+    private static final @NotNull Map<String, Function<MinecraftServer, String>> VARIABLES;
     static {
         /*
          * Save our Variables to parse
          */
-        Map<String, Callable<String>> variables = new HashMap<>();
+        Map<String, Function<MinecraftServer, String>> variables = new HashMap<>();
         
         // Version
-        variables.put("version", () -> {
+        variables.put("version", server -> {
             GameVersion version = SharedConstants.getGameVersion();
             if (version == null)
                 return "1.??.??";
@@ -63,16 +63,38 @@ public class ServerVariables {
         });
         
         // Time
-        variables.put("time", () -> {
-            MinecraftServer server = ServerCore.get();
+        variables.put("time", server -> {
             ServerWorld world = server.getWorld(World.OVERWORLD);
             if (world == null) return "time";
             return SleepUtils.timeFromMillis(world.getTimeOfDay());
         });
         
+        // Weather
+        variables.put("weather", server -> {
+            ServerWorld world = server.getWorld(World.OVERWORLD);
+            if (world == null)
+                return "unknown";
+            if (world.isThundering())
+                return "storm";
+            if (world.isRaining())
+                return "rain";
+            return "clear";
+        });
+        
+        // Weather sentence
+        variables.put("weather.adj", server -> {
+            ServerWorld world = server.getWorld(World.OVERWORLD);
+            if (world == null)
+                return "strange";
+            if (world.isThundering())
+                return "stormy";
+            if (world.isRaining())
+                return "rainy";
+            return "beautiful";
+        });
+        
         // Difficulty
-        variables.put("difficulty", () -> {
-            MinecraftServer server = ServerCore.get();
+        variables.put("difficulty", server -> {
             SaveProperties properties = server.getSaveProperties();
             if (properties.isHardcore())
                 return "hardcore";
@@ -86,7 +108,7 @@ public class ServerVariables {
         VARIABLES = Collections.unmodifiableMap(variables);
     }
     
-    public static @NotNull Set<Map.Entry<String, Callable<String>>> entrySet() {
+    public static @NotNull Set<Map.Entry<String, Function<MinecraftServer, String>>> entrySet() {
         return ServerVariables.VARIABLES.entrySet();
     }
 }

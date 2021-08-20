@@ -32,13 +32,15 @@ import org.jetbrains.annotations.NotNull;
 
 public enum ClaimPermissions {
     
+    BEDS(ClaimRanks.PASSIVE, "Sleep and set spawn at beds"), // Bed usage
     CREATURES(ClaimRanks.PASSIVE, "Harm or kill passive mobs"), // Harm passive mods
     HARVEST(ClaimRanks.ALLY, "Harvest crops that are fully grown"), // Harvest plants
     BLOCKS(ClaimRanks.ALLY, "Place or break any block"), // Break or Place blocks
     STORAGE(ClaimRanks.ALLY, "Access shared inventories: chests, hoppers, furnaces, etc"), // Access storage containers
     DOORS(ClaimRanks.PASSIVE, "Open or close doors"), // Open doors and gates
     PICKUP(ClaimRanks.ALLY, "Pickup dropped items"), // Pickup entities
-    RIDING(ClaimRanks.ALLY, "Ride on horses and llamas"), // Ride carts and animals
+    REDSTONE(ClaimRanks.PASSIVE, "Operate buttons and levers"), // Trigger redstone
+    RIDING(ClaimRanks.ALLY, "Ride on horses, llamas, boats, and minecarts"), // Ride carts and animals
     WARP(ClaimRanks.OWNER, "Teleport to waystones"), // Warp to the players warp location
     TRADING(ClaimRanks.PASSIVE, "Make trades with villagers"), // Trade with villagers
     CRAFTING(ClaimRanks.PASSIVE, "Access non-shared inventories: crafting tables, looms, etc") // Open crafting benches

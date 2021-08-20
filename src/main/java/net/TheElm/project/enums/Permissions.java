@@ -66,6 +66,7 @@ public class Permissions {
     public static final @NotNull OtherInflictableNode PLAYER_GODMODE = addInflictableOther("player.cheat.god", "Allows god mode with /" + AdminCommands.GOD.toLowerCase(Locale.ROOT), "Allow using /" + AdminCommands.GOD.toLowerCase(Locale.ROOT) + " on other players");
     public static final @NotNull OtherInflictableNode PLAYER_FLY = addInflictableOther("player.cheat.fly", "Allows flying with /" + AdminCommands.FLIGHT.toLowerCase(Locale.ROOT), "Allows using /" + AdminCommands.FLIGHT.toLowerCase(Locale.ROOT) + " on other players");
     public static final @NotNull OtherInflictableNode PLAYER_HEAL = addInflictableOther("player.cheat.heal", "Allows healing self with /" + AdminCommands.HEAL.toLowerCase(Locale.ROOT), "Allows using /" + AdminCommands.HEAL.toLowerCase(Locale.ROOT) + " on other players");
+    public static final @NotNull OtherInflictableNode PLAYER_FEED = addInflictableOther("player.cheat.feed", "Allows feeding self with /" + AdminCommands.FEED.toLowerCase(Locale.ROOT), "Allows using /" + AdminCommands.FEED.toLowerCase(Locale.ROOT) + " on other players");
     
     public static final @NotNull InflictableNode PLAYER_REPAIR = addInflictable("player.cheat.repair", "Allows players to use the /" + AdminCommands.REPAIR.toLowerCase(Locale.ROOT) + " command");
     

@@ -1,0 +1,113 @@
+/*
+ * This software is licensed under the MIT License
+ * https://github.com/GStefanowich/MC-Server-Protection
+ *
+ * Copyright (c) 2019 Gregory Stefanowich
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
+package net.TheElm.project.commands;
+
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
+import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.interfaces.CommandPredicate;
+import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.utilities.ItemUtils;
+import net.minecraft.item.Items;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
+import org.jetbrains.annotations.NotNull;
+
+import java.util.Base64;
+
+/**
+ * Created on Aug 17 2021 at 9:25 AM.
+ * By greg in SewingMachineMod
+ */
+public class HeadCommand {
+    private HeadCommand() {}
+    
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
+        ServerCore.register(dispatcher, "skull", builder -> builder
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
+            .then(CommandManager.literal("player")
+                .then(CommandManager.argument("player", StringArgumentType.word())
+                    .suggests(CommandUtils::getAllPlayerNames)
+                    .then(CommandManager.argument("count", IntegerArgumentType.integer(1))
+                        .executes(context -> HeadCommand.getPlayerHead(context, IntegerArgumentType.getInteger(context, "count")))
+                    )
+                    .executes(context -> HeadCommand.getPlayerHead(context, 1))
+                )
+            )
+            .then(CommandManager.literal("texture")
+                .then(CommandManager.argument("texture", StringArgumentType.word())
+                    .then(CommandManager.argument("count", IntegerArgumentType.integer(1))
+                        .executes(context -> HeadCommand.getTextureHead(context, IntegerArgumentType.getInteger(context, "count")))
+                    )
+                    .executes(context -> HeadCommand.getTextureHead(context, 1))
+                )
+            )
+        );
+    }
+    
+    private static int getPlayerHead(@NotNull CommandContext<ServerCommandSource> context, int count) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        String name = StringArgumentType.getString(context, "player");
+        
+        ItemUtils.insertItems(source.getPlayer(), Items.PLAYER_HEAD, count, stack -> {
+            // Assign the SkullOwner tag
+            CompoundTag skullOwner = stack.getOrCreateTag();
+            skullOwner.putString("SkullOwner", name);
+        });
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    
+    private static int getTextureHead(@NotNull CommandContext<ServerCommandSource> context, int count) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        final String texture = StringArgumentType.getString(context, "texture");
+        final String base64 = Base64.getEncoder().encodeToString(("{\"textures\":{\"SKIN\":{\"url\":\"http://textures.minecraft.net/texture/" + texture + "\"}}}").getBytes());
+        
+        ItemUtils.insertItems(source.getPlayer(), Items.PLAYER_HEAD, count, stack -> {
+            // Assign the Properties
+            CompoundTag skullOwner = stack.getOrCreateSubTag("SkullOwner"),
+                listItem = new CompoundTag(),
+                properties;
+            listItem.putString("Value", base64);
+            
+            ListTag textures;
+            skullOwner.putUuid("Id", CoreMod.SPAWN_ID);
+            skullOwner.put("Properties", properties = new CompoundTag());
+            properties.put("textures", textures = new ListTag());
+            textures.add(listItem);
+        });
+        
+        return count;
+    }
+}

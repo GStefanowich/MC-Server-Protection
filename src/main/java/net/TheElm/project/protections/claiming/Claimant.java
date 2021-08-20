@@ -30,6 +30,7 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.objects.ClaimTag;
+import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -188,7 +189,7 @@ public abstract class Claimant {
         }
     }
     public boolean forceSave() {
-        if (CoreMod.isDebugging()) CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
+        if (DevUtils.isDebugging()) CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
         boolean success = NbtUtils.writeClaimData( this );
         if (!success) CoreMod.logInfo( "FAILED TO SAVE " + this.getType().name() + " DATA, " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
         return success;

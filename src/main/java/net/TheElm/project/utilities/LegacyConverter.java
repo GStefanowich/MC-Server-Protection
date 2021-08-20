@@ -81,9 +81,11 @@ public final class LegacyConverter implements AutoCloseable {
             // Disconnect players during conversion
             EntityUtils.kickAllPlayers(new LiteralText("Server is now performing an update."));
             
-            this.clearTowns = this.convertTowns(ServerCore.get());
-            this.clearPlayers = this.convertPlayers(ServerCore.get());
-            this.clearClaims = this.convertClaims(ServerCore.get());
+            MinecraftServer server = ServerCore.get();
+            
+            this.clearTowns = this.convertTowns(server);
+            this.clearPlayers = this.convertPlayers(server);
+            this.clearClaims = this.convertClaims(server);
             this.success = true;
         } catch (NullPointerException e) {
             CoreMod.logError("Failed to complete conversion from legacy version.", e);

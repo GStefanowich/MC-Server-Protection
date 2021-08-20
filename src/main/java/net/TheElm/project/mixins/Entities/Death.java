@@ -52,7 +52,6 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
 import net.minecraft.util.Hand;
-import net.minecraft.util.Nameable;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
@@ -60,6 +59,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -213,20 +213,26 @@ public abstract class Death extends Entity {
     /*
      * Check for falling into the Void in The End
      */
-    @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
-    public void onDamage(@NotNull DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
-        // Ignore if running as the client
-        if (this.world.isClient)
-            return;
-        
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/entity/LivingEntity.damage(Lnet/minecraft/entity/damage/DamageSource;F)Z"), method = "destroy")
+    protected boolean onDamage(@NotNull LivingEntity self, @NotNull DamageSource source, float damage) {
         if (source.equals(DamageSource.OUT_OF_WORLD) && World.isOutOfBuildLimitVertically(this.getBlockPos())) {
-            if (World.END.equals(this.world.getRegistryKey()) && SewConfig.get(SewConfig.END_FALL_FROM_SKY)) {
-                WarpUtils.teleportEntity(ServerCore.getWorld(World.OVERWORLD), this, new BlockPos(this.getX(), 400, this.getZ()));
-            } else if (SewConfig.get(SewConfig.VOID_FALL_TO_SPAWN) && !((Nameable) this instanceof HostileEntity)) { // Teleport to the spawn world
-                WarpUtils.teleportEntity(ServerCore.getWorld(SewConfig.get(SewConfig.DEFAULT_WORLD)), this);
-            } else return;
+            // If the player isn't actually falling (Break the teleport loop and give time to update ticks)
+            if (self.fallDistance < 0.25d)
+                return false;
             
-            callback.cancel();
+            // If the player can fall from the end into the sky of the overworld
+            if (World.END.equals(self.world.getRegistryKey()) && SewConfig.get(SewConfig.END_FALL_FROM_SKY)) {
+                WarpUtils.teleportEntity(ServerCore.getWorld(World.OVERWORLD), this, new BlockPos(this.getX(), 400, this.getZ()));
+                return false;
+            }
+            
+            // If the player can fall from any worlds void back to spawn
+            if (SewConfig.get(SewConfig.VOID_FALL_TO_SPAWN) && !(self instanceof HostileEntity)) { // Teleport to the spawn world
+                WarpUtils.teleportEntity(ServerCore.getWorld(SewConfig.get(SewConfig.DEFAULT_WORLD)), this);
+                return false;
+            }
         }
+        
+        return self.damage(source, damage);
     }
 }

@@ -25,7 +25,7 @@
 
 package net.TheElm.project.utilities;
 
-import net.TheElm.project.interfaces.SleepingWorld;
+import net.TheElm.project.interfaces.LogicalWorld;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
@@ -81,9 +81,9 @@ public final class SleepUtils {
      * @return An int between (0 - 100)
      */
     public static int getSleepingPercentage(@NotNull final World world) {
-        if (!(world instanceof SleepingWorld))
+        if (!(world instanceof LogicalWorld))
             return 0;
-        SleepingWorld sleepingWorld = (SleepingWorld) world;
+        LogicalWorld sleepingWorld = (LogicalWorld) world;
         
         int applicablePlayers = world.getPlayers().size();
         

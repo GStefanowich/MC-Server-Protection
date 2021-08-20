@@ -30,6 +30,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.addons.SewBluemapConfig;
 import net.TheElm.project.objects.ChatFormat;
 import net.TheElm.project.protections.logging.EventLogger.LoggingIntervals;
+import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
@@ -126,11 +127,13 @@ public final class SewConfig extends SewConfigContainer {
     public static final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_ENDERMAN = SewConfig.addConfig(ConfigOption.json("claims.allow_player_override.griefing.enderman", false));
     public static final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_CREEPER = SewConfig.addConfig(ConfigOption.json("claims.allow_player_override.griefing.creeper", false));
     public static final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_GHAST = SewConfig.addConfig(ConfigOption.json("claims.allow_player_override.griefing.ghast", false));
+    public static final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_WEATHER = SewConfig.addConfig(ConfigOption.json("claims.allow_player_override.griefing.weather", false));
     public static final ConfigOption<Boolean> CLAIM_ALLOW_PLAYER_COMBAT = SewConfig.addConfig(ConfigOption.json("claims.allow_player_override.player_pvp", true));
     public static final ConfigOption<Boolean> CLAIM_ALLOW_CROP_AUTOREPLANT = SewConfig.addConfig(ConfigOption.json("claims.allow_player_override.crop_autoreplant", true));
+    public static final ConfigOption<Boolean> CLAIM_ALLOW_FIRE_SPREAD = SewConfig.addConfig(ConfigOption.json("claims.allow_player_override.fire_spread", false));
     
-    public static final ConfigOption<Boolean> CLAIM_ALLOW_TREE_CAPACITATOR = ConfigOption.json("claims.allow_player_override.tree_capacitate", CoreMod.isDebugging());
-    public static final ConfigOption<Boolean> CLAIM_ALLOW_VEIN_MINER = ConfigOption.json("claims.allow_player_override.vein_miner", CoreMod.isDebugging());
+    public static final ConfigOption<Boolean> CLAIM_ALLOW_TREE_CAPACITATOR = ConfigOption.json("claims.allow_player_override.tree_capacitate", DevUtils.isDebugging());
+    public static final ConfigOption<Boolean> CLAIM_ALLOW_VEIN_MINER = ConfigOption.json("claims.allow_player_override.vein_miner", DevUtils.isDebugging());
     
     /*
      * Protections
@@ -239,6 +242,7 @@ public final class SewConfig extends SewConfigContainer {
     public static final ConfigOption<RegistryKey<World>> WARP_DIMENSION = SewConfig.addConfig(ConfigOption.registry("warp.world", World.OVERWORLD, Registry.DIMENSION));
     public static final ConfigOption<Integer> WARP_MAX_DISTANCE = SewConfig.addConfig(ConfigOption.json("warp.max_distance", 1000000));
     public static final ConfigOption<Integer> WARP_WAYSTONE_COST = SewConfig.addConfig(ConfigOption.json("warp.waystone.cost", 2000));
+    public static final ConfigOption<Integer> WARP_WAYSTONES_ALLOWED = SewConfig.addConfig(ConfigOption.json("warp.waystone.maximum", 3));
     
     /*
      * Ender Dragon Options
@@ -291,6 +295,7 @@ public final class SewConfig extends SewConfigContainer {
     public static final ConfigOption<Boolean> ENDERMEN_FARMS_DROP_NO_LOOT = SewConfig.addConfig(ConfigOption.json("fun.mobs.enderman.farms_no_loot", true));
     public static final ConfigOption<Boolean> PREVENT_NETHER_ENDERMEN = SewConfig.addConfig(ConfigOption.json("fun.mobs.enderman.no_nether", false));
     public static final ConfigOption<Boolean> NETHER_INFINITE_LAVA = SewConfig.addConfig(ConfigOption.json("fun.world.nether.infinite_lava", false));
+    public static final ConfigOption<Boolean> CAULDRON_HARDEN = SewConfig.addConfig(ConfigOption.json("fun.world.cauldron_hardens", false));
     
     public static final ConfigOption<Boolean> RANDOM_NAME_VILLAGERS = SewConfig.addConfig(ConfigOption.json("fun.mobs.villagers.random_names", true));
     

@@ -66,7 +66,7 @@ public final class PlayerSpawnCommand {
         );
     }
     
-    private static int moveSpawn(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int moveSpawn(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerPlayerEntity player = context.getSource().getPlayer();
         ServerWorld world = context.getSource().getWorld();
         
@@ -79,10 +79,9 @@ public final class PlayerSpawnCommand {
         PlayerSpawnCommand.commandRanUUIDs.add( player.getUuid() );
         
         // Log our definition
-        CoreMod.logInfo("Player " + player.getName().asString() + " spawn updated to X " + bedPos.getX() + ", Z " + bedPos.getZ() + ", Y " + bedPos.getY());
+        CoreMod.logInfo("Player " + player.getName().getString() + " spawn updated to X " + bedPos.getX() + ", Z " + bedPos.getZ() + ", Y " + bedPos.getY());
         player.setSpawnPoint(world.getRegistryKey(), bedPos, 0.0F, false, true);
         
         return Command.SINGLE_SUCCESS;
     }
-    
 }

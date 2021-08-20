@@ -34,6 +34,7 @@ import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.protections.logging.EventLogger.BlockAction;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.CropUtils;
+import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.minecraft.block.*;
 import net.minecraft.block.entity.BlockEntity;
@@ -106,7 +107,7 @@ public final class BlockBreak {
      * @return If the block is allowed to be broken
      */
     public static ActionResult canBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
-        if (entity == null && CoreMod.isDebugging())
+        if (entity == null && DevUtils.isDebugging())
             CoreMod.logError(new NullPointerException("'entity' is a Null."));
         
         if (entity instanceof ServerPlayerEntity) {
@@ -118,15 +119,22 @@ public final class BlockBreak {
             
             BlockState blockState = world.getBlockState(blockPos);
             Block block = world.getBlockState(blockPos).getBlock();
-            if (block instanceof PumpkinBlock || block instanceof MelonBlock) {
+            if (CropUtils.isGourd(block)) {
                 /*
                  * If Block is PUMPKIN or MELON and player is allowed to FARM
                  */
-                if (ChunkUtils.canPlayerHarvestCrop(player, blockPos))
-                    return ActionResult.PASS;
+                if (ChunkUtils.canPlayerHarvestCrop(player, blockPos) || true) {
+                    Direction dir = Direction.NORTH;
+                    for (int i = 0; i < 4; i++) {
+                        BlockState stem = world.getBlockState(blockPos.offset(dir));
+                        if (stem.getBlock() instanceof AttachedStemBlock && stem.get(AttachedStemBlock.FACING) == dir.getOpposite())
+                            return ActionResult.PASS;
+                        
+                        dir = dir.rotateYClockwise();
+                    }
+                }
                 
             } else if (block instanceof SugarCaneBlock) {
-                
                 /*
                  * If Block is SUGARCANE, is NOT the bottom block, and player is allowed to FARM
                  */
@@ -137,7 +145,6 @@ public final class BlockBreak {
                     return ActionResult.PASS;
                 
             } else if (CropUtils.isCrop(block)) {
-                
                 /*
                  * If block is a CROP, and the player is allowed to FARM
                  */
@@ -168,7 +175,7 @@ public final class BlockBreak {
                                     // Check that item matches
                                     if (!stack.getItem().equals(cropSeed))
                                         continue;
-        
+                                    
                                     // Negate a single seed
                                     if (stack.getCount() > 0) {
                                         stack.setCount(stack.getCount() - 1);
@@ -253,7 +260,7 @@ public final class BlockBreak {
      */
     private static void onSucceedBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace) {
         // Log the block being broken
-        BlockBreak.logBlockBreakEvent( entity, world, blockPos );
+        BlockBreak.logBlockBreakEvent(entity, world, blockPos);
         
         // Take additional actions if the entity breaking is a player
         if (entity instanceof ServerPlayerEntity)

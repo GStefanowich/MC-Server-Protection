@@ -66,6 +66,7 @@ import net.minecraft.text.ClickEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Pair;
 import net.minecraft.util.Unit;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -117,7 +118,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     private BlockPos theNetherPortal = null;
     
     // Compass
-    private CompassDirections compassDirections = CompassDirections.SPAWN;
+    private CompassDirections compassDirection = CompassDirections.SPAWN;
+    private BlockPos compassFocal = BlockPos.ORIGIN;
     
     @Inject(at = @At("RETURN"), method = "<init>*")
     public void onInitialize(CallbackInfo callback) {
@@ -363,7 +365,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
                 return;
             }
             
-            CoreMod.logInfo("Player " + this.getName().asString() + " spawn updated to X " + blockPos.getX() + ", Z " + blockPos.getZ() + ", Y " + blockPos.getY());
+            CoreMod.logInfo("Player " + this.getName().getString() + " spawn updated to X " + blockPos.getX() + ", Z " + blockPos.getZ() + ", Y " + blockPos.getY());
         }
     }
     
@@ -573,27 +575,28 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
      */
     
     @Override
-    public CompassDirections cycleCompass() {
-        CompassDirections next = this.compassDirections;
-        BlockPos pos;
+    public Pair<Text, BlockPos> cycleCompass() {
+        CompassDirections next = this.compassDirection;
+        Pair<Text, BlockPos> pos;
         do {
-            next = next.getNext();
-        } while ((pos = next.getPos( (ServerPlayerEntity)(PlayerEntity)this )) == null);
+            next = next.getNext((ServerPlayerEntity)(PlayerEntity)this, this.compassFocal);
+        } while ((pos = next.getPos((ServerPlayerEntity)(PlayerEntity)this, this.compassFocal)) == null);
         
-        this.setCompassDirection( next, pos );
-        return next;
+        this.setCompassDirection(next, pos);
+        return pos;
     }
     public CompassDirections getCompass() {
-        return this.compassDirections;
+        return this.compassDirection;
     }
     public void setCompassDirection(@NotNull CompassDirections direction) {
-        BlockPos blockPos = direction.getPos( (ServerPlayerEntity)(PlayerEntity) this );
-        if (blockPos == null) this.cycleCompass();
-        else this.setCompassDirection(direction, blockPos);
+        Pair<Text, BlockPos> marker = direction.getPos((ServerPlayerEntity)(PlayerEntity) this, BlockPos.ORIGIN);
+        if (marker == null) this.cycleCompass();
+        else this.setCompassDirection(direction, marker);
     }
-    public void setCompassDirection(@NotNull CompassDirections direction, @NotNull BlockPos blockPos) {
-        this.compassDirections = direction;
-        this.networkHandler.sendPacket(new PlayerSpawnPositionS2CPacket(blockPos, 0.0F));
+    public void setCompassDirection(@NotNull CompassDirections direction, @NotNull Pair<Text, BlockPos> marker) {
+        this.compassDirection = direction;
+        this.compassFocal = marker.getRight();
+        this.networkHandler.sendPacket(new PlayerSpawnPositionS2CPacket(this.compassFocal, 0.0F));
     }
     
     /*

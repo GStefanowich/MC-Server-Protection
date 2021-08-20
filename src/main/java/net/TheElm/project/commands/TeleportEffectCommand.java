@@ -43,13 +43,14 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Collections;
 
 public class TeleportEffectCommand {
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("teleport-particles")
             .then(CommandManager.argument("particle", ParticleArgumentType.particle())
                 .then(CommandManager.argument("target", EntityArgumentType.entities())
@@ -76,21 +77,21 @@ public class TeleportEffectCommand {
         );
     }
     
-    private static int ExecuteParticle(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int ExecuteParticle(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return Execute(
             Collections.singleton(context.getSource().getEntity()),
             ParticleArgumentType.getParticle(context, "particle"),
             1
         );
     }
-    private static int ExecuteTarget(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int ExecuteTarget(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return Execute(
             EntityArgumentType.getEntities(context, "target"),
             ParticleArgumentType.getParticle(context, "particle"),
             1
         );
     }
-    private static int ExecuteCount(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int ExecuteCount(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return Execute(
             EntityArgumentType.getEntities(context, "target"),
             ParticleArgumentType.getParticle(context, "particle"),
@@ -100,16 +101,16 @@ public class TeleportEffectCommand {
     private static <E extends Entity, P extends ParticleEffect> int Execute(Collection<E> entities, P particle, int count) {
         for(E entity : entities) {
             if (entity instanceof LivingEntity)
-                EffectUtils.particleSwirl(particle, (LivingEntity) entity, count);
+                EffectUtils.particleSwirl(particle, (LivingEntity) entity, true, count);
             else 
-                EffectUtils.particleSwirl(particle, (ServerWorld) entity.getEntityWorld(), entity.getPos(), count);
+                EffectUtils.particleSwirl(particle, (ServerWorld) entity.getEntityWorld(), entity.getPos(), true,count);
         }
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int GiveLootAmount(ServerCommandSource source, int count) throws CommandSyntaxException {
+    private static int GiveLootAmount(@NotNull ServerCommandSource source, int count) throws CommandSyntaxException {
         for (int i = 0; i < count; i++) {
-            ItemStack reward = DragonLoot.createReward();
+            ItemStack reward = DragonLoot.createReward(source.getPlayer());
             
             if (reward != null) {
                 if (!BossLootRewards.DRAGON_LOOT.addLoot(source.getPlayer().getUuid(), reward)) {

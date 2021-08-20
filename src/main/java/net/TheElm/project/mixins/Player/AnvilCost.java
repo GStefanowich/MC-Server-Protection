@@ -38,6 +38,7 @@ import net.minecraft.screen.*;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -66,7 +67,7 @@ public abstract class AnvilCost extends ForgingScreenHandler {
     }
     
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/inventory/CraftingResultInventory.setStack(ILnet/minecraft/item/ItemStack;)V"), method = "updateResult")
-    public void onUpdateOutput(CraftingResultInventory inventory, int slot, ItemStack item) {
+    public void onUpdateOutput(@NotNull CraftingResultInventory inventory, int slot, @NotNull ItemStack item) {
         if ((!item.isEmpty()) && item.hasEnchantments()) {
             CompoundTag display = item.getOrCreateSubTag("display");;
             
@@ -89,8 +90,8 @@ public abstract class AnvilCost extends ForgingScreenHandler {
     public int getMaxLevel(Enchantment enchantment) {
         ItemStack left = this.input.getStack(0);
         ItemStack right = this.input.getStack(1);
-        if (Assert.ifAny(ItemStack::isEmpty, left, right) || InventoryUtils.areBooksAtMaximum(enchantment, left, right))
-            return enchantment.getMaxLevel();
+        if (Assert.ifAny(ItemStack::isEmpty, left, right) || InventoryUtils.areBooksAtMaxLevel(enchantment, left, right))
+            return InventoryUtils.getHighestLevel(enchantment, left, right);
         return 10;
     }
 }

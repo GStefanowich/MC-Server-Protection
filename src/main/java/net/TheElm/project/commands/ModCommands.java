@@ -28,23 +28,23 @@ package net.TheElm.project.commands;
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.datafixers.util.Either;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
+import net.TheElm.project.blocks.entities.LecternGuideBlockEntity;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.interfaces.ShopSignData;
-import net.TheElm.project.utilities.BlockUtils;
-import net.TheElm.project.utilities.CommandUtils;
-import net.TheElm.project.utilities.InventoryUtils;
-import net.TheElm.project.utilities.RankUtils;
+import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
-import net.minecraft.command.argument.BlockPosArgumentType;
-import net.minecraft.command.argument.GameProfileArgumentType;
-import net.minecraft.command.argument.ItemStackArgument;
-import net.minecraft.command.argument.ItemStackArgumentType;
+import net.minecraft.command.CommandSource;
+import net.minecraft.command.argument.*;
 import net.minecraft.entity.Entity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
@@ -56,16 +56,19 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Objects;
+import java.util.Optional;
 
 public final class ModCommands {
     private ModCommands() {
@@ -73,13 +76,13 @@ public final class ModCommands {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, CoreMod.MOD_ID, (builder) -> builder
-            .requires(CommandUtils.requires(OpLevels.STOP))
+            .requires(CommandPredicate.opLevel(OpLevels.STOP))
             .then(CommandManager.literal("reload")
                 .then(CommandManager.literal("config")
                     .executes(ModCommands::reloadConfig)
                 )
                 .then(CommandManager.literal("permissions")
-                    .requires((source) -> SewConfig.get(SewConfig.HANDLE_PERMISSIONS))
+                    .requires(CommandPredicate.isEnabled(SewConfig.HANDLE_PERMISSIONS))
                     .executes(ModCommands::reloadPermissions)
                 )
             )
@@ -110,6 +113,20 @@ public final class ModCommands {
                         )
                     )
                 )
+            )
+            .then(CommandManager.literal("guides")
+                .then(CommandManager.argument("book", StringArgumentType.string())
+                    .suggests(((context, suggestionsBuilder) -> CommandSource.suggestMatching(GuideUtils.getBooks(), suggestionsBuilder)))
+                    .then(CommandManager.literal("give")
+                        .then(CommandManager.argument("target", EntityArgumentType.players())
+                            .executes(ModCommands::givePlayersGuideBook)
+                        )
+                    )
+                    .then(CommandManager.literal("set")
+                        .executes(ModCommands::setLecternGuide)
+                    )
+                )
+                .executes(ModCommands::unsetLecternGuide)
             )
         );
     }
@@ -165,7 +182,7 @@ public final class ModCommands {
         
         BlockHitResult hitResult = BlockUtils.getLookingBlock(world, entity);
         if (hitResult.getType() == HitResult.Type.MISS) {
-            source.sendError(new LiteralText("Could not find targetted block."));
+            source.sendError(new LiteralText("Could not find targeted block."));
             return 0;
         }
         BlockPos signPos = hitResult.getBlockPos();
@@ -242,7 +259,7 @@ public final class ModCommands {
         
         BlockHitResult hitResult = BlockUtils.getLookingBlock(world, entity);
         if (hitResult.getType() == HitResult.Type.MISS) {
-            source.sendError(new LiteralText("Could not find targetted block."));
+            source.sendError(new LiteralText("Could not find targeted block."));
             return 0;
         }
         BlockPos signPos = hitResult.getBlockPos();
@@ -285,7 +302,7 @@ public final class ModCommands {
         
         BlockHitResult hitResult = BlockUtils.getLookingBlock(world, entity);
         if (hitResult.getType() == HitResult.Type.MISS) {
-            source.sendError(new LiteralText("Could not find targetted block."));
+            source.sendError(new LiteralText("Could not find targeted block."));
             return 0;
         }
         BlockPos signPos = hitResult.getBlockPos();
@@ -303,5 +320,67 @@ public final class ModCommands {
         
         source.sendFeedback(new LiteralText("Updated sound location.").formatted(Formatting.GREEN), false);
         return Command.SINGLE_SUCCESS;
+    }
+    
+    private static int givePlayersGuideBook(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        
+        // Get the name of the guide to create a lectern for
+        String bookName = StringArgumentType.getString(context, "book");
+        GuideUtils guide = GuideUtils.getBook(bookName);
+        if (guide == null) {
+            source.sendError(new LiteralText("Could not find the guide book \"" + bookName + "\"."));
+            return 0;
+        }
+        
+        Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
+        for (ServerPlayerEntity player : players)
+            player.inventory.offerOrDrop(player.world, guide.newStack());
+        
+        source.sendFeedback(new LiteralText("Gave guide book \"")
+            .append(new LiteralText(bookName).formatted(Formatting.AQUA))
+            .append("\"")
+            .append(" to ")
+            .append(MessageUtils.formatNumber(players.size(), Formatting.AQUA))
+            .append(" players.")
+            .formatted(Formatting.YELLOW), true);
+        return players.size();
+    }
+    private static int unsetLecternGuide(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return ModCommands.setLecternGuide(context, null);
+    }
+    private static int setLecternGuide(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return ModCommands.setLecternGuide(context, StringArgumentType.getString(context, "book"));
+    }
+    private static int setLecternGuide(@NotNull CommandContext<ServerCommandSource> context, @Nullable String bookName) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        
+        Either<LecternGuideBlockEntity, String> either = BlockUtils.getLecternBlockEntity(
+            source.getWorld(),
+            source.getEntityOrThrow(),
+            LecternGuideBlockEntity.class, LecternGuideBlockEntity::new
+        );
+        Optional<LecternGuideBlockEntity> optionalLectern = either.left();
+        Optional<String> error = either.right();
+        
+        if (error.isPresent())
+            source.sendError(new LiteralText(error.get()));
+        else if (optionalLectern.isPresent()) {
+            LecternGuideBlockEntity guideBlockEntity = optionalLectern.get();
+            
+            // Update the guide name
+            guideBlockEntity.setGuide(bookName);
+            
+            source.sendFeedback(ModCommands.bookFeedback(bookName).formatted(Formatting.YELLOW), true);
+            return Command.SINGLE_SUCCESS;
+        }
+        return 0;
+    }
+    private static MutableText bookFeedback(@Nullable String bookName) {
+        if (bookName == null)
+            return new LiteralText("Cleared guide book from lectern.");
+        return new LiteralText("Lectern updated to guide book \"")
+            .append(new LiteralText(bookName).formatted(Formatting.AQUA))
+            .append("\".");
     }
 }

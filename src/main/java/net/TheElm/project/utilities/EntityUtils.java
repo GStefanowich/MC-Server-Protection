@@ -32,19 +32,86 @@ import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.ShopSignData;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.text.MessageUtils;
-import net.minecraft.block.*;
-import net.minecraft.block.entity.*;
+import net.minecraft.block.AnvilBlock;
+import net.minecraft.block.BarrelBlock;
+import net.minecraft.block.BeaconBlock;
+import net.minecraft.block.BedBlock;
+import net.minecraft.block.BeehiveBlock;
+import net.minecraft.block.BellBlock;
+import net.minecraft.block.BlastFurnaceBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.CartographyTableBlock;
+import net.minecraft.block.ChestBlock;
+import net.minecraft.block.CraftingTableBlock;
+import net.minecraft.block.DropperBlock;
+import net.minecraft.block.EnchantingTableBlock;
+import net.minecraft.block.FletchingTableBlock;
+import net.minecraft.block.FlowerPotBlock;
+import net.minecraft.block.FurnaceBlock;
+import net.minecraft.block.GrindstoneBlock;
+import net.minecraft.block.HopperBlock;
+import net.minecraft.block.LecternBlock;
+import net.minecraft.block.LoomBlock;
+import net.minecraft.block.NoteBlock;
+import net.minecraft.block.ShulkerBoxBlock;
+import net.minecraft.block.SmithingTableBlock;
+import net.minecraft.block.SmokerBlock;
+import net.minecraft.block.StonecutterBlock;
+import net.minecraft.block.entity.BarrelBlockEntity;
+import net.minecraft.block.entity.BedBlockEntity;
+import net.minecraft.block.entity.BeehiveBlockEntity;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.ChestBlockEntity;
+import net.minecraft.block.entity.JukeboxBlockEntity;
+import net.minecraft.block.entity.LockableContainerBlockEntity;
+import net.minecraft.block.entity.ShulkerBoxBlockEntity;
+import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.enums.ChestType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.LightningEntity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.mob.PiglinEntity;
-import net.minecraft.entity.passive.*;
+import net.minecraft.entity.passive.CatEntity;
+import net.minecraft.entity.passive.ChickenEntity;
+import net.minecraft.entity.passive.CodEntity;
+import net.minecraft.entity.passive.CowEntity;
+import net.minecraft.entity.passive.DolphinEntity;
+import net.minecraft.entity.passive.DonkeyEntity;
+import net.minecraft.entity.passive.FoxEntity;
+import net.minecraft.entity.passive.HorseEntity;
+import net.minecraft.entity.passive.IronGolemEntity;
+import net.minecraft.entity.passive.LlamaEntity;
+import net.minecraft.entity.passive.MuleEntity;
+import net.minecraft.entity.passive.OcelotEntity;
+import net.minecraft.entity.passive.PandaEntity;
+import net.minecraft.entity.passive.ParrotEntity;
+import net.minecraft.entity.passive.PigEntity;
+import net.minecraft.entity.passive.PolarBearEntity;
+import net.minecraft.entity.passive.PufferfishEntity;
+import net.minecraft.entity.passive.RabbitEntity;
+import net.minecraft.entity.passive.SalmonEntity;
+import net.minecraft.entity.passive.SheepEntity;
+import net.minecraft.entity.passive.SnowGolemEntity;
+import net.minecraft.entity.passive.SquidEntity;
+import net.minecraft.entity.passive.TropicalFishEntity;
+import net.minecraft.entity.passive.TurtleEntity;
+import net.minecraft.entity.passive.VillagerEntity;
+import net.minecraft.entity.passive.WanderingTraderEntity;
+import net.minecraft.entity.passive.WolfEntity;
+import net.minecraft.entity.player.PlayerAbilities;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.vehicle.*;
+import net.minecraft.entity.vehicle.ChestMinecartEntity;
+import net.minecraft.entity.vehicle.FurnaceMinecartEntity;
+import net.minecraft.entity.vehicle.HopperMinecartEntity;
+import net.minecraft.entity.vehicle.MinecartEntity;
+import net.minecraft.entity.vehicle.TntMinecartEntity;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -66,7 +133,15 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public final class EntityUtils {
@@ -200,43 +275,47 @@ public final class EntityUtils {
     public static @Nullable ClaimPermissions getLockPermission(BlockEntity block) {
         if (block instanceof JukeboxBlockEntity)
             return ClaimPermissions.STORAGE;
-        if ( block instanceof LockableContainerBlockEntity )
+        if ( block instanceof LockableContainerBlockEntity)
             return ClaimPermissions.STORAGE;
+        if ( block instanceof BedBlockEntity)
+            return ClaimPermissions.BEDS;
         return null;
     }
     public static @Nullable ClaimPermissions getLockPermission(@NotNull Block block) {
         // Crafting Blocks
-        if ( block instanceof FletchingTableBlock )
+        if (block instanceof FletchingTableBlock)
             return ClaimPermissions.CRAFTING;
-        if ( block instanceof SmithingTableBlock)
+        if (block instanceof SmithingTableBlock)
             return ClaimPermissions.CRAFTING;
-        if ( block instanceof CraftingTableBlock )
+        if (block instanceof CraftingTableBlock)
             return ClaimPermissions.CRAFTING;
-        if ( block instanceof EnchantingTableBlock )
+        if (block instanceof EnchantingTableBlock)
             return ClaimPermissions.CRAFTING;
-        if ( block instanceof GrindstoneBlock )
+        if (block instanceof GrindstoneBlock)
             return ClaimPermissions.CRAFTING;
-        if ( block instanceof LoomBlock )
+        if (block instanceof LoomBlock)
             return ClaimPermissions.CRAFTING;
-        if ( block instanceof StonecutterBlock )
+        if (block instanceof StonecutterBlock)
             return ClaimPermissions.CRAFTING;
-        if ( block instanceof CartographyTableBlock )
+        if (block instanceof CartographyTableBlock)
             return ClaimPermissions.CRAFTING;
         // Activation Blocks
-        if ( block instanceof NoteBlock )
+        if (block instanceof NoteBlock)
             return ClaimPermissions.BLOCKS;
+        if (block instanceof BedBlock)
+            return ClaimPermissions.BEDS;
         // Storage Blocks
-        if ( block instanceof BeaconBlock )
+        if (block instanceof BeaconBlock)
             return ClaimPermissions.STORAGE;
-        if ( block instanceof AnvilBlock )
+        if (block instanceof AnvilBlock)
             return ClaimPermissions.STORAGE;
-        if ( block instanceof BellBlock )
+        if (block instanceof BellBlock)
             return ClaimPermissions.STORAGE;
-        if ( block instanceof LecternBlock )
+        if (block instanceof LecternBlock)
             return ClaimPermissions.STORAGE;
-        if ( block instanceof FlowerPotBlock )
+        if (block instanceof FlowerPotBlock)
             return ClaimPermissions.STORAGE;
-        if ( block instanceof BeehiveBlock )
+        if (block instanceof BeehiveBlock)
             return ClaimPermissions.STORAGE;
         return null;
     }
@@ -301,7 +380,7 @@ public final class EntityUtils {
      * Get Entity Names
      */
     public static Text getLockedName(@NotNull Block block) {
-        return new TranslatableText( block.getTranslationKey() )
+        return new TranslatableText(block.getTranslationKey())
             .formatted(Formatting.AQUA);
     }
     public static Text getLockedName(@NotNull Entity entity) {
@@ -407,6 +486,18 @@ public final class EntityUtils {
             .getPlayer(playerId);
     }
     
+    public static @NotNull PlayerAbilities modifiedAbilities(@NotNull PlayerEntity player, @NotNull Consumer<PlayerAbilities> consumer) {
+        PlayerAbilities playerAbilities = player.abilities;
+        PlayerAbilities copiedAbilities = new PlayerAbilities();
+        CompoundTag serialized = new CompoundTag();
+        playerAbilities.serialize(serialized);
+        copiedAbilities.deserialize(serialized);
+        
+        consumer.accept(copiedAbilities);
+        
+        return copiedAbilities;
+    }
+    
     /*
      * Wandering Traders
      */
@@ -464,27 +555,76 @@ public final class EntityUtils {
     /*
      * World
      */
-    public static boolean isInOverworld(@NotNull Entity player) {
-        return EntityUtils.isIn(player, World.OVERWORLD);
+    public static boolean isInOverworld(@NotNull Entity entity) {
+        return EntityUtils.isIn(entity, World.OVERWORLD);
     }
-    public static boolean isNotInOverworld(@NotNull Entity player) {
-        return !EntityUtils.isInOverworld(player);
+    public static boolean isNotInOverworld(@NotNull Entity entity) {
+        return !EntityUtils.isInOverworld(entity);
     }
-    public static boolean isInNether(@NotNull Entity player) {
-        return EntityUtils.isIn(player, World.NETHER);
+    public static boolean isInNether(@NotNull Entity entity) {
+        return EntityUtils.isIn(entity, World.NETHER);
     }
-    public static boolean isNotInNether(@NotNull Entity player) {
-        return !EntityUtils.isInNether(player);
+    public static boolean isNotInNether(@NotNull Entity entity) {
+        return !EntityUtils.isInNether(entity);
     }
-    public static boolean isInTheEnd(@NotNull Entity player) {
-        return EntityUtils.isIn(player, World.END);
+    public static boolean isInTheEnd(@NotNull Entity entity) {
+        return EntityUtils.isIn(entity, World.END);
     }
-    public static boolean isNotInTheEnd(@NotNull Entity player) {
-        return !EntityUtils.isInTheEnd(player);
+    public static boolean isNotInTheEnd(@NotNull Entity entity) {
+        return !EntityUtils.isInTheEnd(entity);
+    }
+    public static boolean isNotFightingDragon(@NotNull Entity entity) {
+        if (EntityUtils.isNotInTheEnd(entity))
+            return true;
+        double x = entity.getX();
+        double z = entity.getZ();
+        return  (x > 200 || x < -200 || z > 200 || z < -200);
     }
     private static boolean isIn(@NotNull Entity player, RegistryKey<World> world) {
         return player.world.getRegistryKey()
             .equals(world);
+    }
+    
+    /*
+     * Misc
+     */
+    public static int hitWithLightning(@NotNull Collection<? extends Entity> targets) {
+        int i = 0;
+        for (Entity entity : targets)
+            if (EntityUtils.hitWithLightning(entity))
+                i++;
+        return i;
+    }
+    public static <T extends Entity> boolean hitWithLightning(@NotNull T entity) {
+        if (entity.getEntityWorld() instanceof ServerWorld) {
+            ServerWorld world = (ServerWorld) entity.getEntityWorld();
+            if (!entity.isSpectator()) {
+                LightningEntity lightning = new LightningEntity(EntityType.LIGHTNING_BOLT, world);
+                lightning.setPos(entity.getX(), entity.getY(), entity.getZ());
+                
+                world.spawnEntity(lightning);
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public static int extinguish(@NotNull Collection<? extends Entity> targets) {
+        int i = 0;
+        for (Entity entity : targets)
+            if (EntityUtils.extinguish(entity))
+                i++;
+        return i;
+    }
+    public static <T extends Entity> boolean extinguish(@NotNull T entity) {
+        if (entity.getEntityWorld() instanceof ServerWorld) {
+            if (entity.isOnFire() && !entity.isSpectator()) {
+                entity.setOnFireFor(0);
+                entity.setFireTicks(0);
+                return true;
+            }
+        }
+        return false;
     }
     
     /*

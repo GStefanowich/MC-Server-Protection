@@ -33,7 +33,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
-import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.DimensionArgumentType;
@@ -56,7 +56,7 @@ public final class WorldCommand {
     
     private WorldCommand() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         final LiteralArgumentBuilder<ServerCommandSource> gamerules = CommandManager.literal("gamerule");
         GameRules.accept(new GameRules.Visitor() {
             public <T extends GameRules.Rule<T>> void visit(GameRules.Key<T> key, GameRules.Type<T> type) {
@@ -67,9 +67,9 @@ public final class WorldCommand {
                 );
             }
         });
-
+        
         ServerCore.register(dispatcher, "world", builder -> builder
-            .requires(CommandUtils.requires(OpLevels.CHEATING))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("world", DimensionArgumentType.dimension())
                 .then(CommandManager.literal("teleport")
                     .then(CommandManager.argument("target", EntityArgumentType.entities())

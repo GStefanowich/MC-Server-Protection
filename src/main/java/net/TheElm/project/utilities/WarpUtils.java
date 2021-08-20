@@ -32,6 +32,7 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.interfaces.LogicalWorld;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.objects.MaskSet;
 import net.TheElm.project.protections.BlockRange;
@@ -50,6 +51,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.passive.TameableEntity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
@@ -76,17 +78,21 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 public final class WarpUtils {
-    public static final String PRIMARY_DEFAULT_HOME = "Homestead";
-    private static final Set<UUID> GENERATING_PLAYERS = Collections.synchronizedSet(new HashSet<>());
+    public static final @NotNull String PRIMARY_DEFAULT_HOME = "Homestead";
+    private static final @NotNull Set<UUID> GENERATING_PLAYERS = Collections.synchronizedSet(new HashSet<>());
+    private static final @NotNull Map<String, Warp> EMPTY = Collections.unmodifiableMap(new HashMap<>());
     
     private final @NotNull String name;
+    private final @NotNull ServerWorld world;
     private BlockPos createWarpAt;
     private BlockRange region;
     
     public WarpUtils(@NotNull final String name, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos pos) {
         this.name = name;
+        this.world = player.getServerWorld();
         
         WarpUtils.GENERATING_PLAYERS.add(player.getUuid());
         this.updateWarpPos(pos);
@@ -105,17 +111,17 @@ public final class WarpUtils {
         return true;
     }
     
-    public BlockPos getWarpPositionIn(@NotNull final ServerWorld world) {
+    public BlockPos getWarpPositionIn() {
         int x = this.createWarpAt.getX();
         int z = this.createWarpAt.getZ();
         do {
             CoreMod.logInfo("Finding a new warp position!");
             this.updateWarpPos( new BlockPos( getRandom( x ), 256, getRandom( z ) ) );
-        } while (!this.updateWarpPos(this.isValid( world, this.createWarpAt,50,true)));
+        } while (!this.updateWarpPos(this.isValid(this.world, this.createWarpAt,50,true)));
         
         return this.createWarpAt;
     }
-    public BlockPos getSafeTeleportPos(@NotNull final World world) {
+    public BlockPos getSafeTeleportPos() {
         BlockPos tpPos;
         
         int count = 1;
@@ -141,7 +147,7 @@ public final class WarpUtils {
                 }
             }
             
-        } while (( tpPos = this.isValid( world, tpPos, this.createWarpAt.getY() - 5,false ) ) == null );
+        } while (( tpPos = this.isValid(this.world, tpPos, this.createWarpAt.getY() - 5,false)) == null );
         
         return tpPos.up( 2 );
     }
@@ -181,37 +187,35 @@ public final class WarpUtils {
             && ( world.getBlockState( pos.up() ).isAir() ) ? pos : null;
     }
     
-    public boolean claimAndBuild(@NotNull final ServerPlayerEntity player, @NotNull final ServerWorld world) {
-        return this.claimAndBuild(player, world, false);
+    public boolean claimAndBuild(@NotNull final Runnable runnable) {
+        return this.claimAndBuild(runnable, false);
     }
-    public boolean claimAndBuild(@NotNull final ServerPlayerEntity player, @NotNull final ServerWorld world, final boolean dropBlocks) {
+    public boolean claimAndBuild(@NotNull final Runnable runnable, final boolean dropBlocks) {
         // Get the area of blocks to claim
-        if (!ChunkUtils.canPlayerClaimSlices(world, this.region))
+        if (!ChunkUtils.canPlayerClaimSlices(this.world, this.region))
             return false;
-
-        // Claim the defined slices in the name of Spawn
-        ChunkUtils.claimSlices(world, CoreMod.SPAWN_ID, this.region);
         
-        return this.build(player, world, dropBlocks);
+        // Claim the defined slices in the name of Spawn
+        ChunkUtils.claimSlices(this.world, CoreMod.SPAWN_ID, this.region);
+        
+        return this.build(runnable, dropBlocks);
     }
     
-    public boolean build(@NotNull final ServerPlayerEntity player, @NotNull final ServerWorld world) {
-        return this.build(player, world, true);
+    public boolean build(@NotNull final Runnable runnable) {
+        return this.build(runnable, true);
     }
-    public boolean build(@NotNull final ServerPlayerEntity player, @NotNull final ServerWorld world, final boolean dropBlocks) {
-        Biome biome = world.getBiome(this.createWarpAt);
-        RegistryKey<Biome> biomeKey = RegistryUtils.getFromRegistry(world.getServer(), Registry.BIOME_KEY, biome);
+    public boolean build(@NotNull final Runnable runnable, final boolean dropBlocks) {
+        Biome biome = this.world.getBiome(this.createWarpAt);
+        RegistryKey<Biome> biomeKey = RegistryUtils.getFromRegistry(this.world.getServer(), Registry.BIOME_KEY, biome);
         
         // Create the structure
-        StructureBuilderUtils structure = new StructureBuilderUtils(world, "waystone");
-        StructureBuilderUtils.StructureBuilderMaterial material = structure.forBiome(world.getRegistryKey(), biomeKey);
-        
-        final BlockState air = material.getAirBlock(world.getRegistryKey());
+        StructureBuilderUtils structure = new StructureBuilderUtils(this.world, biomeKey, "waystone");
+        final BlockState air = structure.material.getAirBlock(this.world.getRegistryKey());
         
         // Light-source blocks
-        final BlockState decLight = material.getLightSourceBlock();
-        final BlockState ovrLight = material.getCoveringBlock();
-        final BlockState undLight = material.getSupportingBlock();
+        final BlockState decLight = structure.material.getLightSourceBlock();
+        final BlockState ovrLight = structure.material.getCoveringBlock();
+        final BlockState undLight = structure.material.getSupportingBlock();
         BlockPos[] decLightBlocks = new BlockPos[] {
             new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() + 1),
             new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY(), this.createWarpAt.getZ() - 1),
@@ -227,7 +231,7 @@ public final class WarpUtils {
         }
         
         // Andesite blocks
-        final BlockState decJewel = material.getDecoratingBlock();
+        final BlockState decJewel = structure.material.getDecoratingBlock();
         BlockPos[] decJewelBlocks = new BlockPos[]{
             this.createWarpAt.offset(Direction.NORTH),
             this.createWarpAt.offset(Direction.SOUTH),
@@ -241,7 +245,7 @@ public final class WarpUtils {
         }
         
         // Diorite blocks
-        final BlockState decBelowPlate = material.getMainBlock();
+        final BlockState decBelowPlate = structure.material.getMainBlock();
         BlockPos[] decBelowPlateBlocks = new BlockPos[]{
             this.createWarpAt
         };
@@ -252,7 +256,7 @@ public final class WarpUtils {
         }
         
         // Bedrock blocks
-        final BlockState decSupport = material.getStructureBlock();
+        final BlockState decSupport = structure.material.getStructureBlock();
         BlockPos[] bedrockBlocks = new BlockPos[]{
             this.createWarpAt.down(2),
             new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY() - 1, this.createWarpAt.getZ()),
@@ -286,7 +290,7 @@ public final class WarpUtils {
         }
         
         // Pressure plate
-        final BlockState plate = material.getPressurePlateBlock();
+        final BlockState plate = structure.material.getPressurePlateBlock();
         BlockPos[] pressurePlates = new BlockPos[]{
             this.createWarpAt.up()
         };
@@ -294,30 +298,41 @@ public final class WarpUtils {
             structure.addBlock(blockPos, plate);
         }
         
-        try {
-            // Destroy the blocks where the waystone goes
-            structure.destroy(dropBlocks);
-            
-            // Build the structure
-            structure.build();
-            
-            // Play sounds
-            structure.particlesSounds(ParticleTypes.HAPPY_VILLAGER, SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f, 1.0f, 1.0f, 12,
-                new BlockPos(this.createWarpAt.getX() - 1, this.createWarpAt.getY() + 3, this.createWarpAt.getZ() - 1),
-                new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY() + 2, this.createWarpAt.getZ() + 1),
-                new BlockPos(this.createWarpAt.getX() + 1, this.createWarpAt.getY() + 2, this.createWarpAt.getZ() - 1),
-                new BlockPos(this.createWarpAt.getX() - 1, this.createWarpAt.getY() + 1, this.createWarpAt.getZ() + 1)
-            );
-        } catch (InterruptedException e) {
-            throw new RuntimeException( e );
-        }
+        structure.add(runnable);
+        structure.add(() -> structure.particlesSound(ParticleTypes.HAPPY_VILLAGER, SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f, 1.0f, 1.0f, 12, this.createWarpAt.add(-1, 3, -1)));
+        structure.add(() -> structure.particlesSound(ParticleTypes.HAPPY_VILLAGER, SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f, 1.0f, 1.0f, 12, this.createWarpAt.add(1, 2, 1)));
+        structure.add(() -> structure.particlesSound(ParticleTypes.HAPPY_VILLAGER, SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f, 1.0f, 1.0f, 12, this.createWarpAt.add(1, 2, -1)));
+        structure.add(() -> structure.particlesSound(ParticleTypes.HAPPY_VILLAGER, SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f, 1.0f, 1.0f, 12, this.createWarpAt.add(-1, 1, 1)));
         
-        CoreMod.logInfo("Completed constructing new " + structure.getName());
+        //try {
+        ((LogicalWorld)this.world).addTickableEvent(tickable -> {
+            if (tickable.isRemoved())
+                return true;
+            
+            if (tickable.getTicks() % structure.getDelay() == 0) {
+                // Destroy the blocks where the waystone goes
+                if (structure.destroy(dropBlocks))
+                    return false;
+                
+                // Build the structure
+                if (structure.build())
+                    return false;
+            }
+            if (tickable.getTicks() % (structure.getDelay() * 10) == 0 && !structure.hasBuild()) {
+                if (structure.after())
+                    return false;
+            }
+            
+            boolean completed = !(structure.hasDestroy() || structure.hasBuild() || structure.hasRunnable());
+            if (completed)
+                CoreMod.logInfo("Completed constructing new " + structure.getName());
+            return completed;
+        });
         
         return true;
     }
     
-    public void save(@NotNull final World world, @NotNull final BlockPos warpPos, @NotNull final ServerPlayerEntity player) {
+    public void save(@NotNull final BlockPos warpPos, @NotNull final ServerPlayerEntity player) {
         // Remove the player from the build list
         WarpUtils.GENERATING_PLAYERS.remove(player.getUuid());
         
@@ -327,7 +342,7 @@ public final class WarpUtils {
         // Set the players warp position to save
         ((PlayerData) player).setWarp(new Warp(
             this.name,
-            world,
+            this.world,
             warpPos,
             !hasFavorite
         ));
@@ -375,13 +390,21 @@ public final class WarpUtils {
         
         return Collections.emptyMap();
     }
-    public static @NotNull Map<String, WarpUtils.Warp> getWarps(@NotNull final ServerPlayerEntity player) {
-        return ((PlayerData)player).getWarps();
+    public static @NotNull Map<String, WarpUtils.Warp> getWarps(@NotNull final PlayerEntity player) {
+        if (player instanceof PlayerData)
+            return ((PlayerData)player).getWarps();
+        return WarpUtils.EMPTY;
+    }
+    public static @NotNull Stream<WarpUtils.Warp> getWarpStream(@NotNull final PlayerEntity player) {
+        return WarpUtils.getWarps(player)
+            .values()
+            .stream()
+            .sorted((w1, w2) -> String.CASE_INSENSITIVE_ORDER.compare(w1.name, w2.name));
     }
     public static @NotNull Collection<String> getWarpNames(@NotNull final UUID uuid) {
         return WarpUtils.getWarpNames(WarpUtils.getWarps(uuid));
     }
-    public static @NotNull Collection<String> getWarpNames(@NotNull final ServerPlayerEntity player) {
+    public static @NotNull Collection<String> getWarpNames(@NotNull final PlayerEntity player) {
         return WarpUtils.getWarpNames(WarpUtils.getWarps(player));
     }
     public static @NotNull Collection<String> getWarpNames(@NotNull Map<String, WarpUtils.Warp> warps) {
@@ -418,7 +441,7 @@ public final class WarpUtils {
                     if (warpNBT.contains("x", NbtType.NUMBER) && warpNBT.contains("y", NbtType.NUMBER) && warpNBT.contains("z", NbtType.NUMBER)) {
                         warps.put(warpName, new Warp(
                             warpName,
-                            NbtUtils.worldRegistryFromTag(mainNBT.get("d")),
+                            NbtUtils.worldRegistryFromTag(warpNBT.get("d")),
                             new BlockPos(
                                 warpNBT.getInt("x"),
                                 warpNBT.getInt("y"),
@@ -468,37 +491,38 @@ public final class WarpUtils {
     }
     
     public static boolean isPlayerCreating(@NotNull final ServerPlayerEntity player) {
-        return WarpUtils.GENERATING_PLAYERS.contains( player.getUuid() );
+        return WarpUtils.GENERATING_PLAYERS.contains(player.getUuid());
     }
-    public static Warp teleportPlayer(@NotNull ServerPlayerEntity player, @Nullable String location) {
+    public static Warp teleportPlayerAndAttached(@NotNull ServerPlayerEntity player, @Nullable String location) {
         Warp warp = WarpUtils.getWarp(player, location);
         if (warp != null)
-            WarpUtils.teleportPlayer( warp, player );
+            WarpUtils.teleportPlayerAndAttached( warp, player );
         return warp;
     }
-    public static void teleportPlayer(@NotNull final Warp warp, @NotNull final ServerPlayerEntity player) {
-        WarpUtils.teleportPlayer(warp.world, player, warp.warpPos);
+    public static void teleportPlayerAndAttached(@NotNull final Warp warp, @NotNull final ServerPlayerEntity player) {
+        WarpUtils.teleportPlayerAndAttached(warp.world, player, warp.warpPos);
     }
-    public static void teleportPlayer(@NotNull final RegistryKey<World> dimension, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
+    public static void teleportPlayerAndAttached(@NotNull final RegistryKey<World> dimension, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
         MinecraftServer server = player.getServer();
         ServerWorld world = server.getWorld(dimension);
         if (world != null)
-            WarpUtils.teleportPlayer(world, player, tpPos);
+            WarpUtils.teleportPlayerAndAttached(world, player, tpPos);
     }
-    public static void teleportPlayer(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
+    public static void teleportPlayerAndAttached(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
         Entity bottom = player.getRootVehicle(),
             entity = player;
         
         // Spawn the particles (In the entities world)
-        WarpUtils.teleportPoof(bottom);
+        WarpUtils.teleportPoof(bottom, true);
         
         // Warp anything attached to the player
         WarpUtils.teleportFriendlies(world, player, tpPos);
         
         // If the entity can be teleported within the same world
-        if (world == player.world || bottom == player)
+        if (world == player.world || bottom == player) {
             WarpUtils.teleportEntity(world, bottom, tpPos);
-        else while (entity != null) {
+            WarpUtils.teleportPoof(world, tpPos, false);
+        } else while (entity != null) {
             // Get the entity vehicle
             Entity vehicle = entity.getVehicle();
             
@@ -507,6 +531,12 @@ public final class WarpUtils {
             // Teleport the vehicle
             entity = vehicle;
         }
+    }
+    public static void teleportPlayerAndAttached(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player) {
+        WarpUtils.teleportPlayerAndAttached(world, player, ServerCore.getSpawn(world));
+    }
+    public static void teleportPlayerAndAttached(@NotNull final RegistryKey<World> world, @NotNull final ServerPlayerEntity player) {
+        WarpUtils.teleportPlayerAndAttached(ServerCore.getWorld(player, world), player);
     }
     public static void teleportEntity(@NotNull final ServerWorld world, @NotNull Entity entity, @NotNull final BlockPos tpPos) {
         // Must be a ServerWorld
@@ -580,7 +610,7 @@ public final class WarpUtils {
         WarpUtils.teleportEntity(world, entity, ServerCore.getSpawn(world));
     }
     public static void teleportEntity(@NotNull RegistryKey<World> dimension, @NotNull Entity entity) {
-        WarpUtils.teleportEntity(ServerCore.getWorld(dimension), entity);
+        WarpUtils.teleportEntity(ServerCore.getWorld(entity, dimension), entity);
     }
     private static void teleportFriendlies(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
         BlockPos playerPos = player.getBlockPos();
@@ -597,17 +627,22 @@ public final class WarpUtils {
             
             if (lead || ride || (mob instanceof TameableEntity && (!((TameableEntity)mob).isSitting()))) {
                 if (lead && (!ride))
-                    WarpUtils.teleportPoof(mob);
+                    WarpUtils.teleportPoof(mob, true);
                 WarpUtils.teleportEntity(world, mob, tpPos);
             }
         }
     }
-    private static void teleportPoof(@NotNull final Entity entity) {
-        final World world = entity.getEntityWorld();
-        BlockPos blockPos = entity.getBlockPos();
-        if ((world instanceof ServerWorld) && (!entity.isSpectator())) {
-            world.playSound( null, blockPos, SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.MASTER, 1.0f, 1.0f );
-            EffectUtils.particleSwirl(ParticleTypes.WITCH, (ServerWorld) world, entity.getPos(), 10);
+    private static void teleportPoof(@NotNull final Entity entity, boolean departing) {
+        if (!entity.isSpectator())
+            WarpUtils.teleportPoof(entity.getEntityWorld(), entity.getBlockPos(), entity.getPos(), departing);
+    }
+    private static void teleportPoof(@Nullable final World world, @NotNull final BlockPos blockPos, boolean departing) {
+        WarpUtils.teleportPoof(world, blockPos, Vec3d.ofBottomCenter(blockPos), departing);
+    }
+    private static void teleportPoof(@Nullable final World world, @NotNull final BlockPos blockPos, final Vec3d swirlPos, boolean departing) {
+        if (world instanceof ServerWorld) {
+            world.playSound(null, blockPos, SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.MASTER, 1.0f, 1.0f);
+            EffectUtils.particleSwirl(ParticleTypes.WITCH, (ServerWorld) world, swirlPos, departing, 10);
         }
     }
     public static @NotNull BlockPos getWorldSpawn(@NotNull final ServerWorld world) {
@@ -668,6 +703,35 @@ public final class WarpUtils {
             this.warpPos = blockPos;
             this.world = world;
             this.favorite = favorite;
+        }
+        
+        public @Nullable World getWorld(@Nullable World world) {
+            return world == null ? null : (Objects.equals(world.getRegistryKey(), this.world) ? world : this.getWorld(world.getServer()));
+        }
+        public @Nullable World getWorld(@Nullable MinecraftServer server) {
+            return server == null ? null : server.getWorld(this.world);
+        }
+        
+        public boolean isIn(@NotNull World world) {
+            return this.isIn(world.getRegistryKey());
+        }
+        public boolean isIn(@NotNull RegistryKey<World> world) {
+            return Objects.equals(world, this.world);
+        }
+        
+        public boolean isAt(@NotNull World world, @NotNull BlockPos pos) {
+            return this.isAt(world.getRegistryKey(), pos);
+        }
+        public boolean isAt(@NotNull RegistryKey<World> world, @NotNull BlockPos pos) {
+            return this.isIn(world) && Objects.equals(pos, this.warpPos);
+        }
+        public boolean isFavorite() {
+            return this.favorite;
+        }
+        
+        public int compare(@NotNull Warp warp) {
+            int favorites = Boolean.compare(warp.favorite, this.favorite);
+            return favorites == 0 ? String.CASE_INSENSITIVE_ORDER.compare(this.name, warp.name) : favorites;
         }
         
         public Warp copy(@NotNull String name) {

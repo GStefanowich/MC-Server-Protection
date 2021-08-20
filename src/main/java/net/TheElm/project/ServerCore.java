@@ -28,15 +28,22 @@ package net.TheElm.project;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import net.TheElm.project.blocks.entities.LecternGuideBlockEntity;
+import net.TheElm.project.blocks.entities.LecternWarpsBlockEntity;
 import net.TheElm.project.commands.*;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.protections.events.*;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.CasingUtils;
+import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.MapUtils;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.BlockEntityType;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -45,6 +52,7 @@ import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
@@ -53,11 +61,14 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
 public final class ServerCore extends CoreMod implements DedicatedServerModInitializer {
+    public static BlockEntityType<LecternGuideBlockEntity> GUIDE_BLOCK_ENTITY;
+    public static BlockEntityType<LecternWarpsBlockEntity> WARPS_BLOCK_ENTITY;
     
     /*
      * Mod initializer
@@ -66,6 +77,11 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     public void onInitializeServer() {
         super.initialize();
         
+        // Register our server-side block entity
+        ServerCore.GUIDE_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("guide_lectern"), BlockEntityType.Builder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
+        ServerCore.WARPS_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("warps_lectern"), BlockEntityType.Builder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
+        
+        // Register the server commands
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
             CoreMod.logInfo( "Registering our commands." );
             AdminCommands.register(dispatcher);
@@ -74,6 +90,8 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             ClaimCommand.register(dispatcher);
             DateCommand.register(dispatcher);
             GameModesCommand.register(dispatcher);
+            GiveSelfCommand.register(dispatcher);
+            HeadCommand.register(dispatcher);
             HoldingCommand.register(dispatcher);
             LoggingCommand.register(dispatcher);
             MiscCommands.register(dispatcher);
@@ -95,7 +113,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             
             ScoreboardCommand.modify(dispatcher);
             
-            if ( CoreMod.isDebugging() )
+            if ( DevUtils.isDebugging() )
                 TeleportEffectCommand.register(dispatcher);
         });
         
@@ -146,6 +164,9 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         return CoreMod.getGameInstance()
             .left()
             .orElseGet(ClientCore::getServer);
+    }
+    public static @NotNull MinecraftServer get(@NotNull PlayerEntity player) {
+        return Objects.requireNonNull(player.getServer());
     }
     public static @Nullable ServerPlayerEntity getPlayer(@NotNull UUID uuid) {
         return ServerCore.get().getPlayerManager().getPlayer(uuid);
@@ -206,6 +227,9 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     }
     public static @NotNull ServerWorld getWorld(@NotNull RegistryKey<World> key) {
         return ServerCore.getWorld(ServerCore.get(), key);
+    }
+    public static @NotNull ServerWorld getWorld(@NotNull Entity entity, @NotNull RegistryKey<World> key) {
+        return ServerCore.getWorld(Objects.requireNonNull(entity.getServer()), key);
     }
     public static @NotNull ServerWorld getWorld(@NotNull MinecraftServer server, @NotNull RegistryKey<World> key) {
         Optional<ServerWorld> world = Optional.ofNullable(server.getWorld(key));

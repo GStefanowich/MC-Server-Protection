@@ -181,13 +181,13 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
     // On player move
     @Inject(at = @At("TAIL"), method = "onPlayerMove")
     public void onPlayerMove(final PlayerMoveC2SPacket movement, final CallbackInfo callback) {
-        this.movedPlayer( this.player );
+        this.movedPlayer(this.player);
     }
     
     // On vehicle move
     @Inject(at = @At("TAIL"), method = "onVehicleMove")
     public void onVehicleMove(final VehicleMoveC2SPacket movement, final CallbackInfo callback) {
-        this.movedPlayer( this.player );
+        this.movedPlayer(this.player);
     }
     
     // When player leaves
@@ -195,7 +195,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
     public void onPlayerDisconnect(final CallbackInfo callback) {
         // Clear the players location from the cache
         // (Will show location again when logged back in)
-        CoreMod.PLAYER_LOCATIONS.remove( this.player );
+        CoreMod.PLAYER_LOCATIONS.remove(this.player);
         
         // Remove players from the health bar when disconnecting
         // (Don't have floating health bars remaining on-screen)
@@ -235,7 +235,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
         }
     }
     
-    public void movedPlayer( final ServerPlayerEntity player ) {
+    public void movedPlayer(@NotNull final ServerPlayerEntity player) {
         if (!SewConfig.get(SewConfig.DO_CLAIMS))
             return;
         
@@ -251,7 +251,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
             UUID chunkOwner = ( chunk == null ? null : ((IClaimedChunk) chunk).getOwner( blockPos ) );
             
             // If the location has changed
-            if ( ( ( playerLocation != null ) && (!playerLocation.equals( chunkOwner )) ) || ( ( chunkOwner != null ) && (!chunkOwner.equals( playerLocation )) ) ) {
+            if ((( playerLocation != null ) && (!playerLocation.equals( chunkOwner )) ) || ( ( chunkOwner != null ) && (!chunkOwner.equals(playerLocation)))) {
                 this.showPlayerNewLocation( player, chunk );
             }
         }
@@ -261,7 +261,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
         BlockPos playerPos = player.getBlockPos();
         UUID locationOwner;
         
-        if ( ( local == null ) || ((locationOwner = ((IClaimedChunk) local).getOwner( playerPos )) == null ) ) {
+        if (( local == null ) || ((locationOwner = ((IClaimedChunk) local).getOwner(playerPos)) == null )) {
             MutableText popupText = ChunkUtils.getPlayerWorldWilderness( player )
                 .append(
                     new LiteralText( " [" ).formatted(Formatting.RED)
@@ -270,73 +270,70 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                 );
             
             // If the player is in the wilderness
-            CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, null );
-            TitleUtils.showPlayerAlert(player, Formatting.GREEN, popupText );
+            CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, null);
+            TitleUtils.showPlayerAlert(player, Formatting.GREEN, popupText);
             
         } else {
             CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, locationOwner);
-            (new Thread(() -> {
-                IClaimedChunk claimedChunk = (IClaimedChunk) local;
-                MutableText popupText = new LiteralText("Entering ")
-                    .formatted(Formatting.WHITE);
-                
-                ClaimantPlayer owner  = ClaimantPlayer.get( locationOwner );
-                
-                try {
-                    // If player is in spawn protection
-                    if (locationOwner.equals(CoreMod.SPAWN_ID)) {
-                        popupText.append(
-                            owner.getName(player)
-                        );
-                        return;
-                    }
-                    
-                    String landName = "homestead";
-                    ClaimantTown town;
-                    if ((town = claimedChunk.getTown()) != null) {
-                        landName = town.getTownType();
-                    }
-                    
-                    if (town == null) {
-                        // If player is in their own land (No Town)
-                        if ((locationOwner.equals(claimedChunk.getOwner())) && (locationOwner.equals(player.getUuid()))) {
-                            popupText.append(new LiteralText("your " + landName).formatted(Formatting.DARK_GREEN));
-                            return;
-                        }
-                        
-                        // If player is in another players area (No Town)
-                        popupText.append(owner.getName( player ))
-                            .append(new LiteralText("'s " + landName));
-                        return;
-                    }
-                    
-                    // If player is in another players town
-                    popupText.append(town.getName(player.getUuid())); // Town name
-                    if (!locationOwner.equals(town.getOwner())) // Append the chunk owner (If not the towns)
-                        popupText.append(" - ").append(claimedChunk.getOwnerName( player ));
-                    popupText.append( // Town type
-                        new LiteralText(" (")
-                            .append(new LiteralText(CasingUtils.Words(town.getTownType())).formatted(Formatting.DARK_AQUA))
-                            .append(")")
+            IClaimedChunk claimedChunk = (IClaimedChunk) local;
+            MutableText popupText = new LiteralText("Entering ")
+                .formatted(Formatting.WHITE);
+            
+            ClaimantPlayer owner = ClaimantPlayer.get( locationOwner );
+            
+            try {
+                // If player is in spawn protection
+                if (locationOwner.equals(CoreMod.SPAWN_ID)) {
+                    popupText.append(
+                        owner.getName(player)
                     );
-                    
-                } finally {
-                    if (popupText != null) {
-                        // Show that PvP is enabled
-                        if (claimedChunk.isSetting(playerPos, ClaimSettings.PLAYER_COMBAT)) {
-                            popupText.append(
-                                new LiteralText(" [").formatted(Formatting.RED)
-                                    .append(TranslatableServerSide.text(player, "claim.chunk.pvp"))
-                                    .append("]")
-                            );
-                        }
-                        
-                        // Show the message to the player
-                        TitleUtils.showPlayerAlert(player, Formatting.WHITE, popupText);
-                    }
+                    return;
                 }
-            })).start();
+                
+                String landName = "homestead";
+                ClaimantTown town;
+                if ((town = claimedChunk.getTown()) != null) {
+                    landName = town.getTownType();
+                }
+                
+                if (town == null) {
+                    // If player is in their own land (No Town)
+                    if ((locationOwner.equals(claimedChunk.getOwner())) && (locationOwner.equals(player.getUuid()))) {
+                        popupText.append(new LiteralText("your " + landName).formatted(Formatting.DARK_GREEN));
+                        return;
+                    }
+                    
+                    // If player is in another players area (No Town)
+                    popupText.append(owner.getName( player ))
+                        .append(new LiteralText("'s " + landName));
+                    return;
+                }
+                
+                // If player is in another players town
+                popupText.append(town.getName(player.getUuid())); // Town name
+                if (!locationOwner.equals(town.getOwner())) // Append the chunk owner (If not the towns)
+                    popupText.append(" - ").append(claimedChunk.getOwnerName( player ));
+                popupText.append( // Town type
+                    new LiteralText(" (")
+                        .append(new LiteralText(CasingUtils.Words(town.getTownType())).formatted(Formatting.DARK_AQUA))
+                        .append(")")
+                );
+                
+            } finally {
+                if (popupText != null) {
+                    // Show that PvP is enabled
+                    if (claimedChunk.isSetting(playerPos, ClaimSettings.PLAYER_COMBAT)) {
+                        popupText.append(
+                            new LiteralText(" [").formatted(Formatting.RED)
+                                .append(TranslatableServerSide.text(player, "claim.chunk.pvp"))
+                                .append("]")
+                        );
+                    }
+                    
+                    // Show the message to the player
+                    TitleUtils.showPlayerAlert(player, Formatting.WHITE, popupText);
+                }
+            }
         }
     }
-    
 }

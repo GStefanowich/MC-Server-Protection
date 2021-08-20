@@ -67,7 +67,20 @@ public final class DimensionUtils {
         return DimensionUtils.isOutOfBuildLimitVertically(world.getDimension(), y);
     }
     public static boolean isOutOfBuildLimitVertically(@NotNull DimensionType dimension, int y) {
-        return y < 0 || y >= dimension.getLogicalHeight();
+        return y < DimensionUtils.getWorldDepth(dimension) || y >= DimensionUtils.getWorldHeight(dimension);
+    }
+    
+    public static int getWorldDepth(@NotNull World world) {
+        return DimensionUtils.getWorldDepth(world.getDimension());
+    }
+    public static int getWorldDepth(@NotNull DimensionType dimension) {
+        return 0;
+    }
+    public static int getWorldHeight(@NotNull World world) {
+        return DimensionUtils.getWorldHeight(world.getDimension());
+    }
+    public static int getWorldHeight(@NotNull DimensionType dimension) {
+        return dimension.getLogicalHeight();
     }
     
     public static boolean isWithinProtectedZone(@NotNull World world, BlockPos pos) {

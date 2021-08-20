@@ -49,9 +49,6 @@ import net.minecraft.block.entity.ChestBlockEntity;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.inventory.Inventory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -174,7 +171,7 @@ public enum ShopSigns {
                     );
                     
                     // Log the event
-                    CoreMod.logInfo(player.getName().getString() + " sold " + NumberFormat.getInstance().format(sign.getShopItemCount()) + " " + sign.getShopItemIdentifier() + " for $" + NumberFormat.getInstance().format(sign.getShopItemPrice()) + " to " + permissions.getName().asString());
+                    CoreMod.logInfo(player.getName().getString() + " sold " + NumberFormat.getInstance().format(sign.getShopItemCount()) + " " + sign.getShopItemIdentifier() + " for $" + NumberFormat.getInstance().format(sign.getShopItemPrice()) + " to " + permissions.getName().getString());
                     player.increaseStat(ShopStats.SHOP_TYPE_SOLD.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
                     
                     return Either.right(true);
@@ -487,7 +484,7 @@ public enum ShopSigns {
                 return Either.right(this.generateNewWarp(player));
             } else {
                 // Warp the player to their home
-                WarpUtils.teleportPlayer(warp, player);
+                WarpUtils.teleportPlayerAndAttached(warp, player);
             }
             return Either.right(true);
         }
@@ -524,7 +521,7 @@ public enum ShopSigns {
                 WarpUtils newWarp = new WarpUtils(warpName, player, spawnPos);
                 BlockPos warpToPos;
                 
-                while (((warpToPos = newWarp.getWarpPositionIn(world)) == null) || (!newWarp.claimAndBuild(player, world)));
+                while (((warpToPos = newWarp.getWarpPositionIn()) == null) || (!newWarp.claimAndBuild(() -> {})));
                 
                 // Get the distance
                 int distance = warpToPos.getManhattanDistance(spawnPos);
@@ -536,11 +533,11 @@ public enum ShopSigns {
                 ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
                 
                 // Teleport the player
-                BlockPos safeTeleportPos = newWarp.getSafeTeleportPos(world);
-                WarpUtils.teleportPlayer(world, player, safeTeleportPos);
+                BlockPos safeTeleportPos = newWarp.getSafeTeleportPos();
+                WarpUtils.teleportPlayerAndAttached(world, player, safeTeleportPos);
                 
                 // Save the warp for later
-                newWarp.save(world, safeTeleportPos, player);
+                newWarp.save(safeTeleportPos, player);
                 
                 // Notify the player of their new location
                 if ((!SewConfig.get(SewConfig.WORLD_SPECIFIC_SPAWN)) || SewConfig.equals(SewConfig.WARP_DIMENSION, SewConfig.DEFAULT_WORLD))
@@ -608,33 +605,26 @@ public enum ShopSigns {
                 final String warpName = sign.getSignLine(1)
                     .getString();
                 
-                if (WarpUtils.getWarps(player).size() >= 3 && (WarpUtils.getWarp(player, warpName) == null))
+                if (WarpUtils.getWarps(player).size() >= SewConfig.get(SewConfig.WARP_WAYSTONES_ALLOWED) && (WarpUtils.getWarp(player, warpName) == null))
                     return Either.left(new LiteralText("Too many waystones. Can't build any more."));
                 
                 if (!MoneyUtils.takePlayerMoney(player, SewConfig.get(SewConfig.WARP_WAYSTONE_COST)))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                 
-                (new Thread(() -> {
-                    WarpUtils warp = new WarpUtils(warpName, player, signPos.down());
-                    if (!warp.claimAndBuild(player, player.getServerWorld())) {
-                        // Notify the player
-                        player.sendMessage(
-                            new LiteralText("Can't build that here").formatted(Formatting.RED),
-                            MessageType.SYSTEM,
-                            ServerCore.SPAWN_ID
-                        );
-                        
-                        // Refund the player
-                        MoneyUtils.givePlayerMoney(player, SewConfig.get(SewConfig.WARP_WAYSTONE_COST));
-                        
-                        // Cancel the save
-                        return;
-                    }
+                WarpUtils warp = new WarpUtils(warpName, player, signPos.down());
+                if (!warp.claimAndBuild(() -> warp.save(warp.getSafeTeleportPos(), player))) {
+                    // Notify the player
+                    player.sendMessage(
+                        new LiteralText("Can't build that here").formatted(Formatting.RED),
+                        MessageType.SYSTEM,
+                        ServerCore.SPAWN_ID
+                    );
                     
-                    warp.save(player.getServerWorld(), warp.getSafeTeleportPos(player.getServerWorld()), player);
-                })).start();
-                return Either.right(true);
+                    // Refund the player
+                    MoneyUtils.givePlayerMoney(player, SewConfig.get(SewConfig.WARP_WAYSTONE_COST));
+                }
                 
+                return Either.right(true);
             } catch (NotEnoughMoneyException e) {
                 return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
             }
@@ -800,7 +790,7 @@ public enum ShopSigns {
                 ((PlayerData) player).getClaim().increaseMaxChunkLimit( sign.getShopItemCount() );
                 
                 // Log the transaction
-                CoreMod.logInfo( player.getName().asString() + " bought " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " chunks for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) );
+                CoreMod.logInfo( player.getName().getString() + " bought " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " chunks for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) );
                 
             } catch (NotEnoughMoneyException e) {
                 return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
@@ -850,29 +840,22 @@ public enum ShopSigns {
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
             // Get the guides title
-            String bookRawTitle = sign.getSignLine( 1 ).asString();
+            String bookRawTitle = sign.getSignLine(1).getString();
             
             // Get the guidebook
             GuideUtils guide;
             try {
                 if ((guide = GuideUtils.getBook(bookRawTitle.toLowerCase())) == null)
-                    return Either.right( false );
+                    return Either.right(false);
             } catch (JsonSyntaxException e) {
                 CoreMod.logError( e );
                 return Either.left(new LiteralText("An error occurred getting that guide."));
             }
             
-            // Create the object
-            ItemStack book = new ItemStack( Items.WRITTEN_BOOK );
-            CompoundTag nbt = book.getOrCreateTag();
-            
-            // Write the guide data to NBT
-            guide.writeCustomDataToTag( nbt );
-            
             // Give the player the book
-            player.giveItemStack( book );
-            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
-            return Either.right( true );
+            player.giveItemStack(guide.newStack());
+            player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f);
+            return Either.right(true);
         }
     },
     /*
@@ -954,7 +937,7 @@ public enum ShopSigns {
                 );
                 
                 // Log the transaction
-                CoreMod.logInfo( player.getName().asString() + " bought a " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " slot backpack for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) );
+                CoreMod.logInfo(player.getName().getString() + " bought a " + NumberFormat.getInstance().format(sign.getShopItemCount()) + " slot backpack for $" + NumberFormat.getInstance().format(sign.getShopItemPrice()));
                 
             } catch (NotEnoughMoneyException e) {
                 return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));

@@ -38,6 +38,7 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.*;
 import net.TheElm.project.utilities.WarpUtils.Warp;
@@ -59,6 +60,7 @@ import net.minecraft.text.*;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Pair;
 import net.minecraft.util.Util;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -81,56 +83,38 @@ public final class TeleportsCommand {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, "spawn", builder -> builder
-            .requires(CommandUtils.requires(OpLevels.CHEATING))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("player", EntityArgumentType.players())
-                .executes((context) -> {
-                    // Get location information
-                    ServerCommandSource source = context.getSource();
-                    Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "player");
-                    ServerWorld world = source.getMinecraftServer().getWorld(ServerCore.defaultWorldKey());
-                    
-                    for (ServerPlayerEntity player : players) {
-                        WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
-                    }
-                    
-                    Text spawnText = new LiteralText("Spawn").formatted(Formatting.GOLD);
-                    if (players.size() == 1) {
-                        source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", ((Entity) players.iterator().next()).getDisplayName(), spawnText), true);
-                    } else {
-                        source.sendFeedback(new TranslatableText("commands.teleport.success.entity.multiple", players.size(), spawnText), true);
-                    }
-                    
-                    return Command.SINGLE_SUCCESS;
-                })
+                .executes((context) -> TeleportsCommand.sendPlayersToServerSpawn(context.getSource(), EntityArgumentType.getPlayers(context, "player")))
             )
             .executes((context) -> {
                 // Get location information
                 ServerCommandSource source = context.getSource();
-                ServerPlayerEntity player = source.getPlayer();
-                ServerWorld world = source.getMinecraftServer().getWorld(ServerCore.defaultWorldKey());
-                
-                WarpUtils.teleportPlayer(world, player, WarpUtils.getWorldSpawn(world));
-                
-                source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", player.getDisplayName(), new LiteralText("Spawn").formatted(Formatting.GOLD)), true);
-                
-                return Command.SINGLE_SUCCESS;
+                return TeleportsCommand.sendPlayersToServerSpawn(source, Collections.singleton(source.getPlayer()));
             })
         );
         
+        ServerCore.register(dispatcher, "tphere", builder -> builder
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
+            .then(CommandManager.argument("target", EntityArgumentType.entities())
+                .executes(TeleportsCommand::tpHere)
+            )
+        );
+        
         ServerCore.register(dispatcher, "theend", "end teleport", builder -> builder
-            .requires(CommandUtils.requires(OpLevels.CHEATING))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("players", EntityArgumentType.entities())
-                .executes((context) -> TeleportsCommand.sendEntitiesToEnd(EntityArgumentType.getEntities(context, "players")))
+                .executes((context) -> TeleportsCommand.sendEntitiesToEnd(context.getSource(), EntityArgumentType.getEntities(context, "players")))
             )
             .executes((context) -> {
                 // Get location information
                 ServerCommandSource source = context.getSource();
-                return TeleportsCommand.sendEntitiesToEnd(Collections.singleton(source.getPlayer()));
+                return TeleportsCommand.sendEntitiesToEnd(source, Collections.singleton(source.getPlayer()));
             })
         );
         
         ServerCore.register(dispatcher, "tpa", builder -> builder
-            .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
+            .requires(CommandPredicate.isEnabled(SewConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                 .suggests(CommandUtils::getAllPlayerNames)
                 .then(CommandManager.argument("location", StringArgumentType.string())
@@ -143,7 +127,7 @@ public final class TeleportsCommand {
         );
         
         ServerCore.register(dispatcher, "tpaccept", builder -> builder
-            .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
+            .requires(CommandPredicate.isEnabled(SewConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(WarpUtils::hasWarp)
                 .executes(TeleportsCommand::tpAcceptCommand)
@@ -151,7 +135,7 @@ public final class TeleportsCommand {
         );
         
         ServerCore.register(dispatcher, "tpdeny", builder -> builder
-            .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
+            .requires(CommandPredicate.isEnabled(SewConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(WarpUtils::hasWarp)
                 .executes(TeleportsCommand::tpDenyCommand)
@@ -159,7 +143,7 @@ public final class TeleportsCommand {
         );
         
         ServerCore.register(dispatcher, "home", builder -> builder
-            .requires((source) -> SewConfig.get(SewConfig.COMMAND_WARP_TPA))
+            .requires(CommandPredicate.isEnabled(SewConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("location", StringArgumentType.string())
                 .suggests(TeleportsCommand::playerHomeNames)
                 .then(CommandManager.literal("rename")
@@ -328,7 +312,7 @@ public final class TeleportsCommand {
         
         // Accept the teleport automatically
         if ( ChunkUtils.canPlayerWarpTo(porter, target.getId()) ) {
-            WarpUtils.teleportPlayer(warp, porter);
+            WarpUtils.teleportPlayerAndAttached(warp, porter);
             
             TeleportsCommand.feedback(porter, target, warp);
             
@@ -355,7 +339,7 @@ public final class TeleportsCommand {
                 .formatted(Formatting.YELLOW)
                 .append(targetPlayer.getDisplayName())
                 .append(" to accept your teleport."), Util.NIL_UUID);
-            CoreMod.logInfo(porter.getName().asString() + " has requested to teleport to " + (porter.getUuid().equals(target.getId()) ? "their" : target.getName() + "'s") + " warp");
+            CoreMod.logInfo(porter.getName().getString() + " has requested to teleport to " + (porter.getUuid().equals(target.getId()) ? "their" : target.getName() + "'s") + " warp");
             
             // Notify the target
             targetPlayer.sendMessage(ColorUtils.format(porter.getName(), Formatting.AQUA)
@@ -368,6 +352,24 @@ public final class TeleportsCommand {
                     .append(".")
                 ), MessageType.CHAT, porter.getUuid());
         }
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int tpHere(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get location information
+        ServerCommandSource source = context.getSource();
+        Collection<? extends Entity> targets = EntityArgumentType.getEntities(context, "target");
+        
+        for (Entity entity : targets)
+            if (entity != source.getEntity())
+                WarpUtils.teleportEntity(source.getWorld(), entity, new BlockPos(source.getPosition()));
+        
+        Text self = source.getDisplayName();
+        if (targets.size() == 1) {
+            source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", targets.iterator().next().getDisplayName(), self), true);
+        } else {
+            source.sendFeedback(new TranslatableText("commands.teleport.success.entity.multiple", targets.size(), self), true);
+        }
+        
         return Command.SINGLE_SUCCESS;
     }
     
@@ -389,7 +391,7 @@ public final class TeleportsCommand {
         }
         
         Warp warp = WarpUtils.getWarp(target.getUuid(), warpTo.getRight());
-        WarpUtils.teleportPlayer(warp, porter);
+        WarpUtils.teleportPlayerAndAttached(warp, porter);
         
         source.sendFeedback(new LiteralText("Teleport request accepted").formatted(Formatting.GREEN), false);
         
@@ -411,17 +413,40 @@ public final class TeleportsCommand {
             throw TARGET_NOT_REQUESTING.create(target);
         
         source.sendFeedback(new LiteralText("Teleport request rejected").formatted(Formatting.RED), false);
-        CoreMod.logInfo(porter.getName().asString() + "'s teleport was rejected by " + target.getName().asString());
+        CoreMod.logInfo(porter.getName().getString() + "'s teleport was rejected by " + target.getName().getString());
         
         CoreMod.PLAYER_WARP_INVITES.remove(porter);
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int sendEntitiesToEnd(@NotNull Collection<? extends Entity> entities) throws CommandSyntaxException {
+    private static int sendPlayersToServerSpawn(@NotNull ServerCommandSource source, @NotNull Collection<ServerPlayerEntity> players) {
+        // Teleport players to location
+        for (ServerPlayerEntity player : players)
+            WarpUtils.teleportPlayerAndAttached(ServerCore.defaultWorldKey(), player);
+        
+        Text spawnText = new LiteralText("Spawn").formatted(Formatting.GOLD);
+        if (players.size() == 1)
+            source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", players.iterator().next().getDisplayName(), spawnText), true);
+        else
+            source.sendFeedback(new TranslatableText("commands.teleport.success.entity.multiple", players.size(), spawnText), true);
+        
+        return players.size();
+    }
+    private static int sendEntitiesToEnd(@NotNull ServerCommandSource source, @NotNull Collection<? extends Entity> entities) throws CommandSyntaxException {
         // Move the player to the end
         for (Entity entity : entities)
-            WarpUtils.teleportEntity(World.END, entity);
-        return Command.SINGLE_SUCCESS;
+            if (entity instanceof ServerPlayerEntity)
+                WarpUtils.teleportPlayerAndAttached(World.END, (ServerPlayerEntity) entity);
+            else
+                WarpUtils.teleportEntity(World.END, entity);
+        
+        Text endText = new LiteralText("The End").formatted(Formatting.GOLD);
+        if (entities.size() == 1)
+            source.sendFeedback(new TranslatableText("commands.teleport.success.entity.single", entities.iterator().next().getDisplayName(), endText), true);
+        else
+            source.sendFeedback(new TranslatableText("commands.teleport.success.entity.multiple", entities.size(), endText), true);
+            
+        return entities.size();
     }
     
     public static void feedback(@NotNull PlayerEntity porter, @Nullable Warp location) {

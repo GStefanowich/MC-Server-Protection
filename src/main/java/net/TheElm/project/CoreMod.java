@@ -35,6 +35,7 @@ import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.protections.logging.EventLogger;
+import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.LegacyConverter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.FabricLoader;
@@ -117,7 +118,7 @@ public abstract class CoreMod {
     }
     @Nullable
     public static <T extends Claimant> T getFromCache(@NotNull Class<T> type, @NotNull String name) {
-        return CoreMod.getCacheStream( type ).filter((claimant) -> name.equals(claimant.getName().asString())).findFirst().orElse( null );
+        return CoreMod.getCacheStream( type ).filter((claimant) -> name.equals(claimant.getName().getString())).findFirst().orElse( null );
     }
     public static Stream<Claimant> getCacheStream() {
         return CoreMod.getCacheStream( null );
@@ -176,9 +177,6 @@ public abstract class CoreMod {
     }
     public static @NotNull String getModVersion() {
         return CoreMod.getModMetaData().getVersion().getFriendlyString();
-    }
-    public static boolean isDebugging() {
-        return CoreMod.getFabric().isDevelopmentEnvironment();
     }
     public static boolean isClient() {
         return CoreMod.getFabric().getEnvironmentType() == EnvType.CLIENT;
@@ -293,12 +291,12 @@ public abstract class CoreMod {
     }
     
     public static void logDebug(@Nullable String message) {
-        if (CoreMod.isDebugging())
+        if (DevUtils.isDebugging())
             CoreMod.logInfo( message );
     }
     public static void logDebug(@Nullable Text message) {
         if (message == null) CoreMod.logDebug("NULL");
-        else if (CoreMod.isDebugging()) CoreMod.logInfo(message);
+        else if (DevUtils.isDebugging()) CoreMod.logInfo(message);
     }
     
     public static void logError(String message) {
@@ -314,7 +312,7 @@ public abstract class CoreMod {
         logger.error( logPrefix + message, error );
     }
     public static void logError(@Nullable Object message ) {
-        CoreMod.logError( message == null ? "NULL" : message.toString() );
+        CoreMod.logError(message == null ? "NULL" : message.toString());
     }
     
 }

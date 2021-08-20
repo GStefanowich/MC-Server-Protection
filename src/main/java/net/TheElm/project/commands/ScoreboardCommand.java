@@ -34,7 +34,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.CommandNode;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.OpLevels;
-import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.argument.ObjectiveArgumentType;
@@ -89,7 +89,7 @@ public class ScoreboardCommand {
         }
         
         LiteralArgumentBuilder<ServerCommandSource> armorStands = CommandManager.literal("newdisplay")
-            .requires(CommandUtils.requires(OpLevels.CHEATING))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("objective", ObjectiveArgumentType.objective())
                 .then(CommandManager.argument("count", IntegerArgumentType.integer(0, 100))
                     .executes(ScoreboardCommand::generateNumStands)
@@ -103,8 +103,9 @@ public class ScoreboardCommand {
         return ScoreboardCommand.generateStands(context, 3);
     }
     private static int generateNumStands(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        int count = IntegerArgumentType.getInteger(context, "count");
         try {
-            return ScoreboardCommand.generateStands(context, IntegerArgumentType.getInteger(context, "count"));
+            return ScoreboardCommand.generateStands(context, count);
         } catch (Exception e) {
             CoreMod.logError(e);
             return 0;

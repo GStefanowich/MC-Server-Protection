@@ -26,6 +26,7 @@
 package net.TheElm.project.enums;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.BoolEnums;
 import net.minecraft.text.LiteralText;
@@ -38,64 +39,31 @@ import java.util.UUID;
 
 public enum ClaimSettings implements BoolEnums {
     // "False positives"
-    ENDERMAN_GRIEFING("Allow Endermen to pickup blocks", false, true, false) {
-        @Override
-        public boolean isEnabled() {
-            return SewConfig.get(SewConfig.CLAIM_ALLOW_GRIEFING_ENDERMAN);
-        }
-    },
-    CREEPER_GRIEFING("Allow Creepers to destroy blocks", false, true, false) {
-        @Override
-        public boolean isEnabled() {
-            return SewConfig.get(SewConfig.CLAIM_ALLOW_GRIEFING_CREEPER);
-        }
-    },
-    GHAST_GRIEFING("Allow Ghasts to destroy blocks", false, true, false) {
-        @Override
-        public boolean isEnabled() {
-            return SewConfig.get(SewConfig.CLAIM_ALLOW_GRIEFING_GHAST);
-        }
-    },
-    PLAYER_COMBAT("Allow Player vs Player", false, true, false) {
-        @Override
-        public boolean isEnabled() {
-            return SewConfig.get(SewConfig.CLAIM_ALLOW_PLAYER_COMBAT);
-        }
-    },
-    HURT_TAMED("Allow Players to harm Wolves, Cats and other tamed pets", false, false, false) {
-        @Override
-        public boolean isEnabled() {
-            return true;
-        }
-    },
+    ENDERMAN_GRIEFING(SewConfig.CLAIM_ALLOW_GRIEFING_ENDERMAN, "Allow Endermen to pickup blocks", false, true, false),
+    WEATHER_GRIEFING(SewConfig.CLAIM_ALLOW_GRIEFING_WEATHER, "Allow weather to damage blocks", false, true, false),
+    CREEPER_GRIEFING(SewConfig.CLAIM_ALLOW_GRIEFING_CREEPER, "Allow Creepers to destroy blocks", false, true, false),
+    GHAST_GRIEFING(SewConfig.CLAIM_ALLOW_GRIEFING_GHAST, "Allow Ghasts to destroy blocks", false, true, false),
+    PLAYER_COMBAT(SewConfig.CLAIM_ALLOW_PLAYER_COMBAT, "Allow Player vs Player", false, true, false),
+    FIRE_SPREAD(SewConfig.CLAIM_ALLOW_FIRE_SPREAD, "Allow fire to spread and destroy blocks", false, true, false),
+    HURT_TAMED("Allow Players to harm Wolves, Cats and other tamed pets", false, false, false),
     
     // "True positives"
-    CROP_AUTOREPLANT("Automatically replant harvested crops", true, false, true) {
-        @Override
-        public boolean isEnabled() {
-            return SewConfig.get(SewConfig.CLAIM_ALLOW_CROP_AUTOREPLANT);
-        }
-    },
-    TREE_CAPACITATE("Automatically knock down entire trees", true, false, false) {
-        @Override
-        public boolean isEnabled() {
-            return SewConfig.get(SewConfig.CLAIM_ALLOW_TREE_CAPACITATOR);
-        }
-    },
-    VEIN_MINER("Automatically mine entire ore veins", true, false, false) {
-        @Override
-        public boolean isEnabled() {
-            return SewConfig.get(SewConfig.CLAIM_ALLOW_VEIN_MINER);
-        }
-    };
+    CROP_AUTOREPLANT(SewConfig.CLAIM_ALLOW_CROP_AUTOREPLANT, "Automatically replant harvested crops", true, false, true),
+    TREE_CAPACITATE(SewConfig.CLAIM_ALLOW_TREE_CAPACITATOR, "Automatically knock down entire trees", true, false, false),
+    VEIN_MINER(SewConfig.CLAIM_ALLOW_VEIN_MINER, "Automatically mine entire ore veins", true, false, false);
     
     private final @NotNull Text description;
+    private final @Nullable ConfigOption<Boolean> configOption;
     private final boolean valueShouldBe;
     private final boolean playrDef;
     private final boolean spawnDef;
     
     ClaimSettings(@NotNull String description, boolean valueShouldBe, boolean playerDefault, boolean spawnDefault) {
+        this(null, description, valueShouldBe, playerDefault, spawnDefault);
+    }
+    ClaimSettings(@NotNull ConfigOption<Boolean> config, @NotNull String description, boolean valueShouldBe, boolean playerDefault, boolean spawnDefault) {
         this.valueShouldBe = valueShouldBe;
+        this.configOption = config;
         this.playrDef = playerDefault;
         this.spawnDef = spawnDefault;
         this.description = new LiteralText(description)
@@ -130,5 +98,10 @@ public enum ClaimSettings implements BoolEnums {
     }
     public @NotNull Text getDescription() {
         return this.description;
+    }
+    
+    @Override
+    public boolean isEnabled() {
+        return this.configOption == null || SewConfig.get(this.configOption);
     }
 }

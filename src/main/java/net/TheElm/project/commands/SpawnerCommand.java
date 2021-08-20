@@ -30,7 +30,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
-import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.command.argument.EntitySummonArgumentType;
 import net.minecraft.command.suggestion.SuggestionProviders;
@@ -52,7 +52,7 @@ public final class SpawnerCommand {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, "spawner", builder -> builder
-            .requires(CommandUtils.isEnabledAnd(SewConfig.SILK_TOUCH_SPAWNERS, OpLevels.CHEATING))
+            .requires(CommandPredicate.isEnabled(SewConfig.SILK_TOUCH_SPAWNERS).and(OpLevels.CHEATING))
             .then(CommandManager.argument("type", EntitySummonArgumentType.entitySummon())
                 .suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
                 .executes((context) -> {

@@ -198,8 +198,7 @@ public final class ClaimantTown extends Claimant {
         super.readCustomDataFromTag( tag );
     }
     
-    public final void delete() {
-        PlayerManager playerManager = ServerCore.get().getPlayerManager();
+    public final void delete(@NotNull PlayerManager playerManager) {
         ServerPlayerEntity player;
         
         this.deleted = true;
@@ -207,13 +206,13 @@ public final class ClaimantTown extends Claimant {
         // Remove all players from the town
         for (UUID member : this.getFriends()) {
             if ((player = playerManager.getPlayer(member)) != null)
-                ((PlayerData)player).getClaim().setTown( null );
+                ((PlayerData)player).getClaim().setTown(null);
         }
         
         // Remove from the cache (So it doesn't save again)
-        CoreMod.removeFromCache( this );
-        NbtUtils.delete( this );
-        CoreMod.logInfo("Deleted town " + this.getName().asString() + " (" + this.getId() + ")");
+        CoreMod.removeFromCache(this);
+        NbtUtils.delete(this);
+        CoreMod.logInfo("Deleted town " + this.getName().getString() + " (" + this.getId() + ")");
     }
     @Override
     public boolean forceSave() {

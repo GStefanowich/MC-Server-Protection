@@ -5,7 +5,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.MessageArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -15,6 +15,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -32,9 +33,9 @@ public class Kick {
      * @param dispatcher Command Dispatcher
      */
     @Overwrite
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("kick")
-            .requires(CommandUtils.either(OpLevels.KICK_BAN_OP, Permissions.VANILLA_COMMAND_KICK))
+            .requires(CommandPredicate.opLevel(OpLevels.KICK_BAN_OP).or(Permissions.VANILLA_COMMAND_KICK))
             .then(CommandManager.argument("targets", EntityArgumentType.players())
                 .then(CommandManager.argument("reason", MessageArgumentType.message())
                     .executes((sourceCommandContext) -> Kick.execute(sourceCommandContext.getSource(), EntityArgumentType.getPlayers(sourceCommandContext, "targets"), MessageArgumentType.getMessage(sourceCommandContext, "reason")))
@@ -45,7 +46,7 @@ public class Kick {
     }
     
     @Shadow
-    private static int execute(ServerCommandSource serverCommandSource, Collection<ServerPlayerEntity> collection, Text text) {
+    private static int execute(@NotNull ServerCommandSource serverCommandSource, Collection<ServerPlayerEntity> collection, Text text) {
         return Command.SINGLE_SUCCESS;
     }
     

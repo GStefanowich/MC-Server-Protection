@@ -31,6 +31,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import org.jetbrains.annotations.NotNull;
 
 public class ExceptionTranslatableServerSide implements CommandExceptionType {
     
@@ -45,13 +46,13 @@ public class ExceptionTranslatableServerSide implements CommandExceptionType {
         this.expectedArguments = expected;
     }
     
-    public CommandSyntaxException create(final ServerCommandSource source, final Object... objects) {
-        return new CommandSyntaxException(this, TranslatableServerSide.text(source, this.translationKey, objects ));
+    public CommandSyntaxException create(@NotNull final ServerCommandSource source, final Object... objects) {
+        return new CommandSyntaxException(this, TranslatableServerSide.text(source, this.translationKey, objects));
     }
-    public CommandSyntaxException create(final ServerPlayerEntity player, final Object... objects) {
-        return new CommandSyntaxException(this, TranslatableServerSide.text(player, this.translationKey, objects ));
+    public CommandSyntaxException create(@NotNull final ServerPlayerEntity player, final Object... objects) {
+        return new CommandSyntaxException(this, TranslatableServerSide.text(player, this.translationKey, objects));
     }
-    public CommandSyntaxException createWithContext(final ImmutableStringReader reader, final ServerPlayerEntity player, final Object... objects) {
+    public CommandSyntaxException createWithContext(@NotNull final ImmutableStringReader reader, @NotNull final ServerPlayerEntity player, @NotNull final Object... objects) {
         if (objects.length != this.expectedArguments)
             throw new IllegalArgumentException("Invalid amount of arguments provided for ExceptionTranslatableServerSide");
         return new CommandSyntaxException(this, TranslatableServerSide.text(player, this.translationKey, objects ), reader.getString(), reader.getCursor());

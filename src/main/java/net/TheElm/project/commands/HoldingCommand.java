@@ -32,6 +32,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -57,13 +58,13 @@ public final class HoldingCommand {
     private static final ExceptionTranslatableServerSide PLAYER_EMPTY_HAND = TranslatableServerSide.exception("player.equipment.empty_hand");
     private static final ExceptionTranslatableServerSide PLAYER_EMPTY_SLOT = TranslatableServerSide.exception("player.equipment.empty_slot");
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         // Command to display the object the player is holding
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             ServerCore.register(dispatcher, slot.getName(), builder -> builder
-                .requires((source) -> SewConfig.get(SewConfig.COMMAND_EQUIPMENT))
+                .requires(CommandPredicate.isEnabled(SewConfig.COMMAND_EQUIPMENT))
                 .then(CommandManager.argument("message", StringArgumentType.greedyString())
-                        .executes((source) -> HoldingCommand.handMessage(source, slot))
+                    .executes((source) -> HoldingCommand.handMessage(source, slot))
                 )
                 .executes((source) -> HoldingCommand.slot(source, slot))
             );
@@ -71,10 +72,10 @@ public final class HoldingCommand {
     }
     
     private static int slot(@NotNull CommandContext<ServerCommandSource> context, @NotNull EquipmentSlot slot) throws CommandSyntaxException {
-        return HoldingCommand.holding( context, slot,"" );
+        return HoldingCommand.holding(context, slot,"");
     }
     private static int handMessage(@NotNull CommandContext<ServerCommandSource> context, @NotNull EquipmentSlot slot) throws CommandSyntaxException {
-        return HoldingCommand.holding( context, slot, StringArgumentType.getString(context, "message") );
+        return HoldingCommand.holding(context, slot, StringArgumentType.getString(context, "message"));
     }
     private static int holding(@NotNull CommandContext<ServerCommandSource> context, @NotNull EquipmentSlot slot, String message) throws CommandSyntaxException {
         // Get player information

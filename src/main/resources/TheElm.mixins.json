@@ -6,6 +6,7 @@
   ],
   "server": [
     "Interfaces.WhitelistAccessor",
+    "Interfaces.PowderBlockAccessor",
     "Interfaces.LightningAccessor",
     
     "Commands.Ban",
@@ -18,7 +19,9 @@
     
     "Blocks.AbstractFurnace",
     "Blocks.BeeNest",
+    "Blocks.FireSpread",
     "Blocks.HopperBlock",
+    "Blocks.Lecterns",
     "Blocks.LootChest",
     "Blocks.LootChestEntity",
     "Blocks.Pistons",
@@ -52,6 +55,7 @@
     "Entities.EndermenFixes",
     "Entities.EndermenPickup",
     "Entities.EndermenPlace",
+    "Entities.Lightning",
     
     "Entities.FireballFix",
     "Entities.WitherBoss",
@@ -71,6 +75,7 @@
     "Player.Interaction.TamedLead",
     "Player.Interaction.MinecartLock",
     "Player.Interaction.MinecartRide",
+    "Player.Interaction.Paintings",
     "Player.Interaction.ShopSign",
     
     "Player.AnvilCost",

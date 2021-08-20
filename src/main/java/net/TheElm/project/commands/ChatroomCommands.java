@@ -35,6 +35,7 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.RankUtils;
@@ -59,36 +60,36 @@ public final class ChatroomCommands {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, "t", "Town Chat", builder -> builder
-            .requires((source) -> SewConfig.get(SewConfig.CHAT_MODIFY) && ClaimCommand.sourceInTown( source ))
+            .requires(CommandPredicate.isEnabled(SewConfig.CHAT_MODIFY).and(ClaimCommand::sourceInTown))
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
             .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
         );
         
         ServerCore.register(dispatcher, "g", "Global Chat", builder -> builder
-            .requires((source) -> SewConfig.get(SewConfig.CHAT_MODIFY))
+            .requires(CommandPredicate.isEnabled(SewConfig.CHAT_MODIFY))
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
             .executes((context -> switchToChatRoom(context, ChatRooms.GLOBAL)))
         );
         
         ServerCore.register(dispatcher, "l", "Local Chat", builder -> builder
-            .requires((source) -> SewConfig.get(SewConfig.CHAT_MODIFY))
+            .requires(CommandPredicate.isEnabled(SewConfig.CHAT_MODIFY))
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
             .executes((context -> switchToChatRoom(context, ChatRooms.LOCAL)))
         );
         
         ServerCore.register(dispatcher, "Chat", builder -> builder
             .then(CommandManager.literal("town")
-                .requires(( source ) -> SewConfig.get(SewConfig.CHAT_MODIFY) && ClaimCommand.sourceInTown( source ))
+                .requires(CommandPredicate.isEnabled(SewConfig.CHAT_MODIFY).and(ClaimCommand::sourceInTown))
                 .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
                 .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
             )
             .then(CommandManager.literal("global")
-                .requires(( source ) -> SewConfig.get(SewConfig.CHAT_MODIFY))
+                .requires(CommandPredicate.isEnabled(SewConfig.CHAT_MODIFY))
                 .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
                 .executes((context -> switchToChatRoom(context, ChatRooms.GLOBAL)))
             )
             .then(CommandManager.literal("local")
-                .requires(( source ) -> SewConfig.get(SewConfig.CHAT_MODIFY))
+                .requires(CommandPredicate.isEnabled(SewConfig.CHAT_MODIFY))
                 .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
                 .executes((context -> switchToChatRoom(context, ChatRooms.LOCAL)))
             )
@@ -97,11 +98,21 @@ public final class ChatroomCommands {
         // TODO: Add Mute permission node
         // TODO: Add shadow mute
         ServerCore.register(dispatcher, "Mute", builder -> builder
-            .requires(( source ) -> (SewConfig.get(SewConfig.CHAT_MODIFY)) && (SewConfig.get(SewConfig.CHAT_MUTE_SELF) || SewConfig.get(SewConfig.CHAT_MUTE_OP) && source.hasPermissionLevel( 3 )))
+            .requires(CommandPredicate.isEnabled(SewConfig.CHAT_MODIFY)
+                .and(
+                    CommandPredicate.isEnabled(SewConfig.CHAT_MUTE_SELF)
+                    .or(CommandPredicate.isEnabled(SewConfig.CHAT_MUTE_OP).and(OpLevels.KICK_BAN_OP))
+                )
+            )
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .suggests( CommandUtils::getOnlinePlayerNames )
+                .suggests(CommandUtils::getOnlinePlayerNames)
                 .then(CommandManager.literal("global")
-                    .requires(( source ) -> SewConfig.get(SewConfig.CHAT_MUTE_OP) && (source.hasPermissionLevel(OpLevels.KICK_BAN_OP) || RankUtils.hasPermission(source, Permissions.CHAT_COMMAND_MUTE)))
+                    .requires(CommandPredicate.isEnabled(SewConfig.CHAT_MUTE_OP)
+                        .and(
+                            CommandPredicate.opLevel(OpLevels.KICK_BAN_OP)
+                            .or(Permissions.CHAT_COMMAND_MUTE)
+                        )
+                    )
                     .executes(ChatroomCommands::opMute)
                 )
                 .executes(ChatroomCommands::playerMute)

@@ -5,7 +5,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.OpLevels;
-import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.s2c.play.EntityPassengersSetS2CPacket;
@@ -19,7 +19,7 @@ public final class RideCommand {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, "ride", builder -> builder
-            .requires(CommandUtils.requires(OpLevels.CHEATING))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("entity", EntityArgumentType.entity())
                 .executes(RideCommand::ride)
             )

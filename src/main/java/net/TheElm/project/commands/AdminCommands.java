@@ -37,9 +37,11 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
-import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.interfaces.CommandPredicate;
+import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.entity.player.HungerManager;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -54,6 +56,7 @@ public final class AdminCommands {
     public static final @NotNull String FLIGHT = "Fly";
     public static final @NotNull String GOD = "God";
     public static final @NotNull String HEAL = "Heal";
+    public static final @NotNull String FEED = "Feed";
     public static final @NotNull String REPAIR = "Repair";
     
     private static final ExceptionTranslatableServerSide PLAYERS_NOT_FOUND_EXCEPTION = TranslatableServerSide.exception("player.none_found");
@@ -63,43 +66,53 @@ public final class AdminCommands {
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         // Register the FLY command
         ServerCore.register(dispatcher, AdminCommands.FLIGHT, (builder) -> builder
-            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_FLY))
-            .then( CommandManager.argument( "target", EntityArgumentType.players())
-                .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_FLY.onOther()))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FLY))
+            .then( CommandManager.argument("target", EntityArgumentType.players())
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FLY.onOther()))
                 .executes(AdminCommands::targetFlying)
             )
             .executes(AdminCommands::selfFlying)
         );
         
         // Register the GOD command
-        ServerCore.register(dispatcher, AdminCommands.GOD, (builder) -> builder
-            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GODMODE))
+        ServerCore.register(dispatcher, AdminCommands.GOD, builder -> builder
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GODMODE))
             .then( CommandManager.argument( "target", EntityArgumentType.players())
-                .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GODMODE.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GODMODE.onOther()))
                 .executes(AdminCommands::targetGod)
             )
             .executes(AdminCommands::selfGod)
         );
         
         // Register the HEAL command
-        ServerCore.register(dispatcher, AdminCommands.HEAL, (builder) -> builder
-            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_HEAL))
-            .then( CommandManager.argument( "target", EntityArgumentType.players())
-                .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_HEAL.onOther()))
+        ServerCore.register(dispatcher, AdminCommands.HEAL, builder -> builder
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_HEAL))
+            .then(CommandManager.argument("target", EntityArgumentType.players())
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_HEAL.onOther()))
                 .executes(AdminCommands::targetHeal)
             )
             .executes(AdminCommands::selfHeal)
         );
         
+        // Register the FEED command
+        ServerCore.register(dispatcher, AdminCommands.FEED, builder -> builder
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FEED))
+            .then(CommandManager.argument("target", EntityArgumentType.players())
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FEED.onOther()))
+                .executes(AdminCommands::targetFeed)
+            )
+            .executes(AdminCommands::selfFeed)
+        );
+        
         // Register the HEAL command
-        ServerCore.register(dispatcher, AdminCommands.REPAIR, (builder) -> builder
-            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_REPAIR))
+        ServerCore.register(dispatcher, AdminCommands.REPAIR, builder -> builder
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_REPAIR))
             .executes(AdminCommands::selfRepair)
         );
         
         // Create DEBUG commands
-        if (CoreMod.isDebugging()) {
-            ServerCore.register(dispatcher, "Dragon Players", (builder) -> builder
+        if (DevUtils.isDebugging()) {
+            ServerCore.register(dispatcher, "Dragon Players", builder -> builder
                 .then(CommandManager.argument("count", IntegerArgumentType.integer( 0 ))
                     .executes((context) -> {
                         SewConfig.set(SewConfig.DRAGON_PLAYERS, ConfigOption.convertToJSON(
@@ -180,12 +193,12 @@ public final class AdminCommands {
         ServerCommandSource source = context.getSource();
         
         Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
-        if (players.size() <= 0 )
-            throw PLAYERS_NOT_FOUND_EXCEPTION.create( source );
+        if (players.size() <= 0)
+            throw PLAYERS_NOT_FOUND_EXCEPTION.create(source);
         return AdminCommands.healPlayer(source, players.stream());
     }
     private static int healPlayer(@NotNull ServerCommandSource source, @NotNull Stream<ServerPlayerEntity> players) {
-        players.forEach(player -> TranslatableServerSide.send(source, (AdminCommands.healPlayer(player)? "player.abilities.healed_other" : "player.abilities.healed_dead"), player.getDisplayName()));
+        players.forEach(player -> TranslatableServerSide.send(source, (AdminCommands.healPlayer(player) ? "player.abilities.healed_other" : "player.abilities.healed_dead"), player.getDisplayName()));
         return Command.SINGLE_SUCCESS;
     }
     private static boolean healPlayer(@NotNull ServerPlayerEntity player) {
@@ -196,6 +209,37 @@ public final class AdminCommands {
             
             // Tell the player
             TranslatableServerSide.send(player, "player.abilities.healed_self");
+        }
+        return alive;
+    }
+    
+    private static int selfFeed(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        AdminCommands.feedPlayer(source.getPlayer());
+        return Command.SINGLE_SUCCESS;
+    }
+    private static int targetFeed(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        
+        Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
+        if (players.size() <= 0)
+            throw PLAYERS_NOT_FOUND_EXCEPTION.create(source);
+        return AdminCommands.feedPlayer(source, players.stream());
+    }
+    private static int feedPlayer(@NotNull ServerCommandSource source, @NotNull Stream<ServerPlayerEntity> players) {
+        players.forEach(player -> TranslatableServerSide.send(source, (AdminCommands.feedPlayer(player) ? "player.abilities.fed_other" : "player.abilities.fed_dead"), player.getDisplayName()));
+        return Command.SINGLE_SUCCESS;
+    }
+    private static boolean feedPlayer(@NotNull ServerPlayerEntity player) {
+        boolean alive;
+        if (alive = player.isAlive()) {
+            HungerManager hungerManager = player.getHungerManager();
+            
+            // Feed the player
+            hungerManager.setFoodLevel(20);
+            
+            // Tell the player
+            TranslatableServerSide.send(player, "player.abilities.fed_self");
         }
         return alive;
     }

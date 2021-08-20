@@ -30,7 +30,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.OpLevels;
-import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.utilities.EntityUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
@@ -39,6 +39,7 @@ import net.minecraft.server.dedicated.command.StopCommand;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
@@ -51,10 +52,10 @@ public class Stop {
      * @param dispatcher Command Dispatcher
      */
     @Overwrite
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal( "stop" )
-            .requires(CommandUtils.requires(OpLevels.STOP))
-            .then( CommandManager.argument( "reason", StringArgumentType.greedyString())
+            .requires(CommandPredicate.opLevel(OpLevels.STOP))
+            .then(CommandManager.argument("reason", StringArgumentType.greedyString())
                 .executes((context) -> {
                     ServerCommandSource source = context.getSource();
                     MinecraftServer server = source.getMinecraftServer();

@@ -47,6 +47,8 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldView;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,15 +65,19 @@ public final class ChunkUtils {
     }
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // If claims are disabled
-        if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (player != null && player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)))
+        if (player != null && player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS))
             return true;
         
         // Check if player can do action in chunk
         return ChunkUtils.canPlayerDoInChunk(perm, EntityUtils.getUUID(player), chunk, blockPos);
     }
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable UUID playerId, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
+        if (!SewConfig.get(SewConfig.DO_CLAIMS))
+            return true;
+        
         // Return false (Chunks should never BE null, but this is our catch)
-        if ( chunk == null ) return false;
+        if ( chunk == null )
+            return false;
         
         // Check if player can do action in chunk
         return ((IClaimedChunk) chunk).canPlayerDo(blockPos, playerId, perm);
@@ -88,16 +94,29 @@ public final class ChunkUtils {
     }
     
     /**
+     * Check the database if a user can interact with doors within the specified chunk
+     * @param player The player to check
+     * @param blockPos The block position of the interaction
+     * @return If player can interact with doors
+     */
+    public static boolean canPlayerSleep(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.BEDS, player, blockPos);
+    }
+    public static boolean canPlayerSleep(@NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.BEDS, player, chunk, blockPos);
+    }
+    
+    /**
      * Check the database if a user can place/break blocks within the specified chunk
      * @param player The player to check
      * @param blockPos The block position of the interaction
      * @return If the player can break blocks
      */
     public static boolean canPlayerBreakInChunk(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.BLOCKS, player, blockPos );
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.BLOCKS, player, blockPos);
     }
     public static boolean canPlayerBreakInChunk(@Nullable UUID playerId, @NotNull World world, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.BLOCKS, playerId, world.getWorldChunk( blockPos ), blockPos );
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.BLOCKS, playerId, world.getWorldChunk(blockPos), blockPos);
     }
     
     /**
@@ -107,10 +126,10 @@ public final class ChunkUtils {
      * @return If the player can loot storages
      */
     public static boolean canPlayerLootChestsInChunk(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.STORAGE, player, blockPos );
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.STORAGE, player, blockPos);
     }
     public static boolean canPlayerLootChestsInChunk(@NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.STORAGE, player, chunk, blockPos );
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.STORAGE, player, chunk, blockPos);
     }
     
     /**
@@ -130,10 +149,23 @@ public final class ChunkUtils {
      * @return If player can interact with doors
      */
     public static boolean canPlayerToggleDoor(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.DOORS, player, blockPos );
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.DOORS, player, blockPos);
     }
     public static boolean canPlayerToggleDoor(@NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.DOORS, player, chunk, blockPos );
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.DOORS, player, chunk, blockPos);
+    }
+    
+    /**
+     * Check the database if a user can interact with redstone mechanisms within the specified chunk
+     * @param player The player to check
+     * @param blockPos The block position of the interaction
+     * @return If player can interact with mechanisms
+     */
+    public static boolean canPlayerToggleMechanisms(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.REDSTONE, player, blockPos);
+    }
+    public static boolean canPlayerToggleMechanisms(@NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
+        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.REDSTONE, player, chunk, blockPos);
     }
     
     /**
@@ -194,13 +226,13 @@ public final class ChunkUtils {
         return permReq.canPerform(userRank);
     }
     
-    public static boolean isSetting(@NotNull ClaimSettings setting, @NotNull World world, @NotNull BlockPos blockPos) {
-        WorldChunk chunk = world.getWorldChunk( blockPos );
-        if (chunk != null) {
+    public static boolean isSetting(@NotNull ClaimSettings setting, @NotNull WorldView world, @NotNull BlockPos blockPos) {
+        Chunk chunk = world.getChunk(blockPos);
+        if (chunk instanceof IClaimedChunk) {
             return ((IClaimedChunk) chunk)
                 .isSetting(blockPos, setting);
         }
-        return setting.getDefault( null );
+        return setting.getDefault(null);
     }
     
     /*
@@ -340,11 +372,12 @@ public final class ChunkUtils {
      * Chunk claim classes
      */
     public static final class ClaimSlice {
+        
         private final NavigableMap<Integer, InnerClaim> innerChunks = Collections.synchronizedNavigableMap(new TreeMap<>());
         private final int chunkPos;
         
-        public ClaimSlice(int chunkPos) {
-            this.innerChunks.put( -1, new InnerClaim(null));
+        public ClaimSlice(World world, int chunkPos) {
+            this.innerChunks.put(DimensionUtils.getWorldDepth(world) - 1, InnerClaim.WILDERNESS);
             this.chunkPos = chunkPos;
         }
         
@@ -375,7 +408,10 @@ public final class ChunkUtils {
         }
         
         public @NotNull InnerClaim get(int y) {
-            return this.innerChunks.floorEntry(y).getValue();
+            Map.Entry<Integer, InnerClaim> claim = this.innerChunks.floorEntry(y);
+            if (claim == null)
+                return InnerClaim.WILDERNESS;
+            return claim.getValue();
         }
         public @NotNull InnerClaim get(BlockPos blockPos) {
             return this.get(blockPos.getY());
@@ -427,7 +463,7 @@ public final class ChunkUtils {
         }
     }
     public static final class InnerClaim implements Claim {
-        
+        protected static final InnerClaim WILDERNESS = new InnerClaim(null);
         private final @Nullable ClaimantPlayer owner;
         private final int yUpper;
         private final int yLower;
@@ -448,9 +484,7 @@ public final class ChunkUtils {
             return this.getOwner() != null;
         }
         public @Nullable UUID getOwner() {
-            if (this.owner == null)
-                return null;
-            return this.owner.getId();
+            return this.owner == null ? null : this.owner.getId();
         }
         
         public int upper() {

@@ -31,10 +31,7 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.DragonLoot;
 import net.TheElm.project.interfaces.BossLootableContainer;
 import net.TheElm.project.protections.BlockRange;
-import net.TheElm.project.utilities.BossLootRewards;
-import net.TheElm.project.utilities.ChunkUtils;
-import net.TheElm.project.utilities.EntityUtils;
-import net.TheElm.project.utilities.TitleUtils;
+import net.TheElm.project.utilities.*;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
@@ -218,17 +215,25 @@ public abstract class DragonFight {
     public void dragonCreation(@NotNull CallbackInfoReturnable<EnderDragonEntity> callback) {
         EnderDragonEntity dragon = callback.getReturnValue();
         if (dragon != null)
-            MessageUtils.sendToAll(new LiteralText("A new Ender Dragon has arrived in The End.")
-                .formatted(Formatting.YELLOW, Formatting.ITALIC), EntityUtils::isNotInTheEnd);
+            MessageUtils.sendToAll(new LiteralText("An Ender Dragon has arrived in ")
+                .append(new LiteralText("The End").formatted(Formatting.GRAY))
+                .append("! Visit to join in on the fight.")
+                .formatted(Formatting.YELLOW, Formatting.ITALIC), EntityUtils::isNotFightingDragon);
     }
     
     @Inject(at = @At("TAIL"), method = "dragonKilled")
     public void dragonDestroyed(@NotNull EnderDragonEntity dragon, @NotNull CallbackInfo callback) {
         if (this.dragonUuid.equals(dragon.getUuid()))
             this.sewingMachineDragonShouldExist = false;
-        boolean giveLootReward = SewConfig.get(SewConfig.DRAGON_LOOT_END_ITEMS) || SewConfig.get(SewConfig.DRAGON_LOOT_RARE_BOOKS);
+        final boolean giveLootReward = SewConfig.get(SewConfig.DRAGON_LOOT_END_ITEMS) || SewConfig.get(SewConfig.DRAGON_LOOT_RARE_BOOKS);
         
-        MessageUtils.consoleToOps(new LiteralText("An Ender Dragon was slain by " + this.seenPlayers.size() + " player(s)."));
+        // Notify players not participating in the fight
+        int players = this.seenPlayers.size();
+        MessageUtils.sendToAll(new LiteralText("An Ender Dragon has been eradicated by ")
+            .append(new LiteralText((IntUtils.text(players)) + " player" + (players != 1 ? "s" : "")).formatted(Formatting.GOLD))
+            .append("!")
+            .formatted(Formatting.YELLOW, Formatting.ITALIC), EntityUtils::isNotFightingDragon);
+        
         this.seenPlayers.stream()
             .map(ServerCore::getPlayer)
             .filter(Objects::nonNull)
@@ -236,7 +241,7 @@ public abstract class DragonFight {
                 // Increase the dragon kill statistic
                 player.incrementStat(Stats.KILLED.getOrCreateStat(EntityType.ENDER_DRAGON));
                 
-                return giveLootReward && !BossLootRewards.DRAGON_LOOT.addLoot(player.getUuid(), DragonLoot.createReward());
+                return giveLootReward && !BossLootRewards.DRAGON_LOOT.addLoot(player.getUuid(), DragonLoot.createReward(player));
             })
             .forEach(player -> player.sendSystemMessage(new LiteralText("You were not rewarded a drop from killing the Ender Dragon, your loot chest is full.")
                 .formatted(Formatting.RED), Util.NIL_UUID));

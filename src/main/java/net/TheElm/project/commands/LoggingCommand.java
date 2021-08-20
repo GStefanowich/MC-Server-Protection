@@ -35,6 +35,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.interfaces.SQLFunction;
 import net.TheElm.project.protections.logging.EventLogger.BlockAction;
 import net.TheElm.project.utilities.CommandUtils;
@@ -67,10 +68,10 @@ public final class LoggingCommand {
     
     private LoggingCommand() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         if (( SewConfig.any(SewConfig.LOG_CHUNKS_CLAIMED, SewConfig.LOG_CHUNKS_UNCLAIMED) ) && ( SewConfig.any(SewConfig.LOG_BLOCKS_BREAKING, SewConfig.LOG_BLOCKS_PLACING) )) {
             ServerCore.register(dispatcher, "blocklog", builder -> builder
-                .requires(CommandUtils.requires(SewConfig.LOG_VIEW_OP_LEVEL))
+                .requires(CommandPredicate.opLevel(SewConfig.LOG_VIEW_OP_LEVEL))
                 .then(CommandManager.literal("pos")
                     .then(CommandManager.argument("dimension", DimensionArgumentType.dimension())
                         .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
@@ -86,7 +87,7 @@ public final class LoggingCommand {
                         .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
                             .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
                                 .then(CommandManager.argument("count", IntegerArgumentType.integer(1))
-                                        .executes(LoggingCommand::getFromRangeWithCount)
+                                    .executes(LoggingCommand::getFromRangeWithCount)
                                 )
                                 .executes(LoggingCommand::getFromRange)
                             )
@@ -97,7 +98,7 @@ public final class LoggingCommand {
                     .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtils::getAllPlayerNames)
                         .then(CommandManager.argument("count", IntegerArgumentType.integer(1))
-                                .executes(LoggingCommand::getByPlayerWithCount)
+                            .executes(LoggingCommand::getByPlayerWithCount)
                         )
                         .executes(LoggingCommand::getByPlayer)
                     )
@@ -106,19 +107,19 @@ public final class LoggingCommand {
         }
     }
     
-    private static int getBlockHistory(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int getBlockHistory(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return LoggingCommand.getBlockHistorySize(
             context,
             5
         );
     }
-    private static int getBlockHistoryWithCount(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int getBlockHistoryWithCount(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return LoggingCommand.getBlockHistorySize(
             context,
             IntegerArgumentType.getInteger(context, "count")
         );
     }
-    private static int getBlockHistorySize(CommandContext<ServerCommandSource> context, int limit) throws CommandSyntaxException {
+    private static int getBlockHistorySize(@NotNull CommandContext<ServerCommandSource> context, int limit) throws CommandSyntaxException {
         ServerWorld world = DimensionArgumentType.getDimensionArgument(context, "dimension");
         BlockPos blockPos = BlockPosArgumentType.getBlockPos(context, "pos");
         
@@ -164,19 +165,19 @@ public final class LoggingCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int getFromRange(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int getFromRange(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return LoggingCommand.searchForUsedItems(
             context,
             5
         );
     }
-    private static int getFromRangeWithCount(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int getFromRangeWithCount(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return LoggingCommand.searchForUsedItems(
             context,
             IntegerArgumentType.getInteger(context, "count")
         );
     }
-    private static int searchForUsedItems(CommandContext<ServerCommandSource> context, int limit) throws CommandSyntaxException {
+    private static int searchForUsedItems(@NotNull CommandContext<ServerCommandSource> context, int limit) throws CommandSyntaxException {
         ServerWorld world = DimensionArgumentType.getDimensionArgument(context, "dimension");
         BlockPos centerPos = BlockPosArgumentType.getBlockPos(context, "pos");
         Item item = ItemStackArgumentType.getItemStackArgument(context, "item").getItem();
@@ -228,19 +229,19 @@ public final class LoggingCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int getByPlayer(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int getByPlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return LoggingCommand.searchForPlayer(
             context,
             5
         );
     }
-    private static int getByPlayerWithCount(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int getByPlayerWithCount(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return LoggingCommand.searchForPlayer(
             context,
             IntegerArgumentType.getInteger(context, "count")
         );
     }
-    private static int searchForPlayer(CommandContext<ServerCommandSource> context, int limit) throws CommandSyntaxException {
+    private static int searchForPlayer(@NotNull CommandContext<ServerCommandSource> context, int limit) throws CommandSyntaxException {
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument( context, "player" );
         GameProfile player = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         

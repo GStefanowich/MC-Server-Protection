@@ -31,10 +31,13 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import net.TheElm.project.CoreMod;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.nbt.Tag;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
@@ -42,6 +45,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public final class GuideUtils {
     
@@ -55,20 +60,20 @@ public final class GuideUtils {
         return guideInformation.get("title").getAsString();
     }
     
-    private Collection<StringTag> getAllPageContents() {
+    private @NotNull Collection<StringTag> getAllPageContents() {
         ArrayList<StringTag> list = new ArrayList<>();
         JsonArray pages = this.guideInformation.getAsJsonArray("pages");
         
         // For each page
         for (JsonElement page : pages) {
-            list.add(StringTag.of( page.toString() ));
+            list.add(StringTag.of(page.toString()));
         }
         
         return list;
     }
-    public Tag getPages() {
+    public @NotNull Tag getPages() {
         ListTag pages = new ListTag();
-        pages.addAll( this.getAllPageContents() );
+        pages.addAll(this.getAllPageContents());
         return pages;
     }
     
@@ -102,7 +107,7 @@ public final class GuideUtils {
         return bookAuthor;
     }
     
-    public Tag getBookLore() {
+    public @NotNull Tag getBookLore() {
         // Json
         JsonObject json = new JsonObject();
         json.addProperty("text", this.getBookDescription());
@@ -116,7 +121,18 @@ public final class GuideUtils {
         return lore;
     }
     
-    public void writeCustomDataToTag(CompoundTag nbt) {
+    public @NotNull ItemStack newStack() {
+        // Create the object
+        ItemStack book = new ItemStack(Items.WRITTEN_BOOK);
+        CompoundTag nbt = book.getOrCreateTag();
+        
+        // Write the guide data to NBT
+        this.writeCustomDataToTag(nbt);
+        
+        return book;
+    }
+    
+    public void writeCustomDataToTag(@NotNull CompoundTag nbt) {
         // Put Basic Information
         nbt.putString("author", this.getAuthorOrDefault("Server"));
         nbt.putString("title", this.getTitle());
@@ -130,12 +146,20 @@ public final class GuideUtils {
         nbt.put("display", display);
     }
     
-    @Nullable
-    public static GuideUtils getBook(String name) throws JsonSyntaxException {
+    public static @Nullable GuideUtils getBook(@NotNull String name) throws JsonSyntaxException {
         JsonObject fileContents = GuideUtils.readBooksFile();
-        if (!fileContents.has( name.toLowerCase() ))
+        if (!fileContents.has(name.toLowerCase() ))
             return null;
-        return new GuideUtils( fileContents.getAsJsonObject( name.toLowerCase() ) );
+        return new GuideUtils(fileContents.getAsJsonObject(name.toLowerCase()));
+    }
+    public static @NotNull Collection<String> getBooks() {
+        JsonObject fileContents = GuideUtils.readBooksFile();
+        List<String> list = new ArrayList<>();
+        
+        for (Map.Entry<String, JsonElement> entry : fileContents.entrySet())
+            list.add(entry.getKey());
+        
+        return list;
     }
     private static JsonObject readBooksFile() throws JsonSyntaxException {
         // Get file locations

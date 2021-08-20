@@ -44,11 +44,13 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
@@ -67,6 +69,11 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
     
     private WeakReference<ClaimantTown> chunkTown = null;
     private ClaimantPlayer chunkPlayer = null;
+    
+    @Shadow @Final
+    private World world;
+    @Shadow @Final
+    private ChunkPos pos;
     
     @Override
     public ClaimantTown updateTownOwner(@Nullable UUID owner, boolean fresh) {
@@ -121,7 +128,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         
         ClaimSlice slice;
         if ((slice = this.claimSlices[slicePos]) == null)
-            slice = (this.claimSlices[slicePos] = new ClaimSlice(slicePos));
+            slice = (this.claimSlices[slicePos] = new ClaimSlice(this.world, slicePos));
         
         // Get upper and lower positioning
         int yMax = Math.max(yFrom, yTo);

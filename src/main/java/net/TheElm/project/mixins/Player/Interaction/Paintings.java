@@ -23,10 +23,29 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.interfaces;
+package net.TheElm.project.mixins.Player.Interaction;
 
-public interface SleepingWorld {
+import net.TheElm.project.utilities.ChunkUtils;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.entity.decoration.AbstractDecorationEntity;
+import net.minecraft.entity.decoration.painting.PaintingEntity;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.world.World;
+import org.spongepowered.asm.mixin.Mixin;
+
+/**
+ * Created on Aug 18 2021 at 1:38 PM.
+ * By greg in SewingMachineMod
+ */
+@Mixin(PaintingEntity.class)
+public abstract class Paintings extends AbstractDecorationEntity {
+    protected Paintings(EntityType<? extends AbstractDecorationEntity> entityType, World world) {
+        super(entityType, world);
+    }
     
-    void updatePlayersSleeping();
-    
+    @Override
+    public boolean damage(DamageSource source, float amount) {
+        return (!(source.getAttacker() instanceof PlayerEntity) || ChunkUtils.canPlayerBreakInChunk((PlayerEntity) source.getAttacker(), this.getBlockPos())) && super.damage(source, amount);
+    }
 }

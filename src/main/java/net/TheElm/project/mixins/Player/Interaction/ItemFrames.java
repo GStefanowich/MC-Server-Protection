@@ -58,8 +58,8 @@ import java.util.Collections;
 @Mixin(ItemFrameEntity.class)
 public abstract class ItemFrames extends AbstractDecorationEntity {
     
-    protected ItemFrames(EntityType<? extends AbstractDecorationEntity> entityType_1, World world_1) {
-        super(entityType_1, world_1);
+    protected ItemFrames(EntityType<? extends AbstractDecorationEntity> entityType, World world) {
+        super(entityType, world);
     }
     
     @Override
@@ -77,7 +77,7 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
         ItemFrameEntity itemFrame = (ItemFrameEntity)(AbstractDecorationEntity) this;
         
         // Do special item frame interaction if NOT CROUCHING and HOLDING A TOOL
-        if (!( player.isSneaking() && player.getStackInHand(hand).isDamageable() )) {
+        if (!( player.isSneaking() && player.getStackInHand(hand).isDamageable())) {
             Direction direction = itemFrame.getHorizontalFacing().getOpposite();
             
             // Get the item in the item frame

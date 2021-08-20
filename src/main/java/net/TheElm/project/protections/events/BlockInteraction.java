@@ -56,6 +56,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
+import net.minecraft.util.Lazy;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -73,11 +74,13 @@ public final class BlockInteraction {
         BlockInteractionCallback.EVENT.register(BlockInteraction::blockInteract);
     }
     
-    private static ActionResult blockInteract(ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack, BlockHitResult blockHitResult) {
+    private static ActionResult blockInteract(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
         BlockPos blockPos = blockHitResult.getBlockPos();
         final BlockState blockState = world.getBlockState(blockPos);
         final Block block = blockState.getBlock();
         final BlockEntity blockEntity = world.getBlockEntity(blockPos);
+
+        final Lazy<WorldChunk> claimedChunkInfo = new Lazy<>(() -> player.getEntityWorld().getWorldChunk(blockPos));
         
         // Check if the block interacted with is a sign (For shop signs)
         if ( blockEntity instanceof ShopSignData && blockEntity instanceof SignBlockEntity) {
@@ -104,16 +107,21 @@ public final class BlockInteraction {
             }
         }
         
-        // Get the permission of the block
-        ClaimPermissions blockPermission;
-        
-        // If block is a button, door, trapdoor, or gate
-        if ( block instanceof AbstractButtonBlock || block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock) {
-            WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk( blockPos );
-            
+        // If block is a button or lever
+        if (block instanceof AbstractButtonBlock || block instanceof LeverBlock) {
             if ((!SewConfig.get(SewConfig.DO_CLAIMS))
                 || (SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
-                || ChunkUtils.canPlayerToggleDoor( player, claimedChunkInfo, blockPos ))
+                || ChunkUtils.canPlayerToggleMechanisms(player, claimedChunkInfo.get(), blockPos))
+            {
+                return ActionResult.PASS;
+            }
+        }
+        
+        // If block is a button, door, trapdoor, or gate
+        if (block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock) {
+            if ((!SewConfig.get(SewConfig.DO_CLAIMS))
+                || (SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
+                || ChunkUtils.canPlayerToggleDoor(player, claimedChunkInfo.get(), blockPos))
             {
                 // Toggle double doors
                 if ((!player.isSneaking()) && block instanceof DoorBlock && (blockState.getMaterial() != Material.METAL)) {
@@ -146,15 +154,15 @@ public final class BlockInteraction {
         }
         
         // If the block is something that can be accessed (Like a chest)
-        if ( (!player.isSneaking() || (!(itemStack.getItem() instanceof BlockItem || itemStack.getItem() instanceof BucketItem))) ) {
+        if ( (!player.shouldCancelInteraction() || (!(itemStack.getItem() instanceof BlockItem || itemStack.getItem() instanceof BucketItem))) ) {
             if ( player.isSpectator() || (blockEntity instanceof EnderChestBlockEntity))
                 return ActionResult.PASS;
             
+            // Get the permission of the block
+            ClaimPermissions blockPermission;
             if ((((blockPermission = EntityUtils.getLockPermission(blockEntity)) != null) || ((blockPermission = EntityUtils.getLockPermission(block)) != null))) {
-                WorldChunk claimedChunkInfo = player.getEntityWorld().getWorldChunk(blockPos);
-                
                 // Check if allowed to open storages in this location
-                if (ChunkUtils.canPlayerDoInChunk(blockPermission, player, claimedChunkInfo, blockPos)) {
+                if (ChunkUtils.canPlayerDoInChunk(blockPermission, player, claimedChunkInfo.get(), blockPos)) {
                     // Check if the chest is NOT part of a shop, Or the player owns that shop
                     ShopSignData shopSign;
                     if ((!EntityUtils.isValidShopContainer(blockEntity)) || ((shopSign = EntityUtils.getAttachedShopSign(world, blockPos)) == null) || player.getUuid().equals(shopSign.getShopOwner()))
@@ -167,7 +175,7 @@ public final class BlockInteraction {
                 // Display that this item can't be opened
                 TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
                     EntityUtils.getLockedName(block),
-                    (claimedChunkInfo == null ? new LiteralText("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) claimedChunkInfo).getOwnerName(player, blockPos))
+                    (claimedChunkInfo.get() == null ? new LiteralText("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) claimedChunkInfo.get()).getOwnerName(player, blockPos))
                 ));
                 
                 return ActionResult.FAIL;

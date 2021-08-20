@@ -95,7 +95,7 @@ public class AvoidRainGoal extends Goal {
         for( int i = 0; i < 10; ++i ) {
             BlockPos goalPos = blockPos.add( rand.nextInt(20) - 10, rand.nextInt(6) - 3, rand.nextInt(20) - 10 );
             if (!this.world.isSkyVisible(goalPos) && (!this.world.isWater(goalPos)) && this.mob.getPathfindingFavor(goalPos) < 0.0F) {
-                return new Vec3d(goalPos.getX(), goalPos.getY(), goalPos.getZ());
+                return Vec3d.ofBottomCenter(goalPos);
             }
         }
         

@@ -105,23 +105,26 @@ public final class EntityAttack {
                 // Get the item in the item frame
                 ItemStack itemStack = itemFrame.getHeldItemStack();
                 
-                // Get blocks
-                BlockPos containerPos = itemFrame.getBlockPos().offset(direction, 1);
-                Block containerBlock = world.getBlockState(containerPos).getBlock();
-                
-                // If the block behind the item frame is a storage
-                if (containerBlock instanceof ChestBlock || containerBlock instanceof BarrelBlock) {
-                    // Check chunk permissions
-                    if (!ChunkUtils.canPlayerLootChestsInChunk(player, containerPos))
-                        return ActionResult.FAIL;
+                // If the sign actually has an item on it
+                if (!itemStack.isEmpty()) {
+                    // Get blocks
+                    BlockPos containerPos = itemFrame.getBlockPos().offset(direction, 1);
+                    Block containerBlock = world.getBlockState(containerPos).getBlock();
                     
-                    Inventory containerInventory = InventoryUtils.getInventoryOf(world, containerPos);
-                    if (containerInventory != null) {
-                        // The amount the player wants to take
-                        int takeStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
-
-                        InventoryUtils.chestToPlayer((ServerPlayerEntity) player, containerPos, containerInventory, player.inventory, itemStack, takeStackSize);
-                        return ActionResult.FAIL;
+                    // If the block behind the item frame is a storage
+                    if (containerBlock instanceof ChestBlock || containerBlock instanceof BarrelBlock) {
+                        // Check chunk permissions
+                        if (!ChunkUtils.canPlayerLootChestsInChunk(player, containerPos))
+                            return ActionResult.FAIL;
+                        
+                        Inventory containerInventory = InventoryUtils.getInventoryOf(world, containerPos);
+                        if (containerInventory != null) {
+                            // The amount the player wants to take
+                            int takeStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
+                            
+                            InventoryUtils.chestToPlayer((ServerPlayerEntity) player, containerPos, containerInventory, player.inventory, itemStack, takeStackSize);
+                            return ActionResult.FAIL;
+                        }
                     }
                 }
                 
@@ -173,15 +176,16 @@ public final class EntityAttack {
                 target.playSound(EntityUtils.getLockSound(target), 0.5f, 1);
             
         } else if (attacker instanceof CreeperEntity) {
-            final CreeperEntity creeper = (CreeperEntity) attacker;
-            
             // Protect item frames if creeper damage is off
             if (target instanceof ItemFrameEntity) {
                 ItemFrameEntity itemFrame = (ItemFrameEntity) target;
                 WorldChunk chunk = world.getWorldChunk(itemFrame.getBlockPos());
                 if ((chunk == null) || ((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.CREEPER_GRIEFING))
                     return ActionResult.PASS;
+            } else {
+                return ActionResult.PASS;
             }
+            
         } else {
             // Pass for all other entity attackers
             return ActionResult.PASS;

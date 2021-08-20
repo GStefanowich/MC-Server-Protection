@@ -39,6 +39,7 @@ import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.utilities.*;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.network.MessageType;
@@ -71,9 +72,9 @@ public final class MoneyCommand {
          * Player Pay
          */
         LiteralCommandNode<ServerCommandSource> pay = ServerCore.register(dispatcher, "pay", builder -> builder
-            .requires((source) -> SewConfig.get(SewConfig.DO_MONEY))
-            .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
-                .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
+            .requires(CommandPredicate.isEnabled(SewConfig.DO_MONEY))
+            .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
+                .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                     .suggests( CommandUtils::getAllPlayerNames )
                     .executes( MoneyCommand::commandMoneyPay )
                 )
@@ -84,11 +85,11 @@ public final class MoneyCommand {
          * Player Money Management
          */
         ServerCore.register(dispatcher, "money", builder -> builder
-            .requires((source) -> SewConfig.get(SewConfig.DO_MONEY))
+            .requires(CommandPredicate.isEnabled(SewConfig.DO_MONEY))
             // Admin GIVE money (Adds money)
             .then(CommandManager.literal("give")
                 // If player is OP
-                .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                 .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                     .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtils::getAllPlayerNames)
@@ -97,9 +98,9 @@ public final class MoneyCommand {
                 )
             )
             // Admin TAKES money (Removes money)
-            .then( CommandManager.literal("take")
+            .then(CommandManager.literal("take")
                 // If player is OP
-                .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                 .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                     .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtils::getAllPlayerNames)
@@ -108,34 +109,34 @@ public final class MoneyCommand {
                 )
             )
             // Admin SET money (Sets amount)
-            .then( CommandManager.literal("set" )
+            .then(CommandManager.literal("set")
                 // If player is OP
-                .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
-                .then( CommandManager.argument( "amount", IntegerArgumentType.integer() )
-                    .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                        .suggests( CommandUtils::getAllPlayerNames )
-                        .executes( MoneyCommand::commandAdminSet )
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
+                .then(CommandManager.argument("amount", IntegerArgumentType.integer())
+                    .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                        .suggests(CommandUtils::getAllPlayerNames)
+                        .executes(MoneyCommand::commandAdminSet)
                     )
                 )
             )
             // Admin RESET money ()
-            .then( CommandManager.literal( "reset" )
+            .then(CommandManager.literal("reset")
                 // If player is OP
-                .requires((resource) -> resource.hasPermissionLevel(OpLevels.CHEATING))
-                .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                    .suggests( CommandUtils::getAllPlayerNames )
-                    .executes( MoneyCommand::commandAdminReset )
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
+                .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                    .suggests(CommandUtils::getAllPlayerNames)
+                    .executes(MoneyCommand::commandAdminReset)
                 )
             )
             // Player PAY money (Transfers money)
-            .then( pay )
+            .then(pay)
             
             // Player REQUEST money (Send player a request)
-            .then( CommandManager.literal( "request" )
-                .then( CommandManager.argument( "amount", IntegerArgumentType.integer( 0 ) )
-                    .then( CommandManager.argument( "player", GameProfileArgumentType.gameProfile() )
-                        .suggests( CommandUtils::getAllPlayerNames )
-                        .executes( MoneyCommand::commandMoneyRequest )
+            .then(CommandManager.literal("request")
+                .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
+                    .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
+                        .suggests(CommandUtils::getAllPlayerNames)
+                        .executes(MoneyCommand::commandMoneyRequest)
                     )
                 )
             )
@@ -171,7 +172,7 @@ public final class MoneyCommand {
                 );
                 
                 // Notify the player
-                MoneyCommand.tellPlayersTransaction(null, target, amount);
+                MoneyCommand.tellPlayersTransaction(op.getMinecraftServer(),null, target, amount);
             }
         } catch (NbtNotFoundException e) {
             throw PLAYER_NOT_FOUND.create(op);
@@ -205,7 +206,7 @@ public final class MoneyCommand {
                 );
                 
                 // Notify the player
-                MoneyCommand.tellPlayersTransaction(null, target, -amount);
+                MoneyCommand.tellPlayersTransaction(op.getMinecraftServer(), null, target, -amount);
             }
         } catch (NbtNotFoundException e) {
             throw PLAYER_NOT_FOUND.create( op );
@@ -243,10 +244,10 @@ public final class MoneyCommand {
                 );
                 
                 // Notify the player
-                MoneyCommand.tellPlayersTransaction(null, target, amount - balance);
+                MoneyCommand.tellPlayersTransaction(op.getMinecraftServer(), null, target, amount - balance);
             }
         } catch (NbtNotFoundException e) {
-            throw PLAYER_NOT_FOUND.create( op );
+            throw PLAYER_NOT_FOUND.create(op);
         }
         
         return Command.SINGLE_SUCCESS;
@@ -297,12 +298,12 @@ public final class MoneyCommand {
         boolean took = false;
         boolean sent = false;
         try {
-            if (took = MoneyUtils.takePlayerMoney( player, amount )) {
+            if (took = MoneyUtils.takePlayerMoney(player, amount)) {
                 // Give player money
-                sent = MoneyUtils.givePlayerMoney( target.getId(), amount );
+                sent = MoneyUtils.givePlayerMoney(target.getId(), amount);
                 
                 // Alert players
-                MoneyCommand.tellPlayersTransaction( player, target, amount );
+                MoneyCommand.tellPlayersTransaction(commandSource.getMinecraftServer(), player, target, amount);
             }
         } catch ( NbtNotFoundException e ) {
             throw PLAYER_NOT_FOUND.create(player);
@@ -313,10 +314,10 @@ public final class MoneyCommand {
         } finally {
             // Refund
             if (took && (!sent))
-                MoneyUtils.givePlayerMoney( player, amount );
+                MoneyUtils.givePlayerMoney(player, amount);
         }
         
-        return MoneyCommand.commandMoneyGet( context );
+        return MoneyCommand.commandMoneyGet(context);
     }
     
     private static int commandMoneyRequest(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -334,7 +335,7 @@ public final class MoneyCommand {
         int amount = IntegerArgumentType.getInteger(context, "amount");
         if (target == null) {
             // Player not online
-            throw PLAYER_NOT_FOUND.create( player );
+            throw MoneyCommand.PLAYER_NOT_FOUND.create(player);
         } else {
             // Send the pay request
             player.sendSystemMessage(new LiteralText("Sent request to ").append(ColorUtils.format(target.getDisplayName(), Formatting.AQUA)).formatted(Formatting.YELLOW), Util.NIL_UUID);
@@ -344,7 +345,7 @@ public final class MoneyCommand {
                     .append(" is requesting ")
                     .append(new LiteralText("$" + NumberFormat.getInstance().format(amount)).formatted(Formatting.AQUA))
                     .append(" from you. ")
-                    .append(new LiteralText("Click Here").formatted(Formatting.BLUE, Formatting.BOLD).styled((style) -> style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pay " + amount + " " + player.getName().asString()))))
+                    .append(new LiteralText("Click Here").formatted(Formatting.BLUE, Formatting.BOLD).styled((style) -> style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pay " + amount + " " + player.getName().getString()))))
                     .append(" to pay."),
                 MessageType.CHAT,
                 player.getUuid()
@@ -377,13 +378,12 @@ public final class MoneyCommand {
     /*
      * Money adaptation
      */
-    public static void tellPlayersTransaction(@Nullable ServerPlayerEntity payer, @NotNull GameProfile recipient, long amount ) {
-        MinecraftServer server = ServerCore.get();
+    public static void tellPlayersTransaction(@NotNull MinecraftServer server, @Nullable ServerPlayerEntity payer, @NotNull GameProfile recipient, long amount ) {
         if (amount == 0) return;
         
         // Get the recipient and notify them if they are online
         PlayerManager playerManager = server.getPlayerManager();
-        ServerPlayerEntity recipientEntity = playerManager.getPlayer( recipient.getId() );
+        ServerPlayerEntity recipientEntity = playerManager.getPlayer(recipient.getId());
         if ( recipientEntity != null ) {
             if (payer == null) {
                 TitleUtils.showPlayerAlert(recipientEntity, ( amount > 0 ? Formatting.GREEN : Formatting.RED ),

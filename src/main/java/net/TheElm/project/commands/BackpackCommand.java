@@ -33,6 +33,7 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.interfaces.BackpackCarrier;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.argument.ItemStackArgumentType;
@@ -61,7 +62,7 @@ public final class BackpackCommand {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("backpack")
-            .requires((context) -> SewConfig.get(SewConfig.ALLOW_BACKPACKS))
+            .requires(CommandPredicate.isEnabled(SewConfig.ALLOW_BACKPACKS))
             .then(CommandManager.literal("pickup")
                 .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
                     .executes(BackpackCommand::autoPickup)

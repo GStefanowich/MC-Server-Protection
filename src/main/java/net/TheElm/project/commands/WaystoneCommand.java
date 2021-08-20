@@ -33,9 +33,13 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.datafixers.util.Either;
 import net.TheElm.project.ServerCore;
+import net.TheElm.project.blocks.entities.LecternWarpsBlockEntity;
 import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.utilities.BlockUtils;
 import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
@@ -60,6 +64,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
@@ -72,7 +77,7 @@ public class WaystoneCommand {
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, "waystones", builder -> builder
             .then(CommandManager.literal("set")
-                .requires(CommandUtils.requires(OpLevels.CHEATING))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                 .then(CommandManager.argument("player", EntityArgumentType.player())
                     .then(CommandManager.argument("location", StringArgumentType.string())
                         .suggests(WaystoneCommand::getPlayerEntityLocations)
@@ -81,7 +86,7 @@ public class WaystoneCommand {
                 )
             )
             .then(CommandManager.literal("remove")
-                .requires(CommandUtils.requires(OpLevels.CHEATING))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                 .then(CommandManager.argument("player", EntityArgumentType.player())
                     .then(CommandManager.argument("location", StringArgumentType.string())
                         .suggests(WaystoneCommand::getPlayerEntityLocations)
@@ -90,7 +95,7 @@ public class WaystoneCommand {
                 )
             )
             .then(CommandManager.literal("send")
-                .requires(CommandUtils.requires(OpLevels.CHEATING))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                 .then(CommandManager.argument("players", EntityArgumentType.players())
                     .then(CommandManager.argument("to", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtils::getAllPlayerNames)
@@ -101,6 +106,12 @@ public class WaystoneCommand {
                         .executes(WaystoneCommand::sendPlayersTo)
                     )
                     .executes(WaystoneCommand::sendHome)
+                )
+            )
+            .then(CommandManager.literal("lectern")
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
+                .then(CommandManager.literal("set")
+                    .executes(WaystoneCommand::updateLecternToWarpBook)
                 )
             )
         );
@@ -170,7 +181,7 @@ public class WaystoneCommand {
             }
             
             // Teleport the player to their warp
-            WarpUtils.Warp warp = WarpUtils.teleportPlayer(player, null);
+            WarpUtils.Warp warp = WarpUtils.teleportPlayerAndAttached(player, null);
             
             // Provide feedback about the teleport
             TeleportsCommand.feedback(player, warp);
@@ -206,7 +217,7 @@ public class WaystoneCommand {
         
         // Teleport all of the players
         for (ServerPlayerEntity porter : players) {
-            WarpUtils.teleportPlayer(warp, porter);
+            WarpUtils.teleportPlayerAndAttached(warp, porter);
             
             TeleportsCommand.feedback(porter, target, warp);
             
@@ -224,6 +235,32 @@ public class WaystoneCommand {
         }
         
         return players.size();
+    }
+    
+    private static int updateLecternToWarpBook(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        
+        Either<LecternWarpsBlockEntity, String> either = BlockUtils.getLecternBlockEntity(
+            source.getWorld(),
+            source.getEntityOrThrow(),
+            LecternWarpsBlockEntity.class, LecternWarpsBlockEntity::new
+        );
+        Optional<LecternWarpsBlockEntity> optionalLectern = either.left();
+        Optional<String> error = either.right();
+        
+        if (error.isPresent())
+            source.sendError(new LiteralText(error.get()));
+        else if (optionalLectern.isPresent()) {
+            LecternWarpsBlockEntity warps = optionalLectern.get();
+            
+            // Run the created state
+            warps.onCreated();
+            
+            source.sendFeedback(new LiteralText("Updated lectern to show player warps.")
+                .formatted(Formatting.YELLOW), true);
+            return Command.SINGLE_SUCCESS;
+        }
+        return 0;
     }
     
     private static @NotNull CompletableFuture<Suggestions> getPlayerEntityLocations(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {

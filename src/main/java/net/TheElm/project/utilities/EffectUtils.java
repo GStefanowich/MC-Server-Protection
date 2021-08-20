@@ -25,6 +25,7 @@
 
 package net.TheElm.project.utilities;
 
+import net.TheElm.project.interfaces.LogicalWorld;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.pathing.Path;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
@@ -41,108 +42,119 @@ import org.jetbrains.annotations.NotNull;
 
 public final class EffectUtils {
     
+    private static final int TICK_DELAY = 2;
+    private static final int TOTAL_STEPS = 16;
+    private static final double TWO_PI = Math.PI * 2;
+    private static final double PER_STEP = EffectUtils.TWO_PI / EffectUtils.TOTAL_STEPS;
+    
     private EffectUtils() {}
     
-    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final LivingEntity mob) {
-        EffectUtils.particleSwirl( particle, mob, 1 );
+    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final LivingEntity mob, final boolean up) {
+        EffectUtils.particleSwirl(particle, mob, up, 1);
     }
-    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final LivingEntity mob, final int count) {
+    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final LivingEntity mob, final boolean up, final int count) {
         if (mob.world.isClient)
             return;
-        new Thread(() -> {
-            ServerWorld world = (ServerWorld)mob.getEntityWorld();
-            try {
-                
-                int counter = 0;
-                int steps = 16;
-                double TWO_PI = Math.PI * 2;
-                double step = TWO_PI / steps;
+        ((LogicalWorld)mob.world).addTickableEvent(event -> {
+            int ticks = event.getTicks();
+            if (event.isRemoved() || (ticks / EffectUtils.TICK_DELAY) > EffectUtils.TOTAL_STEPS)
+                return true;
+            if (ticks % EffectUtils.TICK_DELAY == 0) {
+                int current = ticks / EffectUtils.TICK_DELAY;
+                int counter = up ? 0 : 15;
                 float radius = mob.getWidth() + 1.5f;
                 
-                for ( double theta = 0; theta <= TWO_PI; theta += step ) {
-                    EffectUtils.summonSwirl(
-                        particle,
-                        world,
-                        mob.getPos(),
-                        mob.getVelocity(),
-                        (((double) ++counter / steps) * mob.getHeight()),
-                        theta,
-                        step,
-                        radius,
-                        count
-                    );
-                    
-                    Thread.sleep( 75 );
-                }
+                double theta = current * EffectUtils.PER_STEP;
+                double height = (((double)(up ? counter + current : counter - current) / EffectUtils.TOTAL_STEPS) * mob.getHeight());
                 
-            } catch(InterruptedException ignore) {}
-        }).start();
+                EffectUtils.summonSwirl(
+                    particle,
+                    event.getWorld(),
+                    mob.getPos(),
+                    mob.getVelocity(),
+                    height,
+                    theta,
+                    EffectUtils.PER_STEP,
+                    radius,
+                    count
+                );
+            }
+            return false;
+        });
     }
     
-    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final ServerWorld world, final Vec3d mobPos) {
-        EffectUtils.particleSwirl(particle, world, mobPos, 1);
+    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final ServerWorld world, final Vec3d mobPos, final boolean up) {
+        EffectUtils.particleSwirl(particle, world, mobPos, up, 1);
     }
-    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final ServerWorld world, final Vec3d mobPos, final int count) {
-        new Thread(() -> {
-            try {
-                int counter = 0;
-                int steps = 16;
-                double TWO_PI = Math.PI * 2;
-                double step = TWO_PI / steps;
+    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final ServerWorld world, final Vec3d mobPos, final boolean up, final int count) {
+        if (world.isClient)
+            return;
+        ((LogicalWorld)world).addTickableEvent(event -> {
+            int ticks = event.getTicks();
+            if (event.isRemoved() || (ticks / EffectUtils.TICK_DELAY) > EffectUtils.TOTAL_STEPS)
+                return true;
+            if (ticks % EffectUtils.TICK_DELAY == 0) {
+                int current = ticks / EffectUtils.TICK_DELAY;
+                int counter = up ? 0 : 15;
                 float radius = 1.5f;
                 
-                for ( double theta = 0; theta <= TWO_PI; theta += step ) {
-                    EffectUtils.summonSwirl(
-                        particle,
-                        world,
-                        mobPos,
-                        new Vec3d( 0, 0, 0 ),
-                        (((double) ++counter / steps) * 2),
-                        theta,
-                        step,
-                        radius,
-                        count
-                    );
-                    
-                    Thread.sleep( 75 );
-                }
-            } catch(InterruptedException ignore) {}
-        }).start();
+                double theta = current * EffectUtils.PER_STEP;
+                double height = (((double)(up ? counter + current : counter - current) / EffectUtils.TOTAL_STEPS) * 2);
+                
+                EffectUtils.summonSwirl(
+                    particle,
+                    world,
+                    mobPos,
+                    Vec3d.ZERO,
+                    height,
+                    theta,
+                    EffectUtils.PER_STEP,
+                    radius,
+                    count
+                );
+            }
+            return false;
+        });
     }
     
     private static <T extends ParticleEffect> void summonSwirl(@NotNull final T particle, @NotNull final ServerWorld world, @NotNull final Vec3d mobPos, @NotNull final Vec3d velocity, final double height, final double theta, final double step, final float radius, final int count) {
         double speed = 0D;
-        Vec3d pos;
         
         // Get X/Z coordinates
         double x = Math.cos( theta ) - Math.cos( theta - step );
         double z = Math.sin( theta ) - Math.sin( theta - step );
         
         // Spawn main side particle
-        pos = mobPos.add(
-            x * radius,
-            0,
-            z * radius
-        );
-        
-        world.spawnParticles(
+        EffectUtils.summonParticle(
             particle,
-            pos.getX(),
-            pos.getY() + height,
-            pos.getZ(),
+            world,
+            mobPos.add(
+                x * radius,
+                0,
+                z * radius
+            ),
+            velocity,
+            height,
             count,
-            velocity.getX(),
-            velocity.getY(),
-            velocity.getZ(),
             speed
         );
         
         // Spawn opposite side particle
-        pos = mobPos.add(
-            x * (-radius),
-            0,
-            z * (-radius)
+        EffectUtils.summonParticle(
+            particle,
+            world,
+            mobPos.add(
+                x * -radius,
+                0,
+                z * -radius
+            ),
+            velocity,
+            height,
+            count,
+            speed
         );
+    }
+    private static <T extends ParticleEffect> void summonParticle(@NotNull final T particle, @NotNull final ServerWorld world, @NotNull final Vec3d pos, @NotNull final Vec3d velocity, final double height, final int count, final double speed) {
         world.spawnParticles(
             particle,
             pos.getX(),

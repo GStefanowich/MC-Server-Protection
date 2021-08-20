@@ -28,28 +28,20 @@ package net.TheElm.project.mixins.Blocks;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Tickable;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 
-@Mixin(CommandBlockBlockEntity.class)
-public abstract class WaystoneBlock extends BlockEntity implements Tickable {
+public class WaystoneBlock extends BlockEntity implements Tickable {
     
     private long tickTimer = 30;
     private UUID wayStoneOwner = null;
     
-    public WaystoneBlock(BlockEntityType<?> blockEntityType) {
-        super(blockEntityType);
+    public WaystoneBlock() {
+        super(null); // TODO: Replace NULL (Can't be null)
     }
     
     @Override
@@ -80,22 +72,19 @@ public abstract class WaystoneBlock extends BlockEntity implements Tickable {
      * NBT read/write
      */
     
-    @Inject(at = @At("RETURN"), method = "toTag", cancellable = true)
-    public void nbtWrite(CompoundTag originalTag, CallbackInfoReturnable<CompoundTag> callback) {
-        CompoundTag tag = callback.getReturnValue();
-        
-        if (this.wayStoneOwner != null)
-            tag.putUuid( "sewingWaystone", this.wayStoneOwner );
-        
-        callback.setReturnValue( tag );
-    }
-    
-    @Inject(at = @At("RETURN"), method = "fromTag")
-    public void nbtRead(BlockState state, CompoundTag tag, CallbackInfo callback) {
+    @Override
+    public void fromTag(BlockState state, CompoundTag tag) {
+        super.fromTag(state, tag);
         
         if (NbtUtils.hasUUID(tag, "sewingWaystone"))
             this.wayStoneOwner = NbtUtils.getUUID(tag, "sewingWaystone");
-        
     }
-    
+
+    @Override
+    public CompoundTag toTag(CompoundTag tag) {
+        if (this.wayStoneOwner != null)
+            tag.putUuid( "sewingWaystone", this.wayStoneOwner );
+        
+        return super.toTag(tag);
+    }
 }

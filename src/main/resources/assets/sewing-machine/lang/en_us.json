@@ -49,6 +49,10 @@
   "player.abilities.healed_other": "%s was healed.",
   "player.abilities.healed_dead": "%s is dead.",
   
+  "player.abilities.fed_self": "You've been fed.",
+  "player.abilities.fed_other": "%s was fed.",
+  "player.abilities.fed_dead": "%s is dead.",
+  
   "player.equipment.empty_hand": "You don't have anything in that hand.",
   "player.equipment.empty_slot": "You aren't wearing anything in that slot.",
   

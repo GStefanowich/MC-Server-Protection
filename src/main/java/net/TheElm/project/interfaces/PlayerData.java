@@ -33,6 +33,8 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.ai.pathing.Path;
 import net.minecraft.entity.ai.pathing.PathNodeNavigator;
 import net.minecraft.entity.boss.ServerBossBar;
+import net.minecraft.text.Text;
+import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -87,8 +89,8 @@ public interface PlayerData {
     /*
      * Compass handling
      */
-    
-    CompassDirections cycleCompass();
+
+    Pair<Text, BlockPos> cycleCompass();
     CompassDirections getCompass();
     
     /*

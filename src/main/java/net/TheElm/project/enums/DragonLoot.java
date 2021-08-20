@@ -3,23 +3,22 @@ package net.TheElm.project.enums;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.objects.WeightedReward;
 import net.TheElm.project.utilities.IntUtils;
+import net.TheElm.project.utilities.ItemUtils;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentLevelEntry;
 import net.minecraft.enchantment.Enchantments;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.EnchantedBookItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.util.Identifier;
-import net.minecraft.util.registry.Registry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 public final class DragonLoot {
     private DragonLoot() {}
@@ -33,16 +32,22 @@ public final class DragonLoot {
         
         if (SewConfig.get(SewConfig.DRAGON_LOOT_END_ITEMS)) {
             DragonLoot.itemReward(2800, Items.ELYTRA);
-            DragonLoot.itemReward(250, Items.ELYTRA, (item) -> {
-                CompoundTag nbt = item.getOrCreateTag();
-                nbt.putBoolean("Unbreakable", true);
-            });
-            DragonLoot.itemReward(6830/*2700*/, Items.DRAGON_EGG);
-            DragonLoot.itemReward(2300, Items.WITHER_SKELETON_SKULL, (item) -> item.setCount(IntUtils.random(RANDOM, 3, 6)));
+            DragonLoot.itemReward(250, Items.ELYTRA, (p, s) -> ItemUtils.makeUnbreakable(s));
+            DragonLoot.itemReward(250, Items.FISHING_ROD, (p, s) -> ItemUtils.makeUnbreakable(s));
+            DragonLoot.itemReward(6830, Items.DRAGON_EGG);
+            DragonLoot.itemReward(1400, Items.DRAGON_HEAD);
+            /*DragonLoot.itemReward(1400, Items.PLAYER_HEAD, (p, s) -> {
+                if (p != null) {
+                    // Assign the SkullOwner tag
+                    CompoundTag skullOwner = s.getOrCreateTag();
+                    skullOwner.putString("SkullOwner", p.getGameProfile().getName());
+                }
+            });*/
+            DragonLoot.itemReward(2300, Items.WITHER_SKELETON_SKULL, (player, stack) -> stack.setCount(IntUtils.random(RANDOM, 3, 6)));
             DragonLoot.itemReward(1800, Items.ENCHANTED_GOLDEN_APPLE);
             DragonLoot.itemReward(750, Items.DIAMOND_BLOCK);
             DragonLoot.itemReward(1400, Items.EMERALD_BLOCK);
-            DragonLoot.itemReward(1400, Items.EXPERIENCE_BOTTLE, (item) -> item.setCount(IntUtils.random(RANDOM, 1, 15)));
+            DragonLoot.itemReward(1400, Items.EXPERIENCE_BOTTLE, (player, stack) -> stack.setCount(IntUtils.random(RANDOM, 1, 15)));
         }
         
         if (SewConfig.get(SewConfig.DRAGON_LOOT_RARE_BOOKS)) {
@@ -77,9 +82,9 @@ public final class DragonLoot {
             DragonLoot.bookReward(70, Enchantments.FIRE_PROTECTION, 8);
             DragonLoot.bookReward(30, Enchantments.FIRE_PROTECTION, 9);
             DragonLoot.bookReward(10, Enchantments.FIRE_PROTECTION, 10);
-            
-            DragonLoot.bookReward(300, Enchantments.PROJECTILE_PROTECTION, 6);
+
             DragonLoot.bookReward(440, Enchantments.PROJECTILE_PROTECTION, 5);
+            DragonLoot.bookReward(300, Enchantments.PROJECTILE_PROTECTION, 6);
             DragonLoot.bookReward(150, Enchantments.PROJECTILE_PROTECTION, 7);
             DragonLoot.bookReward(70, Enchantments.PROJECTILE_PROTECTION, 8);
             DragonLoot.bookReward(30, Enchantments.PROJECTILE_PROTECTION, 9);
@@ -115,23 +120,22 @@ public final class DragonLoot {
         DragonLoot.LOOT_REWARDS.add(reward);
         return reward;
     }
-    private static @NotNull WeightedReward itemReward(int weight, Item item, Consumer<ItemStack> consumer) {
+    private static @NotNull WeightedReward itemReward(int weight, Item item, BiConsumer<PlayerEntity, ItemStack> consumer) {
         WeightedReward reward = new WeightedReward(weight, item, consumer);
         DragonLoot.LOOT_REWARDS.add(reward);
         return reward;
     }
     private static @NotNull WeightedReward bookReward(int weight, Enchantment enchantment, final int level) {
-        final Identifier enchantmentId = Registry.ENCHANTMENT.getId(enchantment);
-        return DragonLoot.itemReward(weight, Items.ENCHANTED_BOOK, (book) -> {
+        return DragonLoot.itemReward(weight, Items.ENCHANTED_BOOK, (player, book) -> {
             EnchantedBookItem.addEnchantment(book, new EnchantmentLevelEntry(enchantment, level));
         });
     }
     
-    public static @Nullable ItemStack createReward() {
+    public static @Nullable ItemStack createReward(@Nullable PlayerEntity player) {
         WeightedReward reward = DragonLoot.getReward();
         if (reward == null)
             return null;
-        return reward.createItem();
+        return reward.createItem(player);
     }
     public static @Nullable WeightedReward getReward() {
         int random = DragonLoot.getRandomNumber();

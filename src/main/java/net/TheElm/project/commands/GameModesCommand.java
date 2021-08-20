@@ -32,7 +32,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -49,52 +49,52 @@ public final class GameModesCommand {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, "gms", builder -> builder
-            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GAMEMODE_SURVIVAL))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SURVIVAL))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GAMEMODE_SURVIVAL.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SURVIVAL.onOther()))
                 .executes((context) -> setPlayerGameMode(context, GameMode.SURVIVAL))
             )
-            .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.SURVIVAL ))
+            .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.SURVIVAL))
         );
         
         ServerCore.register(dispatcher, "gmc", builder -> builder
-            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GAMEMODE_CREATIVE))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_CREATIVE))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                    .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GAMEMODE_CREATIVE.onOther()))
-                    .executes((context) -> setPlayerGameMode(context, GameMode.CREATIVE))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_CREATIVE.onOther()))
+                .executes((context) -> setPlayerGameMode(context, GameMode.CREATIVE))
             )
-            .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.CREATIVE ))
+            .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.CREATIVE))
         );
         
         ServerCore.register(dispatcher, "gma", builder -> builder
-            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GAMEMODE_ADVENTURE))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_ADVENTURE))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GAMEMODE_ADVENTURE.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_ADVENTURE.onOther()))
                 .executes((context) -> setPlayerGameMode(context, GameMode.ADVENTURE))
             )
-            .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.ADVENTURE ))
+            .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.ADVENTURE))
         );
         
         ServerCore.register(dispatcher, "gmsp", builder -> builder
-            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GAMEMODE_SPECTATOR))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SPECTATOR))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.PLAYER_GAMEMODE_SPECTATOR.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SPECTATOR.onOther()))
                 .executes((context) -> setPlayerGameMode(context, GameMode.SPECTATOR))
             )
-            .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.SPECTATOR ))
+            .executes((context) -> setPlayerGameMode(context.getSource(), GameMode.SPECTATOR))
         );
     }
     
-    private static int setPlayerGameMode(ServerCommandSource source, GameMode gameMode) throws CommandSyntaxException {
+    private static int setPlayerGameMode(@NotNull ServerCommandSource source, @NotNull GameMode gameMode) throws CommandSyntaxException {
         ServerPlayerEntity player = source.getPlayer();
         Text gmText = new TranslatableText("gameMode." + gameMode.getName());
         
         source.sendFeedback(new TranslatableText("commands.gamemode.success.self", gmText), true);
-        player.setGameMode( gameMode );
+        player.setGameMode(gameMode);
         
         return Command.SINGLE_SUCCESS;
     }
-    private static int setPlayerGameMode(CommandContext<ServerCommandSource> context, GameMode gameMode) throws CommandSyntaxException {
+    private static int setPlayerGameMode(@NotNull CommandContext<ServerCommandSource> context, @NotNull GameMode gameMode) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
         Text gmText = new TranslatableText("gameMode." + gameMode.getName());

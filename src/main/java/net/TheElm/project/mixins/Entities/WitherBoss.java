@@ -32,11 +32,14 @@ import net.minecraft.entity.ai.RangedAttackMob;
 import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.UUID;
@@ -50,9 +53,10 @@ public abstract class WitherBoss extends HostileEntity implements RangedAttackMo
         super(entityType_1, world_1);
     }
     
-    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/world/World.syncGlobalEvent(ILnet/minecraft/util/math/BlockPos;I)V", shift = At.Shift.BEFORE), method = "mobTick")
-    public void overrideWorldSound(CallbackInfo callback) {
-        this.world.syncGlobalEvent(1023, this.getBlockPos(), 0);
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/world/World.syncGlobalEvent(ILnet/minecraft/util/math/BlockPos;I)V"), method = "mobTick")
+    public void overrideWorldSound(@NotNull World world, int eventId, @NotNull BlockPos pos, int data) {
+        // Play the global event only in the world
+        world.syncWorldEvent(eventId, pos, data);
     }
     
     @Override

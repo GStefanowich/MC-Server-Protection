@@ -33,8 +33,8 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
@@ -57,7 +57,7 @@ public final class WhereCommand {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, WhereCommand.NAME, builder -> builder
-            .requires(CommandUtils.either(OpLevels.CHEATING, Permissions.LOCATE_PLAYERS))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.LOCATE_PLAYERS))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .executes(WhereCommand::locatePlayer)
             )

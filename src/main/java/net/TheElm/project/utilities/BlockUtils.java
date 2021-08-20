@@ -25,17 +25,23 @@
 
 package net.TheElm.project.utilities;
 
+import com.mojang.datafixers.util.Either;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.BlockRange;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.CampfireBlock;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.LecternBlockEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.tag.BlockTags;
 import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.BlockView;
@@ -44,6 +50,8 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.function.Supplier;
 
 public final class BlockUtils {
     
@@ -90,7 +98,7 @@ public final class BlockUtils {
             lookVec.z * distance
         );
         
-        return world.raycast(new RaycastContext( posVec, traceVec, RaycastContext.ShapeType.OUTLINE, fluids, entity));
+        return world.raycast(new RaycastContext(posVec, traceVec, RaycastContext.ShapeType.OUTLINE, fluids, entity));
     }
     
     /**
@@ -152,6 +160,43 @@ public final class BlockUtils {
         
         // Check that first chunk owner can modify the next chunk
         return ((IClaimedChunk) protectedChunk).canPlayerDo(protectedPos, ((IClaimedChunk) sourceChunk).getOwner(sourcePos), permission);
+    }
+    
+    public static @NotNull <T extends BlockEntity> Either<T, String> getLecternBlockEntity(@NotNull World world, @NotNull Entity entity, Class<T> klass, Supplier<T> supplier) {
+        // Get the targeted block
+        BlockHitResult hitResult = BlockUtils.getLookingBlock(world, entity);
+        if (hitResult.getType() == HitResult.Type.MISS)
+            return Either.right("Could not find targeted block.");
+        BlockPos lecternPos = hitResult.getBlockPos();
+        BlockState state = world.getBlockState(lecternPos);
+        BlockEntity blockEntity = world.getBlockEntity(lecternPos);
+        
+        // If the BlockEntity is already of our new type
+        if (klass.isInstance(blockEntity)) {
+            return Either.left((T) blockEntity);
+        } else if (state.getBlock() == Blocks.LECTERN) { // If the Block is a Lectern
+            // Get the existing LecternBlock BlockEntity
+            if (blockEntity instanceof LecternBlockEntity) {
+                // Drop the book on the lectern
+                LecternBlockEntity old = ((LecternBlockEntity)blockEntity);
+                if (old.hasBook()) {
+                    ItemStack book = old.getBook();
+                    
+                    // Drop the book that is in the stand
+                    entity.dropStack(book);
+                    
+                    // Set the book as empty now
+                    old.setBook(ItemStack.EMPTY);
+                }
+            }
+            
+            // Update the BlockEntity to the new one
+            T newBlockEntity = supplier.get();
+            world.setBlockEntity(lecternPos, newBlockEntity);
+            return Either.left(newBlockEntity);
+        } else {
+            return Either.right("Can only set at lecterns.");
+        }
     }
     
     public static double angleBetween(@NotNull BlockPos pos1, @NotNull BlockPos pos2) {

@@ -34,8 +34,8 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.commands.ArgumentTypes.ArgumentSuggestions;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.protections.ranks.PlayerRank;
-import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.RankUtils;
 import net.minecraft.command.CommandException;
 import net.minecraft.server.command.CommandManager;
@@ -48,7 +48,7 @@ public final class PermissionCommand {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, "permissions", builder -> builder
-            .requires(CommandUtils.isEnabledAnd(SewConfig.HANDLE_PERMISSIONS, OpLevels.CHEATING))
+            .requires(CommandPredicate.isEnabled(SewConfig.HANDLE_PERMISSIONS).and(OpLevels.CHEATING))
             // Create a new Rank
             .then(CommandManager.literal("add")
                 .then(CommandManager.argument("rank", StringArgumentType.string())

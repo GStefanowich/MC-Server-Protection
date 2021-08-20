@@ -34,8 +34,8 @@ import com.mojang.brigadier.suggestion.SuggestionProvider;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.interfaces.PlayerChat;
-import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -87,7 +87,7 @@ public final class StatsCommand {
                 .then(CommandManager.argument("entity", EntitySummonArgumentType.entitySummon())
                     .suggests(StatsCommand.KILLABLE_ENTITIES)
                     .then(CommandManager.argument("player", EntityArgumentType.player())
-                        .requires(CommandUtils.requires(OpLevels.CHEATING))
+                        .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                         .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                             .then(CommandManager.literal("add")
                                 .executes(StatsCommand::incStatKilled)
@@ -104,7 +104,7 @@ public final class StatsCommand {
                 .then(CommandManager.argument("block", ItemStackArgumentType.itemStack())
                     .suggests(StatsCommand.BLOCKS)
                     .then(CommandManager.argument("player", EntityArgumentType.player())
-                        .requires(CommandUtils.requires(OpLevels.CHEATING))
+                        .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                         .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                             .then(CommandManager.literal("add")
                                 .executes(StatsCommand::incStatMined)
@@ -121,7 +121,7 @@ public final class StatsCommand {
                 .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
                     .suggests(StatsCommand.DESTROYED_ITEMS)
                     .then(CommandManager.argument("player", EntityArgumentType.player())
-                        .requires(CommandUtils.requires(OpLevels.CHEATING))
+                        .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                         .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                             .then(CommandManager.literal("add")
                                 .executes(StatsCommand::incStatBroken)
@@ -138,7 +138,7 @@ public final class StatsCommand {
                 .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
                     .suggests(StatsCommand.ITEMS)
                     .then(CommandManager.argument("player", EntityArgumentType.player())
-                        .requires(CommandUtils.requires(OpLevels.CHEATING))
+                        .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                         .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                             .then(CommandManager.literal("add")
                                 .executes(StatsCommand::incStatUsed)
@@ -155,7 +155,7 @@ public final class StatsCommand {
                 .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
                     .suggests(StatsCommand.ITEMS)
                     .then(CommandManager.argument("player", EntityArgumentType.player())
-                        .requires(CommandUtils.requires(OpLevels.CHEATING))
+                        .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                         .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                             .then(CommandManager.literal("add")
                                 .executes(StatsCommand::incStatCrafted)
@@ -172,7 +172,7 @@ public final class StatsCommand {
                 .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
                     .suggests(StatsCommand.ITEMS)
                     .then(CommandManager.argument("player", EntityArgumentType.player())
-                        .requires(CommandUtils.requires(OpLevels.CHEATING))
+                        .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                         .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                             .then(CommandManager.literal("add")
                                 .executes(StatsCommand::incStatPickedUp)
@@ -189,7 +189,7 @@ public final class StatsCommand {
                 .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())
                     .suggests(StatsCommand.ITEMS)
                     .then(CommandManager.argument("player", EntityArgumentType.player())
-                        .requires(CommandUtils.requires(OpLevels.CHEATING))
+                        .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                         .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                             .then(CommandManager.literal("add")
                                 .executes(StatsCommand::incStatDropped)

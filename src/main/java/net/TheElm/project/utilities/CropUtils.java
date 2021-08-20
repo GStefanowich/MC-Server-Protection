@@ -30,6 +30,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.Items;
 import net.minecraft.state.property.IntProperty;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 
@@ -45,8 +46,12 @@ public final class CropUtils {
         return Material.WOOD.equals(material) || Material.NETHER_WOOD.equals(material);
     }
     
-    public static boolean isCrop(Block block) {
+    public static boolean isCrop(@Nullable Block block) {
         return block instanceof CropBlock || block instanceof NetherWartBlock;
+    }
+    
+    public static boolean isGourd(@Nullable Block block) {
+        return block instanceof MelonBlock || block instanceof PumpkinBlock;
     }
     
     public static boolean isMature(@NotNull BlockState state) {
@@ -58,35 +63,42 @@ public final class CropUtils {
         return stage >= max;
     }
     
-    public static BlockState withAge(@NotNull Block block, int age) {
-        return block.getDefaultState().with(CropUtils.getAgeProperty(block), age);
+    public static @NotNull BlockState withAge(@NotNull Block block, int age) {
+        return block.getDefaultState()
+            .with(CropUtils.getAgeProperty(block), age);
     }
     
-    private static IntProperty getAgeProperty(Block block) {
-        if ( block instanceof NetherWartBlock )
+    private static @Nullable IntProperty getAgeProperty(@Nullable Block block) {
+        if (block instanceof NetherWartBlock)
             return NetherWartBlock.AGE;
-        if ( block instanceof CarrotsBlock)
+        if (block instanceof CarrotsBlock)
             return CarrotsBlock.AGE;
-        if ( block instanceof PotatoesBlock)
+        if (block instanceof PotatoesBlock)
             return PotatoesBlock.AGE;
-        if ( block instanceof BeetrootsBlock)
+        if (block instanceof BeetrootsBlock)
             return BeetrootsBlock.AGE;
-        if ( block instanceof CropBlock )
+        if (block instanceof CropBlock)
             return CropBlock.AGE;
         return null;
     }
     
-    public static Item getSeed(Block crop) {
-        if ( crop instanceof NetherWartBlock )
+    public static @Nullable Item getSeed(@Nullable Block crop) {
+        if (crop instanceof NetherWartBlock)
             return Items.NETHER_WART;
-        if ( crop instanceof CarrotsBlock)
+        if (crop instanceof CarrotsBlock)
             return Items.CARROT;
-        if ( crop instanceof PotatoesBlock)
+        if (crop instanceof PotatoesBlock)
             return Items.POTATO;
-        if ( crop instanceof BeetrootsBlock)
+        if (crop instanceof BeetrootsBlock)
             return Items.BEETROOT_SEEDS;
-        if ( crop instanceof CropBlock )
+        if (crop instanceof CropBlock)
             return Items.WHEAT_SEEDS;
+        if (crop instanceof StemBlock)
+            return CropUtils.getSeed(((StemBlock) crop).getGourdBlock());
+        if (crop instanceof MelonBlock)
+            return Items.MELON_SEEDS;
+        if (crop instanceof PumpkinBlock)
+            return Items.PUMPKIN_SEEDS;
         return null;
     }
 }

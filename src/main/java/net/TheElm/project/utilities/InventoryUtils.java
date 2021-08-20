@@ -356,7 +356,7 @@ public final class InventoryUtils {
     /*
      * Advanced enchanted books prevent combining
      */
-    public static boolean areBooksAtMaximum(@NotNull Enchantment enchantment, @NotNull ItemStack... stacks) {
+    public static boolean areBooksAtMaxLevel(@NotNull Enchantment enchantment, @NotNull ItemStack... stacks) {
         int level = 0;
         
         // Loop through all of the items
@@ -371,6 +371,16 @@ public final class InventoryUtils {
         }
         
         return level > enchantment.getMaxLevel();
+    }
+    public static int getHighestLevel(@NotNull Enchantment enchantment, @NotNull ItemStack... stacks) {
+        int highest = enchantment.getMaxLevel();
+        for (ItemStack stack : stacks) {
+            Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(stack);
+            int level = enchantments.getOrDefault(enchantment, 0);
+            if (level > highest)
+                highest = level;
+        }
+        return highest;
     }
     
     public static @NotNull ItemRarity getItemRarity(@NotNull ItemStack stack) {

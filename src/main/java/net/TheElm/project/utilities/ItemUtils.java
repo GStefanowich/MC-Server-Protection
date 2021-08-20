@@ -29,16 +29,36 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.item.*;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.Consumer;
 
 public final class ItemUtils {
     private ItemUtils() {}
+    
+    public static void insertItems(@NotNull ServerPlayerEntity player, @NotNull ItemConvertible convertible, int count) {
+        ItemUtils.insertItems(player, convertible, count, ItemUtils::nothing);
+    }
+    public static void insertItems(@NotNull ServerPlayerEntity player, @NotNull ItemConvertible convertible, int count, @NotNull Consumer<ItemStack> consumer) {
+        Item item = convertible.asItem();
+        for (int i = count; i > 0; i -= item.getMaxCount()) {
+            int give = MathHelper.clamp(i, 0, item.getMaxCount());
+            ItemStack stack = new ItemStack(convertible, give);
+            
+            consumer.accept(stack);
+            
+            player.inventory.offerOrDrop(player.world, stack);
+        }
+    }
+    
+    private static void nothing(@NotNull ItemStack stack) {}
     
     public static @Nullable ClaimPermissions getPermission(@NotNull ItemStack stack) {
         if (stack.isEmpty())
@@ -90,5 +110,10 @@ public final class ItemUtils {
             )
         );
         return stack;
+    }
+    
+    public static void makeUnbreakable(@NotNull ItemStack stack) {
+        CompoundTag nbt = stack.getOrCreateTag();
+        nbt.putBoolean("Unbreakable", true);
     }
 }

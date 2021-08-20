@@ -26,7 +26,6 @@
 package net.TheElm.project.protections.events;
 
 import net.TheElm.project.ServerCore;
-import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.interfaces.ItemUseCallback;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.BlockUtils;
@@ -40,15 +39,16 @@ import net.minecraft.block.enums.StairShape;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.state.property.BooleanProperty;
+import net.minecraft.state.property.Properties;
 import net.minecraft.text.LiteralText;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.BlockRotation;
-import net.minecraft.util.Formatting;
-import net.minecraft.util.Hand;
+import net.minecraft.text.Text;
+import net.minecraft.util.*;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
@@ -71,8 +71,8 @@ public final class ItemUse {
     
     private static @NotNull ActionResult blockInteract(@NotNull ServerPlayerEntity player, @NotNull World world, @NotNull Hand hand, @NotNull ItemStack itemStack) {
         if (itemStack.getItem() == Items.COMPASS) {
-            CompassDirections newDirection = ((PlayerData) player).cycleCompass();
-            TitleUtils.showPlayerAlert( player, Formatting.YELLOW, new LiteralText("Compass now pointing towards "), newDirection.text() );
+            Pair<Text, BlockPos> newDirection = ((PlayerData) player).cycleCompass();
+            TitleUtils.showPlayerAlert(player, Formatting.YELLOW, new LiteralText("Compass now pointing towards "), newDirection.getLeft());
             
             return ActionResult.SUCCESS;
         } else if (itemStack.getItem() == Items.STICK) {
@@ -101,14 +101,14 @@ public final class ItemUse {
             /*
              * Rotate blocks
              */
-            ItemUse.simpleBlockRotation(world, pos, state.with(HorizontalFacingBlock.FACING, rotation));
+            ItemUse.syncedBlockStateChange(world, pos, state.with(HorizontalFacingBlock.FACING, rotation));
             
             return true;
         } else if (player.isSneaking() && state.contains(PillarBlock.AXIS)) {
             /*
              * Change block axis
              */
-            ItemUse.simpleBlockRotation(world, pos, ((PillarBlock) block).rotate(state, BlockRotation.CLOCKWISE_90));
+            ItemUse.syncedBlockStateChange(world, pos, ((PillarBlock) block).rotate(state, BlockRotation.CLOCKWISE_90));
             
             return true;
         } else if (block instanceof StairsBlock) {
@@ -116,7 +116,7 @@ public final class ItemUse {
              * If block is a stairs block
              */
             StairShape shape = state.get(StairsBlock.SHAPE);
-            ItemUse.simpleBlockRotation(world, pos, state.with(StairsBlock.SHAPE, ItemUse.rotateStairShape(shape)));
+            ItemUse.syncedBlockStateChange(world, pos, state.with(StairsBlock.SHAPE, ItemUse.rotateStairShape(shape)));
             
             return true;
         } else if (block instanceof DoorBlock) {
@@ -130,15 +130,40 @@ public final class ItemUse {
             // Change the doors hinge
             DoorHinge hinge = state.get(DoorBlock.HINGE) == DoorHinge.LEFT ? DoorHinge.RIGHT : DoorHinge.LEFT;
             
-            ItemUse.simpleBlockRotation(world, pos, state.with(DoorBlock.HINGE, hinge));
-            ItemUse.simpleBlockRotation(world, otherHalf, world.getBlockState(otherHalf).with(DoorBlock.HINGE, hinge));
+            ItemUse.syncedBlockStateChange(world, pos, state.with(DoorBlock.HINGE, hinge));
+            ItemUse.syncedBlockStateChange(world, otherHalf, world.getBlockState(otherHalf).with(DoorBlock.HINGE, hinge));
+            
+            return true;
+        } else if (player.isSneaking() && block instanceof HorizontalConnectingBlock) {
+            /*
+             * Change which sides of a connecting block are connected
+             */
+            if (hitResult.getSide() == Direction.UP || hitResult.getSide() == Direction.DOWN)
+                return false;
+            
+            Vec3d vec3d = hitResult.getPos();
+            Vec3d face = new Vec3d(vec3d.getX() - pos.getX(), vec3d.getY() - pos.getY(), vec3d.getZ() - pos.getZ());
+            Direction dir = ItemUse.getConnectingFace(hitResult.getSide(), face);
+            
+            // Get the connecting property to toggle
+            BooleanProperty property = ItemUse.getConnecting(dir);
+            boolean isConnected = state.get(property);
+            ItemUse.syncedBlockStateChange(world, pos, state.with(property, !isConnected));
+            
+            // Check the connected block to see if we need to de-couple it
+            BlockPos otherPos = pos.offset(dir);
+            BlockState other = world.getBlockState(otherPos);
+            dir = dir.getOpposite();
+            property = ItemUse.getConnecting(dir);
+            if (other.getBlock() == block && other.get(property) == isConnected)
+                ItemUse.syncedBlockStateChange(world, otherPos, other.with(property, !isConnected));
             
             return true;
         } else if (player.isSneaking() && canBeRotated) {
             /*
              * Catch for block rotating
              */
-            ItemUse.simpleBlockRotation(world, pos, state.with(HorizontalFacingBlock.FACING, rotation));
+            ItemUse.syncedBlockStateChange(world, pos, state.with(HorizontalFacingBlock.FACING, rotation));
             
             return true;
         } else {
@@ -157,7 +182,7 @@ public final class ItemUse {
         }
         return false;
     }
-    private static boolean simpleBlockRotation(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state) {
+    private static boolean syncedBlockStateChange(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state) {
         boolean rotated = world.setBlockState(pos, state, ItemUse.BLOCK_UPDATE_ROTATION_FLAG, ItemUse.BLOCK_UPDATE_MAX_DEPTH);
         if (rotated)
             ServerCore.markDirty(world, pos);
@@ -187,5 +212,36 @@ public final class ItemUse {
             default:
                 return StairShape.STRAIGHT;
         }
+    }
+    
+    private static @NotNull Direction getConnectingFace(@NotNull Direction face, @NotNull Vec3d pos) {
+        double faceSide = ItemUse.faceSide(face, pos);
+        boolean left = faceSide <= 0.38;
+        boolean right = faceSide >= 0.62;
+        if (!left && !right)
+            return face;
+        return left && !right ? face.rotateYCounterclockwise() : face.rotateYClockwise();
+    }
+    private static @NotNull BooleanProperty getConnecting(@NotNull Direction face) {
+        switch (face) {
+            case UP: return Properties.UP;
+            case DOWN: return Properties.DOWN;
+            case NORTH: return Properties.NORTH;
+            case SOUTH: return Properties.SOUTH;
+            case WEST: return Properties.WEST;
+            case EAST: return Properties.EAST;
+        }
+        return Properties.UP;
+    }
+    private static double faceSide(@NotNull Direction face, @NotNull Vec3d pos) {
+        if (face == Direction.NORTH)
+            return pos.getX();
+        if (face == Direction.SOUTH)
+            return 1 - pos.getX();
+        if (face == Direction.EAST)
+            return pos.getZ();
+        if (face == Direction.WEST)
+            return 1 - pos.getZ();
+        return 0.5d;
     }
 }

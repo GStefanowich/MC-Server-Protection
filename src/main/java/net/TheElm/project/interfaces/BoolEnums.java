@@ -25,8 +25,8 @@
 
 package net.TheElm.project.interfaces;
 
+@FunctionalInterface
 public interface BoolEnums {
-    
     boolean isEnabled(); 
     
 }

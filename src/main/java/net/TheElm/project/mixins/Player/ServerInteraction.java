@@ -36,6 +36,7 @@ import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket.Action;
+import net.minecraft.network.packet.s2c.play.BlockBreakingProgressS2CPacket;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
 import net.minecraft.network.packet.s2c.play.PlayerActionResponseS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -103,7 +104,7 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
         return this.isGlobalMuted && (!RankUtils.hasPermission(this.player, Permissions.CHAT_COMMAND_MUTE_EXEMPT));
     }
     @Override
-    public boolean isMuted(GameProfile player) {
+    public boolean isMuted(@NotNull GameProfile player) {
         return this.mutedPlayers.contains(player.getId());
     }
     
@@ -121,6 +122,7 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
         if ( result != ActionResult.PASS ) {
             // Send the player a failed notice
             this.player.networkHandler.sendPacket(new PlayerActionResponseS2CPacket(blockPos, this.world.getBlockState(blockPos), action, false, "may not interact"));
+            this.player.networkHandler.sendPacket(new BlockBreakingProgressS2CPacket(this.player.getEntityId(), blockPos, -1));
             
             // Update the neighboring blocks on the client
             this.updateNeighboringBlockStates(blockPos);
@@ -155,8 +157,8 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
     }
     
     private void updateNeighboringBlockStates(BlockPos blockPos) {
-        BlockState blockState = world.getBlockState(blockPos);
-        Block block = blockState.getBlock();
+        final BlockState blockState = this.world.getBlockState(blockPos);
+        final Block block = blockState.getBlock();
         BlockPos part = null;
         
         if ( block instanceof BedBlock ) {
@@ -175,6 +177,6 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
         }
         
         if (part != null) this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(this.world, part));
-        this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(this.world, blockPos));
+        this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(blockPos, blockState));
     }
 }

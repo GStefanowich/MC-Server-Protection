@@ -94,7 +94,7 @@ public final class ClaimantPlayer extends Claimant {
     public final ClaimantTown getTownInvite(@NotNull String townName) {
         ClaimantTown out = null;
         for (ClaimantTown town : this.townInvites) {
-            if (townName.equals(town.getName().asString())) {
+            if (townName.equals(town.getName().getString())) {
                 out = town;
                 break;
             }

@@ -31,10 +31,11 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.BlockSoundGroup;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvent;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
@@ -42,9 +43,7 @@ import net.minecraft.world.biome.Biome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 
 public final class StructureBuilderUtils {
@@ -54,123 +53,163 @@ public final class StructureBuilderUtils {
     public static final StructureBuilderMaterial BEACH = new StructureBuilderMaterial(Blocks.DARK_PRISMARINE, Blocks.PRISMARINE_BRICKS, Blocks.SEA_LANTERN, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
     public static final StructureBuilderMaterial END = new StructureBuilderMaterial(Blocks.PURPUR_BLOCK, Blocks.END_STONE_BRICKS, Blocks.PURPUR_PILLAR, Blocks.STONE_PRESSURE_PLATE, Blocks.END_ROD);
     
-    private final String name;
-    private final World world;
-    private final long delay = 50L;
+    private final @NotNull String name;
+    public final @NotNull World world;
+    public final @NotNull RegistryKey<Biome> biome;
+    public final @NotNull StructureBuilderMaterial material;
+    private final int delay = 1;
     
-    private HashMap<BlockPos, BlockState> structureBlocks = new LinkedHashMap<>();
-    private HashMap<BlockPos, Supplier<BlockEntity>> structureEntity = new LinkedHashMap<>();
+    private @NotNull final Queue<Pair<BlockPos, BlockState>> destroyBlocks = new ArrayDeque<>();
+    private @NotNull final Queue<Pair<BlockPos, BlockState>> structureBlocks = new ArrayDeque<>();
+    private @NotNull final Queue<Pair<BlockPos, Supplier<BlockEntity>>> structureEntity = new ArrayDeque<>();
+    private @NotNull final Queue<Runnable> runnables = new ArrayDeque<>();
     
-    public StructureBuilderUtils(@NotNull World world, @NotNull String structureName) {
+    public StructureBuilderUtils(@NotNull World world, RegistryKey<Biome> biome, @NotNull String structureName) {
         this.world = world;
+        this.biome = biome;
         this.name = structureName;
+        this.material = this.forBiome(biome);
         CoreMod.logInfo("Building new " + structureName);
     }
     
     public String getName() {
         return this.name;
     }
+    public int getDelay() {
+        return this.delay;
+    }
     
     public void addBlock(@NotNull BlockPos blockPos, @NotNull BlockState blockState) {
-        this.structureBlocks.put(blockPos, blockState);
+        Pair<BlockPos, BlockState> pair = new Pair<>(blockPos, blockState);
+        this.destroyBlocks.add(pair);
+        this.structureBlocks.add(pair);
     }
     public void addEntity(@NotNull BlockPos blockPos, @NotNull Supplier<BlockEntity> blockEntity) {
-        this.structureEntity.put( blockPos, blockEntity );
+        this.structureEntity.add(new Pair<>(blockPos, blockEntity));
+    }
+    public void add(Runnable runnable) {
+        this.runnables.add(runnable);
     }
     
-    public void destroy(boolean dropBlocks) throws InterruptedException {
-        for (Map.Entry<BlockPos, BlockState> pair : this.structureBlocks.entrySet()) {
-            BlockPos blockPos = pair.getKey();
-            BlockState newBlockState = pair.getValue();
-            BlockState oldBlockState = this.world.getBlockState(blockPos);
-            
-            BlockEntity blockEntity = dropBlocks && oldBlockState.getBlock().hasBlockEntity() ? this.world.getBlockEntity(blockPos) : null;
-            
-            // Change the block state
-            if (newBlockState.getBlock() == Blocks.AIR)
-                this.world.breakBlock(blockPos, dropBlocks);
-            else {
-                if (!(oldBlockState.getBlock() instanceof AbstractFireBlock))
-                    this.world.syncWorldEvent(2001, blockPos, Block.getRawIdFromState(oldBlockState));
-                
-                this.world.setBlockState(blockPos, Blocks.BARRIER.getDefaultState());
-                
-                // If the old BlockEntity has any drops
-                if (blockEntity != null)
-                    Block.dropStacks(oldBlockState, this.world, blockPos, blockEntity, null, ItemStack.EMPTY);
-            }
-            
-            Thread.sleep(this.delay);
-        }
+    public boolean hasDestroy() {
+        return this.destroyBlocks.peek() != null;
     }
-    public void build() throws InterruptedException {
-        // Place all of the blocks
-        for (Map.Entry<BlockPos, BlockState> iterator : this.structureBlocks.entrySet()) {
-            BlockPos blockPos = iterator.getKey();
-            BlockState block = iterator.getValue();
+    public boolean hasBuild() {
+        return this.structureBlocks.peek() != null || this.structureEntity.peek() != null;
+    }
+    public boolean hasRunnable() {
+        return this.runnables.peek() != null;
+    }
+    
+    public boolean destroy(boolean dropBlocks) {
+        Pair<BlockPos, BlockState> pair = this.destroyBlocks.poll();
+        if (pair == null)
+            return false;
+        
+        BlockPos blockPos = pair.getLeft();
+        BlockState newBlockState = pair.getRight();
+        BlockState oldBlockState = this.world.getBlockState(blockPos);
+        
+        BlockEntity blockEntity = dropBlocks && oldBlockState.getBlock().hasBlockEntity() ? this.world.getBlockEntity(blockPos) : null;
+        
+        // Change the block state
+        if (newBlockState.getBlock() == this.material.getAirBlock(this.world.getRegistryKey()).getBlock())
+            this.world.breakBlock(blockPos, dropBlocks);
+        else {
+            if (!(oldBlockState.getBlock() instanceof AbstractFireBlock))
+                this.world.syncWorldEvent(2001, blockPos, Block.getRawIdFromState(oldBlockState));
             
-            // If block is already the same
-            if (block.getBlock() == this.world.getBlockState(blockPos).getBlock())
-                continue;
+            this.world.setBlockState(blockPos, Blocks.BARRIER.getDefaultState());
             
-            this.world.setBlockState( blockPos, block );
-            this.world.playSound(null, blockPos, SoundEvents.BLOCK_STONE_PLACE, SoundCategory.BLOCKS, 1.0f, 1.0f);
-            Thread.sleep( this.delay );
+            // If the old BlockEntity has any drops
+            if (blockEntity != null)
+                Block.dropStacks(oldBlockState, this.world, blockPos, blockEntity, null, ItemStack.EMPTY);
         }
         
+        //Thread.sleep(this.delay);
+        return true;
+    }
+    public boolean build() {
+        Pair<BlockPos, BlockState> blocks = this.structureBlocks.poll();
+        
+        // Place all of the blocks
+        if (blocks != null) {
+            BlockPos blockPos = blocks.getLeft();
+            BlockState state = blocks.getRight();
+            
+            // If block is already the same
+            if (state.getBlock() != this.world.getBlockState(blockPos).getBlock()) {
+                BlockSoundGroup soundGroup = state.getSoundGroup();
+                
+                this.world.setBlockState(blockPos, state);
+                this.world.playSound(null, blockPos, soundGroup.getPlaceSound(), SoundCategory.BLOCKS, 1.0f, 1.0f);
+            }
+            
+            return true;
+        }
+        
+        Pair<BlockPos, Supplier<BlockEntity>> entities = this.structureEntity.poll();
+        
         // Update the block entities
-        for (Map.Entry<BlockPos, Supplier<BlockEntity>> iterator : this.structureEntity.entrySet()) {
-            BlockPos blockPos = iterator.getKey();
-            BlockEntity entity = iterator.getValue().get();
+        if (entities != null) {
+            BlockPos blockPos = entities.getLeft();
+            BlockEntity entity = entities.getRight().get();
             
             // Get the chunk directly (Won't update properly otherwise)
-            this.world.getWorldChunk( blockPos ) // Update the block entity
-                .setBlockEntity( blockPos, entity );
+            this.world.getWorldChunk(blockPos) // Update the block entity
+                .setBlockEntity(blockPos, entity);
+            
+            return true;
         }
+        
+        return false;
     }
-    public <T extends ParticleEffect> void particlesSounds(T particle, SoundEvent sound, double deltaX, double deltaY, double deltaZ, double speed, int count, @NotNull BlockPos... blockPositions) throws InterruptedException {
-        for (BlockPos blockPos : blockPositions) {
-            // Spawn the particles
-            ((ServerWorld) this.world).spawnParticles(
-                particle,
-                blockPos.getX() + 0.5,
-                blockPos.getY(),
-                blockPos.getZ() + 0.5,
-                count,
-                deltaX,
-                deltaY,
-                deltaZ,
-                speed
-            );
-            
-            // Play the sound effect
-            world.playSound(null, blockPos, sound, SoundCategory.MASTER, 1.0f, 1.0f);
-            
-            // Sleep
-            Thread.sleep(this.delay * 10);
-        }
+    public boolean after() {
+        Runnable runnable = this.runnables.poll();
+        if (runnable == null)
+            return false;
+        runnable.run();
+        return true;
     }
     
-    public @NotNull StructureBuilderMaterial forBiome(@NotNull RegistryKey<World> dimension, @NotNull RegistryKey<Biome> biome) {
+    public <T extends ParticleEffect> void particlesSound(T particle, SoundEvent sound, double deltaX, double deltaY, double deltaZ, double speed, int count, @NotNull BlockPos blockPos) {
+        // Spawn the particles
+        ((ServerWorld) this.world).spawnParticles(
+            particle,
+            blockPos.getX() + 0.5,
+            blockPos.getY(),
+            blockPos.getZ() + 0.5,
+            count,
+            deltaX,
+            deltaY,
+            deltaZ,
+            speed
+        );
+        
+        // Play the sound effect
+        this.world.playSound(null, blockPos, sound, SoundCategory.MASTER, 1.0f, 1.0f);
+    }
+    
+    public @NotNull StructureBuilderMaterial forBiome(@NotNull RegistryKey<Biome> biome) {
+        RegistryKey<World> dimension = this.world.getRegistryKey();
         Identifier identifier = biome.getValue();
         String path = identifier.getPath();
         
         if (dimension.equals(World.OVERWORLD)) {
             if (path.contains("desert"))
-                return DESERT;
+                return StructureBuilderUtils.DESERT;
             /*if (path.contains("snow"))
                 return COLD;*/
             if (path.contains("ocean") || path.contains("beach"))
-                return BEACH;
+                return StructureBuilderUtils.BEACH;
         }
         else if (dimension.equals(World.NETHER)) {
-            
-            return DEFAULT_NETHER;
+            return StructureBuilderUtils.DEFAULT_NETHER;
         }
         else if (dimension.equals(World.END)) {
-            return END;
+            return StructureBuilderUtils.END;
         }
-        return DEFAULT_OVERWORLD;
+        return StructureBuilderUtils.DEFAULT_OVERWORLD;
     }
     
     public static class StructureBuilderMaterial {

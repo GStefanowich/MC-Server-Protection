@@ -119,8 +119,13 @@
               "title": "Page Contents",
               "description": "The contents of your page",
               "default": null,
-              "required": [
-                "text"
+              "oneOf": [
+                {
+                  "required": ["text"]
+                },
+                {
+                  "required": ["translate"]
+                }
               ],
               "properties": {
                 "text": {
@@ -131,7 +136,7 @@
                 "translate": {
                   "type": "string",
                   "title": "Translatable text",
-                  "pattern": "^([a-z.]+)$"
+                  "pattern": "^([a-z0-9._]+)$"
                 },
                 "with": {
                   "type": "array",

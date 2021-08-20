@@ -28,7 +28,8 @@ package net.TheElm.project.mixins.World;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.ConstructableEntity;
-import net.TheElm.project.interfaces.SleepingWorld;
+import net.TheElm.project.interfaces.LogicalWorld;
+import net.TheElm.project.objects.DetachedTickable;
 import net.TheElm.project.utilities.*;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
@@ -38,6 +39,7 @@ import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.ProgressListener;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.DynamicRegistryManager;
@@ -48,6 +50,7 @@ import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.ServerWorldProperties;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -58,19 +61,19 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.text.NumberFormat;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.BooleanSupplier;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 @Mixin(ServerWorld.class)
-public abstract class WorldSleep extends World implements SleepingWorld, ServerWorldAccess {
+public abstract class WorldSleep extends World implements LogicalWorld, ServerWorldAccess {
     // Shadows from ServerWorld
     @Shadow @Final private List<ServerPlayerEntity> players;
     @Shadow @Final private ServerWorldProperties worldProperties;
     @Shadow private boolean allPlayersSleeping;
+    
+    private final @NotNull List<DetachedTickable> detachedEvents = new LinkedList<>();
     
     protected WorldSleep(MutableWorldProperties properties, RegistryKey<World> registryRef, final DimensionType dimensionType, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long seed) {
         super(properties, registryRef, dimensionType, profiler, isClient, debugWorld, seed);
@@ -140,7 +143,7 @@ public abstract class WorldSleep extends World implements SleepingWorld, ServerW
     }
     
     @Inject(at = @At("TAIL"), method = "spawnEntity")
-    public void onSpawnMob(Entity entity, CallbackInfoReturnable<Boolean> callback) {
+    public void onSpawnMob(@NotNull Entity entity, @NotNull CallbackInfoReturnable<Boolean> callback) {
         if (entity instanceof ConstructableEntity) {
             Optional<UUID> chunkOwner;
             if ((chunkOwner = ChunkUtils.getPosOwner(this.toServerWorld(), entity.getBlockPos() )).isPresent())
@@ -148,6 +151,18 @@ public abstract class WorldSleep extends World implements SleepingWorld, ServerW
             
             if (entity instanceof WitherEntity)
                 CoreMod.logInfo("A new Wither Boss was summoned at " + MessageUtils.xyzToString(entity.getBlockPos()));
+        }
+    }
+    
+    @Inject(at = @At("RETURN"), method = "tickTime")
+    public void onWorldTick(@NotNull CallbackInfo callback) {
+        Identifier value = this.getRegistryKey().getValue();
+        Iterator<DetachedTickable> iterator = this.detachedEvents.iterator();
+        while (iterator.hasNext()) {
+            DetachedTickable tickable = iterator.next();
+            tickable.tick();
+            if (tickable.isRemoved())
+                iterator.remove();
         }
     }
     
@@ -162,6 +177,11 @@ public abstract class WorldSleep extends World implements SleepingWorld, ServerW
                 this.getLevelProperties()
             );
         }
+    }
+    
+    @Override
+    public void addTickableEvent(@NotNull Predicate<DetachedTickable> predicate) {
+        this.detachedEvents.add(new DetachedTickable((ServerWorld)(World) this, predicate));
     }
     
     @Override

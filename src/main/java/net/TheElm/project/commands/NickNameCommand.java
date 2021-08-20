@@ -37,10 +37,10 @@ import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.utilities.ColorUtils;
-import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.text.TextUtils;
@@ -67,10 +67,10 @@ public final class NickNameCommand {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, "Nick", (builder) -> builder
-            .requires(CommandUtils.isEnabled(SewConfig.DO_PLAYER_NICKS))
+            .requires(CommandPredicate.isEnabled(SewConfig.DO_PLAYER_NICKS))
             .then(CommandManager.literal("reset")
                 .then(CommandManager.argument("target", EntityArgumentType.player())
-                    .requires(CommandUtils.requires(OpLevels.KICK_BAN_OP))
+                    .requires(CommandPredicate.opLevel(OpLevels.KICK_BAN_OP))
                     .executes((context) -> {
                         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "target");
                         return NickNameCommand.setNickForPlayer(player, null);
@@ -82,12 +82,12 @@ public final class NickNameCommand {
                 })
             )
             .then(CommandManager.argument("nick", StringArgumentType.string())
-                .requires(CommandUtils.requires(Permissions.PLAYER_NICKNAME))
+                .requires(CommandPredicate.node(Permissions.PLAYER_NICKNAME))
                 .then(CommandManager.argument("color", StringArgumentType.string())
-                    .requires(CommandUtils.requires(Permissions.PLAYER_NICKNAME_COLOR))
+                    .requires(CommandPredicate.node(Permissions.PLAYER_NICKNAME_COLOR))
                     .suggests(ArgumentSuggestions::suggestColors)
                     .then(CommandManager.argument("ends", StringArgumentType.string())
-                        .requires(CommandUtils.requires(Permissions.PLAYER_NICKNAME_COLOR_GRADIENT))
+                        .requires(CommandPredicate.node(Permissions.PLAYER_NICKNAME_COLOR_GRADIENT))
                         .suggests(ArgumentSuggestions::suggestColors)
                         .executes(NickNameCommand::commandNickSetNamedColorRange)
                     )
@@ -196,7 +196,7 @@ public final class NickNameCommand {
         ClaimCommand.notifyChangedClaimed(player.getUuid());
         
         // Send update to the player list
-        ServerCore.get().getPlayerManager().sendToAll(
+        ServerCore.get(player).getPlayerManager().sendToAll(
             (new PlayerListS2CPacket(Action.UPDATE_DISPLAY_NAME, player))
         );
         

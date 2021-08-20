@@ -40,7 +40,7 @@ import java.util.regex.Pattern;
 
 public final class FormattingUtils {
     
-    private static final Pattern regex = Pattern.compile("(&[a-fk-or0-9])");
+    private static final @NotNull Pattern REGEX = Pattern.compile("(&[a-fk-or0-9])");
     
     private FormattingUtils() {}
     
@@ -51,8 +51,8 @@ public final class FormattingUtils {
         MutableText text = null;
         Formatting[] formattings = null;
         
-        for (String segment : stringToColorSegments( raw )) {
-            if ( segment.matches(regex.pattern()+'+') ) {
+        for (String segment : stringToColorSegments(raw)) {
+            if ( segment.matches(REGEX.pattern()+'+') ) {
                 formattings = codeGroupToFormat(segment);
                 continue;
             }
@@ -78,7 +78,7 @@ public final class FormattingUtils {
     
     private static @NotNull String[] stringToColorSegments(@NotNull String raw) {
         List<String> segments = new ArrayList<>();
-        Matcher matches = Pattern.compile(regex.pattern() + '+').matcher(raw);
+        Matcher matches = Pattern.compile(REGEX.pattern() + '+').matcher(raw);
         
         int cursor = 0, end = 0;
         while (matches.find()) {
@@ -97,7 +97,7 @@ public final class FormattingUtils {
     
     private static @NotNull Formatting[] codeGroupToFormat(String codes) {
         List<Formatting> formatting = new ArrayList<>();
-        Matcher matches = regex.matcher(codes);
+        Matcher matches = REGEX.matcher(codes);
         while (matches.find()) {
             formatting.add(codeToFormat(codes.substring(matches.start(), matches.end()).toLowerCase()));
         }

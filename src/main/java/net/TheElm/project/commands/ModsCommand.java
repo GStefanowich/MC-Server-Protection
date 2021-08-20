@@ -32,6 +32,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.interfaces.CommandPredicate;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.fabricmc.loader.api.metadata.Person;
@@ -41,6 +42,7 @@ import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
@@ -48,14 +50,14 @@ public final class ModsCommand {
     
     private ModsCommand() {}
     
-    public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
+    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, "Mods", (builder) -> builder
-            .requires((source -> SewConfig.get(SewConfig.COMMAND_MODS_LIST)))
+            .requires(CommandPredicate.isEnabled(SewConfig.COMMAND_MODS_LIST))
             .executes(ModsCommand::getModList)
         );
     }
     
-    private static int getModList(CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int getModList(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         

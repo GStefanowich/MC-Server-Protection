@@ -30,14 +30,18 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufOutputStream;
 import io.netty.buffer.Unpooled;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.*;
 import net.TheElm.project.utilities.text.TextUtils;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerMetadata;
 import net.minecraft.text.Text;
 import org.apache.commons.lang3.Validate;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -57,6 +61,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -106,7 +111,7 @@ public abstract class MOTD {
         if (configMOTD.size() <= 0) return;
         
         // Get the formatted MOTD
-        String raw = descriptionReplaceVariables(SewConfig.getRandom(SewConfig.SERVER_MOTD_LIST));
+        String raw = this.descriptionReplaceVariables(SewConfig.getRandom(SewConfig.SERVER_MOTD_LIST));
         if (raw != null) {
             Text motd = FormattingUtils.stringToText(raw);
             if (motd != null)
@@ -152,10 +157,12 @@ public abstract class MOTD {
         callback.setReturnValue("data:image/png;base64," + random);
     }
     
-    private String descriptionReplaceVariables(String description) {
+    private @Contract("null -> null") String descriptionReplaceVariables(@Nullable String description) {
         if (description != null) {
+            MinecraftServer server = ServerCore.get();
+            
             // For all keys
-            for (Map.Entry<String, Callable<String>> row : ServerVariables.entrySet()) {
+            for (Map.Entry<String, Function<MinecraftServer, String>> row : ServerVariables.entrySet()) {
                 // If description contains
                 Pattern pattern = Pattern.compile("\\$\\{(" + row.getKey() + "[\\^_]{0,2})}");
                 Matcher matcher = pattern.matcher(description);
@@ -164,7 +171,7 @@ public abstract class MOTD {
                     String key = matcher.group(1);
                     String val;
                     try {
-                        val = row.getValue().call();
+                        val = row.getValue().apply(server);
                         if (val == null) continue;
                         
                         // Change val casing
@@ -176,6 +183,7 @@ public abstract class MOTD {
                             val = CasingUtils.Words(val);
                         
                     } catch (Exception e) { CoreMod.logError(new Exception("Error in MOTD variable \"" + row.getKey() + "\"", e)); return null; }
+                    
                     // Replace
                     description = description.replace("${" + key + "}", val);
                 }
