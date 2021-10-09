@@ -28,10 +28,13 @@ package net.TheElm.project.mixins.Server;
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.utilities.DimensionUtils;
+import net.TheElm.project.utilities.EffectUtils;
 import net.TheElm.project.utilities.LegacyConverter;
 import net.TheElm.project.utilities.TeamUtils;
+import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.s2c.play.ExperienceBarUpdateS2CPacket;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -64,7 +67,7 @@ public class PlayerManager {
     
     @Inject(at = @At("RETURN"), method = "onPlayerConnect")
     public void onPlayerConnect(ClientConnection connection, ServerPlayerEntity player, CallbackInfo callback) {
-        TeamUtils.applyTeams( player );
+        TeamUtils.applyTeams(player);
     }
     
     @Inject(at = @At("HEAD"), method = "setMainWorld", cancellable = true)
@@ -120,4 +123,12 @@ public class PlayerManager {
     public RegistryKey<World> onPlayerConnect(@NotNull ClientConnection connection, @NotNull ServerPlayerEntity player) {
         return SewConfig.get(SewConfig.DEFAULT_WORLD);
     }
+    
+    // TODO: Respawn particles?
+    /*@Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/network/ServerPlayerEntity.onSpawn()V"), method = "respawnPlayer")
+    public void respawnPlayer(@NotNull ServerPlayerEntity respawned, @NotNull ServerPlayerEntity player, boolean alive) {
+        if (!alive && !respawned.notInAnyWorld)
+            EffectUtils.particleSwirl(ParticleTypes.HAPPY_VILLAGER, respawned, false, 10);
+        respawned.onSpawn();
+    }*/
 }

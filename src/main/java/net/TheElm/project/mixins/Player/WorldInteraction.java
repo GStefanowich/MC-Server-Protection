@@ -35,10 +35,23 @@ import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.interfaces.*;
+import net.TheElm.project.interfaces.BackpackCarrier;
+import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.interfaces.LanguageEntity;
+import net.TheElm.project.interfaces.MoneyHolder;
+import net.TheElm.project.interfaces.Nicknamable;
+import net.TheElm.project.interfaces.PlayerChat;
+import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.interfaces.PlayerPermissions;
+import net.TheElm.project.interfaces.PlayerServerLanguage;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.ranks.PlayerRank;
-import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.EffectUtils;
+import net.TheElm.project.utilities.EntityUtils;
+import net.TheElm.project.utilities.FormattingUtils;
+import net.TheElm.project.utilities.RankUtils;
+import net.TheElm.project.utilities.SleepUtils;
+import net.TheElm.project.utilities.WarpUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.Entity;
@@ -53,7 +66,7 @@ import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.MessageType;
 import net.minecraft.network.packet.c2s.play.ClientSettingsC2SPacket;
 import net.minecraft.network.packet.s2c.play.PlayerSpawnPositionS2CPacket;
@@ -83,7 +96,13 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(ServerPlayerEntity.class)
@@ -399,8 +418,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
      * Player Warp Point Events
      */
     
-    @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
-    public void onSavingData(@NotNull CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "writeCustomDataToNbt")
+    public void onSavingData(@NotNull NbtCompound tag, CallbackInfo callback) {
         // Save the player warp location for restarts
         tag.put("playerWarps", WarpUtils.toNBT(this.warps));
         
@@ -426,8 +445,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         
         tag.putBoolean("chatMuted", this.isMuted());
     }
-    @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
-    public void onReadingData(@NotNull CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "readCustomDataFromNbt")
+    public void onReadingData(@NotNull NbtCompound tag, CallbackInfo callback) {
         // Read the player warp location after restarting
         /*if ( tag.contains( "playerWarpX" ) && tag.contains( "playerWarpY" ) && tag.contains( "playerWarpZ" ) ) {
             this.warpPos = new BlockPos(

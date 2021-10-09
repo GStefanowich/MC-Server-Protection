@@ -243,7 +243,8 @@ public class WaystoneCommand {
         Either<LecternWarpsBlockEntity, String> either = BlockUtils.getLecternBlockEntity(
             source.getWorld(),
             source.getEntityOrThrow(),
-            LecternWarpsBlockEntity.class, LecternWarpsBlockEntity::new
+            LecternWarpsBlockEntity.class,
+            LecternWarpsBlockEntity::new
         );
         Optional<LecternWarpsBlockEntity> optionalLectern = either.left();
         Optional<String> error = either.right();

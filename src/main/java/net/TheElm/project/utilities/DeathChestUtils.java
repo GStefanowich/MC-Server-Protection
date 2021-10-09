@@ -47,8 +47,8 @@ import net.minecraft.fluid.Fluids;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
@@ -71,13 +71,16 @@ public final class DeathChestUtils {
     public static @Nullable BlockPos getChestPosition(@NotNull final World world, @NotNull final BlockPos deathPoint) {
         BlockPos out;
         
+        int dimensionHeight = world.getDimension()
+            .getHeight();
+        
         // Get the max Y (Spawn Height)
         int maxY = SewConfig.get(SewConfig.MAX_DEATH_ELEVATION);
         if (maxY < 0)
-            maxY = world.getDimensionHeight();
+            maxY = dimensionHeight;
         
         // Get the max upper height of the death spawn point
-        int upper = Collections.min(Arrays.asList(world.getDimensionHeight(), deathPoint.getY() + maxY));
+        int upper = Collections.min(Arrays.asList(dimensionHeight, deathPoint.getY() + maxY));
         
         // Get the max X/Z (Spawn Radius)
         int maxX = SewConfig.get(SewConfig.MAX_DEATH_SCAN);
@@ -126,7 +129,7 @@ public final class DeathChestUtils {
     }
     
     public static boolean createDeathChestFor(@NotNull final PlayerEntity player, @NotNull BlockPos deathPos) {
-        final PlayerInventory inventory = player.inventory;
+        final PlayerInventory inventory = player.getInventory();
         final PlayerBackpack backpack = ((BackpackCarrier)player).getBackpack();
         World world = player.world;
         
@@ -158,8 +161,8 @@ public final class DeathChestUtils {
         /*
          * Add our items to the "Chest"
          */
-        ListTag inventoryTag = DeathChestUtils.collectInventoryTags(inventory);
-        ListTag backpackTag = DeathChestUtils.collectInventoryTags(backpack);
+        NbtList inventoryTag = DeathChestUtils.collectInventoryTags(inventory);
+        NbtList backpackTag = DeathChestUtils.collectInventoryTags(backpack);
         
         // Set the contents of the item stand
         ((PlayerCorpse)corpse).setCorpseData(
@@ -169,7 +172,7 @@ public final class DeathChestUtils {
         );
         
         // Backup data
-        CompoundTag file = new CompoundTag();
+        NbtCompound file = new NbtCompound();
         file.putLong("xp", player.totalExperience);
         file.put("inventory", inventoryTag);
         file.put("backpack", backpackTag);
@@ -195,7 +198,7 @@ public final class DeathChestUtils {
     
     private static @NotNull ArmorStandEntity createFakeCorpse(@NotNull final World world, @NotNull final BlockPos chestPos, @NotNull final LivingEntity copyOf) {
         // Set the stands basic attributes (From tags)
-        CompoundTag entityData = new CompoundTag();
+        NbtCompound entityData = new NbtCompound();
         entityData.putBoolean("NoBasePlate", true);
         entityData.putBoolean("Invulnerable", true);
         entityData.putBoolean("Invisible", true);
@@ -210,16 +213,16 @@ public final class DeathChestUtils {
             chestPos.getZ() + 0.5D
         );
         
-        // Apply data from the CompoundTag
-        corpse.readCustomDataFromTag(entityData);
+        // Apply data from the NbtCompound
+        corpse.readCustomDataFromNbt(entityData);
         
         corpse.setInvulnerable(true);
         corpse.setNoGravity(true);
         corpse.setInvisible(true);
         
         // Set the stands basic attributes
-        corpse.pitch = copyOf.pitch;
-        corpse.yaw = copyOf.yaw;
+        corpse.setPitch(copyOf.getPitch());
+        corpse.setYaw(copyOf.getYaw());
         
         corpse.setCustomName(new LiteralText("")
             .styled((s) -> {
@@ -234,7 +237,7 @@ public final class DeathChestUtils {
         
         // Set the armor stands head
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-        CompoundTag headData = head.getOrCreateTag();
+        NbtCompound headData = head.getOrCreateNbt();
         
         String playerName = copyOf.getName().asString();
         headData.putString("SkullOwner", playerName);
@@ -251,14 +254,14 @@ public final class DeathChestUtils {
         
         return corpse;
     }
-    private static @NotNull ListTag collectInventoryTags(@Nullable Inventory inventory) {
-        ListTag list = new ListTag();
+    private static @NotNull NbtList collectInventoryTags(@Nullable Inventory inventory) {
+        NbtList list = new NbtList();
         if (inventory != null) {
             for (int i = 0; i < inventory.size(); i++) {
                 ItemStack stack = inventory.removeStack(i);
                 if (stack.getItem().equals(Items.AIR))
                     continue;
-                list.add(stack.toTag(new CompoundTag()));
+                list.add(stack.writeNbt(new NbtCompound()));
             }
         }
         return list;

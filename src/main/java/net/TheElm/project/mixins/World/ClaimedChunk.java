@@ -29,7 +29,6 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
-import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.interfaces.Claim;
 import net.TheElm.project.interfaces.IClaimedChunk;
@@ -40,9 +39,9 @@ import net.TheElm.project.utilities.ChunkUtils.ClaimSlice;
 import net.TheElm.project.utilities.ChunkUtils.InnerClaim;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
@@ -78,11 +77,8 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
     @Override
     public ClaimantTown updateTownOwner(@Nullable UUID owner, boolean fresh) {
         ClaimantTown town = null;
-        if (owner != null) {
-            try {
-                town = ClaimantTown.get( owner );
-            } catch (NbtNotFoundException ignored) {}
-        }
+        if (owner != null)
+            town = ClaimantTown.get(owner);
         
         // Make sure we have the towns permissions cached
         this.chunkTown = (town == null ? null : new WeakReference<>( town ));
@@ -123,7 +119,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
     @Override
     public void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo, boolean fresh) {
         // If heights are invalid
-        if (World.isOutOfBuildLimitVertically(yFrom) || World.isOutOfBuildLimitVertically(yTo))
+        if (this.world.isOutOfHeightLimit(yFrom) || this.world.isOutOfHeightLimit(yTo))
             return;
         
         ClaimSlice slice;
@@ -146,8 +142,8 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
             return new UUID[0];
         
         // Get upper and lower positioning
-        int yMax = Math.max( yFrom, yTo );
-        int yMin = Math.min( yFrom, yTo );
+        int yMax = Math.max(yFrom, yTo);
+        int yMin = Math.min(yFrom, yTo);
         
         // Get all owners
         Set<UUID> owners = new HashSet<>();
@@ -258,8 +254,8 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
     }
     
     @Override
-    public @NotNull ListTag serializeSlices() {
-        ListTag serialized = new ListTag();
+    public @NotNull NbtList serializeSlices() {
+        NbtList serialized = new NbtList();
         ClaimSlice slice;
         for (int i = 0; i < this.claimSlices.length; i++) {
             // Slice must be defined
@@ -267,8 +263,8 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
                 continue;
             
             // Create a new tag to save the slice
-            CompoundTag sliceTag = new CompoundTag();
-            ListTag claimsTag = new ListTag();
+            NbtCompound sliceTag = new NbtCompound();
+            NbtList claimsTag = new NbtList();
             
             // For all slice claims
             Iterator<InnerClaim> claims = slice.getClaims();
@@ -280,7 +276,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
                     continue;
                 
                 // Save data to the tag
-                CompoundTag claimTag = new CompoundTag();
+                NbtCompound claimTag = new NbtCompound();
                 claimTag.putUuid("owner", claim.getOwner());
                 claimTag.putInt("upper", claim.upper());
                 claimTag.putInt("lower", claim.lower());
@@ -300,19 +296,19 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         return serialized;
     }
     @Override
-    public void deserializeSlices(@NotNull ListTag serialized) {
-        for (Tag tag : serialized) {
+    public void deserializeSlices(@NotNull NbtList serialized) {
+        for (NbtElement tag : serialized) {
             // Must be compound tags
-            if (!(tag instanceof CompoundTag)) continue;
-            CompoundTag sliceTag = (CompoundTag) tag;
+            if (!(tag instanceof NbtCompound)) continue;
+            NbtCompound sliceTag = (NbtCompound) tag;
             
-            ListTag claimsTag = sliceTag.getList("claims", NbtType.COMPOUND);
+            NbtList claimsTag = sliceTag.getList("claims", NbtType.COMPOUND);
             int i = sliceTag.getInt("i");
             
-            for (Tag claimTag : claimsTag) {
-                UUID owner = NbtUtils.getUUID((CompoundTag) claimTag,"owner");
-                int upper = ((CompoundTag) claimTag).getInt("upper");
-                int lower = ((CompoundTag) claimTag).getInt("lower");
+            for (NbtElement claimTag : claimsTag) {
+                UUID owner = NbtUtils.getUUID((NbtCompound) claimTag,"owner");
+                int upper = ((NbtCompound) claimTag).getInt("upper");
+                int lower = ((NbtCompound) claimTag).getInt("lower");
                 
                 this.updateSliceOwner( owner, i, lower, upper, false );
             }

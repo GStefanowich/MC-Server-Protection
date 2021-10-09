@@ -26,60 +26,27 @@
 package net.TheElm.project.mixins.Server;
 
 import com.mojang.authlib.GameProfile;
-import net.TheElm.project.protections.ranks.PlayerRank;
-import net.TheElm.project.utilities.FormattingUtils;
-import net.TheElm.project.utilities.RankUtils;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(PlayerListS2CPacket.Entry.class)
-public abstract class PlayerList {
+/**
+ * Created on Sep 02 2021 at 3:42 PM.
+ * By greg in SewingMachineMod
+ */
+@Mixin(PlayerListS2CPacket.class)
+public class PlayerList {
     
-    @Shadow @Final private GameProfile profile;
-    @Shadow @Final private Text displayName;
-    
-    @Shadow
-    public abstract @Nullable Text getDisplayName();
-    
-    @Inject(at = @At("HEAD"), method = "getProfile", cancellable = true)
-    public void onGetProfile(CallbackInfoReturnable<GameProfile> callback) {
-        /*if (SewingMachineConfig.INSTANCE.DO_PLAYER_NICKS.get()) {
-            if (this.displayName != null) {
-                new Exception("Look out for this!").printStackTrace();
-                callback.setReturnValue(new GameProfile(this.profile.getId(), this.displayName.getString()));
-            }
-        }*/
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/network/packet/s2c/play/PlayerListS2CPacket$Entry.getProfile()Lcom/mojang/authlib/GameProfile;"), method = "write")
+    public GameProfile onWriteName(@NotNull PlayerListS2CPacket.Entry entry, @NotNull PacketByteBuf buf) {
+        GameProfile profile = entry.getProfile();
+        //if (!SewConfig.get(SewConfig.DO_PLAYER_NICKS))
+            return profile;
+        /*Text displayName = entry.getDisplayName();
+        return new GameProfile(profile.getId(), displayName.getString());*/
     }
     
-    @Inject(at = @At("RETURN"), method = "getDisplayName", cancellable = true)
-    public void getDisplayName(CallbackInfoReturnable<Text> callback) {
-        MutableText displayName = (this.displayName == null ?
-            new LiteralText(this.profile.getName()).formatted(Formatting.YELLOW)
-            : FormattingUtils.deepCopy(this.displayName)
-        );
-        
-        for (PlayerRank rank : RankUtils.getPlayerRanks(this.profile)) {
-            Text display;
-            if ((display = rank.getDisplay()) != null) {
-                // Open bracket
-                displayName.append(new LiteralText(" [").formatted(Formatting.WHITE)
-                    .append(display)
-                    .append("]"));
-                break; // Only append one
-            }
-        }
-        
-        // Set the return value
-        callback.setReturnValue(displayName);
-    }
 }

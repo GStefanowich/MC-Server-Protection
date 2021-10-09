@@ -26,7 +26,11 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
-import net.minecraft.block.*;
+import net.minecraft.block.AbstractFireBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.PressurePlateBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleEffect;
@@ -43,15 +47,16 @@ import net.minecraft.world.biome.Biome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayDeque;
+import java.util.Queue;
 import java.util.function.Supplier;
 
 public final class StructureBuilderUtils {
-    public static final StructureBuilderMaterial DEFAULT_OVERWORLD = new StructureBuilderMaterial(Blocks.CHISELED_STONE_BRICKS, Blocks.SMOOTH_STONE, Blocks.REDSTONE_LAMP, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
-    public static final StructureBuilderMaterial DEFAULT_NETHER = new StructureBuilderMaterial(Blocks.CHISELED_POLISHED_BLACKSTONE, Blocks.POLISHED_BLACKSTONE, Blocks.SHROOMLIGHT);
-    public static final StructureBuilderMaterial DESERT = new StructureBuilderMaterial(Blocks.SMOOTH_SANDSTONE, Blocks.RED_SANDSTONE, Blocks.REDSTONE_LAMP, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
-    public static final StructureBuilderMaterial BEACH = new StructureBuilderMaterial(Blocks.DARK_PRISMARINE, Blocks.PRISMARINE_BRICKS, Blocks.SEA_LANTERN, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
-    public static final StructureBuilderMaterial END = new StructureBuilderMaterial(Blocks.PURPUR_BLOCK, Blocks.END_STONE_BRICKS, Blocks.PURPUR_PILLAR, Blocks.STONE_PRESSURE_PLATE, Blocks.END_ROD);
+    public static final @NotNull StructureBuilderMaterial DEFAULT_OVERWORLD = new StructureBuilderMaterial(Blocks.CHISELED_STONE_BRICKS, Blocks.SMOOTH_STONE, Blocks.REDSTONE_LAMP, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
+    public static final @NotNull StructureBuilderMaterial DEFAULT_NETHER = new StructureBuilderMaterial(Blocks.CHISELED_POLISHED_BLACKSTONE, Blocks.POLISHED_BLACKSTONE, Blocks.SHROOMLIGHT);
+    public static final @NotNull StructureBuilderMaterial DEFAULT_END = new StructureBuilderMaterial(Blocks.PURPUR_BLOCK, Blocks.END_STONE_BRICKS, Blocks.PURPUR_PILLAR, Blocks.STONE_PRESSURE_PLATE, Blocks.END_ROD);
+    public static final @NotNull StructureBuilderMaterial DESERT = new StructureBuilderMaterial(Blocks.SMOOTH_SANDSTONE, Blocks.RED_SANDSTONE, Blocks.REDSTONE_LAMP, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
+    public static final @NotNull StructureBuilderMaterial BEACH = new StructureBuilderMaterial(Blocks.DARK_PRISMARINE, Blocks.PRISMARINE_BRICKS, Blocks.SEA_LANTERN, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
     
     private final @NotNull String name;
     public final @NotNull World world;
@@ -64,7 +69,7 @@ public final class StructureBuilderUtils {
     private @NotNull final Queue<Pair<BlockPos, Supplier<BlockEntity>>> structureEntity = new ArrayDeque<>();
     private @NotNull final Queue<Runnable> runnables = new ArrayDeque<>();
     
-    public StructureBuilderUtils(@NotNull World world, RegistryKey<Biome> biome, @NotNull String structureName) {
+    public StructureBuilderUtils(@NotNull World world, @NotNull RegistryKey<Biome> biome, @NotNull String structureName) {
         this.world = world;
         this.biome = biome;
         this.name = structureName;
@@ -87,7 +92,7 @@ public final class StructureBuilderUtils {
     public void addEntity(@NotNull BlockPos blockPos, @NotNull Supplier<BlockEntity> blockEntity) {
         this.structureEntity.add(new Pair<>(blockPos, blockEntity));
     }
-    public void add(Runnable runnable) {
+    public void add(@NotNull Runnable runnable) {
         this.runnables.add(runnable);
     }
     
@@ -207,7 +212,7 @@ public final class StructureBuilderUtils {
             return StructureBuilderUtils.DEFAULT_NETHER;
         }
         else if (dimension.equals(World.END)) {
-            return StructureBuilderUtils.END;
+            return StructureBuilderUtils.DEFAULT_END;
         }
         return StructureBuilderUtils.DEFAULT_OVERWORLD;
     }

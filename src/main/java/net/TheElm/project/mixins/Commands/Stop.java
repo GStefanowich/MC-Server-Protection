@@ -31,6 +31,7 @@ import com.mojang.brigadier.arguments.StringArgumentType;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.interfaces.CommandPredicate;
+import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
@@ -40,6 +41,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
@@ -53,8 +55,8 @@ public class Stop {
      */
     @Overwrite
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal( "stop" )
-            .requires(CommandPredicate.opLevel(OpLevels.STOP))
+        dispatcher.register(CommandManager.literal("stop")
+            .requires(CommandPredicate.opLevel(OpLevels.STOP).and(CommandUtils::isDedicatedServer))
             .then(CommandManager.argument("reason", StringArgumentType.greedyString())
                 .executes((context) -> {
                     ServerCommandSource source = context.getSource();
@@ -67,7 +69,12 @@ public class Stop {
                     source.sendFeedback(new TranslatableText("commands.stop.stopping"), true);
                     
                     // Disconnect all players with a reason
-                    Stop.closeServer(new LiteralText("Closing Server: " + reason));
+                    Stop.closeServer(
+                        source.getMinecraftServer(),
+                        new TranslatableText("commands.stop.stopping")
+                            .append(": ")
+                            .append(reason)
+                    );
                     
                     return Command.SINGLE_SUCCESS;
                 })
@@ -79,21 +86,23 @@ public class Stop {
                 source.sendFeedback(new TranslatableText("commands.stop.stopping"), true);
                 
                 // Disconnect all players with a reason
-                Stop.closeServer(new LiteralText("Closing server"));
+                Stop.closeServer(
+                    source.getMinecraftServer(),
+                    new TranslatableText("commands.stop.stopping")
+                );
                 
                 return Command.SINGLE_SUCCESS;
             }))
         );
     }
     
-    private static void closeServer(Text reason) {
-        new Thread(() -> {
-            // Disconnect all players with a reason
+    private static void closeServer(@NotNull MinecraftServer server, @Nullable Text reason) {
+        // Disconnect all players with a reason
+        if (reason != null)
             EntityUtils.kickAllPlayers(reason);
-            
-            // Stop the server
-            ServerCore.get().stop(false);
-        }).start();
+        
+        // Stop the server
+        server.stop(false);
     }
     
 }

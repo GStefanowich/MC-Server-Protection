@@ -25,7 +25,8 @@
 
 package net.TheElm.project.utilities;
 
-import net.minecraft.block.MaterialColor;
+import com.google.common.collect.ImmutableList;
+import net.minecraft.block.Material;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -35,7 +36,8 @@ import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
+import java.awt.Color;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
@@ -215,8 +217,8 @@ public final class ColorUtils {
             .append(text), color);
     }
     
-    private static @NotNull Color materialToColor(@NotNull MaterialColor material) {
-        return new Color(material.color);
+    private static @NotNull Color materialToColor(@NotNull Material material) {
+        return new Color(material.getColor().color);
     }
     private static @NotNull Color dyeToColor(@NotNull DyeColor color) {
         float[] components = color.getColorComponents();
@@ -416,6 +418,27 @@ public final class ColorUtils {
                 return Formatting.WHITE;
             default: return Formatting.RESET;
         }
+    }
+    
+    public static @NotNull Collection<Formatting> formattingColors() {
+        return ImmutableList.of(
+            Formatting.BLACK,
+            Formatting.DARK_BLUE,
+            Formatting.DARK_GREEN,
+            Formatting.DARK_AQUA,
+            Formatting.DARK_RED,
+            Formatting.DARK_PURPLE,
+            Formatting.GOLD,
+            Formatting.GRAY,
+            Formatting.DARK_GRAY,
+            Formatting.BLUE,
+            Formatting.GREEN,
+            Formatting.AQUA,
+            Formatting.RED,
+            Formatting.LIGHT_PURPLE,
+            Formatting.YELLOW,
+            Formatting.WHITE
+        );
     }
     
     public static @NotNull String getLegacyTag(@NotNull Formatting formatting) {

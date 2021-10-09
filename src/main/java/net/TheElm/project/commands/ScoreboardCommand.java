@@ -37,11 +37,11 @@ import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
-import net.minecraft.command.argument.ObjectiveArgumentType;
+import net.minecraft.command.argument.ScoreboardObjectiveArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.scoreboard.ScoreboardObjective;
 import net.minecraft.scoreboard.ScoreboardPlayerScore;
 import net.minecraft.scoreboard.ServerScoreboard;
@@ -90,7 +90,7 @@ public class ScoreboardCommand {
         
         LiteralArgumentBuilder<ServerCommandSource> armorStands = CommandManager.literal("newdisplay")
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
-            .then(CommandManager.argument("objective", ObjectiveArgumentType.objective())
+            .then(CommandManager.argument("objective", ScoreboardObjectiveArgumentType.scoreboardObjective())
                 .then(CommandManager.argument("count", IntegerArgumentType.integer(0, 100))
                     .executes(ScoreboardCommand::generateNumStands)
                 )
@@ -116,16 +116,17 @@ public class ScoreboardCommand {
         ServerWorld world = source.getWorld();
         Vec3d position = source.getPosition();
         
-        ScoreboardObjective objective = ObjectiveArgumentType.getObjective(context, "objective");
-        ServerScoreboard scoreboard = source.getMinecraftServer().getScoreboard();
+        ScoreboardObjective objective = ScoreboardObjectiveArgumentType.getObjective(context, "objective");
+        ServerScoreboard scoreboard = source.getServer()
+            .getScoreboard();
         
         List<ScoreboardPlayerScore> scores = new ArrayList<>(scoreboard.getAllPlayerScores(objective));
         Collections.reverse(scores);
         
-        CompoundTag bottom = null, previous = null;
+        NbtCompound bottom = null, previous = null;
         for (int i = places; i >= 0; i--) {
-            CompoundTag rider = i == 0 ? ScoreboardCommand.generateTitle(objective) : ScoreboardCommand.generateRider(i, scores.size() < i ? null : scores.get(i - 1));
-            ListTag passengers = new ListTag();
+            NbtCompound rider = i == 0 ? ScoreboardCommand.generateTitle(objective) : ScoreboardCommand.generateRider(i, scores.size() < i ? null : scores.get(i - 1));
+            NbtList passengers = new NbtList();
             passengers.add(rider);
             
             if (i == places)
@@ -141,18 +142,18 @@ public class ScoreboardCommand {
         
         // Load the data from the generated tag
         Entity e = EntityType.loadEntityWithPassengers(bottom, world, (entity) -> {
-            entity.refreshPositionAndAngles(position.x, position.y, position.z, entity.yaw, entity.pitch);
+            entity.refreshPositionAndAngles(position.x, position.y, position.z, entity.getYaw(), entity.getPitch());
             return entity;
         });
         
         // Create the entity and its passengers
         return e != null && world.shouldCreateNewEntityWithPassenger(e) ? Command.SINGLE_SUCCESS : 0;
     }
-    private static @NotNull CompoundTag generateTitle(@NotNull ScoreboardObjective objective) {
+    private static @NotNull NbtCompound generateTitle(@NotNull ScoreboardObjective objective) {
         return ScoreboardCommand.generateRider(FormattingUtils.deepCopy(objective.getDisplayName())
             .formatted(Formatting.AQUA));
     }
-    private static @NotNull CompoundTag generateRider(int count, @Nullable ScoreboardPlayerScore score) {
+    private static @NotNull NbtCompound generateRider(int count, @Nullable ScoreboardPlayerScore score) {
         final MutableText right = new LiteralText(": ").formatted(Formatting.WHITE);
         if (score == null) {
             right.append(new LiteralText("Nobody")
@@ -168,8 +169,8 @@ public class ScoreboardCommand {
         return ScoreboardCommand.generateRider(new LiteralText(count + ScoreboardCommand.ending(count)).formatted(Formatting.GOLD)
             .append(right));
     }
-    private static @NotNull CompoundTag generateRider(@NotNull Text display) {
-        CompoundTag tag = new CompoundTag();
+    private static @NotNull NbtCompound generateRider(@NotNull Text display) {
+        NbtCompound tag = new NbtCompound();
         tag.putBoolean("NoAI", true);
         tag.putBoolean("Silent", true);
         tag.putBoolean("NoGravity", true);

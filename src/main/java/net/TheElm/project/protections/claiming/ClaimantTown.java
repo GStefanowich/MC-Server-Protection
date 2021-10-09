@@ -37,8 +37,9 @@ import net.TheElm.project.utilities.TownNameUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.passive.VillagerEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.MessageType;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.HoverEvent;
@@ -153,10 +154,11 @@ public final class ClaimantTown extends Claimant {
     
     /* Send Messages */
     @Override
-    public final void send(Text text, MessageType type, UUID from) {
+    public final void send(@NotNull MinecraftServer server, @NotNull final Text text, @NotNull final MessageType type, @NotNull final UUID from) {
         this.getFriends().forEach((uuid) -> {
-            ServerPlayerEntity player = ServerCore.getPlayer(uuid);
-            if (player != null) player.sendMessage(text, type, from);
+            ServerPlayerEntity player = ServerCore.getPlayer(server, uuid);
+            if (player != null)
+                player.sendMessage(text, type, from);
         });
     }
     
@@ -167,7 +169,7 @@ public final class ClaimantTown extends Claimant {
     
     /* Nbt saving */
     @Override
-    public final void writeCustomDataToTag(@NotNull CompoundTag tag) {
+    public final void writeCustomDataToTag(@NotNull NbtCompound tag) {
         if (this.ownerId == null) throw new RuntimeException("Town owner should not be null");
         
         tag.putUuid("owner", this.ownerId);
@@ -181,7 +183,7 @@ public final class ClaimantTown extends Claimant {
         super.writeCustomDataToTag( tag );
     }
     @Override
-    public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
+    public final void readCustomDataFromTag(@NotNull NbtCompound tag) {
         // Get the towns owner
         this.ownerId = (NbtUtils.hasUUID(tag, "owner") ? NbtUtils.getUUID(tag, "owner") : null);
         
@@ -221,39 +223,42 @@ public final class ClaimantTown extends Claimant {
         return true;
     }
     
-    @Nullable
-    public static ClaimantTown get(UUID townId) throws NbtNotFoundException {
+    public static @Nullable ClaimantTown get(UUID townId) {
         ClaimantTown town;
         
         // If claims are disabled
         if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (townId == null))
             return null;
         
-        NbtUtils.assertExists(ClaimantType.TOWN, townId);
-        
-        // If contained in the cache
-        if ((town = CoreMod.getFromCache(ClaimantTown.class, townId)) != null)
-            return town;
-        
-        // Return the town object
-        return new ClaimantTown( townId );
+        try {
+            NbtUtils.assertExists(ClaimantType.TOWN, townId);
+            
+            // If contained in the cache
+            if ((town = CoreMod.getFromCache(ClaimantTown.class, townId)) != null)
+                return town;
+            
+            // Return the town object
+            return new ClaimantTown(townId);
+        } catch (NbtNotFoundException e) {
+            return null;
+        }
     }
-    public static ClaimantTown makeTown(@NotNull ServerPlayerEntity founder, @NotNull MutableText townName) {
+    public static @NotNull ClaimantTown makeTown(@NotNull ServerPlayerEntity founder, @NotNull MutableText townName) {
         // Generate a random UUID
         UUID townUUID;
         do {
             townUUID = UUID.randomUUID();
-        } while (NbtUtils.exists( ClaimantType.TOWN, townUUID ));
-        return ClaimantTown.makeTown( townUUID, founder.getUuid(), townName );
+        } while (NbtUtils.exists(ClaimantType.TOWN, townUUID ));
+        return ClaimantTown.makeTown(townUUID, founder.getUuid(), townName );
     }
-    public static ClaimantTown makeTown(@NotNull UUID townUUID, @NotNull UUID founder, @NotNull MutableText townName) {
+    public static @NotNull ClaimantTown makeTown(@NotNull UUID townUUID, @NotNull UUID founder, @NotNull MutableText townName) {
         // Create our town
         ClaimantTown town = new ClaimantTown(townUUID, townName);
-    
+        
         // Save the town
-        town.setOwner( founder );
+        town.setOwner(founder);
         town.save();
-    
+        
         // Return the town
         return town;
     }

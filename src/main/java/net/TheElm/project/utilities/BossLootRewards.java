@@ -1,11 +1,14 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.objects.LootInventory;
+import net.TheElm.project.objects.rewards.RewardContext;
+import net.TheElm.project.objects.rewards.WeightedReward;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -50,26 +53,38 @@ public final class BossLootRewards {
      * Loot
      */
     
-    public boolean addLoot(UUID uuid, ItemStack... items) {
-        LootInventory inventory = this.getPlayerLoot(uuid);
+    public boolean addLoot(@NotNull PlayerEntity player, @NotNull WeightedReward reward) {
+        boolean success;
         
         // Add new items to the collection
-        for (ItemStack item : items) {
-            if (!inventory.addStack(item).isEmpty())
-                return false;
-            
+        RewardContext context = reward.create(player);
+        if (success = this.addLoot(player.getUuid(), context)) {
             MessageUtils.consoleToOps(new LiteralText("Gave new reward ")
-                .append(MessageUtils.detailedItem(item))
+                .append(context.asText())
                 .append(" to ")
-                .append(PlayerNameUtils.fetchPlayerName(uuid))
+                .append(player.getDisplayName())
                 .append("."));
         }
+        
+        return success;
+    }
+    public boolean addLoot(@NotNull UUID uuid, @NotNull RewardContext context) {
+        // If no stack to insert, success
+        if (!context.hasStack())
+            return context.wasSuccess();
+        ItemStack stack = context.getStack();
+        
+        // Get the loot inventory to insert into
+        LootInventory inventory = this.getPlayerLoot(uuid);
+        
+        if (!inventory.addStack(stack).isEmpty())
+            return false;
         
         // Save the players loot
         return this.savePlayerLoot(uuid);
     }
     
-    public @NotNull LootInventory getPlayerLoot(UUID uuid) {
+    public @NotNull LootInventory getPlayerLoot(@NotNull UUID uuid) {
         LootInventory inventory = this.playerRewards.get(uuid);
         
         // Get the inventory if it is loaded
@@ -85,7 +100,7 @@ public final class BossLootRewards {
         return inventory;
     }
     
-    public boolean savePlayerLoot(UUID uuid) {
+    public boolean savePlayerLoot(@NotNull UUID uuid) {
         LootInventory inventory = this.getPlayerLoot(uuid);
         if (inventory.isEmpty() && this.playerRewards.containsKey(uuid))
             return this.playerRewards.remove(uuid) != null;
@@ -101,10 +116,10 @@ public final class BossLootRewards {
     /*
      * Display
      */
-    public Text getEntityName() {
+    public @NotNull Text getEntityName() {
         return new TranslatableText(this.entityType.getTranslationKey());
     }
-    public Text getContainerName() {
+    public @NotNull Text getContainerName() {
         return new LiteralText("")
             .append(this.getEntityName())
             .append(" loot.");
@@ -117,16 +132,16 @@ public final class BossLootRewards {
     public void isDirty() {
         this.dirty = true;
     }
-    public CompoundTag toTag(CompoundTag tag) {
+    public @NotNull NbtCompound toTag(@NotNull NbtCompound tag) {
         for (Map.Entry<UUID, LootInventory> players : playerRewards.entrySet())
-            tag.put(players.getKey().toString(), players.getValue().toTag(new ListTag()));
+            tag.put(players.getKey().toString(), players.getValue().toTag(new NbtList()));
         
         return tag;
     }
     
-    public static CompoundTag save(CompoundTag tag) {
+    public static @NotNull NbtCompound save(@NotNull NbtCompound tag) {
         for (Map.Entry<Identifier, BossLootRewards> reward : LOOT_REWARDS.entrySet())
-            tag.put(reward.getKey().toString(), reward.getValue().toTag(new CompoundTag()));
+            tag.put(reward.getKey().toString(), reward.getValue().toTag(new NbtCompound()));
         
         return tag;
     }
@@ -141,8 +156,8 @@ public final class BossLootRewards {
         }
         return null;
     }
-    private static BossLootRewards register(@NotNull BossLootRewards rewards) {
-        LOOT_REWARDS.put(rewards.getIdentifier(), rewards);
+    private static @NotNull BossLootRewards register(@NotNull BossLootRewards rewards) {
+        BossLootRewards.LOOT_REWARDS.put(rewards.getIdentifier(), rewards);
         return rewards;
     }
 }

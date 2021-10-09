@@ -31,7 +31,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.SpawnEggItem;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -180,7 +180,7 @@ public class TradeUtils {
             
             ItemStack pearl = this.createPearl();
             pearl.setCustomName(this.itemName(strength));
-            pearl.getOrCreateTag()
+            pearl.getOrCreateNbt()
                 .putInt("strength", strength);
             
             return new TradeOffer(
@@ -224,7 +224,7 @@ public class TradeUtils {
             String structureName = this.structure.getName();
             
             ItemStack pearl = super.createPearl(new LiteralText(this.description(structureName)));
-            CompoundTag throwDat = pearl.getOrCreateSubTag("throw");
+            NbtCompound throwDat = pearl.getSubNbt("throw");
             
             throwDat.putString("structure", structureName);
             throwDat.putInt("uses", this.uses);
@@ -269,7 +269,7 @@ public class TradeUtils {
         protected @NotNull ItemStack createPearl() {
             Identifier biomeId = this.biome.getValue();
             ItemStack pearl = super.createPearl(this.description(biomeId));
-            CompoundTag throwDat = pearl.getOrCreateSubTag("throw");
+            NbtCompound throwDat = pearl.getSubNbt("throw");
             throwDat.putString("biome", biomeId.toString());
             throwDat.putInt("uses", this.uses);
             

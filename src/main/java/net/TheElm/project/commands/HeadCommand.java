@@ -38,8 +38,8 @@ import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.ItemUtils;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import org.jetbrains.annotations.NotNull;
@@ -82,7 +82,7 @@ public class HeadCommand {
         
         ItemUtils.insertItems(source.getPlayer(), Items.PLAYER_HEAD, count, stack -> {
             // Assign the SkullOwner tag
-            CompoundTag skullOwner = stack.getOrCreateTag();
+            NbtCompound skullOwner = stack.getOrCreateNbt();
             skullOwner.putString("SkullOwner", name);
         });
         
@@ -96,15 +96,15 @@ public class HeadCommand {
         
         ItemUtils.insertItems(source.getPlayer(), Items.PLAYER_HEAD, count, stack -> {
             // Assign the Properties
-            CompoundTag skullOwner = stack.getOrCreateSubTag("SkullOwner"),
-                listItem = new CompoundTag(),
+            NbtCompound skullOwner = stack.getSubNbt("SkullOwner"),
+                listItem = new NbtCompound(),
                 properties;
             listItem.putString("Value", base64);
             
-            ListTag textures;
+            NbtList textures;
             skullOwner.putUuid("Id", CoreMod.SPAWN_ID);
-            skullOwner.put("Properties", properties = new CompoundTag());
-            properties.put("textures", textures = new ListTag());
+            skullOwner.put("Properties", properties = new NbtCompound());
+            properties.put("textures", textures = new NbtList());
             textures.add(listItem);
         });
         

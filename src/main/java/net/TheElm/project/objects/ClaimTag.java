@@ -27,8 +27,8 @@ package net.TheElm.project.objects;
 
 import net.TheElm.project.utilities.LegacyConverter;
 import net.fabricmc.fabric.api.util.NbtType;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.IntArrayTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtIntArray;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.Registry;
@@ -38,7 +38,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public final class ClaimTag extends CompoundTag {
+public final class ClaimTag extends NbtCompound {
     private ClaimTag() {
         super();
     }
@@ -82,10 +82,10 @@ public final class ClaimTag extends CompoundTag {
             return null;
         if ((identifier = Identifier.tryParse(dimType)) == null)
             return null;
-        return RegistryKey.of(Registry.DIMENSION, identifier);
+        return RegistryKey.of(Registry.WORLD_KEY, identifier);
     }
     
-    public static @Nullable ClaimTag fromCompound(@NotNull CompoundTag compoundTag) {
+    public static @Nullable ClaimTag fromCompound(@NotNull NbtCompound compoundTag) {
         if (!(compoundTag.contains("dimension", NbtType.STRING) && compoundTag.contains("x", NbtType.INT) && compoundTag.contains("z", NbtType.INT)))
             return null;
         else {
@@ -98,12 +98,13 @@ public final class ClaimTag extends CompoundTag {
             return tag;
         }
     }
-    public static @Nullable ClaimTag fromArray(@NotNull IntArrayTag arrayTag) {
+    public static @Nullable ClaimTag fromArray(@NotNull NbtIntArray arrayTag) {
         int[] array = arrayTag.getIntArray();
         ClaimTag tag = new ClaimTag();
         
         RegistryKey<World> world = LegacyConverter.getWorldFromId((byte) array[0]);
-        if (world == null) return null;
+        if (world == null)
+            return null;
         
         tag.putString("dimension", world.getValue().toString());
         tag.putInt("x", array[1]);

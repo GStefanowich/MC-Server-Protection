@@ -34,30 +34,32 @@ import net.minecraft.block.entity.CampfireBlockEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Clearable;
-import net.minecraft.util.Tickable;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(CampfireBlockEntity.class)
-public abstract class Campfires extends BlockEntity implements Clearable, Tickable {
+public abstract class Campfires extends BlockEntity implements Clearable {
     
-    public Campfires(BlockEntityType<?> blockEntityType) {
-        super(blockEntityType);
+    public Campfires(BlockEntityType<?> type, BlockPos pos, BlockState state) {
+        super(type, pos, state);
     }
     
-    @Inject(at = @At("TAIL"), method = "tick")
-    public void onTick(CallbackInfo callback) {
-        if ((!this.world.isClient) && SewConfig.get(SewConfig.EXTINGUISH_CAMPFIRES)) {
-            BlockState blockState = this.getCachedState();
+    @Inject(at = @At("TAIL"), method = "litServerTick")
+    public static void onTick(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull CampfireBlockEntity campfire, @NotNull CallbackInfo callback) {
+        if ((!world.isClient) && SewConfig.get(SewConfig.EXTINGUISH_CAMPFIRES)) {
+            BlockState blockState = campfire.getCachedState();
             boolean isLit = blockState.get(CampfireBlock.LIT);
             
             // If RAINING, currently LIT, is in a raining BIOME, and VISIBLE TO SKY
-            if (this.world.isRaining() && isLit && (this.world.getBiome(this.getPos()).getPrecipitation() == Biome.Precipitation.RAIN) && this.world.isSkyVisible(this.getPos())) {
-                this.world.setBlockState(this.getPos(), blockState.with(CampfireBlock.LIT, false));
-                this.world.playSound(null, this.getPos(), SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 1.0f, 1.0f);
+            if (world.isRaining() && isLit && (world.getBiome(pos).getPrecipitation() == Biome.Precipitation.RAIN) && world.isSkyVisible(pos)) {
+                world.setBlockState(pos, blockState.with(CampfireBlock.LIT, false));
+                world.playSound(null, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 1.0f, 1.0f);
             }
         }
     }

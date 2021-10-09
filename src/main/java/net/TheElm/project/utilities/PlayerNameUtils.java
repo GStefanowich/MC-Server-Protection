@@ -43,10 +43,14 @@ import net.TheElm.project.utilities.text.MessageUtils;
 import net.TheElm.project.utilities.text.StyleApplicator;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.*;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
@@ -59,7 +63,9 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 
 public final class PlayerNameUtils {
     
@@ -230,16 +236,15 @@ public final class PlayerNameUtils {
         return (MutableText) player.getName();
     }
     private static @Nullable String getCachedPlayerName(@NotNull UUID uuid) {
-        String name = null;
-        MinecraftServer server = ServerCore.get();
-        GameProfile profile = server.getUserCache().getByUuid( uuid );
-        if (profile != null)
-            name = profile.getName();
-        return name;
+        return ServerCore.get()
+            .getUserCache()
+            .getByUuid(uuid)
+            .map(GameProfile::getName)
+            .orElse(null);
     }
     private static @Nullable MutableText getOfflinePlayerNickname(@NotNull UUID uuid) {
         try {
-            CompoundTag tag = NbtUtils.readOfflinePlayerData(uuid);
+            NbtCompound tag = NbtUtils.readOfflinePlayerData(uuid);
             if ((tag != null) && tag.contains("PlayerNickname", NbtType.STRING))
                 return Text.Serializer.fromJson(tag.getString("PlayerNickname"));
         } catch (NbtNotFoundException ignored) {}

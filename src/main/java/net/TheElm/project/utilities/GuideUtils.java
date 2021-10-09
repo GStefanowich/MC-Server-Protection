@@ -33,10 +33,10 @@ import com.google.gson.JsonSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,19 +60,19 @@ public final class GuideUtils {
         return guideInformation.get("title").getAsString();
     }
     
-    private @NotNull Collection<StringTag> getAllPageContents() {
-        ArrayList<StringTag> list = new ArrayList<>();
+    private @NotNull Collection<NbtString> getAllPageContents() {
+        ArrayList<NbtString> list = new ArrayList<>();
         JsonArray pages = this.guideInformation.getAsJsonArray("pages");
         
         // For each page
         for (JsonElement page : pages) {
-            list.add(StringTag.of(page.toString()));
+            list.add(NbtString.of(page.toString()));
         }
         
         return list;
     }
-    public @NotNull Tag getPages() {
-        ListTag pages = new ListTag();
+    public @NotNull NbtElement getPages() {
+        NbtList pages = new NbtList();
         pages.addAll(this.getAllPageContents());
         return pages;
     }
@@ -107,15 +107,15 @@ public final class GuideUtils {
         return bookAuthor;
     }
     
-    public @NotNull Tag getBookLore() {
+    public @NotNull NbtElement getBookLore() {
         // Json
         JsonObject json = new JsonObject();
         json.addProperty("text", this.getBookDescription());
         json.addProperty("color", this.getBookDescriptionColorOrDefault("dark_purple"));
         
         // Lore
-        ListTag lore = new ListTag();
-        lore.add(StringTag.of( json.toString() ));
+        NbtList lore = new NbtList();
+        lore.add(NbtString.of( json.toString() ));
         
         // Return
         return lore;
@@ -124,7 +124,7 @@ public final class GuideUtils {
     public @NotNull ItemStack newStack() {
         // Create the object
         ItemStack book = new ItemStack(Items.WRITTEN_BOOK);
-        CompoundTag nbt = book.getOrCreateTag();
+        NbtCompound nbt = book.getOrCreateNbt();
         
         // Write the guide data to NBT
         this.writeCustomDataToTag(nbt);
@@ -132,7 +132,7 @@ public final class GuideUtils {
         return book;
     }
     
-    public void writeCustomDataToTag(@NotNull CompoundTag nbt) {
+    public void writeCustomDataToTag(@NotNull NbtCompound nbt) {
         // Put Basic Information
         nbt.putString("author", this.getAuthorOrDefault("Server"));
         nbt.putString("title", this.getTitle());
@@ -141,7 +141,7 @@ public final class GuideUtils {
         nbt.put("pages", this.getPages());
         
         // Put Lore
-        CompoundTag display = new CompoundTag();
+        NbtCompound display = new NbtCompound();
         display.put("Lore", this.getBookLore());
         nbt.put("display", display);
     }

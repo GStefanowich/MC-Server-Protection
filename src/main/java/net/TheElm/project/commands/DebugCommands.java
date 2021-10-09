@@ -30,14 +30,15 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.DragonLoot;
+import net.TheElm.project.objects.rewards.WeightedReward;
 import net.TheElm.project.utilities.BossLootRewards;
 import net.TheElm.project.utilities.EffectUtils;
 import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.command.argument.ParticleArgumentType;
+import net.minecraft.command.argument.ParticleEffectArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.particle.ParticleEffect;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -48,57 +49,58 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collection;
 import java.util.Collections;
 
-public class TeleportEffectCommand {
+public class DebugCommands {
+    private DebugCommands() {}
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("teleport-particles")
-            .then(CommandManager.argument("particle", ParticleArgumentType.particle())
+        ServerCore.register(dispatcher, "Teleport Particles", builder -> builder
+            .then(CommandManager.argument("particle", ParticleEffectArgumentType.particleEffect())
                 .then(CommandManager.argument("target", EntityArgumentType.entities())
                     .then(CommandManager.argument("count", IntegerArgumentType.integer(0, 100))
-                        .executes(TeleportEffectCommand::ExecuteCount)
+                        .executes(DebugCommands::executeCount)
                     )
-                    .executes(TeleportEffectCommand::ExecuteTarget)
+                    .executes(DebugCommands::executeTarget)
                 )
-                .executes(TeleportEffectCommand::ExecuteParticle)
+                .executes(DebugCommands::executeParticle)
             )
         );
         
-        dispatcher.register(CommandManager.literal("dragon-loot")
+        ServerCore.register(dispatcher, "Dragon Loot", builder -> builder
             .then(CommandManager.argument("amount", IntegerArgumentType.integer(1, 54))
-                .executes((context) -> GiveLootAmount(
+                .executes((context) -> giveLootAmount(
                     context.getSource(),
                     IntegerArgumentType.getInteger(context, "amount")
                 ))
             )
-            .executes((context) -> GiveLootAmount(
+            .executes((context) -> giveLootAmount(
                 context.getSource(),
                 1
             ))
         );
     }
     
-    private static int ExecuteParticle(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return Execute(
+    private static int executeParticle(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return execute(
             Collections.singleton(context.getSource().getEntity()),
-            ParticleArgumentType.getParticle(context, "particle"),
+            ParticleEffectArgumentType.getParticle(context, "particle"),
             1
         );
     }
-    private static int ExecuteTarget(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return Execute(
+    private static int executeTarget(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return execute(
             EntityArgumentType.getEntities(context, "target"),
-            ParticleArgumentType.getParticle(context, "particle"),
+            ParticleEffectArgumentType.getParticle(context, "particle"),
             1
         );
     }
-    private static int ExecuteCount(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return Execute(
+    private static int executeCount(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return execute(
             EntityArgumentType.getEntities(context, "target"),
-            ParticleArgumentType.getParticle(context, "particle"),
+            ParticleEffectArgumentType.getParticle(context, "particle"),
             IntegerArgumentType.getInteger(context, "count")
         );
     }
-    private static <E extends Entity, P extends ParticleEffect> int Execute(Collection<E> entities, P particle, int count) {
+    private static <E extends Entity, P extends ParticleEffect> int execute(@NotNull Collection<E> entities, P particle, int count) {
         for(E entity : entities) {
             if (entity instanceof LivingEntity)
                 EffectUtils.particleSwirl(particle, (LivingEntity) entity, true, count);
@@ -108,15 +110,12 @@ public class TeleportEffectCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int GiveLootAmount(@NotNull ServerCommandSource source, int count) throws CommandSyntaxException {
+    private static int giveLootAmount(@NotNull ServerCommandSource source, int count) throws CommandSyntaxException {
         for (int i = 0; i < count; i++) {
-            ItemStack reward = DragonLoot.createReward(source.getPlayer());
-            
-            if (reward != null) {
-                if (!BossLootRewards.DRAGON_LOOT.addLoot(source.getPlayer().getUuid(), reward)) {
-                    source.sendError(new LiteralText("Could not add loot reward, chest is full."));
-                    return 0;
-                }
+            WeightedReward reward = DragonLoot.getReward();
+            if (reward != null && !BossLootRewards.DRAGON_LOOT.addLoot(source.getPlayer(), reward)) {
+                source.sendError(new LiteralText("Could not add loot reward, chest is full."));
+                return 0;
             }
         }
         

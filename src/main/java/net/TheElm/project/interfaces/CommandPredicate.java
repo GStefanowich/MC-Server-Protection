@@ -42,14 +42,10 @@ import java.util.function.Predicate;
  */
 @FunctionalInterface
 public interface CommandPredicate extends Predicate<ServerCommandSource> {
-    @NotNull
-    CommandPredicate OP_LEVEL_1 = source -> source.hasPermissionLevel(OpLevels.SPAWN_PROTECTION);
-    @NotNull
-    CommandPredicate OP_LEVEL_2 = source -> source.hasPermissionLevel(OpLevels.CHEATING);
-    @NotNull
-    CommandPredicate OP_LEVEL_3 = source -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP);
-    @NotNull
-    CommandPredicate OP_LEVEL_4 = source -> source.hasPermissionLevel(OpLevels.STOP);
+    @NotNull CommandPredicate OP_LEVEL_1 = source -> source.hasPermissionLevel(OpLevels.SPAWN_PROTECTION);
+    @NotNull CommandPredicate OP_LEVEL_2 = source -> source.hasPermissionLevel(OpLevels.CHEATING);
+    @NotNull CommandPredicate OP_LEVEL_3 = source -> source.hasPermissionLevel(OpLevels.KICK_BAN_OP);
+    @NotNull CommandPredicate OP_LEVEL_4 = source -> source.hasPermissionLevel(OpLevels.STOP);
     
     boolean testCommandSource(ServerCommandSource source);
     
@@ -58,65 +54,50 @@ public interface CommandPredicate extends Predicate<ServerCommandSource> {
         return this.testCommandSource(source);
     }
     
-    default @NotNull
-    CommandPredicate andEnabled(@NotNull ConfigOption<Boolean> configLevel) {
+    default @NotNull CommandPredicate andEnabled(@NotNull ConfigOption<Boolean> configLevel) {
         return this.and(CommandPredicate.isEnabled(configLevel));
     }
-    default @NotNull
-    CommandPredicate and(CommandPredicate chain) {
+    default @NotNull CommandPredicate and(CommandPredicate chain) {
         return (t) -> this.test(t) && chain.test(t);
     }
-    default @NotNull
-    CommandPredicate and(@NotNull ConfigOption<Integer> configLevel) {
+    default @NotNull CommandPredicate and(@NotNull ConfigOption<Integer> configLevel) {
         return this.and(CommandPredicate.opLevel(configLevel));
     }
-    default @NotNull
-    CommandPredicate and(final int level) {
+    default @NotNull CommandPredicate and(final int level) {
         return this.and(CommandPredicate.opLevel(level));
     }
-    default @NotNull
-    CommandPredicate and(@NotNull final PermissionNode permission) {
+    default @NotNull CommandPredicate and(@NotNull final PermissionNode permission) {
         return this.and(CommandPredicate.node(permission));
     }
-    default @NotNull
-    CommandPredicate and(BooleanSupplier supplier) {
+    default @NotNull CommandPredicate and(BooleanSupplier supplier) {
         return this.and(discard -> supplier.getAsBoolean());
     }
-    default @NotNull
-    CommandPredicate orEnabled(@NotNull ConfigOption<Boolean> configLevel) {
+    default @NotNull CommandPredicate orEnabled(@NotNull ConfigOption<Boolean> configLevel) {
         return this.or(CommandPredicate.isEnabled(configLevel));
     }
-    default @NotNull
-    CommandPredicate or(CommandPredicate chain) {
+    default @NotNull CommandPredicate or(CommandPredicate chain) {
         return (t) -> this.test(t) || chain.test(t);
     }
-    default @NotNull
-    CommandPredicate or(@NotNull ConfigOption<Integer> configLevel) {
+    default @NotNull CommandPredicate or(@NotNull ConfigOption<Integer> configLevel) {
         return this.or(CommandPredicate.opLevel(configLevel));
     }
-    default @NotNull
-    CommandPredicate or(final int level) {
+    default @NotNull CommandPredicate or(final int level) {
         return this.or(CommandPredicate.opLevel(level));
     }
-    default @NotNull
-    CommandPredicate or(@NotNull final PermissionNode permission) {
+    default @NotNull CommandPredicate or(@NotNull final PermissionNode permission) {
         return this.or(CommandPredicate.node(permission));
     }
-    default @NotNull
-    CommandPredicate or(BooleanSupplier supplier) {
+    default @NotNull CommandPredicate or(BooleanSupplier supplier) {
         return this.or(discard -> supplier.getAsBoolean());
     }
     
-    static @NotNull
-    CommandPredicate isEnabled(@NotNull ConfigOption<Boolean> configLevel) {
+    static @NotNull CommandPredicate isEnabled(@NotNull ConfigOption<Boolean> configLevel) {
         return source -> SewConfig.get(configLevel);
     }
-    static @NotNull
-    CommandPredicate opLevel(@NotNull ConfigOption<Integer> configLevel) {
+    static @NotNull CommandPredicate opLevel(@NotNull ConfigOption<Integer> configLevel) {
         return source -> source.hasPermissionLevel(SewConfig.get(configLevel));
     }
-    static @NotNull
-    CommandPredicate opLevel(final int level) {
+    static @NotNull CommandPredicate opLevel(final int level) {
         switch (level) {
             case 1: return CommandPredicate.OP_LEVEL_1;
             case 2: return CommandPredicate.OP_LEVEL_2;
@@ -124,12 +105,10 @@ public interface CommandPredicate extends Predicate<ServerCommandSource> {
             default: return CommandPredicate.OP_LEVEL_4;
         }
     }
-    static @NotNull
-    CommandPredicate node(@NotNull final PermissionNode permission) {
+    static @NotNull CommandPredicate node(@NotNull final PermissionNode permission) {
         return source -> RankUtils.hasPermission(source, permission);
     }
-    static @NotNull
-    CommandPredicate cast(CommandPredicate predicate) {
+    static @NotNull CommandPredicate cast(CommandPredicate predicate) {
         return predicate;
     }
 }

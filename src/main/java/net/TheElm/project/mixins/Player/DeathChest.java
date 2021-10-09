@@ -26,7 +26,11 @@
 package net.TheElm.project.mixins.Player;
 
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.interfaces.*;
+import net.TheElm.project.interfaces.BackpackCarrier;
+import net.TheElm.project.interfaces.BlockPlaceCallback;
+import net.TheElm.project.interfaces.MoneyHolder;
+import net.TheElm.project.interfaces.Nicknamable;
+import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.utilities.DeathChestUtils;
 import net.TheElm.project.utilities.InventoryUtils;
@@ -44,8 +48,8 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.RangedWeaponItem;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
@@ -201,8 +205,8 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
     public void onInitDataTracking(CallbackInfo callback) {
         this.dataTracker.startTracking( MONEY, SewConfig.get(SewConfig.STARTING_MONEY) );
     }
-    @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
-    public void onSavingData(CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "writeCustomDataToNbt")
+    public void onSavingData(NbtCompound tag, CallbackInfo callback) {
         // Save the players money
         tag.putInt( MoneyHolder.SAVE_KEY, this.getPlayerWallet() );
         
@@ -211,13 +215,13 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
             tag.putInt("BackpackSize", this.backpack.getRows());
             tag.put("Backpack", this.backpack.getTags());
             
-            ListTag pickupTags = this.backpack.getPickupTags();
+            NbtList pickupTags = this.backpack.getPickupTags();
             if (!pickupTags.isEmpty())
                 tag.put("BackpackPickup", pickupTags);
         }
     }
-    @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
-    public void onReadingData(CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "readCustomDataFromNbt")
+    public void onReadingData(NbtCompound tag, CallbackInfo callback) {
         // Read the players money
         if (tag.contains( MoneyHolder.SAVE_KEY, NbtType.NUMBER ))
             this.dataTracker.set( MONEY, tag.getInt( MoneyHolder.SAVE_KEY ) );

@@ -28,10 +28,19 @@ package net.TheElm.project.mixins.Player;
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.Permissions;
-import net.TheElm.project.interfaces.*;
+import net.TheElm.project.interfaces.BlockBreakCallback;
+import net.TheElm.project.interfaces.BlockInteractionCallback;
+import net.TheElm.project.interfaces.ItemUseCallback;
+import net.TheElm.project.interfaces.PlayerChat;
+import net.TheElm.project.interfaces.PlayerPermissions;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.block.*;
+import net.minecraft.block.BedBlock;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.DoorBlock;
+import net.minecraft.block.HorizontalFacingBlock;
+import net.minecraft.block.TallPlantBlock;
 import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.item.ItemStack;
@@ -130,6 +139,9 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
             // Update the players mining position
             // Must to set to prevent (Block Mismatch) messages
             this.miningPos = blockPos;
+            
+            // Create a slow mining event
+            //((LogicalWorld)this.world).addTickableEvent(new PlayerNoBreak(this.player, blockPos));
             
             // Cancel the rest of the event
             info.cancel();

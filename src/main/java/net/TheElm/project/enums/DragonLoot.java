@@ -1,7 +1,10 @@
 package net.TheElm.project.enums;
 
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.objects.WeightedReward;
+import net.TheElm.project.objects.rewards.WeightedReward;
+import net.TheElm.project.objects.rewards.WeightedRewardEnchantedBook;
+import net.TheElm.project.objects.rewards.WeightedRewardGenerator;
+import net.TheElm.project.objects.rewards.WeightedRewardItem;
 import net.TheElm.project.utilities.IntUtils;
 import net.TheElm.project.utilities.ItemUtils;
 import net.minecraft.enchantment.Enchantment;
@@ -19,6 +22,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 public final class DragonLoot {
     private DragonLoot() {}
@@ -34,12 +39,15 @@ public final class DragonLoot {
             DragonLoot.itemReward(2800, Items.ELYTRA);
             DragonLoot.itemReward(250, Items.ELYTRA, (p, s) -> ItemUtils.makeUnbreakable(s));
             DragonLoot.itemReward(250, Items.FISHING_ROD, (p, s) -> ItemUtils.makeUnbreakable(s));
-            DragonLoot.itemReward(6830, Items.DRAGON_EGG);
-            DragonLoot.itemReward(1400, Items.DRAGON_HEAD);
+            DragonLoot.itemReward(5430, Items.DRAGON_EGG);
+            DragonLoot.itemReward(1400, "Head chance", (player) -> {
+                Random random = player.getRandom();
+                return new ItemStack(random.nextBoolean() ? Items.DRAGON_EGG : Items.DRAGON_HEAD);
+            });
             /*DragonLoot.itemReward(1400, Items.PLAYER_HEAD, (p, s) -> {
                 if (p != null) {
                     // Assign the SkullOwner tag
-                    CompoundTag skullOwner = s.getOrCreateTag();
+                    NbtCompound skullOwner = s.getOrCreateNbt();
                     skullOwner.putString("SkullOwner", p.getGameProfile().getName());
                 }
             });*/
@@ -115,42 +123,37 @@ public final class DragonLoot {
         }
     }
     
+    private static @NotNull <T extends WeightedReward> T reward(T reward) {
+        DragonLoot.LOOT_REWARDS.add(reward);
+        return reward;
+    }
     private static @NotNull WeightedReward itemReward(int weight, Item item) {
-        WeightedReward reward = new WeightedReward(weight, item);
-        DragonLoot.LOOT_REWARDS.add(reward);
-        return reward;
+        return DragonLoot.reward(new WeightedRewardItem(weight, item));
     }
-    private static @NotNull WeightedReward itemReward(int weight, Item item, BiConsumer<PlayerEntity, ItemStack> consumer) {
-        WeightedReward reward = new WeightedReward(weight, item, consumer);
-        DragonLoot.LOOT_REWARDS.add(reward);
-        return reward;
+    private static @NotNull WeightedReward itemReward(int weight, Item item, @NotNull BiConsumer<PlayerEntity, ItemStack> consumer) {
+        return DragonLoot.reward(new WeightedRewardItem(weight, item, consumer));
     }
-    private static @NotNull WeightedReward bookReward(int weight, Enchantment enchantment, final int level) {
-        return DragonLoot.itemReward(weight, Items.ENCHANTED_BOOK, (player, book) -> {
-            EnchantedBookItem.addEnchantment(book, new EnchantmentLevelEntry(enchantment, level));
-        });
+    private static @NotNull WeightedReward itemReward(int weight, @NotNull String name, @NotNull Function<PlayerEntity, ItemStack> consumer) {
+        return DragonLoot.reward(new WeightedRewardGenerator(weight, name, consumer));
+    }
+    private static @NotNull WeightedReward bookReward(int weight, @NotNull Enchantment enchantment, final int level) {
+        return DragonLoot.reward(new WeightedRewardEnchantedBook(weight, enchantment, level));
     }
     
-    public static @Nullable ItemStack createReward(@Nullable PlayerEntity player) {
-        WeightedReward reward = DragonLoot.getReward();
-        if (reward == null)
-            return null;
-        return reward.createItem(player);
-    }
     public static @Nullable WeightedReward getReward() {
         int random = DragonLoot.getRandomNumber();
         if (random < 0)
             return null;
-        return LOOT_REWARDS.get(random);
+        return DragonLoot.LOOT_REWARDS.get(random);
     }
     private static int getRandomNumber() {
         double totalWeight = 0.0D;
-        for (WeightedReward reward : LOOT_REWARDS)
+        for (WeightedReward reward : DragonLoot.LOOT_REWARDS)
             totalWeight += reward.getWeight();
         
         double random = Math.random() * totalWeight;
-        for (int i = 0; i < LOOT_REWARDS.size(); i++) {
-            random -= LOOT_REWARDS.get(i).getWeight();
+        for (int i = 0; i < DragonLoot.LOOT_REWARDS.size(); i++) {
+            random -= DragonLoot.LOOT_REWARDS.get(i).getWeight();
             if (random <= 0D)
                 return i;
         }

@@ -34,6 +34,8 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.CauldronBlock;
 import net.minecraft.block.ConcretePowderBlock;
+import net.minecraft.block.LeveledCauldronBlock;
+import net.minecraft.block.cauldron.CauldronBehavior;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
@@ -41,8 +43,8 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -63,7 +65,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
 import java.util.UUID;
 
-@Mixin(CauldronBlock.class)
+@Mixin(LeveledCauldronBlock.class)
 public abstract class CauldronCleaning extends Block {
     
     @Shadow
@@ -77,7 +79,7 @@ public abstract class CauldronCleaning extends Block {
     public void onEntityCollided(@NotNull BlockState blockState, @NotNull World world, @NotNull BlockPos blockPos, Entity entity, CallbackInfo callback) {
         if (world.isClient() || (!(entity instanceof ItemEntity)))
             return;
-        int waterLevel = blockState.get(CauldronBlock.LEVEL);
+        int waterLevel = blockState.get(LeveledCauldronBlock.LEVEL);
         
         ItemEntity colliderEntity = (ItemEntity) entity;
         ItemStack colliderStack = colliderEntity.getStack();
@@ -113,8 +115,8 @@ public abstract class CauldronCleaning extends Block {
                 return;
             
             // Get the entity IDs on the spawner
-            CompoundTag spawnerTag = colliderStack.getOrCreateTag();
-            ListTag entityIds;
+            NbtCompound spawnerTag = colliderStack.getOrCreateNbt();
+            NbtList entityIds;
             if ((!spawnerTag.contains("EntityIds", NbtType.LIST)) || ((entityIds = spawnerTag.getList("EntityIds", NbtType.STRING)).size() < 2))
                 return;
             
@@ -134,8 +136,9 @@ public abstract class CauldronCleaning extends Block {
             
             // Cause the player to pickup the spawner
             thrower.sendPickup(colliderEntity, colliderStack.getCount());
-            colliderEntity.remove();
-            thrower.inventory.offerOrDrop(world, colliderStack);
+            colliderEntity.remove(Entity.RemovalReason.DISCARDED);
+            thrower.getInventory()
+                .offerOrDrop(colliderStack);
             
             // Cancel the initial cauldron event
             callback.cancel();

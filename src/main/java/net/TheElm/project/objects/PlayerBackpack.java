@@ -31,9 +31,9 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.screen.GenericContainerScreenHandler;
 import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.sound.SoundCategory;
@@ -147,8 +147,8 @@ public class PlayerBackpack extends SimpleInventory {
         ItemStack invStack = this.getStack(slot);
         if (invStack.isEmpty()) {
             invStack = new ItemStack(item, 0);
-            if (extStack.hasTag()) {
-                invStack.setTag(extStack.getOrCreateTag().copy());
+            if (extStack.hasNbt()) {
+                invStack.setNbt(extStack.getOrCreateNbt().copy());
             }
             
             this.setStack(slot, invStack);
@@ -177,7 +177,7 @@ public class PlayerBackpack extends SimpleInventory {
         return !mainStack.isEmpty() && this.areItemsEqual(mainStack, otherStack) && mainStack.isStackable() && mainStack.getCount() < mainStack.getMaxCount() && mainStack.getCount() < this.getMaxCountPerStack();
     }
     private boolean areItemsEqual(@NotNull ItemStack mainStack, @NotNull ItemStack otherStack) {
-        return mainStack.getItem() == otherStack.getItem() && ItemStack.areTagsEqual(mainStack, otherStack);
+        return mainStack.getItem() == otherStack.getItem() && ItemStack.areNbtEqual(mainStack, otherStack);
     }
     
     public int getEmptySlot() {
@@ -200,28 +200,28 @@ public class PlayerBackpack extends SimpleInventory {
     /*
      * Backpack Items as NBT
      */
-    public void readTags(@NotNull ListTag listTag) {
+    public void readTags(@NotNull NbtList listTag) {
         for(int slot = 0; slot < this.size(); ++slot) {
             this.setStack(slot, ItemStack.EMPTY);
         }
         
         for(int itemCount = 0; itemCount < listTag.size(); ++itemCount) {
-            CompoundTag compoundTag = listTag.getCompound(itemCount);
+            NbtCompound compoundTag = listTag.getCompound(itemCount);
             int slot = compoundTag.getByte("Slot") & 255;
             if (slot >= 0 && slot < this.size()) {
-                this.setStack(slot, ItemStack.fromTag(compoundTag));
+                this.setStack(slot, ItemStack.fromNbt(compoundTag));
             }
         }
     }
-    public ListTag getTags() {
-        ListTag listTag = new ListTag();
+    public NbtList getTags() {
+        NbtList listTag = new NbtList();
         
         for(int slot = 0; slot < this.size(); ++slot) {
             ItemStack itemStack = this.getStack(slot);
             if (!itemStack.isEmpty()) {
-                CompoundTag compoundTag = new CompoundTag();
+                NbtCompound compoundTag = new NbtCompound();
                 compoundTag.putByte("Slot", (byte)slot);
-                itemStack.toTag(compoundTag);
+                itemStack.writeNbt(compoundTag);
                 listTag.add(compoundTag);
             }
         }
@@ -232,18 +232,18 @@ public class PlayerBackpack extends SimpleInventory {
     /*
      * Backpack Auto-Pickup NBT
      */
-    public void readPickupTags(@NotNull ListTag listTag) {
+    public void readPickupTags(@NotNull NbtList listTag) {
         for (int i = 0; i < listTag.size(); ++i) {
             this.autopickup.add(new Identifier(
                 listTag.getString(i)
             ));
         }
     }
-    public ListTag getPickupTags() {
-        ListTag listTag = new ListTag();
+    public NbtList getPickupTags() {
+        NbtList listTag = new NbtList();
         
         for (Identifier identifier : this.autopickup) {
-            listTag.add(StringTag.of(
+            listTag.add(NbtString.of(
                 identifier.toString()
             ));
         }

@@ -7,9 +7,9 @@ import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.block.entity.ShulkerBoxBlockEntity;
 import net.minecraft.inventory.SidedInventory;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Tickable;
+import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,25 +18,25 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ShulkerBoxBlockEntity.class)
-public abstract class LootChestEntity extends LootableContainerBlockEntity implements SidedInventory, Tickable, BossLootableContainer {
+public abstract class LootChestEntity extends LootableContainerBlockEntity implements SidedInventory, BossLootableContainer {
     
     private Identifier bossLootLinkedIdentifier;
     
-    protected LootChestEntity(BlockEntityType<?> blockEntityType) {
-        super(blockEntityType);
+    protected LootChestEntity(BlockEntityType<?> blockEntityType, BlockPos blockPos, BlockState blockState) {
+        super(blockEntityType, blockPos, blockState);
     }
     
     /*
      * NBT Saving / Loading
      */
     
-    @Inject(at = @At("TAIL"), method = "fromTag")
-    public void nbtRead(BlockState state, CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "nbtRead")
+    public void onNbtRead(BlockState state, NbtCompound tag, CallbackInfo callback) {
         this.bossLootLinkedIdentifier = (tag.contains("BossLootContainer", NbtType.STRING) ? new Identifier(tag.getString("BossLootContainer")) : null);
     }
     
-    @Inject(at = @At("TAIL"), method = "toTag")
-    public void nbtWrite(CompoundTag tag, CallbackInfoReturnable<CompoundTag> callback) {
+    @Inject(at = @At("TAIL"), method = "nbtWrite")
+    public void onNbtWrite(NbtCompound tag, CallbackInfoReturnable<NbtCompound> callback) {
         if (this.bossLootLinkedIdentifier != null)
             tag.putString("BossLootContainer", this.bossLootLinkedIdentifier.toString());
     }

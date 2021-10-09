@@ -27,8 +27,11 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.utilities.text.StyleApplicator;
 import net.minecraft.network.Packet;
-import net.minecraft.network.packet.s2c.play.WorldBorderS2CPacket;
-import net.minecraft.network.packet.s2c.play.WorldBorderS2CPacket.Type;
+import net.minecraft.network.packet.s2c.play.WorldBorderCenterChangedS2CPacket;
+import net.minecraft.network.packet.s2c.play.WorldBorderInterpolateSizeS2CPacket;
+import net.minecraft.network.packet.s2c.play.WorldBorderSizeChangedS2CPacket;
+import net.minecraft.network.packet.s2c.play.WorldBorderWarningBlocksChangedS2CPacket;
+import net.minecraft.network.packet.s2c.play.WorldBorderWarningTimeChangedS2CPacket;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
@@ -141,27 +144,27 @@ public final class DimensionUtils {
         
         @Override
         public void onSizeChange(WorldBorder border, double size) {
-            this.sendToAll(new WorldBorderS2CPacket(border, Type.SET_SIZE));
+            this.sendToAll(new WorldBorderSizeChangedS2CPacket(border));
         }
         
         @Override
         public void onInterpolateSize(WorldBorder border, double fromSize, double toSize, long time) {
-            this.sendToAll(new WorldBorderS2CPacket(border, Type.LERP_SIZE));
+            this.sendToAll(new WorldBorderInterpolateSizeS2CPacket(border));
         }
         
         @Override
         public void onCenterChanged(WorldBorder border, double centerX, double centerZ) {
-            this.sendToAll(new WorldBorderS2CPacket(border, Type.SET_CENTER));
+            this.sendToAll(new WorldBorderCenterChangedS2CPacket(border));
         }
         
         @Override
         public void onWarningTimeChanged(WorldBorder border, int warningTime) {
-            this.sendToAll(new WorldBorderS2CPacket(border, Type.SET_WARNING_TIME));
+            this.sendToAll(new WorldBorderWarningTimeChangedS2CPacket(border));
         }
         
         @Override
         public void onWarningBlocksChanged(WorldBorder border, int warningBlockDistance) {
-            this.sendToAll(new WorldBorderS2CPacket(border, Type.SET_WARNING_BLOCKS));
+            this.sendToAll(new WorldBorderWarningBlocksChangedS2CPacket(border));
         }
         
         @Override

@@ -26,28 +26,41 @@
 package net.TheElm.project.protections.claiming;
 
 import com.flowpowered.math.vector.Vector2d;
+import de.bluecolored.bluemap.api.BlueMapAPI;
 import de.bluecolored.bluemap.api.marker.Shape;
 import de.bluecolored.bluemap.api.marker.ShapeMarker;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.objects.ClaimTag;
 import net.TheElm.project.utilities.MapUtils;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Consumer;
+import java.util.function.IntFunction;
 
 /**
  * Created on Jul 30 2021 at 11:02 PM.
  * By greg in SewingMachineMod
  */
-public class ClaimRegion {
-    
-    public final @NotNull OutlineMaintainer outline;
-    private final @NotNull Set<ClaimTag> chunks = new LinkedHashSet<>();
+public class ChunkZone {
+    //public final @NotNull OutlineMaintainer outline;
+    private final @NotNull Set<LinkedPointChunk> chunks = new LinkedHashSet<>();
     
     public final @NotNull Claimant claimant;
     
@@ -57,11 +70,11 @@ public class ClaimRegion {
     public final @NotNull String label;
     public final @NotNull String description;
     
-    public ClaimRegion(@NotNull ClaimTag first, @NotNull Claimant owner) {
+    public ChunkZone(@NotNull ClaimTag first, @NotNull Claimant owner) {
         System.out.println("Created a new claim region");
         this.world = first.getDimension();
-        this.outline = new OutlineMaintainer(first);
-        this.chunks.add(first);
+        //this.outline = new OutlineMaintainer(first);
+        this.chunks.add(LinkedPointChunk.of(first));
         
         this.mapId = "region" + first.getX() + "-" + first.getUpperZ();
         
@@ -74,9 +87,9 @@ public class ClaimRegion {
         }
         this.claimant = owner;
     }
-    public ClaimRegion(@NotNull RegistryKey<World> world, @NotNull ListTag list, @NotNull Claimant owner) {
+    public ChunkZone(@NotNull RegistryKey<World> world, @NotNull NbtList list, @NotNull Claimant owner) {
         this.world = world;
-        this.outline = new OutlineMaintainer(list);
+        //this.outline = new OutlineMaintainer(list);
         
         this.mapId = "";
         this.label = "";
@@ -85,71 +98,144 @@ public class ClaimRegion {
         this.claimant = owner;
     }
     
-    public boolean tryConsume(@NotNull Claimant claimant,@NotNull WorldChunk chunk) {
+    public boolean tryConsume(@NotNull Claimant claimant, @NotNull WorldChunk chunk) {
         return this.tryConsume(claimant, ClaimTag.of(chunk));
     }
     public boolean tryConsume(@NotNull Claimant claimant, @NotNull ClaimTag tag) {
         if (!Objects.equals(tag.getDimension(), this.world) || !Objects.equals(this.claimant.getId(), claimant.getId()))
             return false;
-        boolean success = this.outline.push(tag);
+        /*boolean success = this.outline.push(tag);
         if (success)
-            this.chunks.add(tag);
-        return success;
+            this.chunks.add(tag);*/
+        LinkedPointChunk convert = LinkedPointChunk.of(tag);
+        for (LinkedPointChunk chunk : this.chunks) {
+            if (chunk.setLinked(convert)) {
+                this.chunks.add(convert);
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    public Vector2d[] toArray() {
+        List<Vector2d> points = new ArrayList<>();
+        for (LinkedPointChunk chunk : this.chunks) {
+            points.addAll(chunk.gatherPoints());
+        }
+        
+        return Arrays.stream(points.toArray(new Vector2d[0]))
+            .sorted((t1, t2) -> {
+                if ((t1.getX() == t2.getX()) && (t1.getY() == t2.getY()))
+                    return 0;
+                if ((t1.getX() == t2.getX()) || (t1.getY() == t2.getY()))
+                    return 1;
+                return Double.compare(t1.getX(), t2.getX()) + Double.compare(t1.getY(), t2.getY());
+            })
+            .toArray(Vector2d[]::new);
+        
+        /*Collections.sort(points, (t1, t2) -> {
+            if ((t1.getX() == t2.getX()) || (t1.getY() == t2.getY()))
+                return 0;
+            return Double.compare(t1.getX(), t2.getX()) + Double.compare(t1.getY(), t2.getY());
+        });
+        
+        return points.toArray(new Vector2d[0]);*/
     }
     
     public int size() {
         return this.chunks.size();
     }
     
-    public static @NotNull Set<ClaimRegion> generateFromExistingClaims(@NotNull final Collection<ClaimTag> collection, @NotNull Claimant claimant) {
-        Set<ClaimRegion> regions = new HashSet<>();
-        Set<ClaimTag> regionChunks = new HashSet<>(collection);
-        while (!regionChunks.isEmpty()) {
-            ClaimTag regionTag = null;
-            boolean consumed = !regions.isEmpty();
-
-            Iterator<ClaimTag> regionIterator = regionChunks.iterator();
-            outer:
-            while (regionIterator.hasNext()) {
-                regionTag = regionIterator.next();
-                // If no region exists, skip trying to iterate forever and just make one
-                if (regions.isEmpty())
-                    break;
-                for (ClaimRegion region : regions) {
-                    if (consumed = region.tryConsume(claimant, regionTag)) {
-                        regionIterator.remove();
-                        break outer;
-                    }
-                }
-            }
-
-            if (!consumed && regionTag != null) {
-                // Create a new region for the unconsumed chunk
-                if (regionTag.getDimension() != null)
-                    regions.add(new ClaimRegion(regionTag, claimant));
-                regionIterator.remove();
-            }
+    public static class Builder implements Consumer<BlueMapAPI> {
+        private final @NotNull Claimant claimant;
+        private final @NotNull Set<ChunkZone> regions = new HashSet<>();
+        private final @NotNull Set<ClaimTag> regionChunks = new HashSet<>();
+        
+        public Builder(@NotNull Claimant claimant) {
+            this.claimant = claimant;
         }
         
-        MapUtils.RUN.add((api) -> {
-            for (ClaimRegion region : regions) {
-                System.out.println("Region Size -> " + region.size() + " (" + region.outline.size() + " corners)");
+        public ChunkZone.Builder add(Collection<ClaimTag> collection) {
+            this.regionChunks.addAll(collection);
+            return this;
+        }
+        public ChunkZone.Builder add(ClaimTag tag) {
+            this.regionChunks.add(tag);
+            return this;
+        }
+        
+        public @NotNull Set<ChunkZone> build() {
+            while (!this.regionChunks.isEmpty()) {
+                ClaimTag regionTag = null;
+                boolean consumed = !this.regions.isEmpty();
+
+                Iterator<ClaimTag> regionIterator = this.regionChunks.iterator();
+                outer:
+                while (regionIterator.hasNext()) {
+                    regionTag = regionIterator.next();
+                    // If no region exists, skip trying to iterate forever and just make one
+                    if (this.regions.isEmpty())
+                        break;
+                    for (ChunkZone region : this.regions) {
+                        if (consumed = region.tryConsume(this.claimant, regionTag)) {
+                            regionIterator.remove();
+                            break outer;
+                        }
+                    }
+                }
+                
+                if (!consumed && regionTag != null) {
+                    // Create a new region for the unconsumed chunk
+                    if (regionTag.getDimension() != null)
+                        regions.add(new ChunkZone(regionTag, this.claimant));
+                    regionIterator.remove();
+                }
+            }
+            
+            // Run the bluemap plotter
+            MapUtils.RUN.add(this);
+            
+            // Return the generated regions
+            return this.regions;
+        }
+        
+        private @NotNull
+        ChunkZone addRegion(@NotNull ClaimTag tag) {
+            ChunkZone region = new ChunkZone(tag, this.claimant);
+            
+            this.regions.add(region);
+            
+            return region;
+        }
+        
+        @Override
+        public void accept(BlueMapAPI blueMapAPI) {
+            for (ChunkZone region : this.regions) {
+                Vector2d[] points = region.toArray();
+                System.out.println("Region Size -> " + region.size() + " (" + points.length + " corners)");
                 MapUtils.withMarker(region.world, "claims", (map, set) -> {
                     if (!set.getMarker(region.mapId).isPresent()) {
-                        ShapeMarker shapeMarker = set.createShapeMarker(region.mapId, map, new Shape(region.outline.toArray()), 64);
-                        shapeMarker.setLabel(region.label);
-                        shapeMarker.setDetail(region.description);
-
-                        return true;
+                        if (points.length >= 3) {
+                            ShapeMarker shapeMarker = set.createShapeMarker(region.mapId, map, new Shape(points), 64);
+                            shapeMarker.setLabel(region.label);
+                            shapeMarker.setDetail(region.description);
+                            
+                            return true;
+                        }
                     }
                     return false;
                 });
             }
-        });
+        }
         
-        return regions;
+        public static @NotNull Set<ChunkZone> build(@NotNull final Collection<ClaimTag> collection, @NotNull Claimant claimant) {
+            Builder builder = new Builder(claimant);
+            
+            builder.add(collection);
+            
+            return builder.build();
+        }
     }
-    
     public static class OutlineMaintainer {
         private final @NotNull List<Vector2d> outline = new LinkedList<>();
         
@@ -164,7 +250,7 @@ public class ClaimRegion {
             this.outline.add(new Vector2d(upperX, upperZ));
             this.outline.add(new Vector2d(upperX, lowerZ));
         }
-        private OutlineMaintainer(@NotNull ListTag points) {
+        private OutlineMaintainer(@NotNull NbtList points) {
             
         }
         

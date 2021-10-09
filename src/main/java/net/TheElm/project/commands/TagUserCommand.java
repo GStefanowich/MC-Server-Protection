@@ -30,6 +30,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.utilities.text.MessageUtils;
@@ -52,7 +53,7 @@ public final class TagUserCommand {
     private TagUserCommand() {}
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("@")
+        ServerCore.register(dispatcher, "@", "tag user", builder -> builder
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .then(CommandManager.argument("message", StringArgumentType.greedyString())
                     .executes(TagUserCommand::tagPlayerMessage)

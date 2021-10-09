@@ -34,11 +34,12 @@ import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.IntArrayTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtIntArray;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.network.MessageType;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
@@ -48,7 +49,14 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.function.Consumer;
 
 public abstract class Claimant {
@@ -135,7 +143,7 @@ public abstract class Claimant {
     }
     
     /* Send Messages */
-    public abstract void send(Text text, MessageType type, UUID from);
+    public abstract void send(@NotNull final MinecraftServer server, @NotNull final Text text, @NotNull final MessageType type, @NotNull final UUID from);
     
     /* Town types */
     public final ClaimantType getType() {
@@ -153,7 +161,7 @@ public abstract class Claimant {
             this.CLAIMED_CHUNKS.removeIf((iteration) -> (
                 Objects.equals(
                     iteration.getDimension(),
-                    chunk.getWorld().getDimension()
+                    chunk.getWorld().getRegistryKey()
                 )
                 && iteration.getX() == pos.x
                 && iteration.getZ() == pos.z
@@ -169,8 +177,8 @@ public abstract class Claimant {
         for (ClaimTag it : new LinkedHashSet<>(this.CLAIMED_CHUNKS))
             action.accept(it);
     }
-    public final @NotNull Iterator<ClaimTag> getChunks() {
-        return this.CLAIMED_CHUNKS.iterator();
+    public final @NotNull Collection<ClaimTag> getChunks() {
+        return this.CLAIMED_CHUNKS;
     }
     
     /* Nbt saving */
@@ -194,17 +202,17 @@ public abstract class Claimant {
         if (!success) CoreMod.logInfo( "FAILED TO SAVE " + this.getType().name() + " DATA, " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
         return success;
     }
-    public void writeCustomDataToTag(@NotNull CompoundTag tag) {
+    public void writeCustomDataToTag(@NotNull NbtCompound tag) {
         // Save our chunks
-        ListTag chunkList = new ListTag();
+        NbtList chunkList = new NbtList();
         chunkList.addAll(this.CLAIMED_CHUNKS);
         tag.put("landChunks", chunkList);
         
         // Save our list of friends
-        ListTag rankList = new ListTag();
+        NbtList rankList = new NbtList();
         for (Map.Entry<UUID, ClaimRanks> friend : this.USER_RANKS.entrySet()) {
             // Make a map for the ranked player
-            CompoundTag friendTag = new CompoundTag();
+            NbtCompound friendTag = new NbtCompound();
             friendTag.putUuid("i", friend.getKey());
             friendTag.putString("r", friend.getValue().name());
             
@@ -214,10 +222,10 @@ public abstract class Claimant {
         tag.put(rankNbtTag(this), rankList);
         
         // Save our list of permissions
-        ListTag permList = new ListTag();
+        NbtList permList = new NbtList();
         for (Map.Entry<ClaimPermissions, ClaimRanks> permission : this.RANK_PERMISSIONS.entrySet()) {
             // Make a map for the permission
-            CompoundTag permTag = new CompoundTag();
+            NbtCompound permTag = new NbtCompound();
             permTag.putString("k", permission.getKey().name());
             permTag.putString("v", permission.getValue().name());
             
@@ -227,10 +235,10 @@ public abstract class Claimant {
         tag.put("permissions", permList);
         
         // Save our list of settings
-        ListTag settingList = new ListTag();
+        NbtList settingList = new NbtList();
         for (Map.Entry<ClaimSettings, Boolean> setting : this.CHUNK_CLAIM_OPTIONS.entrySet()) {
             // Make a map for the setting
-            CompoundTag settingTag = new CompoundTag();
+            NbtCompound settingTag = new NbtCompound();
             settingTag.putString("k", setting.getKey().name());
             settingTag.putBoolean("b", setting.getValue());
             
@@ -239,7 +247,7 @@ public abstract class Claimant {
         }
         tag.put("settings", settingList);
     }
-    public void readCustomDataFromTag(@NotNull CompoundTag tag) {
+    public void readCustomDataFromTag(@NotNull NbtCompound tag) {
         if (!(tag.getString("type").equals(this.type.name()) && Objects.equals(NbtUtils.getUUID(tag, "iden"), this.id)))
             throw new RuntimeException("Invalid NBT data match");
         
@@ -248,21 +256,21 @@ public abstract class Claimant {
             ClaimTag claim;
             
             // Get from Int Array
-            for (Tag it : tag.getList("landChunks",NbtType.INT_ARRAY)) {
-                claim = ClaimTag.fromArray((IntArrayTag) it);
+            for (NbtElement it : tag.getList("landChunks",NbtType.INT_ARRAY)) {
+                claim = ClaimTag.fromArray((NbtIntArray) it);
                 if (claim != null) this.CLAIMED_CHUNKS.add(claim);
             }
             // Get from Compound
-            for (Tag it : tag.getList("landChunks", NbtType.COMPOUND)) {
-                claim = ClaimTag.fromCompound((CompoundTag) it);
+            for (NbtElement it : tag.getList("landChunks", NbtType.COMPOUND)) {
+                claim = ClaimTag.fromCompound((NbtCompound) it);
                 if (claim != null) this.CLAIMED_CHUNKS.add(claim);
             }
         }
         
         // Read friends
         if (tag.contains(rankNbtTag(this), NbtType.LIST)) {
-            for (Tag it : tag.getList(rankNbtTag(this), NbtType.COMPOUND)) {
-                CompoundTag friend = (CompoundTag) it;
+            for (NbtElement it : tag.getList(rankNbtTag(this), NbtType.COMPOUND)) {
+                NbtCompound friend = (NbtCompound) it;
                 this.USER_RANKS.put(
                     NbtUtils.getUUID(friend, "i"),
                     ClaimRanks.valueOf(friend.getString("r"))
@@ -272,8 +280,8 @@ public abstract class Claimant {
         
         // Read permissions
         if (tag.contains("permissions", NbtType.LIST)) {
-            for (Tag it : tag.getList("permissions", NbtType.COMPOUND)) {
-                CompoundTag permission = (CompoundTag) it;
+            for (NbtElement it : tag.getList("permissions", NbtType.COMPOUND)) {
+                NbtCompound permission = (NbtCompound) it;
                 this.RANK_PERMISSIONS.put(
                     ClaimPermissions.valueOf(permission.getString("k")),
                     ClaimRanks.valueOf(permission.getString("v"))
@@ -283,14 +291,18 @@ public abstract class Claimant {
         
         // Read settings
         if (tag.contains("settings", NbtType.LIST)) {
-            for (Tag it : tag.getList("settings", NbtType.COMPOUND)) {
-                CompoundTag setting = (CompoundTag) it;
+            for (NbtElement it : tag.getList("settings", NbtType.COMPOUND)) {
+                NbtCompound setting = (NbtCompound) it;
                 this.CHUNK_CLAIM_OPTIONS.put(
                     ClaimSettings.valueOf(setting.getString("k")),
                     setting.getBoolean("b")
                 );
             }
         }
+        
+        new ChunkZone.Builder(this)
+            .add(this.CLAIMED_CHUNKS)
+            .build();
     }
     
     private static @NotNull String rankNbtTag(@Nullable Claimant claimant) {

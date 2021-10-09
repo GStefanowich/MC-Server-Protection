@@ -31,10 +31,15 @@ import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerCorpse;
 import net.TheElm.project.objects.PlayerBackpack;
-import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.CasingUtils;
+import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.EntityUtils;
+import net.TheElm.project.utilities.TitleUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.Block;
+import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -43,10 +48,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ArmorItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -76,8 +81,8 @@ import java.util.UUID;
 public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     
     private UUID corpsePlayerUUID = null;
-    private ListTag corpsePlayerItems = null;
-    private ListTag corpsePlayerBackpack = null;
+    private NbtList corpsePlayerItems = null;
+    private NbtList corpsePlayerBackpack = null;
     
     @Shadow public native boolean shouldShowArms();
     @Shadow private native void setShowArms( boolean show );
@@ -99,13 +104,13 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
         boolean hidePlate = this.shouldHideBasePlate();
         
         if (showArms || hidePlate) {
-            CompoundTag name = itemStack.getOrCreateSubTag("display");
-            CompoundTag enti = itemStack.getOrCreateSubTag("EntityTag");
+            NbtCompound name = itemStack.getSubNbt("display");
+            NbtCompound enti = itemStack.getSubNbt("EntityTag");
             enti.putBoolean("ShowArms", showArms);
             enti.putBoolean("NoBasePlate", hidePlate);
             
-            ListTag lore = new ListTag();
-            lore.add(StringTag.of("{\"text\":\""
+            NbtList lore = new NbtList();
+            lore.add(NbtString.of("{\"text\":\""
                 + String.join(", ", Arrays.asList(
                     ( hidePlate ? "No base" : "Base" ),
                     ( showArms ? "Arms" : "No Arms" )
@@ -244,44 +249,38 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     }
     
     @Override
-    public void setCorpseData(UUID owner, ListTag inventory, ListTag backpack) {
+    public void setCorpseData(UUID owner, NbtList inventory, NbtList backpack) {
         this.corpsePlayerUUID = owner;
         this.corpsePlayerItems = inventory;
         this.corpsePlayerBackpack = backpack;
     }
     private void giveCorpseItems(@NotNull final PlayerEntity player) {
-        World world = player.world;
-        Iterator<Tag> items;
+        Iterator<NbtElement> items;
         
         // Get all of the items to give back
         if (this.corpsePlayerItems != null) {
             items = this.corpsePlayerItems.iterator();
             while (items.hasNext()) {
                 // Create the item from the tag
-                ItemStack itemStack = ItemStack.fromTag((CompoundTag) items.next());
-        
+                ItemStack itemStack = ItemStack.fromNbt((NbtCompound) items.next());
+                
                 // Try equipping the item if the slot is available
-                boolean equipped = false;
                 EquipmentSlot slot = null;
-        
-                if (itemStack.getItem() instanceof ArmorItem) {
+                
+                if (itemStack.getItem() instanceof ArmorItem && !EnchantmentHelper.hasBindingCurse(itemStack)) {
                     // If armor
                     slot = ((ArmorItem) itemStack.getItem()).getSlotType();
                 } else if (itemStack.getItem().equals(Items.SHIELD)) {
                     // If shield
                     slot = EquipmentSlot.OFFHAND;
                 }
-        
+                
                 // If slot is set, equip it there (If allowed)
-                if ((slot != null) && player.getEquippedStack(slot).getItem() == Items.AIR) {
+                if ((slot != null) && player.getEquippedStack(slot).getItem() == Items.AIR)
                     player.equipStack(slot, itemStack);
-                    equipped = true;
-                }
-        
-                // Add to the inventory (If not equipped)
-                if (!equipped)
-                    player.inventory.offerOrDrop(world, itemStack);
-        
+                else // Add to the inventory (If not equipped)
+                    player.getInventory().offerOrDrop(itemStack);
+                
                 // Remove from the iterator (Tag list)
                 items.remove();
             }
@@ -292,12 +291,12 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
             items = this.corpsePlayerBackpack.iterator();
             while (items.hasNext()) {
                 // Create the item from the tag
-                ItemStack itemStack = ItemStack.fromTag((CompoundTag) items.next());
+                ItemStack itemStack = ItemStack.fromNbt((NbtCompound) items.next());
                 PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
                 
                 // Attempt to put items into the backpack
                 if ((backpack == null) || (!backpack.insertStack(itemStack)))
-                    player.inventory.offerOrDrop(world, itemStack);
+                    player.getInventory().offerOrDrop(itemStack);
                 
                 // Remove from the iterator (Tag list)
                 items.remove();
@@ -327,12 +326,12 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
             );
             
             // Remove the armor stand
-            this.destroy();
+            this.discard();
         }
     }
     
-    @Inject(at=@At("TAIL"), method = "writeCustomDataToTag")
-    public void onSavingData(CompoundTag tag, CallbackInfo callback) {
+    @Inject(at=@At("TAIL"), method = "writeCustomDataToNbt")
+    public void onSavingData(NbtCompound tag, CallbackInfo callback) {
         // Save the player warp location for restarts
         if ( this.corpsePlayerUUID != null ) {
             tag.putUuid("corpsePlayerUUID", this.corpsePlayerUUID);
@@ -342,8 +341,8 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
                 tag.put("corpsePlayerBackpack", this.corpsePlayerBackpack);
         }
     }
-    @Inject(at=@At("TAIL"), method = "readCustomDataFromTag")
-    public void onReadingData(CompoundTag tag, CallbackInfo callback) {
+    @Inject(at=@At("TAIL"), method = "readCustomDataFromNbt")
+    public void onReadingData(NbtCompound tag, CallbackInfo callback) {
         if ( NbtUtils.hasUUID(tag, "corpsePlayerUUID") ) {
             this.corpsePlayerUUID = NbtUtils.getUUID(tag, "corpsePlayerUUID");
             if (tag.contains("corpsePlayerItems", NbtType.LIST))

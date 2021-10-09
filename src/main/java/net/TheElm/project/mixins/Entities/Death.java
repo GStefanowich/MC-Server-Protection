@@ -27,6 +27,7 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.utilities.CallbackUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.WarpUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
@@ -44,9 +45,9 @@ import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
@@ -94,12 +95,12 @@ public abstract class Death extends Entity {
         if (!(damageSource.getAttacker() instanceof ServerPlayerEntity))
             return;
         
-        CompoundTag spawnerTag;
+        NbtCompound spawnerTag;
         
         // Get the attacker
         ServerPlayerEntity player = (ServerPlayerEntity) damageSource.getAttacker();
         ItemStack itemStack = player.getStackInHand(Hand.OFF_HAND);
-        if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getTag()) == null) || ((spawnerTag = spawnerTag.copy()) == null) || (!spawnerTag.contains("EntityIds", NbtType.LIST)))
+        if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getNbt()) == null) || ((spawnerTag = spawnerTag.copy()) == null) || (!spawnerTag.contains("EntityIds", NbtType.LIST)))
             return;
         
         // Check if mob type is allowed to be spawned
@@ -108,10 +109,10 @@ public abstract class Death extends Entity {
             return;
         
         // Get the identifier of the mob we killed
-        StringTag mobId = StringTag.of(EntityType.getId(type).toString());
+        NbtString mobId = NbtString.of(EntityType.getId(type).toString());
         
         // Get current entity IDs
-        ListTag entityIds = spawnerTag.getList("EntityIds", NbtType.STRING);
+        NbtList entityIds = spawnerTag.getList("EntityIds", NbtType.STRING);
         int rolls = 1 + EnchantmentHelper.getLevel(Enchantments.LOOTING, player.getMainHandStack());
         for (int roll = 0; roll < rolls; ++roll) {
             Integer random = null;
@@ -139,11 +140,12 @@ public abstract class Death extends Entity {
                 }
                 
                 // Update the itemstack
-                itemStack.setTag(spawnerTag);
+                itemStack.setNbt(spawnerTag);
                 
                 // Give the player
                 if (dropNew)
-                    player.inventory.offerOrDrop(player.world, itemStack);
+                    player.getInventory()
+                        .offerOrDrop(itemStack);
                 break;
             }
         }
@@ -152,10 +154,10 @@ public abstract class Death extends Entity {
     /*
      * Check for totem of undying
      */
-    @Inject(at = @At("HEAD"), method = "tryUseTotem", cancellable = true)
-    public void onUseTotem(@NotNull DamageSource source, CallbackInfoReturnable<Boolean> callback) {
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/entity/LivingEntity.tryUseTotem(Lnet/minecraft/entity/damage/DamageSource;)Z"), method = "damage")
+    public boolean onUseTotem(@NotNull LivingEntity entity, @NotNull DamageSource source) {
         if (source.isOutOfWorld())
-            callback.setReturnValue(false);
+            return false;
         else {
             ItemStack totem = null;
             
@@ -171,10 +173,10 @@ public abstract class Death extends Entity {
             }
             
             // Check the inventory
-            if (totem == null && (((Entity)this) instanceof ServerPlayerEntity) && SewConfig.get(SewConfig.TOTEM_ANYWHERE)) {
-                ServerPlayerEntity player = (ServerPlayerEntity)(Entity)this;
-                for (int slot = 0; slot < player.inventory.size(); slot++) {
-                    ItemStack pack = player.inventory.getStack(slot);
+            if (totem == null && (entity instanceof ServerPlayerEntity) && SewConfig.get(SewConfig.TOTEM_ANYWHERE)) {
+                ServerPlayerEntity player = (ServerPlayerEntity)entity;
+                for (int slot = 0; slot < player.getInventory().size(); slot++) {
+                    ItemStack pack = player.getInventory().getStack(slot);
                     if (pack.getItem() == Items.TOTEM_OF_UNDYING) {
                         totem = pack.copy();
                         pack.decrement(1);
@@ -186,8 +188,8 @@ public abstract class Death extends Entity {
             // If a totem was found
             if (totem != null) {
                 // If totem user is a player, increase stats
-                if (((Entity)this) instanceof ServerPlayerEntity) {
-                    ServerPlayerEntity player = (ServerPlayerEntity)(Entity)this;
+                if (entity instanceof ServerPlayerEntity) {
+                    ServerPlayerEntity player = (ServerPlayerEntity)entity;
                     player.incrementStat(Stats.USED.getOrCreateStat(Items.TOTEM_OF_UNDYING));
                     Criteria.USED_TOTEM.trigger(player, totem);
                 }
@@ -197,16 +199,15 @@ public abstract class Death extends Entity {
                 this.clearStatusEffects();
                 
                 // Apply status effects
-                if (source.isFire())
-                    this.addStatusEffect(new StatusEffectInstance(StatusEffects.FIRE_RESISTANCE, 900, 1));
                 this.addStatusEffect(new StatusEffectInstance(StatusEffects.REGENERATION, 900, 1));
                 this.addStatusEffect(new StatusEffectInstance(StatusEffects.ABSORPTION, 100, 1));
+                this.addStatusEffect(new StatusEffectInstance(StatusEffects.FIRE_RESISTANCE, 800, 0));
                 
                 // Update the entity status as alive
                 this.world.sendEntityStatus(this, (byte)35);
             }
             
-            callback.setReturnValue(totem != null);
+            return totem != null;
         }
     }
     
@@ -215,20 +216,20 @@ public abstract class Death extends Entity {
      */
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/entity/LivingEntity.damage(Lnet/minecraft/entity/damage/DamageSource;F)Z"), method = "destroy")
     protected boolean onDamage(@NotNull LivingEntity self, @NotNull DamageSource source, float damage) {
-        if (source.equals(DamageSource.OUT_OF_WORLD) && World.isOutOfBuildLimitVertically(this.getBlockPos())) {
+        if (source.equals(DamageSource.OUT_OF_WORLD) && !self.world.isInBuildLimit(this.getBlockPos())) {
             // If the player isn't actually falling (Break the teleport loop and give time to update ticks)
             if (self.fallDistance < 0.25d)
                 return false;
             
             // If the player can fall from the end into the sky of the overworld
             if (World.END.equals(self.world.getRegistryKey()) && SewConfig.get(SewConfig.END_FALL_FROM_SKY)) {
-                WarpUtils.teleportEntity(ServerCore.getWorld(World.OVERWORLD), this, new BlockPos(this.getX(), 400, this.getZ()));
+                WarpUtils.teleportEntity(World.OVERWORLD, this, new BlockPos(this.getX(), 400, this.getZ()));
                 return false;
             }
             
             // If the player can fall from any worlds void back to spawn
             if (SewConfig.get(SewConfig.VOID_FALL_TO_SPAWN) && !(self instanceof HostileEntity)) { // Teleport to the spawn world
-                WarpUtils.teleportEntity(ServerCore.getWorld(SewConfig.get(SewConfig.DEFAULT_WORLD)), this);
+                WarpUtils.teleportEntity(ServerCore.defaultWorldKey(), this);
                 return false;
             }
         }

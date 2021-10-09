@@ -36,9 +36,9 @@ import net.minecraft.command.argument.EntitySummonArgumentType;
 import net.minecraft.command.suggestion.SuggestionProviders;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -64,22 +64,23 @@ public final class SpawnerCommand {
                     // Get item information
                     ItemStack spawner = new ItemStack(Items.SPAWNER);
                     Identifier mobIdentifier = EntitySummonArgumentType.getEntitySummon(context, "type");
-                    StringTag mob = StringTag.of(mobIdentifier.toString());
+                    NbtString mob = NbtString.of(mobIdentifier.toString());
                     
                     // Add mob to the list
-                    CompoundTag tag = spawner.getOrCreateTag();
-                    ListTag list;
+                    NbtCompound tag = spawner.getOrCreateNbt();
+                    NbtList list;
                     if (tag.contains("EntityIds", NbtType.LIST))
                         list = tag.getList("EntityIds", NbtType.STRING);
                     else {
-                        list = new ListTag();
+                        list = new NbtList();
                         tag.put("EntityIds", list);
                     }
                     
                     list.add(mob);
                     
                     // Give the spawner
-                    player.inventory.offerOrDrop(world, spawner);
+                    player.getInventory()
+                        .offerOrDrop(spawner);
                     
                     return Command.SINGLE_SUCCESS;
                 })

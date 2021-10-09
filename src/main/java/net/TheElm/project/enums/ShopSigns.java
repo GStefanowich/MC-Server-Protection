@@ -35,14 +35,28 @@ import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.exceptions.ShopBuilderException;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.interfaces.LogicalWorld;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.ShopSignData;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.objects.ShopStats;
+import net.TheElm.project.objects.ticking.WaystoneSearch;
 import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.CasingUtils;
+import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.ColorUtils;
+import net.TheElm.project.utilities.DimensionUtils;
+import net.TheElm.project.utilities.FormattingUtils;
+import net.TheElm.project.utilities.GuideUtils;
+import net.TheElm.project.utilities.IntUtils;
+import net.TheElm.project.utilities.InventoryUtils;
+import net.TheElm.project.utilities.MoneyUtils;
+import net.TheElm.project.utilities.ShopSignBuilder;
+import net.TheElm.project.utilities.TitleUtils;
+import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.WarpUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.TheElm.project.utilities.text.StyleApplicator;
 import net.minecraft.block.entity.ChestBlockEntity;
@@ -55,7 +69,11 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.text.*;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
+import net.minecraft.text.TextColor;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.WorldChunk;
@@ -492,66 +510,11 @@ public enum ShopSigns {
         public boolean isEnabled() {
             return SewConfig.get(SewConfig.WARP_MAX_DISTANCE) > 0;
         }
-        private boolean generateNewWarp(final ServerPlayerEntity player) {
-            // Create a new warp point asynchronously
-            new Thread(() -> {
-                // Get world info
-                final MinecraftServer server;
-                if ((server = player.getServer()) == null)
-                    return;
-                final ServerWorld world = server.getWorld(SewConfig.get(SewConfig.WARP_DIMENSION));
-                if (world == null)
-                    return;
-                final BlockPos spawnPos = WarpUtils.getWorldSpawn(world);
-                
-                // Tell the player
-                player.sendMessage(TranslatableServerSide.text(
-                    player,
-                    "warp.random.search"
-                ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
-                
-                // Create an unused warp name for the player
-                String warpName = WarpUtils.PRIMARY_DEFAULT_HOME;
-                int count = 0;
-                while (WarpUtils.hasWarp(player, warpName)) {
-                    warpName = WarpUtils.PRIMARY_DEFAULT_HOME + (++count);
-                }
-                
-                // Create warp
-                WarpUtils newWarp = new WarpUtils(warpName, player, spawnPos);
-                BlockPos warpToPos;
-                
-                while (((warpToPos = newWarp.getWarpPositionIn()) == null) || (!newWarp.claimAndBuild(() -> {})));
-                
-                // Get the distance
-                int distance = warpToPos.getManhattanDistance(spawnPos);
-                
-                // Build the return warp
-                player.sendMessage(TranslatableServerSide.text(
-                    player,
-                    "warp.random.build"
-                ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
-                
-                // Teleport the player
-                BlockPos safeTeleportPos = newWarp.getSafeTeleportPos();
-                WarpUtils.teleportPlayerAndAttached(world, player, safeTeleportPos);
-                
-                // Save the warp for later
-                newWarp.save(safeTeleportPos, player);
-                
-                // Notify the player of their new location
-                if ((!SewConfig.get(SewConfig.WORLD_SPECIFIC_SPAWN)) || SewConfig.equals(SewConfig.WARP_DIMENSION, SewConfig.DEFAULT_WORLD))
-                    player.sendMessage(TranslatableServerSide.text(
-                        player,
-                        "warp.random.teleported",
-                        distance
-                    ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
-                else
-                    player.sendMessage(TranslatableServerSide.text(
-                        player,
-                        "warp.random.teleported_world"
-                    ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
-            }).start();
+        private boolean generateNewWarp(@NotNull final ServerPlayerEntity player) {
+            ServerWorld world = player.getServerWorld();
+            ((LogicalWorld)world).addTickableEvent(new WaystoneSearch(
+                player
+            ));
             return true;
         }
     },

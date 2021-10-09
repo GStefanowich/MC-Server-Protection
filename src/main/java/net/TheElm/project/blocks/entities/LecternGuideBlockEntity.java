@@ -25,6 +25,7 @@
 
 package net.TheElm.project.blocks.entities;
 
+import com.google.common.base.Suppliers;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.objects.PlayerBookPropertyDelegate;
@@ -37,25 +38,32 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.item.WrittenBookItem;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.screen.*;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.particle.ParticleTypes;
+import net.minecraft.screen.LecternScreenHandler;
+import net.minecraft.screen.NamedScreenHandlerFactory;
+import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Lazy;
-import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Random;
+import java.util.function.Supplier;
 
 /**
  * Created on Aug 11 2021 at 3:04 PM.
  * By greg in SewingMachineMod
  */
 public class LecternGuideBlockEntity extends BlockEntity implements NamedScreenHandlerFactory {
-    private Inventory inventory = new Inventory() {
+    private final Inventory inventory = new Inventory() {
         @Override
         public int size() {
             return 1;
@@ -105,12 +113,14 @@ public class LecternGuideBlockEntity extends BlockEntity implements NamedScreenH
         @Override
         public void clear() {}
     };
+    private final Random random = new Random();
+    private int ticks = 0;
     
     private String bookName = null;
-    private Lazy<ItemStack> book = this.newLazy();
+    private Supplier<ItemStack> book = this.newLazy();
     
-    public LecternGuideBlockEntity() {
-        super(ServerCore.GUIDE_BLOCK_ENTITY);
+    public LecternGuideBlockEntity(BlockPos blockPos, BlockState blockState) {
+        super(ServerCore.GUIDE_BLOCK_ENTITY, blockPos, blockState);
     }
     
     public void setGuide(@Nullable String bookName) {
@@ -134,7 +144,8 @@ public class LecternGuideBlockEntity extends BlockEntity implements NamedScreenH
                 ItemStack book = LecternGuideBlockEntity.this.getBook();
                 if (player instanceof ServerPlayerEntity)
                     ((ServerPlayerEntity)player).closeHandledScreen();
-                return player.inventory.insertStack(book);
+                return player.getInventory()
+                    .insertStack(book);
             }
         };
     }
@@ -143,13 +154,39 @@ public class LecternGuideBlockEntity extends BlockEntity implements NamedScreenH
         GuideUtils guide;
         return this.bookName == null || (guide = GuideUtils.getBook(this.bookName)) == null ? ItemStack.EMPTY : guide.newStack();
     }
-    public @NotNull Lazy<ItemStack> newLazy() {
-        return new Lazy<>(this::getBook);
+    public @NotNull Supplier<ItemStack> newLazy() {
+        return Suppliers.memoize(this::getBook);
     }
     
     @Override
     public @NotNull Text getDisplayName() {
         return new LiteralText(this.bookName);
+    }
+
+    public static <T extends BlockEntity> void tick(@NotNull World world, BlockPos blockPos, BlockState blockState, T blockEntity) {
+        if (world.isClient || !(blockEntity instanceof LecternGuideBlockEntity))
+            return;
+        LecternGuideBlockEntity warpsBlock = (LecternGuideBlockEntity) blockEntity;
+        if (warpsBlock.ticks++ > 0 && (warpsBlock.ticks % 20) == 0) {
+            if (warpsBlock.random.nextInt(4) == 0) {
+                for (int i = 0; i < 4; ++i) {
+                    Vec3d pos = Vec3d.of(warpsBlock.pos)
+                        .add(warpsBlock.random.nextDouble(), 1 + warpsBlock.random.nextDouble(), warpsBlock.random.nextDouble());
+                    
+                    ((ServerWorld) world).spawnParticles(
+                        ParticleTypes.ENCHANT,
+                        pos.getX(),
+                        pos.getY(),
+                        pos.getZ(),
+                        warpsBlock.random.nextInt(4) + 1,
+                        ((double)warpsBlock.random.nextFloat()) * 0.5D,
+                        ((double)warpsBlock.random.nextFloat()) * 0.5D,
+                        ((double)warpsBlock.random.nextFloat()) * 0.5D,
+                        0.1
+                    );
+                }
+            }
+        }
     }
     
     /*
@@ -157,8 +194,8 @@ public class LecternGuideBlockEntity extends BlockEntity implements NamedScreenH
      */
     
     @Override
-    public void fromTag(BlockState state, CompoundTag tag) {
-        super.fromTag(state, tag);
+    public void readNbt(NbtCompound tag) {
+        super.readNbt(tag);
         
         // Load the book name
         if (tag.contains("guide_book", NbtType.STRING))
@@ -166,12 +203,12 @@ public class LecternGuideBlockEntity extends BlockEntity implements NamedScreenH
     }
     
     @Override
-    public CompoundTag toTag(CompoundTag tag) {
+    public NbtCompound writeNbt(NbtCompound tag) {
         // Save the book name
         if (this.bookName != null)
             tag.putString("guide_book", this.bookName);
         
-        return super.toTag(tag);
+        return super.writeNbt(tag);
     }
     
     @Override

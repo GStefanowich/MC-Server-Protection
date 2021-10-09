@@ -28,8 +28,8 @@ package net.TheElm.project.mixins.World;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.ChunkSerializer;
 import net.minecraft.world.chunk.Chunk;
@@ -50,9 +50,9 @@ public class ChunkSaving {
     private static final String sewingMachineSerializationSlices = "sewingMachineOwnerSlices";
     
     @Inject(at = @At("TAIL"), method = "serialize")
-    private static void saveSewingOwner(ServerWorld world, Chunk chunk, CallbackInfoReturnable<CompoundTag> callback) {
-        CompoundTag mainTag = callback.getReturnValue();
-        CompoundTag levelTag = mainTag.getCompound( "Level" );
+    private static void saveSewingOwner(ServerWorld world, Chunk chunk, CallbackInfoReturnable<NbtCompound> callback) {
+        NbtCompound mainTag = callback.getReturnValue();
+        NbtCompound levelTag = mainTag.getCompound( "Level" );
         
         // Only add the chunks if they're an ownable chunk
         if ( chunk instanceof WorldChunk ) {
@@ -63,7 +63,7 @@ public class ChunkSaving {
             if ((player = ((IClaimedChunk) chunk).getOwner()) != null)
                 levelTag.putUuid(sewingMachineSerializationPlayer, player);
             
-            ListTag slices = ((IClaimedChunk) chunk).serializeSlices();
+            NbtList slices = ((IClaimedChunk) chunk).serializeSlices();
             
             // Save the inner claims
             levelTag.put(sewingMachineSerializationSlices, slices);
@@ -75,7 +75,7 @@ public class ChunkSaving {
     }
     
     @Inject(at = @At("RETURN"), method = "writeEntities")
-    private static void loadSewingOwner(CompoundTag levelTag, WorldChunk chunk, CallbackInfo callback) {
+    private static void loadSewingOwner(NbtCompound levelTag, WorldChunk chunk, CallbackInfo callback) {
         // Update the chunks player-owner
         if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationPlayer) )
             ((IClaimedChunk) chunk).updatePlayerOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationPlayer), false);

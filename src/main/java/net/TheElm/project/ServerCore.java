@@ -30,16 +30,51 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.blocks.entities.LecternGuideBlockEntity;
 import net.TheElm.project.blocks.entities.LecternWarpsBlockEntity;
-import net.TheElm.project.commands.*;
+import net.TheElm.project.commands.AdminCommands;
+import net.TheElm.project.commands.BackpackCommand;
+import net.TheElm.project.commands.ChatroomCommands;
+import net.TheElm.project.commands.ClaimCommand;
+import net.TheElm.project.commands.DateCommand;
+import net.TheElm.project.commands.FireworksCommand;
+import net.TheElm.project.commands.GameModesCommand;
+import net.TheElm.project.commands.GiveSelfCommand;
+import net.TheElm.project.commands.HeadCommand;
+import net.TheElm.project.commands.HoldingCommand;
+import net.TheElm.project.commands.LoggingCommand;
+import net.TheElm.project.commands.MiscCommands;
+import net.TheElm.project.commands.ModCommands;
+import net.TheElm.project.commands.ModsCommand;
+import net.TheElm.project.commands.MoneyCommand;
+import net.TheElm.project.commands.NickNameCommand;
+import net.TheElm.project.commands.PermissionCommand;
+import net.TheElm.project.commands.PlayerSpawnCommand;
+import net.TheElm.project.commands.RideCommand;
+import net.TheElm.project.commands.RulerCommand;
+import net.TheElm.project.commands.ScoreboardCommand;
+import net.TheElm.project.commands.SpawnerCommand;
+import net.TheElm.project.commands.StatsCommand;
+import net.TheElm.project.commands.TagUserCommand;
+import net.TheElm.project.commands.DebugCommands;
+import net.TheElm.project.commands.TeleportsCommand;
+import net.TheElm.project.commands.WaystoneCommand;
+import net.TheElm.project.commands.WhereCommand;
+import net.TheElm.project.commands.WorldCommand;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.protections.events.*;
+import net.TheElm.project.protections.claiming.LinkedPointChunk;
+import net.TheElm.project.protections.events.BlockBreak;
+import net.TheElm.project.protections.events.BlockInteraction;
+import net.TheElm.project.protections.events.EntityAttack;
+import net.TheElm.project.protections.events.ItemPlace;
+import net.TheElm.project.protections.events.ItemUse;
 import net.TheElm.project.protections.logging.EventLogger;
-import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.MapUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
+import net.minecraft.SharedConstants;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.Entity;
@@ -61,6 +96,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -77,9 +113,12 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     public void onInitializeServer() {
         super.initialize();
         
+        if ( DevUtils.isDebugging() )
+            SharedConstants.isDevelopment = true;
+        
         // Register our server-side block entity
-        ServerCore.GUIDE_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("guide_lectern"), BlockEntityType.Builder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
-        ServerCore.WARPS_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("warps_lectern"), BlockEntityType.Builder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
+        ServerCore.GUIDE_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("guide_lectern"), FabricBlockEntityTypeBuilder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
+        ServerCore.WARPS_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("warps_lectern"), FabricBlockEntityTypeBuilder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
         
         // Register the server commands
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
@@ -89,6 +128,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             ChatroomCommands.register(dispatcher);
             ClaimCommand.register(dispatcher);
             DateCommand.register(dispatcher);
+            FireworksCommand.register(dispatcher);
             GameModesCommand.register(dispatcher);
             GiveSelfCommand.register(dispatcher);
             HeadCommand.register(dispatcher);
@@ -114,7 +154,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             ScoreboardCommand.modify(dispatcher);
             
             if ( DevUtils.isDebugging() )
-                TeleportEffectCommand.register(dispatcher);
+                DebugCommands.register(dispatcher);
         });
         
         // Create registry based listeners
@@ -158,6 +198,20 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         } catch (IOException e) {
             CoreMod.logError("Error during startup", e);
         }
+        
+        /*LinkedPointChunk[] chunks = new LinkedPointChunk[] {
+            LinkedPointChunk.of(0, 0),
+            LinkedPointChunk.of(0, 1)
+        };
+        
+        LinkedPointChunk chunk = chunks[0];
+        System.out.println("Connected: " + chunk.setLinked(chunks[1]));
+        
+        for (LinkedPointChunk link : chunks) {
+            for (BlockPos point : link.gatherPoints()) {
+                System.out.println(MessageUtils.xzToString(point));
+            }
+        }*/
     }
     
     public static @NotNull MinecraftServer get() {
@@ -168,22 +222,19 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     public static @NotNull MinecraftServer get(@NotNull PlayerEntity player) {
         return Objects.requireNonNull(player.getServer());
     }
-    public static @Nullable ServerPlayerEntity getPlayer(@NotNull UUID uuid) {
-        return ServerCore.get().getPlayerManager().getPlayer(uuid);
+    public static @Nullable ServerPlayerEntity getPlayer(@NotNull MinecraftServer server, @NotNull UUID uuid) {
+        return server.getPlayerManager().getPlayer(uuid);
     }
     
     public static @NotNull RegistryKey<World> defaultWorldKey() {
         return SewConfig.get(SewConfig.DEFAULT_WORLD);
-    }
-    public static @NotNull ServerWorld defaultWorld() {
-        return ServerCore.getWorld(ServerCore.defaultWorldKey());
     }
     
     public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final Consumer<LiteralArgumentBuilder<ServerCommandSource>> consumer) {
         return ServerCore.register(dispatcher, command, command, consumer);
     }
     public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final String descriptive, @NotNull final Consumer<LiteralArgumentBuilder<ServerCommandSource>> consumer) {
-        final String display = CasingUtils.Sentence(command);
+        final String display = command.toLowerCase(Locale.ROOT);
         
         // Build the literal using the name
         LiteralArgumentBuilder<ServerCommandSource> builder = CommandManager.literal(command.toLowerCase().replace(" ", "-"));
@@ -195,14 +246,11 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         LiteralCommandNode<ServerCommandSource> node = dispatcher.register(builder);
         
         // Log the command registration
-        CoreMod.logDebug("- Registered " + (descriptive.isEmpty() || descriptive.equalsIgnoreCase(command) ? "/" + display : descriptive + " [/" + display + "]") + " command");
+        CoreMod.logDebug("- Registered " + (descriptive.isEmpty() || descriptive.equalsIgnoreCase(command) ? "/" + display : descriptive.toLowerCase(Locale.ROOT) + " [/" + display + "]") + " command");
         
         return node;
     }
     
-    public static @NotNull BlockPos getSpawn() {
-        return ServerCore.getSpawn(ServerCore.defaultWorld());
-    }
     public static @NotNull BlockPos getSpawn(@NotNull World world) {
         // Get the forced position of TheEnd
         if ((world instanceof ServerWorld) && (world.getRegistryKey() == World.END) && (!SewConfig.get(SewConfig.WORLD_SPECIFIC_SPAWN))) {
@@ -222,11 +270,8 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             properties.getSpawnZ()
         );
     }
-    public static @NotNull BlockPos getSpawn(@NotNull RegistryKey<World> world) {
-        return ServerCore.getSpawn(ServerCore.getWorld(world));
-    }
-    public static @NotNull ServerWorld getWorld(@NotNull RegistryKey<World> key) {
-        return ServerCore.getWorld(ServerCore.get(), key);
+    public static @NotNull BlockPos getSpawn(@NotNull MinecraftServer server, @NotNull RegistryKey<World> world) {
+        return ServerCore.getSpawn(ServerCore.getWorld(server, world));
     }
     public static @NotNull ServerWorld getWorld(@NotNull Entity entity, @NotNull RegistryKey<World> key) {
         return ServerCore.getWorld(Objects.requireNonNull(entity.getServer()), key);
@@ -244,9 +289,6 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     public static void markDirty(@NotNull World world, @NotNull BlockPos pos) {
         if (world instanceof ServerWorld)
             ServerCore.markDirty((ServerWorld) world, pos);
-    }
-    public static void markDirty(@NotNull RegistryKey<World> key, @NotNull BlockPos pos) {
-        ServerCore.markDirty(ServerCore.getWorld(key), pos);
     }
     
     public static boolean isIntegratedServer() {

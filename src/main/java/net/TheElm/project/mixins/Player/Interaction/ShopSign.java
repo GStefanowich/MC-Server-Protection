@@ -46,7 +46,7 @@ import net.minecraft.inventory.Inventory;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -68,8 +68,8 @@ import java.util.UUID;
 @Mixin(SignBlockEntity.class)
 public abstract class ShopSign extends BlockEntity implements ShopSignData {
     
-    @Shadow public Text[] text;
-    @Shadow public abstract PlayerEntity getEditor();
+    @Shadow public Text[] texts;
+    @Shadow public abstract UUID getEditor();
     
     /*
      * Mixin variables
@@ -123,7 +123,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
     
     @Override
     public Text getSignLine(int line) {
-        return this.text[line];
+        return this.texts[line];
     }
     @Override
     public void setSignLine(int row, @Nullable Text text) {
@@ -196,8 +196,8 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
      * Constructor
      */
     
-    public ShopSign(BlockEntityType<?> blockEntityType_1) {
-        super(blockEntityType_1);
+    public ShopSign(BlockEntityType<?> blockEntityType_1, BlockPos blockPos, BlockState blockState) {
+        super(blockEntityType_1, blockPos, blockState);
     }
     
     /*
@@ -217,7 +217,8 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
                     return;
                 
                 // Ignore if this isn't actually a shop sign
-                if ( !builder.build((ServerPlayerEntity) this.getEditor()) )
+                PlayerEntity editor = this.world.getPlayerByUuid(this.getEditor());
+                if (!(editor instanceof ServerPlayerEntity) || !builder.build((ServerPlayerEntity) editor) )
                     return;
                 
                 this.shopSign_Type = builder.getType();
@@ -249,9 +250,9 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
      * NBT read/write
      */
     
-    @Inject(at = @At("RETURN"), method = "toTag", cancellable = true)
-    public void nbtWrite(@NotNull CompoundTag originalTag, @NotNull CallbackInfoReturnable<CompoundTag> callback) {
-        CompoundTag tag = callback.getReturnValue();
+    @Inject(at = @At("RETURN"), method = "nbtWrite", cancellable = true)
+    public void onNbtWrite(@NotNull NbtCompound originalTag, @NotNull CallbackInfoReturnable<NbtCompound> callback) {
+        NbtCompound tag = callback.getReturnValue();
         
         if ( this.shopSign_Owner == null )
             return;
@@ -284,10 +285,10 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
         callback.setReturnValue(tag);
     }
     
-    @Inject(at = @At("RETURN"), method = "fromTag")
-    public void nbtRead(@NotNull BlockState state, @NotNull CompoundTag tag, @NotNull CallbackInfo callback) {
+    @Inject(at = @At("RETURN"), method = "nbtRead")
+    public void onNbtRead(@NotNull BlockState state, @NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
         // Shop signs
-        if ((this.shopSign_Type = ShopSigns.valueOf(this.text[0])) != null) {
+        if ((this.shopSign_Type = ShopSigns.valueOf(this.texts[0])) != null) {
             NbtUtils.tryGet(tag, NbtGet.UUID, "shop_owner", (uuid) -> {
                 String signItem = "";
                 try {

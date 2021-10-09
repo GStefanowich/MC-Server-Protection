@@ -5,6 +5,7 @@
   "mixins": [
   ],
   "server": [
+    "Interfaces.InteractionManagerAccessor",
     "Interfaces.WhitelistAccessor",
     "Interfaces.PowderBlockAccessor",
     "Interfaces.LightningAccessor",
@@ -25,6 +26,7 @@
     "Blocks.LootChest",
     "Blocks.LootChestEntity",
     "Blocks.Pistons",
+    "Blocks.Tnt",
     
     "Items.LocatorPearls",
     "Items.RepairCost",
@@ -47,6 +49,7 @@
     "Entities.PotionDamage",
     "Entities.Damage",
     "Entities.Tnt",
+    "Entities.Trident",
     "Entities.Death",
     
     "Entities.EndCrystal",
@@ -105,9 +108,10 @@
     "Server.DeathMessages",
     "Server.Explosions",
     "Server.LanguagePacket",
-    "Server.ServerCommandSource",
+    "Server.VanillaProtection",
     "Server.MOTD",
     "Server.PlayerList",
+    "Server.PlayerListEntry",
     "Server.PlayerManager",
     "Server.Save",
     "Server.SaveFolder",

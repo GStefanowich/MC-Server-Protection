@@ -31,7 +31,7 @@ import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.entity.data.DataTracker;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 
@@ -51,7 +51,7 @@ public final class MoneyUtils {
             return MoneyUtils.getPlayerMoney( player );
         
         // If not online
-        CompoundTag tag = NbtUtils.readOfflinePlayerData( playerId );
+        NbtCompound tag = NbtUtils.readOfflinePlayerData( playerId );
         
         // Get the balance from the NBT tag
         return tag.getInt( MoneyHolder.SAVE_KEY );
@@ -70,7 +70,7 @@ public final class MoneyUtils {
             return MoneyUtils.setPlayerMoney( player, amount );
         
         // If not online
-        CompoundTag nbt = NbtUtils.readOfflinePlayerData( playerId );
+        NbtCompound nbt = NbtUtils.readOfflinePlayerData( playerId );
         int balance = nbt.getInt( MoneyHolder.SAVE_KEY );
         if (amount < 0)
             return false;
@@ -100,7 +100,7 @@ public final class MoneyUtils {
         
         // If not online
         double updateTo = 0;
-        CompoundTag nbt = NbtUtils.readOfflinePlayerData( playerId );
+        NbtCompound nbt = NbtUtils.readOfflinePlayerData( playerId );
         int balance = nbt.getInt( MoneyHolder.SAVE_KEY );
         if (((updateTo = (double)(balance + amount))) > Integer.MAX_VALUE)
             return false;
@@ -137,7 +137,7 @@ public final class MoneyUtils {
         
         // If not online
         double updateTo = 0;
-        CompoundTag nbt = NbtUtils.readOfflinePlayerData( playerId );
+        NbtCompound nbt = NbtUtils.readOfflinePlayerData( playerId );
         int balance = nbt.getInt( MoneyHolder.SAVE_KEY );
         if (((updateTo = (double)(balance - amount))) < Integer.MIN_VALUE)
             return false;

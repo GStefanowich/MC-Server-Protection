@@ -25,15 +25,15 @@
 
 package net.TheElm.project.interfaces;
 
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtList;
 
 import java.util.UUID;
 
 public interface PlayerCorpse {
     
-    default void setCorpseData(UUID owner, ListTag inventory) {
-        this.setCorpseData(owner, inventory, new ListTag());
+    default void setCorpseData(UUID owner, NbtList inventory) {
+        this.setCorpseData(owner, inventory, new NbtList());
     }
-    void setCorpseData(UUID owner, ListTag inventory, ListTag backpack);
+    void setCorpseData(UUID owner, NbtList inventory, NbtList backpack);
     
 }

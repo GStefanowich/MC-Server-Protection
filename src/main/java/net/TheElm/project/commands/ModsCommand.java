@@ -33,11 +33,15 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.CommandPredicate;
+import net.TheElm.project.utilities.text.StyleApplicator;
 import net.fabricmc.loader.api.ModContainer;
+import net.fabricmc.loader.api.metadata.ContactInformation;
+import net.fabricmc.loader.api.metadata.CustomValue;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.fabricmc.loader.api.metadata.Person;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
@@ -45,6 +49,11 @@ import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
 
 public final class ModsCommand {
     
@@ -61,40 +70,71 @@ public final class ModsCommand {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
-        Collection<ModContainer> mods = CoreMod.getFabric().getAllMods();
+        Collection<ModContainer> mods = CoreMod.getFabric()
+            .getAllMods();
         
         MutableText output = new LiteralText("Server Mods:").formatted(Formatting.YELLOW);
         for ( ModContainer mod : mods ) {
-            ModMetadata meta = mod.getMetadata();
-            String name = meta.getName();
-            String desc = meta.getDescription();
-            String type = meta.getType(); // Type should always be FABRIC
-            String version = meta.getVersion().getFriendlyString();
+            ModMetadata metadata = mod.getMetadata();
+            ContactInformation contact = metadata.getContact();
+            String name = metadata.getName();
+            String desc = metadata.getDescription();
+            String type = metadata.getType(); // Type should always be FABRIC
+            String version = metadata.getVersion()
+                .getFriendlyString();
             
-            // Skip if it doesn't have a name
-            if ( name == null ) continue;
+            StyleApplicator applicator = new StyleApplicator();
+            
+            // Skip if it doesn't have a name (Or is one of many fabric API mods)
+            if ( name == null || ModsCommand.isFabricAPI(metadata) )
+                continue;
             
             MutableText modText = new LiteralText("\n ").formatted(Formatting.WHITE)
                 .append(new LiteralText(name).formatted(Formatting.RED))
                 .append(" v")
                 .append(new LiteralText(version).formatted(Formatting.YELLOW));
             
-            Collection<Person> authors = meta.getAuthors();
             MutableText authorText = new LiteralText(", by: ").formatted(Formatting.WHITE);
             int authorC = 0;
-            for ( Person author : authors )
-                authorText.append(( ++authorC > 1 ? ", " : "" )).append(new LiteralText( author.getName() ).formatted(Formatting.AQUA));
+            for (Person author : metadata.getAuthors())
+                authorText.append(( ++authorC > 1 ? ", " : "" ))
+                    .append(new LiteralText(author.getName()).formatted(Formatting.AQUA));
+            
+            // Get the URL source
+            Optional<String> url = contact.get("homepage");
+            if (!url.isPresent())
+                url = contact.get("sources");
+            if (url.isPresent())
+                applicator.withClick(ClickEvent.Action.OPEN_URL, url.get());
             
             // Append information
-            if ( authorC > 0 ) modText.append( authorText );
-            if ( !"".equals( desc ) ) modText.styled((styler) -> styler.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText(desc).formatted(Formatting.WHITE))));
+            if ( authorC > 0 )
+                modText.append(authorText);
+            if ( !"".equals( desc ) )
+                applicator.withHover(HoverEvent.Action.SHOW_TEXT, new LiteralText(desc)
+                    .formatted(Formatting.WHITE));
             
             // Append to lines
-            output.append( modText );
+            modText.styled(applicator);
+            output.append(modText);
         }
         
         player.sendMessage(output, false);
         return Command.SINGLE_SUCCESS;
     }
-
+    
+    private static boolean isFabricAPI(@NotNull ModMetadata metadata) {
+        if (!metadata.getId().startsWith("fabric-"))
+            return false;
+        String authors = "";
+        for (Person author : metadata.getAuthors())
+            authors += author.getName();
+        
+        ContactInformation contact = metadata.getContact();
+        Map<String, String> contactInfo = contact.asMap();
+        return Objects.equals("FabricMC", authors)
+            && Objects.equals("irc://irc.esper.net:6667/fabric", contactInfo.get("irc"))
+            && Objects.equals("https://github.com/FabricMC/fabric/issues", contactInfo.get("issues"))
+            && Objects.equals("https://fabricmc.net", contactInfo.get("homepage"));
+    }
 }

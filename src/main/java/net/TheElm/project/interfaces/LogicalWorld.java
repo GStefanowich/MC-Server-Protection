@@ -33,7 +33,7 @@ import java.util.function.Predicate;
 public interface LogicalWorld {
     
     void updatePlayersSleeping();
-    
-    void addTickableEvent(@NotNull Predicate<DetachedTickable> predicate);
+
+    @NotNull DetachedTickable addTickableEvent(@NotNull Predicate<DetachedTickable> predicate);
     
 }

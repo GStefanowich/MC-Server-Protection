@@ -99,9 +99,6 @@ public final class WrittenBookBuilder {
     public static @NotNull JsonObject blankBookComponent() {
         return WrittenBookBuilder.stringBookComponent(null);
     }
-    public static @NotNull JsonObject stringBookComponent(@Nullable String text) {
-        return WrittenBookBuilder.stringBookComponent(text, null);
-    }
     public static @NotNull JsonObject stringBookComponent(@Nullable String text, @Nullable Formatting... formatting) {
         JsonObject obj = new JsonObject();
         
@@ -109,9 +106,6 @@ public final class WrittenBookBuilder {
         WrittenBookBuilder.applyFormatting(obj, formatting);
         
         return obj;
-    }
-    public static @NotNull JsonObject translateBookComponent(@Nullable String text) {
-        return WrittenBookBuilder.stringBookComponent(text, null);
     }
     public static @NotNull JsonObject translateBookComponent(@Nullable String text, @Nullable Formatting... formatting) {
         JsonObject obj = new JsonObject();

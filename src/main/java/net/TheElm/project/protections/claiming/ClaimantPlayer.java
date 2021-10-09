@@ -38,8 +38,9 @@ import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.MessageType;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
@@ -71,12 +72,11 @@ public final class ClaimantPlayer extends Claimant {
     }
     
     /* Players Town Reference */
-    @Nullable
-    public final ClaimantTown getTown() {
+    public final @Nullable ClaimantTown getTown() {
         return this.town;
     }
-    @Nullable
-    public final UUID getTownId() {
+    
+    public final @Nullable UUID getTownId() {
         ClaimantTown town;
         if ((town = this.getTown()) == null)
             return null;
@@ -90,8 +90,7 @@ public final class ClaimantPlayer extends Claimant {
         if (this.town != null) return false;
         return this.townInvites.add(town);
     }
-    @Nullable
-    public final ClaimantTown getTownInvite(@NotNull String townName) {
+    public final @Nullable ClaimantTown getTownInvite(@NotNull String townName) {
         ClaimantTown out = null;
         for (ClaimantTown town : this.townInvites) {
             if (townName.equals(town.getName().getString())) {
@@ -127,9 +126,9 @@ public final class ClaimantPlayer extends Claimant {
     
     /* Send Messages */
     @Override
-    public final void send(@NotNull Text text, @NotNull MessageType type, @Nullable UUID from) {
+    public final void send(@NotNull final MinecraftServer server, @NotNull final Text text, @NotNull final MessageType type, @Nullable final UUID from) {
         UUID playerId = this.getId();
-        ServerPlayerEntity player = ServerCore.getPlayer(playerId);
+        ServerPlayerEntity player = ServerCore.getPlayer(server, playerId);
         if (player != null) player.sendMessage(text, type, from);
     }
     
@@ -155,7 +154,7 @@ public final class ClaimantPlayer extends Claimant {
     
     /* Nbt saving */
     @Override
-    public final void writeCustomDataToTag(@NotNull CompoundTag tag) {
+    public final void writeCustomDataToTag(@NotNull NbtCompound tag) {
         // Write the town ID
         if (this.town != null)
             tag.putUuid("town", this.town.getId());
@@ -166,23 +165,23 @@ public final class ClaimantPlayer extends Claimant {
         super.writeCustomDataToTag( tag );
     }
     @Override
-    public final void readCustomDataFromTag(@NotNull CompoundTag tag) {
+    public final void readCustomDataFromTag(@NotNull NbtCompound tag) {
         // Get the players town
         ClaimantTown town = null;
         if ( NbtUtils.hasUUID(tag, "town") ) {
-            try {
-                town = ClaimantTown.get(NbtUtils.getUUID(tag, "town"));
-                // Ensure that the town has the player in the ranks
-                if ((town != null) && town.getFriendRank(this.getId()) == null) town = null;
-            } catch (NbtNotFoundException ignored) {}
+            town = ClaimantTown.get(NbtUtils.getUUID(tag, "town"));
+            
+            // Ensure that the town has the player in the ranks
+            if ((town != null) && town.getFriendRank(this.getId()) == null)
+                town = null;
         }
         this.town = town;
         
         // Additional claim limit
-        this.additionalClaims = ( tag.contains("claimLimit", NbtType.INT) ? tag.getInt("claimLimit") : 0 );
+        this.additionalClaims = (tag.contains("claimLimit", NbtType.INT) ? tag.getInt("claimLimit") : 0);
         
         // Read from SUPER
-        super.readCustomDataFromTag( tag );
+        super.readCustomDataFromTag(tag);
     }
     
     /* Get the PlayerPermissions object from the cache */

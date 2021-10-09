@@ -111,7 +111,7 @@ import net.minecraft.entity.vehicle.FurnaceMinecartEntity;
 import net.minecraft.entity.vehicle.HopperMinecartEntity;
 import net.minecraft.entity.vehicle.MinecartEntity;
 import net.minecraft.entity.vehicle.TntMinecartEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -155,9 +155,9 @@ public final class EntityUtils {
     
     public static boolean hasClientBlockData(@NotNull BlockState blockState) {
         Block block = blockState.getBlock();
-        if (!block.hasBlockEntity())
+        if (!blockState.hasBlockEntity())
             return false;
-        return block.isIn(BlockTags.SIGNS)
+        return blockState.isIn(BlockTags.SIGNS)
             || block == Blocks.PLAYER_HEAD
             || block == Blocks.PLAYER_WALL_HEAD;
     }
@@ -442,6 +442,8 @@ public final class EntityUtils {
     }
     public static <T extends Entity> boolean preventSpawnered(@NotNull EntityType<T> type) {
         return type == EntityType.WANDERING_TRADER
+            || type == EntityType.VILLAGER
+            || type == EntityType.IRON_GOLEM
             || EntityUtils.isBossEntity(type);
     }
     public static <T extends Entity> boolean isBossEntity(@NotNull EntityType<T> type) {
@@ -467,7 +469,9 @@ public final class EntityUtils {
             EntityUtils.resendInventory((ServerPlayerEntity)player);
     }
     public static void resendInventory(@NotNull ServerPlayerEntity player) {
-        player.refreshScreenHandler(player.playerScreenHandler);
+        //player.refreshScreenHandler(player.playerScreenHandler);
+        // TODO: Verify screen gets resent to player (Inventory refresh)
+        player.currentScreenHandler.syncState();
     }
     
     /*
@@ -487,11 +491,11 @@ public final class EntityUtils {
     }
     
     public static @NotNull PlayerAbilities modifiedAbilities(@NotNull PlayerEntity player, @NotNull Consumer<PlayerAbilities> consumer) {
-        PlayerAbilities playerAbilities = player.abilities;
+        PlayerAbilities playerAbilities = player.getAbilities();
         PlayerAbilities copiedAbilities = new PlayerAbilities();
-        CompoundTag serialized = new CompoundTag();
-        playerAbilities.serialize(serialized);
-        copiedAbilities.deserialize(serialized);
+        NbtCompound serialized = new NbtCompound();
+        playerAbilities.writeNbt(serialized);
+        copiedAbilities.readNbt(serialized);
         
         consumer.accept(copiedAbilities);
         

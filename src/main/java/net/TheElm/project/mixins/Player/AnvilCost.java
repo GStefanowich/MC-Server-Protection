@@ -33,8 +33,12 @@ import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.CraftingResultInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.screen.*;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.screen.AnvilScreenHandler;
+import net.minecraft.screen.ForgingScreenHandler;
+import net.minecraft.screen.Property;
+import net.minecraft.screen.ScreenHandlerContext;
+import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
@@ -69,7 +73,7 @@ public abstract class AnvilCost extends ForgingScreenHandler {
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/inventory/CraftingResultInventory.setStack(ILnet/minecraft/item/ItemStack;)V"), method = "updateResult")
     public void onUpdateOutput(@NotNull CraftingResultInventory inventory, int slot, @NotNull ItemStack item) {
         if ((!item.isEmpty()) && item.hasEnchantments()) {
-            CompoundTag display = item.getOrCreateSubTag("display");;
+            NbtCompound display = item.getSubNbt("display");;
             
             // Get the rarity of the new output item
             InventoryUtils.ItemRarity rarity = InventoryUtils.getItemRarity(item);

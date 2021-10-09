@@ -25,8 +25,8 @@
 
 package net.TheElm.project.objects;
 
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Tickable;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Predicate;
@@ -35,7 +35,7 @@ import java.util.function.Predicate;
  * Created on Aug 20 2021 at 2:05 AM.
  * By greg in SewingMachineMod
  */
-public final class DetachedTickable implements Tickable {
+public final class DetachedTickable {
     private final @NotNull ServerWorld world;
     private final @NotNull Predicate<DetachedTickable> predicate;
     private int ticks = 0;
@@ -46,7 +46,6 @@ public final class DetachedTickable implements Tickable {
         this.predicate = predicate;
     }
     
-    @Override
     public void tick() {
         // Run the tickable and see if we should remove it
         if (!this.removed)
@@ -54,6 +53,9 @@ public final class DetachedTickable implements Tickable {
         this.ticks++;
     }
     
+    public @NotNull MinecraftServer getServer() {
+        return this.world.getServer();
+    }
     public @NotNull ServerWorld getWorld() {
         return this.world;
     }

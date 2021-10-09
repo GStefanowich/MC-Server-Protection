@@ -32,7 +32,7 @@ import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
@@ -109,8 +109,8 @@ public interface IClaimedChunk extends Chunk {
      * Claim Slices
      */
     @NotNull
-    ListTag serializeSlices();
-    void deserializeSlices(@NotNull ListTag serialized);
+    NbtList serializeSlices();
+    void deserializeSlices(@NotNull NbtList serialized);
     
     default void updateSliceOwner(@Nullable UUID owner, int slicePos) {
         this.updateSliceOwner(owner, slicePos, 0, 256);
@@ -124,10 +124,10 @@ public interface IClaimedChunk extends Chunk {
     /*
      * Statics
      */
-    static boolean isOwnedAround(World world, BlockPos blockPos, int leniency ) {
+    static boolean isOwnedAround(@NotNull final World world, @NotNull final BlockPos blockPos, int leniency) {
         return IClaimedChunk.getOwnedAround( world, blockPos, leniency).length > 0;
     }
-    static IClaimedChunk[] getOwnedAround(final World world, final BlockPos blockPos, final int radius) {
+    static @NotNull IClaimedChunk[] getOwnedAround(@NotNull final World world, @NotNull final BlockPos blockPos, final int radius) {
         int chunkX = blockPos.getX() >> 4;
         int chunkZ = blockPos.getZ() >> 4;
         

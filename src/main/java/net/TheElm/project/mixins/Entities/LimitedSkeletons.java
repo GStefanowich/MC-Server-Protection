@@ -35,7 +35,7 @@ import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.LocalDifficulty;
@@ -72,14 +72,14 @@ public abstract class LimitedSkeletons extends HostileEntity implements RangedAt
     }
     
     @Override
-    public void writeCustomDataToTag(CompoundTag tag) {
-        super.writeCustomDataToTag( tag );
+    public void writeCustomDataToNbt(NbtCompound tag) {
+        super.writeCustomDataToNbt(tag);
         this.createArrowQuiver();
-        tag.putInt( "arrowStack", this.arrowStack );
+        tag.putInt("arrowStack", this.arrowStack);
     }
     
-    @Inject(at=@At("TAIL"), method = "readCustomDataFromTag")
-    public void onReadingData(CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "readCustomDataFromNbt")
+    public void onReadingData(NbtCompound tag, CallbackInfo callback) {
         if ( tag.contains( "arrowStack" ) ) {
             this.arrowStack = tag.getInt("arrowStack");
         }

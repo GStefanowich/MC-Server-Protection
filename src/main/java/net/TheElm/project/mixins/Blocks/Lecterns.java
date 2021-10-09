@@ -25,15 +25,23 @@
 
 package net.TheElm.project.mixins.Blocks;
 
+import net.TheElm.project.ServerCore;
+import net.TheElm.project.blocks.entities.LecternGuideBlockEntity;
+import net.TheElm.project.blocks.entities.LecternWarpsBlockEntity;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.LecternBlock;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BlockEntityTicker;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.stat.Stats;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.event.listener.GameEventListener;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -55,5 +63,13 @@ public abstract class Lecterns extends BlockWithEntity {
             player.openHandledScreen((NamedScreenHandlerFactory) blockEntity);
             player.incrementStat(Stats.INTERACT_WITH_LECTERN);
         }
+    }
+    
+    @Override
+    public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(World world, BlockState state, BlockEntityType<T> type) {
+        if (type == ServerCore.GUIDE_BLOCK_ENTITY)
+            return LecternWarpsBlockEntity::tick;
+        if (type == ServerCore.WARPS_BLOCK_ENTITY);
+        return super.getTicker(world, state, type);
     }
 }

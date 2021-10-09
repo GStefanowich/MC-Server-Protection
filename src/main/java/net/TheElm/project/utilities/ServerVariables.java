@@ -58,7 +58,7 @@ public class ServerVariables {
         variables.put("version", server -> {
             GameVersion version = SharedConstants.getGameVersion();
             if (version == null)
-                return "1.??.??";
+                return "?.??.??";
             return version.getId();
         });
         

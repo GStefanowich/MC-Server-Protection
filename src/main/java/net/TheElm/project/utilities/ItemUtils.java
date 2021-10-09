@@ -27,8 +27,19 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.minecraft.item.*;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.BucketItem;
+import net.minecraft.item.EndCrystalItem;
+import net.minecraft.item.EnderEyeItem;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemConvertible;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.LeadItem;
+import net.minecraft.item.MusicDiscItem;
+import net.minecraft.item.ToolItem;
+import net.minecraft.item.WritableBookItem;
+import net.minecraft.item.WrittenBookItem;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.MathHelper;
@@ -54,7 +65,8 @@ public final class ItemUtils {
             
             consumer.accept(stack);
             
-            player.inventory.offerOrDrop(player.world, stack);
+            player.getInventory()
+                .offerOrDrop(stack);
         }
     }
     
@@ -88,7 +100,7 @@ public final class ItemUtils {
             return true;
         return !stack1.isEmpty() && !stack2.isEmpty() // Neither stack is empty
             && stack1.getItem() == stack2.getItem() // Items are both the same
-            && Objects.equals(stack1.getTag(), stack2.getTag()); // Tags are both equal
+            && Objects.equals(stack1.getNbt(), stack2.getNbt()); // Tags are both equal
     }
     
     @Contract("_, _ -> new")
@@ -101,7 +113,7 @@ public final class ItemUtils {
     }
     @Contract("_, _ -> param1")
     public static @NotNull ItemStack setLore(@NotNull ItemStack stack, @NotNull Text ...text) {
-        CompoundTag display = stack.getOrCreateSubTag("display");
+        NbtCompound display = stack.getSubNbt("display");
         display.put(
             "Lore",
             NbtUtils.toList(
@@ -113,7 +125,7 @@ public final class ItemUtils {
     }
     
     public static void makeUnbreakable(@NotNull ItemStack stack) {
-        CompoundTag nbt = stack.getOrCreateTag();
+        NbtCompound nbt = stack.getOrCreateNbt();
         nbt.putBoolean("Unbreakable", true);
     }
 }

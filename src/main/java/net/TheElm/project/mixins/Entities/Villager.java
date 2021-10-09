@@ -43,7 +43,7 @@ import net.minecraft.entity.passive.MerchantEntity;
 import net.minecraft.entity.passive.PassiveEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.stat.Stats;
@@ -113,11 +113,11 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
     protected ClaimantTown getTown() {
         ClaimantTown town = null;
         if (this.town != null) {
-            try {
-                town = ClaimantTown.get(this.town);
-            } catch (NbtNotFoundException ignored) {}
+            town = ClaimantTown.get(this.town);
+            
             // Reset the town
-            if (town == null) this.setTown(null);
+            if (town == null)
+                this.setTown(null);
         }
         return town;
     }
@@ -162,7 +162,7 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
                         bName = ColorUtils.format(child.getDisplayName(), Formatting.WHITE);
                 }
                 
-                town.send(((pName != null && sName != null && bName != null) ?
+                town.send(this.getServer(), ((pName != null && sName != null && bName != null) ?
                     new LiteralText("").append(pName).append(" and ")
                         .append(sName).append(" have welcome a new villager, ")
                         .append(bName).append(", into your town.")
@@ -175,13 +175,13 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
         }
     }
     
-    @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
-    public void onSavingData(CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "writeCustomDataToNbt")
+    public void onSavingData(NbtCompound tag, CallbackInfo callback) {
         if (this.town != null)
             tag.putString("smTown", this.town.toString());
     }
-    @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
-    public void onReadingData(CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "readCustomDataFromNbt")
+    public void onReadingData(NbtCompound tag, CallbackInfo callback) {
         if (tag.contains("smTown", NbtType.STRING)) {
             // Load the UUID from the tag
             this.town = UUID.fromString(tag.getString("smTown"));
@@ -190,8 +190,8 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
             this.getTown();
         }
     }
-    @Inject(at = @At("RETURN"), method = "readCustomDataFromTag")
-    public void afterReadingData(CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("RETURN"), method = "readCustomDataFromNbt")
+    public void afterReadingData(NbtCompound tag, CallbackInfo callback) {
         if ((!this.hasCustomName()) && SewConfig.get(SewConfig.RANDOM_NAME_VILLAGERS)) {
             Text name = EntityUtils.Naming.create(this.random, this.getVillagerData(), 4);
             if (name != null) {

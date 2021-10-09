@@ -48,7 +48,7 @@ public abstract class Clumps extends Entity {
     
     @Inject(at = @At("TAIL"), method = "tick")
     public void onTick(CallbackInfo callback) {
-        if (!this.world.isClient && !this.removed && this.world.getTime() % 4 == 0) {
+        if (!this.world.isClient && !this.isRemoved() && this.world.getTime() % 4 == 0) {
             // Get orbs of same tile
             this.world.getEntitiesByClass(
                 ExperienceOrbEntity.class,
@@ -57,10 +57,10 @@ public abstract class Clumps extends Entity {
                 (orb -> (!orb.getUuid().equals(this.getUuid())) && orb.isAlive())
             ).stream().filter((orb) -> {
                 // Get where found orbs are younger than the current (Let the oldest live)
-                return orb.orbAge < this.orbAge;
+                return orb.age < this.orbAge;
             }).findAny().ifPresent((orb) -> {
                 this.amount += orb.getExperienceAmount(); // Add that orb to this
-                orb.remove(); // Remove the orb
+                orb.discard(); // Remove the orb
             });
         }
     }

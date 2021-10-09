@@ -26,7 +26,7 @@
 package net.TheElm.project.utilities.nbt;
 
 import net.fabricmc.fabric.api.util.NbtType;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -38,15 +38,15 @@ import java.util.UUID;
 public final class NbtGet<T> {
     
     public static final NbtGet<UUID> UUID = new NbtGet<>(NbtType.INT_ARRAY, NbtUtils::getUUID);
-    public static final NbtGet<Byte> BYTE = new NbtGet<>(NbtType.BYTE, CompoundTag::getByte);
-    public static final NbtGet<Short> SHORT = new NbtGet<>(NbtType.SHORT, CompoundTag::getShort);
-    public static final NbtGet<Integer> INT = new NbtGet<>(NbtType.INT, CompoundTag::getInt);
-    public static final NbtGet<Long> LONG = new NbtGet<>(NbtType.LONG, CompoundTag::getLong);
-    public static final NbtGet<Float> FLOAT = new NbtGet<>(NbtType.FLOAT, CompoundTag::getFloat);
-    public static final NbtGet<Double> DOUBLE = new NbtGet<>(NbtType.DOUBLE, CompoundTag::getDouble);
-    public static final NbtGet<String> STRING = new NbtGet<>(NbtType.STRING, CompoundTag::getString);
-    public static final NbtGet<CompoundTag> COMPOUND = new NbtGet<>(NbtType.COMPOUND, CompoundTag::getCompound);
-    //public static final NbtGet<ListTag> LIST = new NbtGet<>(NbtType.LIST, CompoundTag::getList);
+    public static final NbtGet<Byte> BYTE = new NbtGet<>(NbtType.BYTE, NbtCompound::getByte);
+    public static final NbtGet<Short> SHORT = new NbtGet<>(NbtType.SHORT, NbtCompound::getShort);
+    public static final NbtGet<Integer> INT = new NbtGet<>(NbtType.INT, NbtCompound::getInt);
+    public static final NbtGet<Long> LONG = new NbtGet<>(NbtType.LONG, NbtCompound::getLong);
+    public static final NbtGet<Float> FLOAT = new NbtGet<>(NbtType.FLOAT, NbtCompound::getFloat);
+    public static final NbtGet<Double> DOUBLE = new NbtGet<>(NbtType.DOUBLE, NbtCompound::getDouble);
+    public static final NbtGet<String> STRING = new NbtGet<>(NbtType.STRING, NbtCompound::getString);
+    public static final NbtGet<NbtCompound> COMPOUND = new NbtGet<>(NbtType.COMPOUND, NbtCompound::getCompound);
+    //public static final NbtGet<NbtList> LIST = new NbtGet<>(NbtType.LIST, NbtCompound::getList);
     
     private final int nbtType;
     private final CompoundTagGetter<T> applicator;
@@ -60,12 +60,12 @@ public final class NbtGet<T> {
         return this.nbtType;
     }
     
-    public T apply(@NotNull CompoundTag tag, @NotNull String key) {
+    public T apply(@NotNull NbtCompound tag, @NotNull String key) {
         return this.applicator.apply(tag, key);
     }
     
     @FunctionalInterface
     public interface CompoundTagGetter<T> {
-        T apply(@NotNull CompoundTag tag, @NotNull String key);
+        T apply(@NotNull NbtCompound tag, @NotNull String key);
     }
 }

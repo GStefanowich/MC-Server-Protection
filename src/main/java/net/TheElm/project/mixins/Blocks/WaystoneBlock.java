@@ -28,23 +28,23 @@ package net.TheElm.project.mixins.Blocks;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.Tickable;
+import net.minecraft.util.math.BlockPos;
 
 import java.util.UUID;
 
-public class WaystoneBlock extends BlockEntity implements Tickable {
+public class WaystoneBlock extends BlockEntity {
     
     private long tickTimer = 30;
     private UUID wayStoneOwner = null;
     
-    public WaystoneBlock() {
-        super(null); // TODO: Replace NULL (Can't be null)
+    public WaystoneBlock(BlockPos blockPos, BlockState blockState) {
+        super(null, blockPos, blockState); // TODO: Replace NULL (Can't be null)
     }
     
-    @Override
+    // TODO: Convert the tick to use the static ticking
     public void tick() {
         if ((this.wayStoneOwner != null) && (this.world != null)) {
             this.tickTimer--;
@@ -61,8 +61,8 @@ public class WaystoneBlock extends BlockEntity implements Tickable {
             int y = this.world.random.nextInt((this.pos.getY() + 5) - (low = (this.pos.getY() + 3))) + low;
             int z = this.world.random.nextInt((this.pos.getZ() + 2) - (low = (this.pos.getZ() - 1))) + low;
             
-            int shiftX = this.world.random.nextInt( 100 );
-            int shiftZ = this.world.random.nextInt( 100 );
+            int shiftX = this.world.random.nextInt(100);
+            int shiftZ = this.world.random.nextInt(100);
             
             ((ServerWorld)this.world).spawnParticles(ParticleTypes.PORTAL, x + (double)(shiftX / 100), y, z + (double)(shiftZ / 100), 8, 0.1D, -0.2D, 0.1D, 0.0D);
         }
@@ -73,18 +73,18 @@ public class WaystoneBlock extends BlockEntity implements Tickable {
      */
     
     @Override
-    public void fromTag(BlockState state, CompoundTag tag) {
-        super.fromTag(state, tag);
+    public void readNbt(NbtCompound tag) {
+        super.readNbt(tag);
         
         if (NbtUtils.hasUUID(tag, "sewingWaystone"))
             this.wayStoneOwner = NbtUtils.getUUID(tag, "sewingWaystone");
     }
-
+    
     @Override
-    public CompoundTag toTag(CompoundTag tag) {
+    public NbtCompound writeNbt(NbtCompound tag) {
         if (this.wayStoneOwner != null)
             tag.putUuid( "sewingWaystone", this.wayStoneOwner );
         
-        return super.toTag(tag);
+        return super.writeNbt(tag);
     }
 }

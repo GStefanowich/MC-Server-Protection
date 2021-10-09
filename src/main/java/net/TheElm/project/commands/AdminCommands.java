@@ -67,7 +67,7 @@ public final class AdminCommands {
         // Register the FLY command
         ServerCore.register(dispatcher, AdminCommands.FLIGHT, (builder) -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FLY))
-            .then( CommandManager.argument("target", EntityArgumentType.players())
+            .then(CommandManager.argument("target", EntityArgumentType.players())
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FLY.onOther()))
                 .executes(AdminCommands::targetFlying)
             )
@@ -77,7 +77,7 @@ public final class AdminCommands {
         // Register the GOD command
         ServerCore.register(dispatcher, AdminCommands.GOD, builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GODMODE))
-            .then( CommandManager.argument( "target", EntityArgumentType.players())
+            .then(CommandManager.argument( "target", EntityArgumentType.players())
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GODMODE.onOther()))
                 .executes(AdminCommands::targetGod)
             )

@@ -27,8 +27,8 @@ package net.TheElm.project.mixins.Server;
 
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.item.WritableBookItem;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -45,14 +45,14 @@ public class Books {
      * @return Returns if the book is valid
      */
     @Overwrite
-    public static boolean isValid(@Nullable CompoundTag compound) {
+    public static boolean isValid(@Nullable NbtCompound compound) {
         if (compound == null)
             return false;
         if (!compound.contains("pages", NbtType.LIST))
             return false;
         
         int bytes = 0;
-        ListTag pages = compound.getList("pages", NbtType.STRING);
+        NbtList pages = compound.getList("pages", NbtType.STRING);
         
         // Iterate pages
         for(int i = 0; i < pages.size(); ++i) {

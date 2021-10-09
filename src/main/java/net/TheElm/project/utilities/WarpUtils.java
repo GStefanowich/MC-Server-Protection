@@ -31,7 +31,6 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
-import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.LogicalWorld;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.objects.MaskSet;
@@ -52,7 +51,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
@@ -64,7 +63,12 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.math.*;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Box;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
@@ -73,7 +77,17 @@ import net.minecraft.world.biome.Biome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
@@ -87,7 +101,7 @@ public final class WarpUtils {
     
     private final @NotNull String name;
     private final @NotNull ServerWorld world;
-    private BlockPos createWarpAt;
+    private @Nullable BlockPos createWarpAt;
     private BlockRange region;
     
     public WarpUtils(@NotNull final String name, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos pos) {
@@ -111,29 +125,32 @@ public final class WarpUtils {
         return true;
     }
     
-    public BlockPos getWarpPositionIn() {
+    public boolean getNewWarpPositionIn() {
         int x = this.createWarpAt.getX();
         int z = this.createWarpAt.getZ();
-        do {
-            CoreMod.logInfo("Finding a new warp position!");
-            this.updateWarpPos( new BlockPos( getRandom( x ), 256, getRandom( z ) ) );
-        } while (!this.updateWarpPos(this.isValid(this.world, this.createWarpAt,50,true)));
         
+        CoreMod.logInfo("Finding a new warp position!");
+        this.updateWarpPos(new BlockPos(WarpUtils.getRandom(x), 256, WarpUtils.getRandom(z)));
+        
+        // Return if the warp is a valid position
+        return this.updateWarpPos(this.isValid(this.world, this.createWarpAt,50));
+    }
+    public @Nullable BlockPos getLastWarpPositionIn() {
         return this.createWarpAt;
     }
     public BlockPos getSafeTeleportPos() {
         BlockPos tpPos;
         
         int count = 1;
-        int maxHeight = ( world.getDimension().hasSkyLight() ? 256 : this.createWarpAt.getY() + 10 );
+        int maxHeight = ( this.world.getDimension().hasSkyLight() ? 256 : this.createWarpAt.getY() + 10 );
         boolean negX = false;
         boolean negZ = false;
         
         do {
             int x = this.createWarpAt.getX() + ( 2 * count * ( negX ? -1 : 1 ));
             int z = this.createWarpAt.getZ() + ( 2 * count * ( negZ ? -1 : 1 ));
-            
-            tpPos = new BlockPos( x, maxHeight, z );
+
+            tpPos = new BlockPos(x, maxHeight, z);
             
             if (!negX) {
                 negX = true;
@@ -147,7 +164,7 @@ public final class WarpUtils {
                 }
             }
             
-        } while (( tpPos = this.isValid(this.world, tpPos, this.createWarpAt.getY() - 5,false)) == null );
+        } while ((tpPos = this.isValid(this.world, tpPos, this.createWarpAt.getY() - 5)) == null);
         
         return tpPos.up( 2 );
     }
@@ -160,11 +177,7 @@ public final class WarpUtils {
         return ( 16 * Math.round(random >> 4) ) + 8;
     }
     
-    private @Nullable BlockPos isValid(@NotNull final World world, @NotNull final BlockPos startingPos, final int minY, final boolean mustBeUnowned) {
-        // If the chunks are claimed.
-        if (mustBeUnowned && IClaimedChunk.isOwnedAround(world, this.createWarpAt, 5))
-            return null;
-        
+    private @Nullable BlockPos isValid(@NotNull final World world, @NotNull final BlockPos startingPos, final int minY) {
         BlockPos pos = startingPos;
         BlockState blockState;
         do {
@@ -172,8 +185,8 @@ public final class WarpUtils {
                 return null;
             
             pos = pos.down();
-            blockState = world.getBlockState( pos );
-        } while ( blockState.isAir() || blockState.getMaterial().isReplaceable() || ( mustBeUnowned && ( blockState.getMaterial() == Material.SNOW_LAYER || blockState.getMaterial() == Material.PLANT )));
+            blockState = world.getBlockState(pos);
+        } while (blockState.isAir() || blockState.getMaterial().isReplaceable() || blockState.getMaterial() == Material.SNOW_LAYER || blockState.getMaterial() == Material.PLANT);
         
         Material material = blockState.getMaterial();
         
@@ -277,7 +290,7 @@ public final class WarpUtils {
             // Place the command block
             structure.addBlock(blockPos, cmdBlock);
             structure.addEntity(blockPos, () -> {
-                CommandBlockBlockEntity blockEntity = BlockEntityType.COMMAND_BLOCK.instantiate();
+                CommandBlockBlockEntity blockEntity = BlockEntityType.COMMAND_BLOCK.instantiate(blockPos, Blocks.COMMAND_BLOCK.getDefaultState());
                 if (blockEntity != null) {
                     blockEntity.getCommandExecutor()
                         .setCommand("spawn @a[x=" + this.createWarpAt.getX() + ",z=" + this.createWarpAt.getZ() + ",y=" + this.createWarpAt.getY() + ",distance=0..2]");
@@ -381,7 +394,7 @@ public final class WarpUtils {
         
         try {
             // Read from the NBT file
-            CompoundTag playerNBT;
+            NbtCompound playerNBT;
             if ((playerNBT = NbtUtils.readOfflinePlayerData(uuid)) == null)
                 return Collections.emptyMap();
             
@@ -415,7 +428,7 @@ public final class WarpUtils {
         return pattern.matcher(name).matches();
     }
     
-    public static @NotNull Map<String, WarpUtils.Warp> fromNBT(@NotNull CompoundTag mainNBT) {
+    public static @NotNull Map<String, WarpUtils.Warp> fromNBT(@NotNull NbtCompound mainNBT) {
         Map<String, WarpUtils.Warp> warps = new ConcurrentHashMap<>();
         
         // Read the player warp location after restarting
@@ -431,13 +444,13 @@ public final class WarpUtils {
                 true
             ));
         } else if (mainNBT.contains("playerWarps", NbtType.COMPOUND)) {
-            CompoundTag warpsNBT = mainNBT.getCompound("playerWarps");
+            NbtCompound warpsNBT = mainNBT.getCompound("playerWarps");
             if (warpsNBT != null) {
                 Set<String> warpNames = warpsNBT.getKeys();
                 for (String warpName : warpNames) {
                     if (!warpsNBT.contains(warpName, NbtType.COMPOUND))
                         continue;
-                    CompoundTag warpNBT = warpsNBT.getCompound(warpName);
+                    NbtCompound warpNBT = warpsNBT.getCompound(warpName);
                     if (warpNBT.contains("x", NbtType.NUMBER) && warpNBT.contains("y", NbtType.NUMBER) && warpNBT.contains("z", NbtType.NUMBER)) {
                         warps.put(warpName, new Warp(
                             warpName,
@@ -456,8 +469,8 @@ public final class WarpUtils {
         
         return warps;
     }
-    public static @NotNull CompoundTag toNBT(@NotNull Map<String, WarpUtils.Warp> warps) {
-        CompoundTag tag = new CompoundTag();
+    public static @NotNull NbtCompound toNBT(@NotNull Map<String, WarpUtils.Warp> warps) {
+        NbtCompound tag = new NbtCompound();
         warps.forEach((name, warp) -> tag.put(name, warp.toTag()));
         return tag;
     }
@@ -521,7 +534,10 @@ public final class WarpUtils {
         // If the entity can be teleported within the same world
         if (world == player.world || bottom == player) {
             WarpUtils.teleportEntity(world, bottom, tpPos);
-            WarpUtils.teleportPoof(world, tpPos, false);
+            
+            // Show an effect in the new location
+            if (!bottom.isSpectator())
+                WarpUtils.teleportPoof(world, tpPos, false);
         } else while (entity != null) {
             // Get the entity vehicle
             Entity vehicle = entity.getVehicle();
@@ -538,9 +554,12 @@ public final class WarpUtils {
     public static void teleportPlayerAndAttached(@NotNull final RegistryKey<World> world, @NotNull final ServerPlayerEntity player) {
         WarpUtils.teleportPlayerAndAttached(ServerCore.getWorld(player, world), player);
     }
+    public static void teleportEntity(@NotNull final RegistryKey<World> dimension, @NotNull Entity entity, @NotNull final BlockPos tpPos) {
+        WarpUtils.teleportEntity(ServerCore.getWorld(entity, dimension), entity, tpPos);
+    }
     public static void teleportEntity(@NotNull final ServerWorld world, @NotNull Entity entity, @NotNull final BlockPos tpPos) {
         // Must be a ServerWorld
-        if (world.isClient || entity.removed)
+        if (world.isClient || entity.isRemoved())
             return;
         
         // Get the chunks
@@ -553,7 +572,7 @@ public final class WarpUtils {
         
         // Set the teleport ticket
         world.getChunkManager()
-            .addTicket(ChunkTicketType.POST_TELEPORT, chunkPos, 1, entity.getEntityId());
+            .addTicket(ChunkTicketType.POST_TELEPORT, chunkPos, 1, entity.getId());
         
         // Reset velocity before teleporting
         entity.setVelocity(Vec3d.ZERO);
@@ -569,14 +588,14 @@ public final class WarpUtils {
             
             // Move the player
             if (world == player.world) {
-                player.networkHandler.requestTeleport(x, y, z, player.yaw, player.pitch);
+                player.networkHandler.requestTeleport(x, y, z, player.getYaw(), player.getPitch());
                 player.networkHandler.syncWithPlayerPosition();
             } else {
-                player.teleport(world, x, y, z, player.yaw, player.pitch);
+                player.teleport(world, x, y, z, player.getYaw(), player.getPitch());
             }
         } else {
-            float i = MathHelper.wrapDegrees(entity.yaw);
-            float j = MathHelper.wrapDegrees(entity.pitch);
+            float i = MathHelper.wrapDegrees(entity.getYaw());
+            float j = MathHelper.wrapDegrees(entity.getPitch());
             j = MathHelper.clamp(j, -90.0F, 90.0F);
             
             if (world == entity.world) {
@@ -596,7 +615,7 @@ public final class WarpUtils {
                 entity.refreshPositionAndAngles(x, y, z, i,j);
                 entity.setHeadYaw( i );
                 world.onDimensionChanged(entity);
-                copyFrom.removed = true;
+                copyFrom.setRemoved(Entity.RemovalReason.CHANGED_DIMENSION);
             }
         }
         
@@ -609,7 +628,7 @@ public final class WarpUtils {
     public static void teleportEntity(@NotNull final ServerWorld world, @NotNull Entity entity) {
         WarpUtils.teleportEntity(world, entity, ServerCore.getSpawn(world));
     }
-    public static void teleportEntity(@NotNull RegistryKey<World> dimension, @NotNull Entity entity) {
+    public static void teleportEntity(@NotNull final RegistryKey<World> dimension, @NotNull Entity entity) {
         WarpUtils.teleportEntity(ServerCore.getWorld(entity, dimension), entity);
     }
     private static void teleportFriendlies(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
@@ -740,8 +759,8 @@ public final class WarpUtils {
         public Warp copy() {
             return this.copy(this.name);
         }
-        public CompoundTag toTag() {
-            CompoundTag tag = new CompoundTag();
+        public NbtCompound toTag() {
+            NbtCompound tag = new NbtCompound();
             
             tag.putInt("x", this.warpPos.getX());
             tag.putInt("y", this.warpPos.getY());

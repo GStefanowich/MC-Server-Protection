@@ -26,6 +26,7 @@
 package net.TheElm.project.mixins.Blocks;
 
 import net.minecraft.block.AbstractFurnaceBlock;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.LockableContainerBlockEntity;
@@ -38,8 +39,8 @@ import net.minecraft.recipe.Recipe;
 import net.minecraft.recipe.RecipeInputProvider;
 import net.minecraft.recipe.RecipeType;
 import net.minecraft.recipe.RecipeUnlocker;
-import net.minecraft.util.Tickable;
 import net.minecraft.util.collection.DefaultedList;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -51,15 +52,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(AbstractFurnaceBlockEntity.class)
-public abstract class AbstractFurnace extends LockableContainerBlockEntity implements SidedInventory, RecipeUnlocker, RecipeInputProvider, Tickable {
-    
-    protected AbstractFurnace(BlockEntityType<?> blockEntityType) {
-        super(blockEntityType);
-    }
+public abstract class AbstractFurnace extends LockableContainerBlockEntity implements SidedInventory, RecipeUnlocker, RecipeInputProvider {
     
     private Item cachedRecipeIngredient = null;
     private Recipe<?> cachedRecipe = null;
     private boolean isRecipeDirty = true;
+    
+    protected AbstractFurnace(BlockEntityType<?> blockEntityType, BlockPos blockPos, BlockState blockState) {
+        super(blockEntityType, blockPos, blockState);
+    }
     
     @Shadow private native boolean isBurning();
     @Shadow protected native int getFuelTime(ItemStack itemStack);

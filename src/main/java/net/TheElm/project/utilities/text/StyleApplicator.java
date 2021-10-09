@@ -26,6 +26,9 @@
 package net.TheElm.project.utilities.text;
 
 import net.TheElm.project.utilities.ColorUtils;
+import net.minecraft.text.ClickEvent;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Style;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
@@ -41,24 +44,58 @@ import java.util.function.UnaryOperator;
 public final class StyleApplicator implements UnaryOperator<Style> {
     
     private @Nullable TextColor color = null;
+    private @Nullable HoverEvent hover = null;
+    private @Nullable ClickEvent click = null;
     
+    public StyleApplicator() {}
     public StyleApplicator(@Nullable TextColor color) {
+        this.withStyle(color);
+    }
+    public StyleApplicator(@Nullable Formatting color) {
+        this.withStyle(color);
+    }
+    public StyleApplicator(@Nullable String color) {
+        this.withStyle(color);
+    }
+    public <T> StyleApplicator(HoverEvent.Action<T> action, T contents) {
+        this.withHover(action, contents);
+    }
+    public StyleApplicator(ClickEvent.Action action, String value) {
+        this.withClick(action, value);
+    }
+    
+    public StyleApplicator withStyle(@Nullable TextColor color) {
         this.color = color;
+        return this;
     }
-    public StyleApplicator(@NotNull Formatting color) {
-        if (color.isColor())
+    public StyleApplicator withStyle(@Nullable Formatting color) {
+        if (color != null && color.isColor())
             this.color = TextColor.fromFormatting(color);
+        return this;
     }
-    public StyleApplicator(@NotNull String color) {
-        TextColor textColor = ColorUtils.getRawTextColor(color);
-        if (textColor != null)
+    public StyleApplicator withStyle(@Nullable String color) {
+        TextColor textColor;
+        if (color != null && (textColor = ColorUtils.getRawTextColor(color)) != null)
             this.color = textColor;
+        return this;
+    }
+    public <T> StyleApplicator withHover(@NotNull HoverEvent.Action<T> action, @NotNull T contents) {
+        this.hover = new HoverEvent(action, contents);
+        return this;
+    }
+    public StyleApplicator withClick(@NotNull ClickEvent.Action action, @NotNull String value) {
+        this.click = new ClickEvent(action, value);
+        return this;
     }
     
     @Override
     public @NotNull Style apply(@NotNull Style style) {
         if (this.color != null)
             style = style.withColor(this.color);
+        if (this.hover != null)
+            style = style.withHoverEvent(this.hover);
+        if (this.click != null)
+            style = style.withClickEvent(this.click);
         return style;
     }
 }

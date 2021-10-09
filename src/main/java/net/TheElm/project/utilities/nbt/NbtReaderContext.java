@@ -25,7 +25,7 @@
 
 package net.TheElm.project.utilities.nbt;
 
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -36,11 +36,11 @@ import java.util.function.Consumer;
  * By greg in SewingMachineMod
  */
 public final class NbtReaderContext<T> implements NbtReader<T> {
-    private final @NotNull CompoundTag tag;
+    private final @NotNull NbtCompound tag;
     private final @NotNull NbtGet<T> nbtType;
     private final @NotNull Consumer<T> consumer;
     
-    NbtReaderContext(@Nullable CompoundTag tag, @NotNull NbtGet<T> nbtType, @NotNull Consumer<T> consumer) {
+    NbtReaderContext(@Nullable NbtCompound tag, @NotNull NbtGet<T> nbtType, @NotNull Consumer<T> consumer) {
         this.tag = tag;
         this.nbtType = nbtType;
         this.consumer = consumer;

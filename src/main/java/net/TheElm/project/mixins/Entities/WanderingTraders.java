@@ -99,10 +99,10 @@ public abstract class WanderingTraders extends MerchantEntity {
     }
     
     @Override
-    public void remove() {
+    public void remove(RemovalReason removalReason) {
         if (!this.world.isClient && TradeUtils.isEntityWanderingTrader(this))
             EntityUtils.wanderingTraderDeparture((WanderingTraderEntity)(Entity) this);
-        super.remove();
+        super.remove(removalReason);
     }
     
     private static final Int2ObjectMap<TradeOffers.Factory[]> WANDERING_TRADER_TRADES = copyToFastUtilMap(ImmutableMap.of(

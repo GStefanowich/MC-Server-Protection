@@ -31,7 +31,11 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.DragonLoot;
 import net.TheElm.project.interfaces.BossLootableContainer;
 import net.TheElm.project.protections.BlockRange;
-import net.TheElm.project.utilities.*;
+import net.TheElm.project.utilities.BossLootRewards;
+import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.EntityUtils;
+import net.TheElm.project.utilities.IntUtils;
+import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
@@ -43,7 +47,7 @@ import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.entity.boss.dragon.EnderDragonFight;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.stat.Stats;
 import net.minecraft.text.LiteralText;
@@ -61,7 +65,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 
 @Mixin(EnderDragonFight.class)
 public abstract class DragonFight {
@@ -103,13 +111,13 @@ public abstract class DragonFight {
             this.generateEndPortal(false);
         }
         
-        List<EnderDragonEntity> dragons;
+        List<? extends EnderDragonEntity> dragons;
         this.dragonKilled = (dragons = this.world.getAliveEnderDragons()).isEmpty();
         if (!this.dragonKilled) {
             EnderDragonEntity dragon = dragons.get(0);
             this.dragonUuid = dragon.getUuid();
             if (!this.previouslyKilled) {
-                dragon.remove();
+                dragon.discard();
                 this.dragonUuid = null;
             }
         }
@@ -235,13 +243,13 @@ public abstract class DragonFight {
             .formatted(Formatting.YELLOW, Formatting.ITALIC), EntityUtils::isNotFightingDragon);
         
         this.seenPlayers.stream()
-            .map(ServerCore::getPlayer)
+            .map(uuid -> ServerCore.getPlayer(this.world.getServer(), uuid))
             .filter(Objects::nonNull)
             .filter((player) -> {
                 // Increase the dragon kill statistic
                 player.incrementStat(Stats.KILLED.getOrCreateStat(EntityType.ENDER_DRAGON));
                 
-                return giveLootReward && !BossLootRewards.DRAGON_LOOT.addLoot(player.getUuid(), DragonLoot.createReward(player));
+                return giveLootReward && !BossLootRewards.DRAGON_LOOT.addLoot(player, DragonLoot.getReward());
             })
             .forEach(player -> player.sendSystemMessage(new LiteralText("You were not rewarded a drop from killing the Ender Dragon, your loot chest is full.")
                 .formatted(Formatting.RED), Util.NIL_UUID));
@@ -256,7 +264,7 @@ public abstract class DragonFight {
     
     @Inject(at = @At("TAIL"), method = "updatePlayers")
     public void onUpdatePlayers(CallbackInfo callback) {
-        List<EnderDragonEntity> dragons = this.world.getAliveEnderDragons();
+        List<? extends EnderDragonEntity> dragons = this.world.getAliveEnderDragons();
         if (!dragons.isEmpty()) {
             // Get all players
             this.bossBar.getPlayers().stream().map(Entity::getUuid)
@@ -309,10 +317,10 @@ public abstract class DragonFight {
         
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (blockEntity != null) {
-            CompoundTag chestTag = blockEntity.toTag(new CompoundTag());
+            NbtCompound chestTag = blockEntity.writeNbt(new NbtCompound());
             chestTag.putString("BossLootContainer", BossLootRewards.DRAGON_LOOT.toString());
             
-            blockEntity.fromTag(Blocks.BLACK_SHULKER_BOX.getDefaultState(), chestTag);
+            blockEntity.readNbt(chestTag);
         }
         
         ChunkUtils.claimSlices(world, ServerCore.SPAWN_ID, BlockRange.of(pos));

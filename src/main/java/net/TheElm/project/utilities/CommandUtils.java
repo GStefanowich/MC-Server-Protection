@@ -25,10 +25,14 @@
 
 package net.TheElm.project.utilities;
 
+import com.mojang.brigadier.Command;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.brigadier.tree.ArgumentCommandNode;
+import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -39,14 +43,17 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public final class CommandUtils {
@@ -121,8 +128,37 @@ public final class CommandUtils {
                 .getString());
     }
     
+    public static @NotNull <S> Command<S> command(@NotNull Command<S> command) {
+        if (DevUtils.isDebugging())
+            return new CommandExceptionable<>(command, CoreMod::logError);
+        return command;
+    }
+    
     public static boolean isSourcePlayer(@NotNull ServerCommandSource source) {
         return source.getEntity() instanceof PlayerEntity;
     }
+    public static boolean isDedicatedServer(@NotNull ServerCommandSource source) {
+        return source.getMinecraftServer() instanceof DedicatedServer;
+    }
     
+    private static class CommandExceptionable<S> implements Command<S> {
+        private final @NotNull Command<S> command;
+        private final @NotNull Consumer<Exception> handler;
+        
+        private CommandExceptionable(@NotNull Command<S> command, @NotNull Consumer<Exception> handler) {
+            this.command = command;
+            this.handler = handler;
+        }
+        
+        @Override
+        public int run(CommandContext<S> context) throws CommandSyntaxException {
+            try {
+                return this.command.run(context);
+            } catch (Exception e) {
+                if (!(e instanceof CommandSyntaxException))
+                    this.handler.accept(e);
+                throw e;
+            }
+        }
+    }
 }

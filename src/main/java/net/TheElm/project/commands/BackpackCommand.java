@@ -61,7 +61,7 @@ public final class BackpackCommand {
     private BackpackCommand() {}
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
-        dispatcher.register(CommandManager.literal("backpack")
+        ServerCore.register(dispatcher, "Backpack", builder -> builder
             .requires(CommandPredicate.isEnabled(SewConfig.ALLOW_BACKPACKS))
             .then(CommandManager.literal("pickup")
                 .then(CommandManager.argument("item", ItemStackArgumentType.itemStack())

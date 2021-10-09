@@ -37,7 +37,13 @@ import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityType;
-import net.minecraft.nbt.*;
+import net.minecraft.nbt.AbstractNbtNumber;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
@@ -60,7 +66,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -88,10 +100,10 @@ public final class NbtUtils {
     /*
      * Player Data
      */
-    public static CompoundTag readOfflinePlayerData(@NotNull UUID uuid) throws NbtNotFoundException {
+    public static NbtCompound readOfflinePlayerData(@NotNull UUID uuid) throws NbtNotFoundException {
         return NbtUtils.readOfflinePlayerData(uuid, false);
     }
-    public static CompoundTag readOfflinePlayerData(@NotNull UUID uuid, boolean locking) throws NbtNotFoundException {
+    public static NbtCompound readOfflinePlayerData(@NotNull UUID uuid, boolean locking) throws NbtNotFoundException {
         File file = NbtUtils.playerDataFile(uuid);
         
         if (!file.exists()) {
@@ -110,7 +122,7 @@ public final class NbtUtils {
         
         throw new NbtNotFoundException( uuid );
     }
-    public static boolean writeOfflinePlayerData(UUID uuid, CompoundTag tag) {
+    public static boolean writeOfflinePlayerData(UUID uuid, NbtCompound tag) {
         return NbtUtils.writeBackupAndMove(
             NbtUtils.playerDataFile(uuid),
             tag
@@ -120,7 +132,7 @@ public final class NbtUtils {
     /*
      * Claims
      */
-    public static @NotNull CompoundTag readClaimData(@NotNull Claimant.ClaimantType type, @NotNull UUID uuid) {
+    public static @NotNull NbtCompound readClaimData(@NotNull Claimant.ClaimantType type, @NotNull UUID uuid) {
         File file = Paths.get(
             NbtUtils.levelNameFolder().getAbsolutePath(),
             "sewing-machine",
@@ -156,7 +168,7 @@ public final class NbtUtils {
         );
         
         // Create an empty tag
-        CompoundTag write = NbtUtils.emptyTag(claimant.getType(), claimant.getId());
+        NbtCompound write = NbtUtils.emptyTag(claimant.getType(), claimant.getId());
         
         // Write the save data
         claimant.writeCustomDataToTag(write);
@@ -184,8 +196,8 @@ public final class NbtUtils {
         
         return false;
     }
-    private static void applyWorldDatFromTag(@NotNull ServerWorld world, @NotNull CompoundTag tag, @NotNull ServerWorldProperties properties) {
-        CompoundTag data = tag.getCompound("Data");
+    private static void applyWorldDatFromTag(@NotNull ServerWorld world, @NotNull NbtCompound tag, @NotNull ServerWorldProperties properties) {
+        NbtCompound data = tag.getCompound("Data");
         
         properties.setGameMode(GameMode.byId(data.getInt("GameType")));
         properties.setClearWeatherTime(data.getInt("clearWeatherTime"));
@@ -212,7 +224,7 @@ public final class NbtUtils {
             data.getDouble("BorderSizeLerpTarget"),
             data.getLong("BorderSizeLerpTime")
         );
-        border.setBuffer(data.getDouble("BorderSafeZone"));
+        border.setSafeZone(data.getDouble("BorderSafeZone"));
         border.setDamagePerBlock(data.getDouble("BorderDamagePerBlock"));
         border.setWarningBlocks(data.getInt("BorderWarningBlocks"));
         border.setWarningTime(data.getInt("BorderWarningTime"));
@@ -223,8 +235,8 @@ public final class NbtUtils {
             NbtUtils.writeWorldDatToTag(world, properties)
         );
     }
-    private static @NotNull CompoundTag writeWorldDatToTag(@NotNull ServerWorld world, @NotNull WorldProperties properties) {
-        CompoundTag data = new CompoundTag();
+    private static @NotNull NbtCompound writeWorldDatToTag(@NotNull ServerWorld world, @NotNull WorldProperties properties) {
+        NbtCompound data = new NbtCompound();
         
         if (properties instanceof ServerWorldProperties) {
             ServerWorldProperties serverProperties = (ServerWorldProperties)properties;
@@ -246,16 +258,16 @@ public final class NbtUtils {
         data.putBoolean("thundering", properties.isThundering());
         
         WorldBorder border = world.getWorldBorder();
-        border.write().toTag(data);
+        border.write().writeNbt(data);
         
         data.put("GameRules", properties.getGameRules().toNbt());
         
-        CompoundTag out = new CompoundTag();
+        NbtCompound out = new NbtCompound();
         out.put("Data", data);
         return out;
     }
     
-    private static boolean writeBackupAndMove(@NotNull File file, @NotNull CompoundTag tag) {
+    private static boolean writeBackupAndMove(@NotNull File file, @NotNull NbtCompound tag) {
         String fileName = file.getName();
         int indexOf = fileName.indexOf('.');
         if (indexOf < 0)
@@ -294,8 +306,8 @@ public final class NbtUtils {
         
         return file.exists();
     }
-    private static @NotNull CompoundTag emptyTag(@NotNull Claimant.ClaimantType type, UUID uuid) {
-        CompoundTag tag = new CompoundTag();
+    private static @NotNull NbtCompound emptyTag(@NotNull Claimant.ClaimantType type, UUID uuid) {
+        NbtCompound tag = new NbtCompound();
         tag.putString("type", type.name());
         tag.putUuid("iden", uuid);
         return tag;
@@ -304,20 +316,20 @@ public final class NbtUtils {
     /*
      * Simplifications
      */
-    public static @NotNull CompoundTag blockPosToTag(@NotNull BlockPos blockPos) {
+    public static @NotNull NbtCompound blockPosToTag(@NotNull BlockPos blockPos) {
         return NbtUtils.blockPosToTag(null, blockPos, null);
     }
-    public static @NotNull CompoundTag blockPosToTag(@NotNull WorldPos blockPointer) {
+    public static @NotNull NbtCompound blockPosToTag(@NotNull WorldPos blockPointer) {
         return NbtUtils.blockPosToTag(blockPointer, null);
     }
-    public static @NotNull CompoundTag blockPosToTag(@NotNull WorldPos blockPointer, @Nullable Direction direction) {
+    public static @NotNull NbtCompound blockPosToTag(@NotNull WorldPos blockPointer, @Nullable Direction direction) {
         return NbtUtils.blockPosToTag(blockPointer.getWorld(), blockPointer.getBlockPos(), direction);
     }
-    public static @NotNull CompoundTag blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos) {
+    public static @NotNull NbtCompound blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos) {
         return NbtUtils.blockPosToTag(world, blockPos, null);
     }
-    public static @NotNull CompoundTag blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos, @Nullable Direction direction) {
-        CompoundTag compound = new CompoundTag();
+    public static @NotNull NbtCompound blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos, @Nullable Direction direction) {
+        NbtCompound compound = new NbtCompound();
         if (world != null)
             NbtUtils.worldToTag(compound, world);
         if (blockPos != null)
@@ -326,13 +338,13 @@ public final class NbtUtils {
             NbtUtils.directionToTag(compound, direction);
         return compound;
     }
-    private static @NotNull CompoundTag blockPosToTag(@NotNull CompoundTag compound, @NotNull BlockPos blockPos) {
+    private static @NotNull NbtCompound blockPosToTag(@NotNull NbtCompound compound, @NotNull BlockPos blockPos) {
         compound.putInt("x", blockPos.getX());
         compound.putInt("y", blockPos.getY());
         compound.putInt("z", blockPos.getZ());
         return compound;
     }
-    private static @NotNull CompoundTag worldToTag(@NotNull CompoundTag compound, @NotNull World world) {
+    private static @NotNull NbtCompound worldToTag(@NotNull NbtCompound compound, @NotNull World world) {
         compound.putString("world", NbtUtils.worldToTag(world));
         return compound;
     }
@@ -342,41 +354,38 @@ public final class NbtUtils {
     public static String worldToTag(@NotNull RegistryKey<World> world) {
         return world.getValue().toString();
     }
-    public static @NotNull World worldFromTag(@Nullable Tag nbt) {
-        return ServerCore.getWorld(NbtUtils.worldRegistryFromTag(nbt));
-    }
-    public static @NotNull RegistryKey<World> worldRegistryFromTag(@Nullable Tag nbt) {
+    public static @NotNull RegistryKey<World> worldRegistryFromTag(@Nullable NbtElement nbt) {
         if (nbt != null) {
-            if (nbt instanceof AbstractNumberTag)
-                return LegacyConverter.getWorldFromId(((AbstractNumberTag) nbt).getByte());
+            if (nbt instanceof AbstractNbtNumber)
+                return LegacyConverter.getWorldFromId(((AbstractNbtNumber) nbt).byteValue());
             DataResult<RegistryKey<World>> worlds = World.CODEC.parse(NbtOps.INSTANCE, nbt);
             return worlds.resultOrPartial(CoreMod::logError)
                 .orElse(World.OVERWORLD);
         }
         return World.OVERWORLD;
     }
-    private static @NotNull CompoundTag directionToTag(@NotNull CompoundTag compound, @NotNull Direction direction) {
+    private static @NotNull NbtCompound directionToTag(@NotNull NbtCompound compound, @NotNull Direction direction) {
         compound.putInt("direction", direction.getId());
         return compound;
     }
     
-    public static @Nullable BlockPos tagToBlockPos(@Nullable CompoundTag compound) {
+    public static @Nullable BlockPos tagToBlockPos(@Nullable NbtCompound compound) {
         if (compound != null) {
             if (compound.contains("x", NbtType.NUMBER) && compound.contains("y", NbtType.NUMBER) && compound.contains("z", NbtType.NUMBER))
                 return new BlockPos(compound.getDouble("x"), compound.getDouble("y"), compound.getDouble("z"));
         }
         return null;
     }
-    public static @Nullable WorldPos tagToWorldPos(@Nullable CompoundTag compound) {
+    public static @Nullable WorldPos tagToWorldPos(@Nullable NbtCompound compound) {
         if ((compound != null) && compound.contains("world", NbtType.STRING)) {
-            RegistryKey<World> dimension = RegistryKey.of(Registry.DIMENSION, new Identifier(compound.getString("world")));
+            RegistryKey<World> dimension = RegistryKey.of(Registry.WORLD_KEY, new Identifier(compound.getString("world")));
             BlockPos blockPos = NbtUtils.tagToBlockPos(compound);
             if ( blockPos != null )
                 return new WorldPos(dimension, blockPos);
         }
         return null;
     }
-    public static @Nullable Direction tagToDirection(@Nullable CompoundTag compound) {
+    public static @Nullable Direction tagToDirection(@Nullable NbtCompound compound) {
         if (compound != null && compound.contains("direction", NbtType.NUMBER))
             return Direction.byId(compound.getInt("direction"));
         return null;
@@ -385,13 +394,13 @@ public final class NbtUtils {
     /*
      * Lists
      */
-    public static @NotNull <T> ListTag toList(@NotNull Collection<T> collection, @NotNull Function<T, String> function) {
-        ListTag list = new ListTag();
+    public static @NotNull <T> NbtList toList(@NotNull Collection<T> collection, @NotNull Function<T, String> function) {
+        NbtList list = new NbtList();
         for (T obj : collection)
-            list.add(StringTag.of(function.apply(obj)));
+            list.add(NbtString.of(function.apply(obj)));
         return list;
     }
-    public static @NotNull <T> Collection<T> fromList(@NotNull ListTag list, @NotNull Function<String, T> function) {
+    public static @NotNull <T> Collection<T> fromList(@NotNull NbtList list, @NotNull Function<String, T> function) {
         List<T> collection = new ArrayList<>();
         for (int i = 0; i < list.size(); i++) {
             T obj = function.apply(list.getString(i));
@@ -401,12 +410,12 @@ public final class NbtUtils {
         return collection;
     }
     
-    public static boolean hasUUID(@Nullable CompoundTag tag, @NotNull String key) {
+    public static boolean hasUUID(@Nullable NbtCompound tag, @NotNull String key) {
         if (tag == null)
             return false;
         return (tag.contains(key + "Most", NbtType.LONG) && tag.contains(key + "Least", NbtType.LONG)) || tag.contains(key, NbtType.INT_ARRAY);
     }
-    public static @Nullable UUID getUUID(@Nullable CompoundTag tag, @NotNull String key) {
+    public static @Nullable UUID getUUID(@Nullable NbtCompound tag, @NotNull String key) {
         if (tag != null) {
             // Check for old 64-bit ints
             final String kMost = key + "Most";
@@ -422,7 +431,7 @@ public final class NbtUtils {
         }
         return null;
     }
-    public static @NotNull <T> NbtReader<T> tryGet(@Nullable CompoundTag tag, @NotNull NbtGet<T> nbtType, @NotNull String key, @NotNull Consumer<T> consumer) {
+    public static @NotNull <T> NbtReader<T> tryGet(@Nullable NbtCompound tag, @NotNull NbtGet<T> nbtType, @NotNull String key, @NotNull Consumer<T> consumer) {
         return new NbtReaderContext<>(tag, nbtType, consumer)
             .run(key);
     }
@@ -445,26 +454,26 @@ public final class NbtUtils {
     /*
      * Spawner Lore
      */
-    public static @NotNull CompoundTag getSpawnerDisplay(@NotNull ListTag entityIdTag) {
+    public static @NotNull NbtCompound getSpawnerDisplay(@NotNull NbtList entityIdTag) {
         // Create the lore tag
-        ListTag loreTag = new ListTag();
-        for (Tag entityTag : entityIdTag) {
+        NbtList loreTag = new NbtList();
+        for (NbtElement entityTag : entityIdTag) {
             // Get the mob entity name
             String mobTag = entityTag.asString();
-        
+            
             Optional<EntityType<?>> entityType = EntityType.get( mobTag );
             EntityType<?> entity;
             if ((entity = entityType.orElse( null )) != null) {
                 // Create the display of mobs
                 JsonObject lore = new JsonObject();
                 lore.addProperty("translate", entity.getTranslationKey());
-                lore.addProperty("color", (entity.getSpawnGroup().isAnimal() ? Formatting.GOLD : Formatting.RED).getName());
-                loreTag.add(StringTag.of(lore.toString()));
+                lore.addProperty("color", (entity.getSpawnGroup().isPeaceful() ? Formatting.GOLD : Formatting.RED).getName());
+                loreTag.add(NbtString.of(lore.toString()));
             }
         }
         
         // Update the lore tag
-        CompoundTag displayTag = new CompoundTag();
+        NbtCompound displayTag = new NbtCompound();
         displayTag.put("Lore", loreTag);
         return displayTag;
     }
@@ -472,11 +481,11 @@ public final class NbtUtils {
     /*
      * Enchantment Tags
      */
-    public static @NotNull ListTag enchantsToTag(@NotNull Map<Enchantment, Integer> enchantments) {
-        ListTag list = new ListTag();
+    public static @NotNull NbtList enchantsToTag(@NotNull Map<Enchantment, Integer> enchantments) {
+        NbtList list = new NbtList();
         enchantments.entrySet().stream()
             .map(entry -> {
-                CompoundTag tag = new CompoundTag();
+                NbtCompound tag = new NbtCompound();
                 tag.putString("id", String.valueOf(Registry.ENCHANTMENT.getId(entry.getKey())));
                 tag.putInt("lvl", entry.getValue());
                 return tag;
@@ -484,8 +493,8 @@ public final class NbtUtils {
         
         return list;
     }
-    public static @NotNull Map<Enchantment, Integer> enchantsFromTag(@NotNull ListTag tag) {
-        return EnchantmentHelper.fromTag(tag);
+    public static @NotNull Map<Enchantment, Integer> enchantsFromTag(@NotNull NbtList tag) {
+        return EnchantmentHelper.fromNbt(tag);
     }
     public static boolean enchantsEquals(@NotNull final Map<Enchantment, Integer> first, @NotNull final Map<Enchantment, Integer> second) {
         if (first.isEmpty() && second.isEmpty())

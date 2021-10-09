@@ -39,10 +39,10 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
@@ -74,15 +74,15 @@ public abstract class MobSpawners extends BlockWithEntity {
             ItemStack handItem = player.getMainHandStack();
             
             // Spawner Display
-            ListTag spawnEntities = new ListTag();
+            NbtList spawnEntities = new NbtList();
             
             if (blockEntity instanceof MobSpawnerBlockEntity) {
-                CompoundTag spawnerTag = blockEntity.toTag(new CompoundTag());
-                ListTag list = spawnerTag.getList("SpawnPotentials", NbtType.COMPOUND);
+                NbtCompound spawnerTag = blockEntity.writeNbt(new NbtCompound());
+                NbtList list = spawnerTag.getList("SpawnPotentials", NbtType.COMPOUND);
                 
                 // Save to the item (The mob)
-                for (Tag tag : list)
-                    spawnEntities.add(StringTag.of(((CompoundTag) tag).getCompound("Entity").getString("id")));
+                for (NbtElement tag : list)
+                    spawnEntities.add(NbtString.of(((NbtCompound) tag).getCompound("Entity").getString("id")));
                 
                 boolean doDrop = false;
                 
@@ -104,7 +104,7 @@ public abstract class MobSpawners extends BlockWithEntity {
                 
                 if (doDrop) {
                     // Create the item tag
-                    CompoundTag dropTag = new CompoundTag();
+                    NbtCompound dropTag = new NbtCompound();
                     //dropTag.put("EntityIds", itemNbt);
                     dropTag.put("display", NbtUtils.getSpawnerDisplay( spawnEntities ));
                     dropTag.put("EntityIds", spawnEntities);
@@ -112,7 +112,7 @@ public abstract class MobSpawners extends BlockWithEntity {
                     // Create the mob spawner drop
                     ItemStack dropStack = new ItemStack(Items.SPAWNER);
                     dropStack.setCount(1);
-                    dropStack.setTag(dropTag);
+                    dropStack.setNbt(dropTag);
                     
                     // Drop the spawner
                     ItemScatterer.spawn(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), dropStack);
@@ -136,21 +136,21 @@ public abstract class MobSpawners extends BlockWithEntity {
     
     @Override
     public void onPlaced(World world, BlockPos blockPos, BlockState blockState, LivingEntity livingEntity, ItemStack itemStack) {
-        CompoundTag tag = itemStack.getOrCreateTag();
+        NbtCompound tag = itemStack.getOrCreateNbt();
         if (tag.contains("EntityIds", NbtType.LIST)) {
-            ListTag mob = tag.getList("EntityIds", NbtType.STRING);
+            NbtList mob = tag.getList("EntityIds", NbtType.STRING);
             
             // Get the mob spawner entity
             BlockEntity blockEntity = world.getBlockEntity(blockPos);
             if (blockEntity instanceof MobSpawnerBlockEntity) {
-                CompoundTag spawnerTag = blockEntity.toTag(new CompoundTag());
+                NbtCompound spawnerTag = blockEntity.writeNbt(new NbtCompound());
                 
                 // Get the mobs to spawn
-                ListTag spawnPotentials = new ListTag();
-                for (Tag spawn : mob) {
+                NbtList spawnPotentials = new NbtList();
+                for (NbtElement spawn : mob) {
                     String mobIdentifier = spawn.asString();
-                    CompoundTag mobTag = new CompoundTag();
-                    CompoundTag entity = new CompoundTag();
+                    NbtCompound mobTag = new NbtCompound();
+                    NbtCompound entity = new NbtCompound();
                     
                     entity.putString("id", mobIdentifier);
                     mobTag.put("Entity", entity);
@@ -164,7 +164,7 @@ public abstract class MobSpawners extends BlockWithEntity {
                 spawnerTag.put("SpawnPotentials", spawnPotentials);
                 
                 // Save to block
-                blockEntity.fromTag(blockState, spawnerTag);
+                blockEntity.createFromNbt(blockPos, blockState, spawnerTag);
             }
         }
     }

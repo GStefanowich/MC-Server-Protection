@@ -2,8 +2,8 @@ package net.TheElm.project.objects;
 
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.SimpleInventory;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
 import net.minecraft.screen.GenericContainerScreenHandler;
 import net.minecraft.screen.ScreenHandlerType;
 import org.jetbrains.annotations.NotNull;
@@ -38,10 +38,10 @@ public final class LootInventory extends SimpleInventory {
         return Math.min(54, Math.max(quotient * 9, 9));
     }
     
-    public ListTag toTag(ListTag tag) {
+    public NbtList toTag(NbtList tag) {
         for (int i = 0; i < this.getInvItems(); i++) {
             tag.add(this.getStack(i)
-                .toTag(new CompoundTag()));
+                .writeNbt(new NbtCompound()));
         }
         return tag;
     }

@@ -47,7 +47,7 @@ public final class TitleUtils {
     public static void showPlayerAlert(final ServerPlayerEntity player, final Formatting formatting, final Text... text) {
         player.networkHandler.sendPacket(new TitleS2CPacket(
             Action.ACTIONBAR,
-            combineTextChunks(formatting, text),
+            TitleUtils.combineTextChunks(formatting, text),
             1,
             20,
             1
@@ -55,7 +55,7 @@ public final class TitleUtils {
     }
     
     public static void showPlayerAlert(@NotNull final ServerWorld world, Text... text) {
-        Text builtText = combineTextChunks( Formatting.YELLOW, text );
+        Text builtText = TitleUtils.combineTextChunks( Formatting.YELLOW, text );
         
         CoreMod.logInfo( builtText );
         

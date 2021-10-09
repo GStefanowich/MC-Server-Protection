@@ -23,30 +23,18 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Server;
+package net.TheElm.project.objects.fireworks;
 
-import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.interfaces.CommandSource;
-import net.TheElm.project.permissions.PermissionNode;
-import net.TheElm.project.utilities.RankUtils;
-import net.minecraft.entity.Entity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.world.gen.Spawner;
 
-@Mixin(net.minecraft.server.command.ServerCommandSource.class)
-public abstract class ServerCommandSource implements CommandSource, net.minecraft.command.CommandSource {
-    
-    @Nullable @Shadow
-    public native Entity getEntity();
-    
+/**
+ * Created on Aug 25 2021 at 2:26 AM.
+ * By greg in SewingMachineMod
+ */
+public class FireworkRocketManager implements Spawner {
     @Override
-    public boolean hasPermission(PermissionNode permission) {
-        if (!SewConfig.get(SewConfig.HANDLE_PERMISSIONS))
-            return false;
-        Entity entity = this.getEntity();
-        return ((entity instanceof ServerPlayerEntity) && RankUtils.hasPermission(((ServerPlayerEntity) entity), permission));
+    public int spawn(ServerWorld world, boolean spawnMonsters, boolean spawnAnimals) {
+        return 0;
     }
-    
 }

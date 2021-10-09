@@ -31,7 +31,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ai.RangedAttackMob;
 import net.minecraft.entity.boss.WitherEntity;
 import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
@@ -69,14 +69,14 @@ public abstract class WitherBoss extends HostileEntity implements RangedAttackMo
         this.chunkSpawnedInOwner = owner;
     }
     
-    @Inject(at = @At("TAIL"), method = "writeCustomDataToTag")
-    public void onSavingData(CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "writeCustomDataToNbt")
+    public void onSavingData(NbtCompound tag, CallbackInfo callback) {
         // Save the players money
         if (this.getEntityOwner() != null)
             tag.putUuid("WitherCreator", this.getEntityOwner());
     }
-    @Inject(at = @At("TAIL"), method = "readCustomDataFromTag")
-    public void onReadingData(CompoundTag tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "readCustomDataFromNbt")
+    public void onReadingData(NbtCompound tag, CallbackInfo callback) {
         // Read the players money
         if (NbtUtils.hasUUID(tag, "WitherCreator"))
             this.setEntityOwner(NbtUtils.getUUID(tag, "WitherCreator"));

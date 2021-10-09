@@ -35,7 +35,7 @@ import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.block.Block;
-import net.minecraft.client.options.ChatVisibility;
+import net.minecraft.client.option.ChatVisibility;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.item.Item;
@@ -47,13 +47,19 @@ import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.*;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.LiteralText;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.math.Vec3i;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.GameRules;
@@ -61,9 +67,13 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.awt.*;
+import java.awt.Color;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.*;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
@@ -132,10 +142,10 @@ public final class MessageUtils {
     }
     
     // Send a text blob to a local area
-    public static void sendToLocal(@NotNull final World world, @NotNull final BlockPos pos, @NotNull Text text) {
+    public static void sendToLocal(@NotNull final World world, @NotNull final Vec3i pos, @NotNull Text text) {
         MessageUtils.sendToLocal(world, pos, Collections.emptyList(), text);
     }
-    public static boolean sendToLocal(@NotNull final World world, @NotNull final BlockPos pos, @NotNull Collection<ServerPlayerEntity> tags, @NotNull Text text) {
+    public static boolean sendToLocal(@NotNull final World world, @NotNull final Vec3i pos, @NotNull Collection<ServerPlayerEntity> tags, @NotNull Text text) {
         // Log to the server
         ((ServerWorld) world).getServer()
             .sendSystemMessage(text, ServerCore.SPAWN_ID);
@@ -273,7 +283,7 @@ public final class MessageUtils {
         MutableText out = xyzToText(pos);
         
         // Get the dimension
-        RegistryKey<World> dimension = RegistryKey.of(Registry.DIMENSION, id);
+        RegistryKey<World> dimension = RegistryKey.of(Registry.WORLD_KEY, id);
         if (dimension != null) {
             // TODO: Verify the translation key of the dimension
             out.append(" ")
@@ -314,17 +324,17 @@ public final class MessageUtils {
         return base;
     }
     
-    public static @NotNull String xyzToString(@NotNull final BlockPos pos) {
+    public static @NotNull String xyzToString(@NotNull final Vec3i pos) {
         return MessageUtils.xyzToString(pos, ", ");
     }
-    public static @NotNull String xyzToString(@NotNull final BlockPos pos, final String separator) {
+    public static @NotNull String xyzToString(@NotNull final Vec3i pos, final String separator) {
         return MessageUtils.xyzToString(separator, pos.getX(), pos.getY(), pos.getZ());
     }
     public static @NotNull String xyzToString(@NotNull final String separator, final int x, final int y, final int z) {
         return String.join(separator, MessageUtils.posToString( x, y, z ));
     }
     
-    public static @NotNull String xzToString(@NotNull final BlockPos pos) {
+    public static @NotNull String xzToString(@NotNull final Vec3i pos) {
         return MessageUtils.xzToString(", ", pos.getX(), pos.getZ());
     }
     public static @NotNull String xzToString(@NotNull final ChunkPos pos) {
@@ -406,32 +416,42 @@ public final class MessageUtils {
     }
     
     // Item text details
-    public static @NotNull MutableText detailedItem(ItemStack stack) {
+    public static @NotNull MutableText detailedItem(@NotNull ItemStack stack) {
+        List<Text> infos = new LinkedList<>();
         Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(stack);
         MutableText output = new LiteralText("")
-            .append(detailedItem(stack.getItem()));
+            .append(MessageUtils.detailedItem(stack.getItem()));
+        
+        if (stack.getItem().isDamageable() && !stack.isDamageable())
+            infos.add(new TranslatableText("item.unbreakable"));
         
         if (!enchantments.isEmpty()) {
-            // Add the opening bracket
-            output.append(" (");
-            
-            Iterator<Map.Entry<Enchantment, Integer>> iterator = enchantments.entrySet().iterator();
-            while (iterator.hasNext()) {
-                Map.Entry<Enchantment, Integer> value = iterator.next();
-                
+            for (Map.Entry<Enchantment, Integer> value : enchantments.entrySet()) {
                 // Get enchantment details
                 Enchantment enchantment = value.getKey();
                 int level = value.getValue();
                 
                 // Append onto output
-                output.append(enchantment.getName(level));
-                if (iterator.hasNext())
+                infos.add(enchantment.getName(level));
+            }
+        }
+        
+        if (!infos.isEmpty()) {
+            // Add the opening bracket
+            output.append(" (");
+            
+            Iterator<Text> it = infos.iterator();
+            while (it.hasNext()) {
+                output.append(it.next());
+                if (it.hasNext())
                     output.append(", ");
             }
             
             // Add the close bracket
             output.append(")");
         }
+        
+        output.append(" x" + FormattingUtils.number(stack.getCount()));
         
         return output;
     }

@@ -72,7 +72,7 @@ public abstract class WanderingSpawns implements Spawner {
     @Shadow
     private native boolean doesNotSuffocateAt(@NotNull BlockView blockView, @NotNull BlockPos blockPos);
     
-    @Inject(at = @At("HEAD"), method = "method_18018", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "trySpawn", cancellable = true)
     private void onAttemptTraderSpawn(@NotNull ServerWorld world, @NotNull CallbackInfoReturnable<Boolean> callback) {
         if (!SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN))
             return;

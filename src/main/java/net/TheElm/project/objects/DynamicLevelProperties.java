@@ -28,7 +28,7 @@ package net.TheElm.project.objects;
 import com.mojang.serialization.Lifecycle;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.DynamicRegistryManager;
@@ -43,6 +43,7 @@ import net.minecraft.world.level.ServerWorldProperties;
 import net.minecraft.world.level.UnmodifiableLevelProperties;
 import net.minecraft.world.timer.Timer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
@@ -251,6 +252,11 @@ public final class DynamicLevelProperties implements ServerWorldProperties {
     }
     
     @Override
+    public @Nullable UUID getWanderingTraderId() {
+        return this.accessor.getWanderingTraderId();
+    }
+    
+    @Override
     public void setWanderingTraderId(UUID uuid) {
         this.accessor.setWanderingTraderId(uuid);
     }
@@ -297,10 +303,10 @@ public final class DynamicLevelProperties implements ServerWorldProperties {
         return this.accessor.getScheduledEvents();
     }
     
-    public CompoundTag writeToTag(DynamicRegistryManager registryManager) {
+    public NbtCompound writeToTag(DynamicRegistryManager registryManager) {
         if (SewConfig.get(SewConfig.WORLD_SEPARATE_PROPERTIES) && this.dynamic instanceof LevelProperties)
-            return ((LevelProperties)this.dynamic).cloneWorldTag(registryManager, null);
-        return new CompoundTag();
+            return ((LevelProperties)this.dynamic).cloneWorldNbt(registryManager, null);
+        return new NbtCompound();
     }
     
     public @NotNull ServerWorldProperties getDynamicPropertyHandler() {

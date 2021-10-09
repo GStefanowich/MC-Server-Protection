@@ -23,12 +23,23 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.interfaces;
+package net.TheElm.project.mixins.Interfaces;
 
-import net.TheElm.project.permissions.PermissionNode;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.network.ServerPlayerInteractionManager;
+import net.minecraft.util.math.BlockPos;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-public interface CommandSource {
-    
-    boolean hasPermission(PermissionNode permission);
-    
+/**
+ * Created on Aug 29 2021 at 1:09 PM.
+ * By greg in SewingMachineMod
+ */
+@Mixin(ServerPlayerInteractionManager.class)
+public interface InteractionManagerAccessor {
+    @Accessor("mining")
+    boolean isMining();
+
+    @Accessor("miningPos")
+    BlockPos miningPos();
 }

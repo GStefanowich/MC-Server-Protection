@@ -192,7 +192,7 @@ public final class BlockUtils {
             
             // Update the BlockEntity to the new one
             T newBlockEntity = supplier.get();
-            world.setBlockEntity(lecternPos, newBlockEntity);
+            world.addBlockEntity(newBlockEntity);
             return Either.left(newBlockEntity);
         } else {
             return Either.right("Can only set at lecterns.");

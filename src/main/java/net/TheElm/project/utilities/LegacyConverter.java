@@ -41,8 +41,8 @@ import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.IntTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtInt;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
@@ -58,7 +58,13 @@ import org.jetbrains.annotations.Nullable;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
 public final class LegacyConverter implements AutoCloseable {
     
@@ -148,7 +154,7 @@ public final class LegacyConverter implements AutoCloseable {
                     int money = rs.getInt("dataMoney");
                     
                     // Get the players NBT data
-                    CompoundTag playerDat;
+                    NbtCompound playerDat;
                     try {
                         playerDat = NbtUtils.readOfflinePlayerData( playerUUID );
                         
@@ -398,10 +404,10 @@ public final class LegacyConverter implements AutoCloseable {
     }
     
     public static @NotNull RegistryKey<World> getWorldFromId(int id) {
-        return LegacyConverter.getWorldFromId(IntTag.of(id));
+        return LegacyConverter.getWorldFromId(NbtInt.of(id));
     }
-    public static @NotNull RegistryKey<World> getWorldFromId(IntTag id) {
-        DataResult<RegistryKey<World>> worlds = DimensionType.method_28521(new Dynamic<>(NbtOps.INSTANCE, id));
+    public static @NotNull RegistryKey<World> getWorldFromId(NbtInt id) {
+        DataResult<RegistryKey<World>> worlds = DimensionType.worldFromDimensionNbt(new Dynamic<>(NbtOps.INSTANCE, id));
         return worlds.resultOrPartial(CoreMod::logError).orElse(World.OVERWORLD);
     }
     

@@ -1,14 +1,15 @@
-buildscript {
+/* buildscript {
 	repositories {
 		maven { url 'https://plugins.gradle.org/m2/' }
 	}
 	dependencies {
-		classpath 'com.github.jengelman.gradle.plugins:shadow:5.0.0'
+		classpath 'gradle.plugin.com.github.johnrengelman:shadow:7.1.0'
 	}
-}
+} */
 
 plugins {
-	id 'fabric-loom' version '0.5-SNAPSHOT'
+	id 'fabric-loom' version '0.9-SNAPSHOT'
+	id 'com.github.johnrengelman.shadow' version '7.1.0'
 	id 'maven-publish'
 }
 
@@ -16,10 +17,10 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 
-apply plugin: "com.github.johnrengelman.shadow"
+//apply plugin: "com.github.johnrengelman.shadow"
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_16
+targetCompatibility = JavaVersion.VERSION_16
 
 archivesBaseName = project.archives_base_name
 version = project.mod_version
@@ -32,21 +33,21 @@ dependencies {
 	//to change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	mappings "net.fabricmc:yarn:${project.yarn_mappings}"
-	modCompile "net.fabricmc:fabric-loader:${project.loader_version}"
+	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 	
 	// Fabric API. Used for commands
-	modCompile "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 	
 	// Bluemap API
-	implementation 'com.github.BlueMap-Minecraft:BlueMapAPI:v1.5.0'
+	implementation 'com.github.BlueMap-Minecraft:BlueMapAPI:v1.7.0'
 	
 	// https://mvnrepository.com/artifact/mysql/mysql-connector-java
-	compile group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'
-	compile 'com.intellij:annotations:+@jar'
+	implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'
+	implementation 'com.intellij:annotations:+@jar'
 	
 	shadow group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
 	shadow group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'
-	shadow group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: 'v1.4.0'
+	shadow group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: 'v1.7.0'
 }
 
 shadowJar {

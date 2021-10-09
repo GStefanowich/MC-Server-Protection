@@ -30,7 +30,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.EnderEyeItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
@@ -66,7 +66,7 @@ public abstract class LocatorPearls extends Item {
         BlockPos location = null;
         
         ItemStack inHand = user.getStackInHand(hand);
-        CompoundTag throwDat = inHand.getSubTag("throw");
+        NbtCompound throwDat = inHand.getSubNbt("throw");
         
         if (throwDat == null)
             location = generator.locateStructure(world, feature, center, radius, skipExistingChunks);
@@ -81,7 +81,7 @@ public abstract class LocatorPearls extends Item {
             }
             
             int strength = 0;
-            CompoundTag baseDat = inHand.getOrCreateTag();
+            NbtCompound baseDat = inHand.getOrCreateNbt();
             if (baseDat.contains("strength", NbtType.NUMBER))
                 strength = baseDat.getInt("strength");
             

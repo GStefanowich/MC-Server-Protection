@@ -32,9 +32,8 @@ import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.DimensionUtils;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.WarpUtils;
-import net.TheElm.project.utilities.text.MessageUtils;
-import net.TheElm.project.utilities.text.TextUtils;
 import net.TheElm.project.utilities.text.WrittenBookBuilder;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.LecternBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -42,35 +41,43 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.StringTag;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.screen.LecternScreenHandler;
 import net.minecraft.screen.NamedScreenHandlerFactory;
 import net.minecraft.screen.PropertyDelegate;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.Tickable;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Random;
 
 /**
  * Created on Aug 18 2021 at 3:41 PM.
  * By greg in SewingMachineMod
  */
 public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenHandlerFactory {
-    public LecternWarpsBlockEntity() {
-        super(ServerCore.WARPS_BLOCK_ENTITY);
+    private final Random random = new Random();
+    private int ticks = 0;
+    
+    public LecternWarpsBlockEntity(BlockPos blockPos, BlockState blockState) {
+        super(ServerCore.WARPS_BLOCK_ENTITY, blockPos, blockState);
     }
     
     public void onCreated() {
@@ -108,6 +115,32 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
         return new LiteralText("Warps");
     }
     
+    public static <T extends BlockEntity> void tick(@NotNull World world, BlockPos blockPos, BlockState blockState, T blockEntity) {
+        if (world.isClient || !(blockEntity instanceof LecternWarpsBlockEntity))
+            return;
+        LecternWarpsBlockEntity warpsBlock = (LecternWarpsBlockEntity) blockEntity;
+        if (warpsBlock.ticks++ > 0 && (warpsBlock.ticks % 20) == 0) {
+            if (warpsBlock.random.nextInt(3) == 0) {
+                for (int i = 0; i < 4; ++i) {
+                    Vec3d pos = Vec3d.of(warpsBlock.pos)
+                        .add(warpsBlock.random.nextDouble(), 1 + warpsBlock.random.nextDouble(), warpsBlock.random.nextDouble());
+                    
+                    ((ServerWorld) world).spawnParticles(
+                        ParticleTypes.PORTAL,
+                        pos.getX(),
+                        pos.getY(),
+                        pos.getZ(),
+                        warpsBlock.random.nextInt(4) + 1,
+                        ((double)warpsBlock.random.nextFloat()) * 0.5D,
+                        ((double)warpsBlock.random.nextFloat()) * 0.5D,
+                        ((double)warpsBlock.random.nextFloat()) * 0.5D,
+                        0.1
+                    );
+                }
+            }
+        }
+    }
+
     private class PlayerWarpBookInventory implements Inventory {
         private final @NotNull PlayerEntity player;
         public final @NotNull ItemStack book;
@@ -129,9 +162,9 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
         public @NotNull ItemStack getBook() {
             ItemStack stack = new ItemStack(Items.WRITTEN_BOOK, 1);
             
-            ListTag pages;
-            CompoundTag nbt = stack.getOrCreateTag();
-            nbt.put("pages", pages = new ListTag());
+            NbtList pages;
+            NbtCompound nbt = stack.getOrCreateNbt();
+            nbt.put("pages", pages = new NbtList());
             
             this.writeBookNbt(nbt);
             this.writePagesNbt(pages);
@@ -139,7 +172,7 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
             return stack;
         }
         
-        public void writeBookNbt(@NotNull final CompoundTag nbt) {
+        public void writeBookNbt(@NotNull final NbtCompound nbt) {
             // Put Basic Information
             nbt.putString("author", "Server");
             nbt.putString("title", "Warps");
@@ -147,13 +180,13 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
             nbt.putInt("generation", 1);
         }
         
-        private void writePagesNbt(@NotNull final ListTag pages) {
+        private void writePagesNbt(@NotNull final NbtList pages) {
             WrittenBookBuilder page;
             if (this.warps.isEmpty()) {
                 page = new WrittenBookBuilder();
                 page.addString("It seems you don't have any warps :(");
                 
-                pages.add(StringTag.of(page.toString()));
+                pages.add(NbtString.of(page.toString()));
                 
             } else for (WarpUtils.Warp warp : this.warps) {
                 page = new WrittenBookBuilder();
@@ -162,7 +195,7 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
                     warp.getWorld(LecternWarpsBlockEntity.this.world),
                     warp
                 );
-                pages.add(StringTag.of(page.toString()));
+                pages.add(NbtString.of(page.toString()));
             }
         }
         
