@@ -170,6 +170,9 @@ public abstract class WanderingTraders extends MerchantEntity {
             TradeUtils.createSellSpawnEgg(32, Items.PANDA_SPAWN_EGG, 5),
             TradeUtils.createSellSpawnEgg(32, Items.PARROT_SPAWN_EGG, 5),
             TradeUtils.createSellSpawnEgg(32, Items.POLAR_BEAR_SPAWN_EGG, 5),
+            TradeUtils.createSellSpawnEgg(32, Items.AXOLOTL_SPAWN_EGG, 5),
+            TradeUtils.createSellSpawnEgg(32, Items.GOAT_SPAWN_EGG, 5),
+            TradeUtils.createSellSpawnEgg(32, Items.GLOW_SQUID_SPAWN_EGG, 5),
             /* Music Discs */
             TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_11, 1),
             TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_13, 1),

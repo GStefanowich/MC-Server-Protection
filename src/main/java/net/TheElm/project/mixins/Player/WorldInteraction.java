@@ -348,9 +348,6 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     
     @Inject(at = @At("RETURN"), method = "trySleep")
     public void onBedEntered(final BlockPos blockPos, @NotNull final CallbackInfoReturnable<Either<PlayerEntity.SleepFailureReason, Unit>> callback) {
-        if (!SewConfig.get(SewConfig.DO_SLEEP_VOTE))
-            return;
-        
         // If player is unable to sleep, ignore
         if ( !this.isSleeping() )
             return;
@@ -390,15 +387,12 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     
     @Inject(at = @At("RETURN"), method = "wakeUp")
     public void onBedEjected(final boolean sleepTimer, final boolean leftBed, final CallbackInfo callback) {
-        if (!SewConfig.get(SewConfig.DO_SLEEP_VOTE))
-            return;
-        
         // If player woke up naturally, ignore.
         if ( !leftBed )
             return;
         
         // Announce bed left
-        SleepUtils.entityBedToggle( this, !leftBed, false );
+        SleepUtils.entityBedToggle(this, !leftBed, false);
     }
     
     /*

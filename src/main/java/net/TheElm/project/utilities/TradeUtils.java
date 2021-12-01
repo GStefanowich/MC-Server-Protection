@@ -269,7 +269,7 @@ public class TradeUtils {
         protected @NotNull ItemStack createPearl() {
             Identifier biomeId = this.biome.getValue();
             ItemStack pearl = super.createPearl(this.description(biomeId));
-            NbtCompound throwDat = pearl.getSubNbt("throw");
+            NbtCompound throwDat = pearl.getOrCreateSubNbt("throw");
             throwDat.putString("biome", biomeId.toString());
             throwDat.putInt("uses", this.uses);
             

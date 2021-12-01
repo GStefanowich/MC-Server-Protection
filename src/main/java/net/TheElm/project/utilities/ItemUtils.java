@@ -113,7 +113,7 @@ public final class ItemUtils {
     }
     @Contract("_, _ -> param1")
     public static @NotNull ItemStack setLore(@NotNull ItemStack stack, @NotNull Text ...text) {
-        NbtCompound display = stack.getSubNbt("display");
+        NbtCompound display = stack.getOrCreateSubNbt("display");
         display.put(
             "Lore",
             NbtUtils.toList(
