@@ -231,31 +231,6 @@ public abstract class CoreMod {
         
         return !tables.isEmpty();
     }
-    protected static void checkLegacyDatabase() {
-        if (!LegacyConverter.isLegacy())
-            return;
-        
-        // Convert our database
-        String[] notice = new String[]{
-            "====================================================",
-            "| SEWING MACHINE UTILS:",
-            "|  YOU HAVE UPGRADED FROM A LEGACY VERSION",
-            "|  PLEASE CONVERT YOUR CHUNK CLAIMS, IF ENABLED",
-            "|  USING THE FOLLOWING COMMAND:",
-            "|",
-            "|      /protection legacy-import",
-            "|",
-            "| IF YOU DO NOT CONVERT TO THE NEW FORMAT, ALL",
-            "| EXISTING CLAIM INFORMATION WILL BE LOST",
-            "|",
-            "| PLAYERS CANNOT JOIN DURING THE CONVERSION",
-            "====================================================="
-        };
-        CoreMod.logInfo(
-            "Detected a legacy version"
-            + System.lineSeparator() + String.join( System.lineSeparator(), notice )
-        );
-    }
     public static @NotNull File getConfDir() throws RuntimeException {
         // Get the directory
         final File config = CoreMod.getFabric().getConfigDirectory();

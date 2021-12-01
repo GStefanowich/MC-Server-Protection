@@ -66,7 +66,7 @@ public class ArgumentSuggestions {
         
         for (Map.Entry<String, Text> suggestion : suggestions) {
             String name = suggestion.getKey();
-            if (CommandSource.method_27136(remaining, name.toLowerCase(Locale.ROOT)))
+            if (CommandSource.shouldSuggest(remaining, name.toLowerCase(Locale.ROOT)))
                 builder.suggest(name);
         }
         
@@ -77,7 +77,7 @@ public class ArgumentSuggestions {
         
         suggestions.filter((suggestion) -> {
             String name = suggestion.getKey();
-            return CommandSource.method_27136(remaining, name.toLowerCase(Locale.ROOT));
+            return CommandSource.shouldSuggest(remaining, name.toLowerCase(Locale.ROOT));
         }).forEach(pair -> builder.suggest(pair.getKey(), pair.getValue()));
         
         return builder.buildFuture();

@@ -99,7 +99,6 @@ public class PlayerBackpack extends SimpleInventory {
                     return false;
                 
                 this.setStack(slot, itemStack.copy());
-                this.getStack(slot).setCooldown(5);
                 itemStack.decrement(1);
                 return true;
             }
@@ -168,7 +167,6 @@ public class PlayerBackpack extends SimpleInventory {
         } else {
             j -= k;
             invStack.increment(k);
-            invStack.setCooldown(5);
             return j;
         }
     }

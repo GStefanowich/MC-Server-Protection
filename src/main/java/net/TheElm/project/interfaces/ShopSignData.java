@@ -175,7 +175,7 @@ public interface ShopSignData {
         return null;
     }
     default void playSound(@NotNull ServerPlayerEntity player, @NotNull SoundEvent event, @NotNull SoundCategory category) {
-        ServerWorld world = player.getServerWorld();
+        ServerWorld world = player.getWorld();
         BlockPos source;
         if (world == null || (source = this.getSoundSourcePosition()) == null)
             player.playSound(event, category, 1.0f, 1.0f);

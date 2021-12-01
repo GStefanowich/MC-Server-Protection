@@ -44,9 +44,15 @@ import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.world.HeightLimitView;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.chunk.UpgradeData;
 import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.gen.chunk.BlendingData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -60,9 +66,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Mixin(WorldChunk.class)
-public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
-    
-    @Shadow public abstract void markDirty();
+public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim {
     
     private final ClaimSlice[] claimSlices = new ClaimSlice[256];
     
@@ -71,8 +75,10 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
     
     @Shadow @Final
     private World world;
-    @Shadow @Final
-    private ChunkPos pos;
+    
+    public ClaimedChunk(ChunkPos pos, UpgradeData upgradeData, HeightLimitView heightLimitView, Registry<Biome> biome, long inhabitedTime, @Nullable ChunkSection[] sectionArrayInitializer, @Nullable BlendingData blendingData) {
+        super(pos, upgradeData, heightLimitView, biome, inhabitedTime, sectionArrayInitializer, blendingData);
+    }
     
     @Override
     public ClaimantTown updateTownOwner(@Nullable UUID owner, boolean fresh) {
@@ -84,7 +90,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         this.chunkTown = (town == null ? null : new WeakReference<>( town ));
         
         if ( fresh )
-            this.markDirty();
+            this.setShouldSave(true);
         
         return this.getTown();
     }
@@ -96,7 +102,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         this.chunkPlayer = ( owner == null ? null : ClaimantPlayer.get( owner ));
         
         if (fresh)
-            this.markDirty();
+            this.setShouldSave(true);
         
         // If there is no player owner, there is no town
         if (owner == null) {
@@ -114,7 +120,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
                 continue;
             slice.reset();
         }
-        this.markDirty();
+        this.setShouldSave(true);
     }
     @Override
     public void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo, boolean fresh) {
@@ -134,7 +140,7 @@ public abstract class ClaimedChunk implements IClaimedChunk, Chunk, Claim {
         
         // Make sure the chunk gets saved
         if ( fresh )
-            this.markDirty();
+            this.setShouldSave(true);
     }
     public UUID[] getSliceOwner(int slicePos, int yFrom, int yTo) {
         ClaimSlice slice;

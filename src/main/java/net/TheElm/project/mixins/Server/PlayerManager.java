@@ -58,13 +58,6 @@ public class PlayerManager {
     /**
      * Prevent players from joining the server if an update is running
      */
-    @Inject(at = @At("HEAD"), method = "checkCanJoin", cancellable = true)
-    public void onConnect(SocketAddress socket, GameProfile gameProfile, CallbackInfoReturnable<Text> callback) {
-        // Check if the LegacyConverter is running
-        if (LegacyConverter.running())
-            callback.setReturnValue(new LiteralText("The server is currently updating!"));
-    }
-    
     @Inject(at = @At("RETURN"), method = "onPlayerConnect")
     public void onPlayerConnect(ClientConnection connection, ServerPlayerEntity player, CallbackInfo callback) {
         TeamUtils.applyTeams(player);

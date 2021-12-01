@@ -74,7 +74,7 @@ public class ChunkSaving {
         }
     }
     
-    @Inject(at = @At("RETURN"), method = "loadEntities")
+    @Inject(at = @At("RETURN"), method = "serializeTicks")
     private static void loadSewingOwner(ServerWorld world, NbtCompound levelTag, WorldChunk chunk, CallbackInfo callback) {
         // Update the chunks player-owner
         if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationPlayer) )

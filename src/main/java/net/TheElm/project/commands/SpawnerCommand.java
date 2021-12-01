@@ -59,7 +59,7 @@ public final class SpawnerCommand {
                     // Get command information
                     ServerCommandSource source = context.getSource();
                     ServerPlayerEntity player = source.getPlayer();
-                    ServerWorld world = player.getServerWorld();
+                    ServerWorld world = player.getWorld();
                     
                     // Get item information
                     ItemStack spawner = new ItemStack(Items.SPAWNER);

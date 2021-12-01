@@ -75,7 +75,7 @@ public final class WhereCommand {
             .append(" is currently at ")
             .append(MessageUtils.xyzToText(pos))
             .append(" in ")
-            .append(new LiteralText(player.getServerWorld().getRegistryKey().getValue().toString()).formatted(Formatting.AQUA));
+            .append(new LiteralText(player.getWorld().getRegistryKey().getValue().toString()).formatted(Formatting.AQUA));
         
         if (SewConfig.get(SewConfig.DO_CLAIMS)) {
             Entity commandSource = source.getEntity();

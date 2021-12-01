@@ -46,7 +46,7 @@ public enum CompassDirections {
     SPAWN {
         @Override @NotNull
         public Pair<Text, BlockPos> getPos(@NotNull ServerPlayerEntity player, @NotNull BlockPos current) {
-            return new Pair<>(new LiteralText("World Spawn"), ServerCore.getSpawn(player.getServerWorld()));
+            return new Pair<>(new LiteralText("World Spawn"), ServerCore.getSpawn(player.getWorld()));
         }
         @Override
         public CompassDirections getNext(@NotNull ServerPlayerEntity player, @NotNull BlockPos current) { return WARP; }

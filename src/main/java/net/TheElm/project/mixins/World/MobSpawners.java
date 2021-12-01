@@ -77,7 +77,7 @@ public abstract class MobSpawners extends BlockWithEntity {
             NbtList spawnEntities = new NbtList();
             
             if (blockEntity instanceof MobSpawnerBlockEntity) {
-                NbtCompound spawnerTag = blockEntity.writeNbt(new NbtCompound());
+                NbtCompound spawnerTag = blockEntity.createNbtWithIdentifyingData();
                 NbtList list = spawnerTag.getList("SpawnPotentials", NbtType.COMPOUND);
                 
                 // Save to the item (The mob)
@@ -143,7 +143,7 @@ public abstract class MobSpawners extends BlockWithEntity {
             // Get the mob spawner entity
             BlockEntity blockEntity = world.getBlockEntity(blockPos);
             if (blockEntity instanceof MobSpawnerBlockEntity) {
-                NbtCompound spawnerTag = blockEntity.writeNbt(new NbtCompound());
+                NbtCompound spawnerTag = blockEntity.createNbtWithIdentifyingData();
                 
                 // Get the mobs to spawn
                 NbtList spawnPotentials = new NbtList();
@@ -164,7 +164,7 @@ public abstract class MobSpawners extends BlockWithEntity {
                 spawnerTag.put("SpawnPotentials", spawnPotentials);
                 
                 // Save to block
-                blockEntity.createFromNbt(blockPos, blockState, spawnerTag);
+                BlockEntity.createFromNbt(blockPos, blockState, spawnerTag);
             }
         }
     }

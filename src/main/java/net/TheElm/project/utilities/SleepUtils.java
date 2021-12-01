@@ -92,7 +92,7 @@ public final class SleepUtils {
             return 100;
         
         // Get actually sleeping players
-        long remSleepers = world.getPlayers().stream().filter((player) -> player.isSleeping() && player.isSleepingLongEnough()).count();
+        long remSleepers = world.getPlayers().stream().filter((player) -> player.isSleeping() && player.isSleeping()).count();
         
         int percentage = (int)( ( (float)remSleepers / (float)applicablePlayers ) * 100.0f );
         

@@ -170,8 +170,6 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         try {
             // Initialize the database
             if (CoreMod.initDB()) {
-                CoreMod.checkLegacyDatabase();
-                
                 CoreMod.logInfo("Database initialization finished");
                 
                 // Clear out old logs

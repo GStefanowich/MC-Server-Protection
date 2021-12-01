@@ -203,12 +203,12 @@ public class LecternGuideBlockEntity extends BlockEntity implements NamedScreenH
     }
     
     @Override
-    public NbtCompound writeNbt(NbtCompound tag) {
+    public void writeNbt(NbtCompound tag) {
         // Save the book name
         if (this.bookName != null)
             tag.putString("guide_book", this.bookName);
         
-        return super.writeNbt(tag);
+        super.writeNbt(tag);
     }
     
     @Override

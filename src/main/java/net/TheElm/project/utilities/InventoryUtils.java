@@ -173,7 +173,7 @@ public final class InventoryUtils {
     }
     public static boolean playerToChest(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @NotNull final PlayerInventory playerInventory, @Nullable final Inventory chestInventory, @NotNull final Predicate<ItemStack> loosePredicate, final int count, final boolean required) {
         // World
-        ServerWorld world = player.getServerWorld();
+        ServerWorld world = player.getWorld();
         
         // Check if enough in player inventory
         if ( required && (InventoryUtils.getInventoryCount(playerInventory, loosePredicate) < count) )
@@ -287,7 +287,7 @@ public final class InventoryUtils {
     }
     public static boolean chestToPlayer(@NotNull ServerPlayerEntity player, @NotNull final BlockPos sourcePos, @Nullable final Inventory chestInventory, @NotNull final PlayerInventory playerInventory, @NotNull final Predicate<ItemStack> loosePredicate, @NotNull final Predicate<ItemStack> strictPredicate, final int count, final boolean required, @Nullable ItemStackGenerator spawner) {
         // World
-        ServerWorld world = player.getServerWorld();
+        ServerWorld world = player.getWorld();
         
         // Check if enough in the chest
         if (required && (chestInventory != null) && (InventoryUtils.getInventoryCount(chestInventory, loosePredicate) < count))

@@ -65,6 +65,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -80,18 +81,18 @@ public final class NbtUtils {
     
     private NbtUtils() {}
     
-    public static @NotNull File levelNameFolder() {
-        return Paths.get(ServerCore.get().getSaveProperties().getLevelName()).toFile();
+    public static @NotNull Path levelNameFolder() {
+        return Paths.get(ServerCore.get().getSaveProperties().getLevelName());
     }
-    public static @NotNull File worldSaveFolder(@NotNull RegistryKey<World> world) {
+    public static @NotNull Path worldSaveFolder(@NotNull RegistryKey<World> world) {
         return DimensionType.getSaveDirectory(world, NbtUtils.levelNameFolder());
     }
     public static @NotNull File worldSaveFile(@NotNull RegistryKey<World> world) {
-        return new File(NbtUtils.worldSaveFolder(world), WorldSavePath.LEVEL_DAT.getRelativePath());
+        return new File(NbtUtils.worldSaveFolder(world).toFile(), WorldSavePath.LEVEL_DAT.getRelativePath());
     }
     public static @NotNull File playerDataFile(@NotNull UUID uuid) {
         return Paths.get(
-            NbtUtils.levelNameFolder().getAbsolutePath(),
+            NbtUtils.levelNameFolder().toAbsolutePath().toString(),
             WorldSavePath.PLAYERDATA.getRelativePath(),
             uuid.toString() + ".dat"
         ).toFile();
@@ -107,7 +108,7 @@ public final class NbtUtils {
         File file = NbtUtils.playerDataFile(uuid);
         
         if (!file.exists()) {
-            CoreMod.logError("Cannot read offline player data \"" + uuid.toString() + "\"; Path (" + file.getAbsolutePath() + ") does not exist. Never joined the server?");
+            CoreMod.logError("Cannot read offline player data \"" + uuid + "\"; Path (" + file.getAbsolutePath() + ") does not exist. Never joined the server?");
             throw new NbtNotFoundException( uuid );
         }
         
@@ -134,7 +135,7 @@ public final class NbtUtils {
      */
     public static @NotNull NbtCompound readClaimData(@NotNull Claimant.ClaimantType type, @NotNull UUID uuid) {
         File file = Paths.get(
-            NbtUtils.levelNameFolder().getAbsolutePath(),
+            NbtUtils.levelNameFolder().toAbsolutePath().toString(),
             "sewing-machine",
             type.name().toLowerCase() + "_" + uuid.toString() + ".dat"
         ).toFile();
@@ -154,7 +155,7 @@ public final class NbtUtils {
     }
     public static boolean writeClaimData(@NotNull Claimant claimant) {
         File folder = new File(
-            NbtUtils.levelNameFolder(),
+            NbtUtils.levelNameFolder().toFile(),
             "sewing-machine"
         );
         
@@ -299,7 +300,7 @@ public final class NbtUtils {
     }
     public static boolean exists(@NotNull Claimant.ClaimantType type, @NotNull UUID uuid) {
         File file = Paths.get(
-            NbtUtils.levelNameFolder().getAbsolutePath(),
+            NbtUtils.levelNameFolder().toAbsolutePath().toString(),
             "sewing-machine",
             type.name().toLowerCase() + "_" + uuid.toString() + ".dat"
         ).toFile();
@@ -441,7 +442,7 @@ public final class NbtUtils {
      */
     public static boolean delete(@NotNull Claimant claimant) {
         File file = Paths.get(
-            NbtUtils.levelNameFolder().getAbsolutePath(),
+            NbtUtils.levelNameFolder().toAbsolutePath().toString(),
             "sewing-machine",
             claimant.getType().name().toLowerCase() + "_" + claimant.getId().toString() + ".dat"
         ).toFile();

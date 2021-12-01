@@ -147,7 +147,7 @@ public class ScoreboardCommand {
         });
         
         // Create the entity and its passengers
-        return e != null && world.shouldCreateNewEntityWithPassenger(e) ? Command.SINGLE_SUCCESS : 0;
+        return e != null && world.spawnNewEntityAndPassengers(e) ? Command.SINGLE_SUCCESS : 0;
     }
     private static @NotNull NbtCompound generateTitle(@NotNull ScoreboardObjective objective) {
         return ScoreboardCommand.generateRider(FormattingUtils.deepCopy(objective.getDisplayName())

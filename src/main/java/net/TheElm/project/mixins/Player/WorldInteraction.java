@@ -37,7 +37,6 @@ import net.TheElm.project.enums.CompassDirections;
 import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.BackpackCarrier;
 import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.interfaces.LanguageEntity;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.Nicknamable;
 import net.TheElm.project.interfaces.PlayerChat;
@@ -106,7 +105,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(ServerPlayerEntity.class)
-public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerPermissions, PlayerServerLanguage, Nicknamable, PlayerChat, LanguageEntity {
+public abstract class WorldInteraction extends PlayerEntity implements PlayerData, PlayerPermissions, PlayerServerLanguage, Nicknamable, PlayerChat {
     
     @Shadow public ServerPlayerInteractionManager interactionManager;
     @Shadow public ServerPlayNetworkHandler networkHandler;
@@ -405,7 +404,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     @Inject(at = @At("HEAD"), method = "setClientSettings")
     private void onClientSettings(ClientSettingsC2SPacket packet, CallbackInfo callback) {
-        this.clientLanguage = ((LanguageEntity)packet).getClientLanguage();
+        this.clientLanguage = Locale.forLanguageTag(packet.language());
     }
     
     /*

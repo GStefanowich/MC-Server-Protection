@@ -44,7 +44,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.util.registry.SimpleRegistry;
-import net.minecraft.util.snooper.SnooperListener;
 import net.minecraft.util.thread.ReentrantThreadExecutor;
 import net.minecraft.world.SaveProperties;
 import net.minecraft.world.World;
@@ -72,7 +71,7 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 
 @Mixin(MinecraftServer.class)
-public abstract class Save extends ReentrantThreadExecutor<ServerTask> implements SnooperListener, CommandOutput, AutoCloseable, Runnable {
+public abstract class Save extends ReentrantThreadExecutor<ServerTask> implements CommandOutput, AutoCloseable {
     
     @Shadow @Final
     protected LevelStorage.Session session;

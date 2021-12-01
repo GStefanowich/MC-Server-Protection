@@ -38,7 +38,6 @@ import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -47,7 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-public interface IClaimedChunk extends Chunk {
+public interface IClaimedChunk {
     
     ClaimantTown updateTownOwner(@Nullable UUID owner, boolean fresh);
     default ClaimantTown updateTownOwner(@Nullable UUID owner) {

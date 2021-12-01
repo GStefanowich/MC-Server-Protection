@@ -317,9 +317,8 @@ public abstract class DragonFight {
         
         BlockEntity blockEntity = world.getBlockEntity(pos);
         if (blockEntity != null) {
-            NbtCompound chestTag = blockEntity.writeNbt(new NbtCompound());
+            NbtCompound chestTag = blockEntity.createNbtWithIdentifyingData();
             chestTag.putString("BossLootContainer", BossLootRewards.DRAGON_LOOT.toString());
-            
             blockEntity.readNbt(chestTag);
         }
         

@@ -685,7 +685,7 @@ public final class WarpUtils {
             if (name.contains(" "))
                 name = TextUtils.quoteWrap(name);
             
-            if (CommandSource.method_27136(remainder, name.toLowerCase(Locale.ROOT))) {
+            if (CommandSource.shouldSuggest(remainder, name.toLowerCase(Locale.ROOT))) {
                 Warp warp = iterator.getValue();
                 MutableText world;
                 MutableText position;

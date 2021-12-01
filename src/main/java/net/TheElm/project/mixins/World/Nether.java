@@ -25,10 +25,10 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.minecraft.world.biome.DefaultBiomeCreator;
+import net.minecraft.world.biome.TheNetherBiomeCreator;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin(DefaultBiomeCreator.class)
+@Mixin(TheNetherBiomeCreator.class)
 public class Nether {
     
     /*@Inject(at = @At("RETURN"), method = {"createNetherWastes", "createSoulSandValley", "createBasaltDeltas", "createCrimsonForest", "createWarpedForest"})

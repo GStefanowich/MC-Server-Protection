@@ -395,12 +395,6 @@ public final class ClaimCommand {
                     )
                 )
             )
-            
-            // Import from older version
-            .then(CommandManager.literal("legacy-import")
-                .requires(CommandPredicate.opLevel(OpLevels.STOP).and(LegacyConverter::isLegacy))
-                .executes(ClaimCommand::convertFromLegacy )
-            )
         );
     }
     
@@ -414,7 +408,7 @@ public final class ClaimCommand {
         
         ServerPlayerEntity player = source.getPlayer();
         for (GameProfile target : targets)
-            return ClaimCommand.claimChunkAt(player, player.getServerWorld(), target.getId(), false, player.getBlockPos());
+            return ClaimCommand.claimChunkAt(player, player.getWorld(), target.getId(), false, player.getBlockPos());
         return 0;
     }
     private static int rawSetChunkTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -445,7 +439,7 @@ public final class ClaimCommand {
     private static int claimChunkTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
-        ServerWorld world = player.getServerWorld();
+        ServerWorld world = player.getWorld();
         
         // Attempt to claim the chunk
         WorldChunk chunk = world.getWorldChunk(player.getBlockPos());
@@ -519,7 +513,7 @@ public final class ClaimCommand {
         if (chunkFor == null)
             chunkFor = player.getUuid();
         
-        return ClaimCommand.claimChunkAt(player, player.getServerWorld(), chunkFor, true, blockPos);
+        return ClaimCommand.claimChunkAt(player, player.getWorld(), chunkFor, true, blockPos);
     }
     private static int claimChunkRadius(@Nullable UUID chunkFor, @NotNull final CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the player running the command
@@ -537,7 +531,7 @@ public final class ClaimCommand {
         
         // Check the radius that the player wants to claim
         final int radius = IntegerArgumentType.getInteger(context, "radius");
-        IClaimedChunk[] claimedChunks = IClaimedChunk.getOwnedAround(player.getServerWorld(), player.getBlockPos(), radius);
+        IClaimedChunk[] claimedChunks = IClaimedChunk.getOwnedAround(player.getWorld(), player.getBlockPos(), radius);
         for (IClaimedChunk claimedChunk : claimedChunks) {
             if (!chunkFor.equals(claimedChunk.getOwner(blockPos)))
                 throw CHUNK_RADIUS_OWNED.create(player, claimedChunk.getOwnerName(player));
@@ -586,7 +580,7 @@ public final class ClaimCommand {
     private static int unclaimChunkTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
-        ServerWorld world = player.getServerWorld();
+        ServerWorld world = player.getWorld();
         
         ClaimantPlayer claimant = ((PlayerData) player).getClaim();
         
@@ -830,7 +824,7 @@ public final class ClaimCommand {
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument( context, "target" );
         GameProfile targetPlayer = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
-        ServerWorld world = player.getServerWorld();
+        ServerWorld world = player.getWorld();
         IClaimedChunk claimedChunk = (IClaimedChunk) world.getChunk( player.getBlockPos() );
         
         ClaimantTown town;
@@ -1287,27 +1281,6 @@ public final class ClaimCommand {
     }
     
     /*
-     * Convert from legacy database version
-     */
-    
-    private static int convertFromLegacy(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        if (LegacyConverter.exists())
-            return -1;
-        if (!SewConfig.get(SewConfig.DO_CLAIMS))
-            return -1;
-        
-        Thread threadConverter = new Thread(() -> {
-            try (LegacyConverter converter = LegacyConverter.create()) {
-                
-            }
-        });
-        threadConverter.setName("Sewing Converter");
-        threadConverter.start();
-        
-        return Command.SINGLE_SUCCESS;
-    }
-    
-    /*
      * Notify players of chunk claim changes
      */
     
@@ -1315,7 +1288,7 @@ public final class ClaimCommand {
         CoreMod.PLAYER_LOCATIONS.entrySet().stream().filter((entry) -> chunkOwner.equals(entry.getValue())).forEach((entry) -> {
             ServerPlayerEntity notifyPlayer = entry.getKey();
             PlayerMovement movement = ((PlayerMovement) notifyPlayer.networkHandler);
-            movement.showPlayerNewLocation(notifyPlayer, notifyPlayer.getServerWorld().getWorldChunk(notifyPlayer.getBlockPos()));
+            movement.showPlayerNewLocation(notifyPlayer, notifyPlayer.getWorld().getWorldChunk(notifyPlayer.getBlockPos()));
         });
     }
 }

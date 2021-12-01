@@ -81,10 +81,10 @@ public class WaystoneBlock extends BlockEntity {
     }
     
     @Override
-    public NbtCompound writeNbt(NbtCompound tag) {
+    public void writeNbt(NbtCompound tag) {
         if (this.wayStoneOwner != null)
             tag.putUuid( "sewingWaystone", this.wayStoneOwner );
         
-        return super.writeNbt(tag);
+        super.writeNbt(tag);
     }
 }

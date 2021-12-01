@@ -518,7 +518,7 @@ public enum ShopSigns {
             
             ServerWorld world = server.getWorld(registryKey);
             if (world == null)
-                world = player.getServerWorld();
+                world = player.getWorld();
             
             ((LogicalWorld)world).addTickableEvent(new WaystoneSearch(
                 world,
@@ -570,7 +570,7 @@ public enum ShopSigns {
         @Override
         public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
             try {
-                ServerWorld world = player.getServerWorld();
+                ServerWorld world = player.getWorld();
                 if (DimensionUtils.isOutOfBuildLimitVertically(world, signPos) || DimensionUtils.isWithinProtectedZone(world, signPos) || !ChunkUtils.canPlayerBreakInChunk(player, signPos))
                     return Either.left(new LiteralText("Can't build that here"));
                 
@@ -583,7 +583,7 @@ public enum ShopSigns {
                 if (!MoneyUtils.takePlayerMoney(player, SewConfig.get(SewConfig.WARP_WAYSTONE_COST)))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                 
-                WarpUtils warp = new WarpUtils(warpName, player, player.getServerWorld(),signPos.down());
+                WarpUtils warp = new WarpUtils(warpName, player, player.getWorld(),signPos.down());
                 if (!warp.claimAndBuild(() -> warp.save(warp.getSafeTeleportPos(), player))) {
                     // Notify the player
                     player.sendMessage(
@@ -964,7 +964,7 @@ public enum ShopSigns {
             .append(MessageUtils.formatObject(signBuilder.getShopItem()));
         
         // Try getting the located town
-        ServerWorld world = player.getServerWorld();
+        ServerWorld world = player.getWorld();
         ClaimantTown town = ((IClaimedChunk)world.getChunk(signBuilder.getSign().getPos()))
             .getTown();
         int townTaxVal = (town == null ? 0 : signBuilder.getShopItemPrice() * (town.getTaxRate() / 100));

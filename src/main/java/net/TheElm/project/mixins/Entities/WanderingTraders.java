@@ -187,6 +187,7 @@ public abstract class WanderingTraders extends MerchantEntity {
             TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_WAIT, 1),
             TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_WARD, 1),
             TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_PIGSTEP, 1),
+            TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_OTHERSIDE, 1),
             
             TradeUtils.createSellItem(14, 1, Items.NAME_TAG, 5),
             TradeUtils.createSellItem(2, 3, Items.LEAD, 5),
@@ -246,7 +247,8 @@ public abstract class WanderingTraders extends MerchantEntity {
             TradeUtils.createSellLocator(1, BiomeKeys.SWAMP, 100),
             TradeUtils.createSellLocator(1, BiomeKeys.SUNFLOWER_PLAINS, 100),
             TradeUtils.createSellLocator(1, BiomeKeys.FLOWER_FOREST, 100),
-            TradeUtils.createSellLocator(1, BiomeKeys.MOUNTAINS, 100),
+            TradeUtils.createSellLocator(1, BiomeKeys.STONY_PEAKS, 100),
+            TradeUtils.createSellLocator(1, BiomeKeys.FROZEN_PEAKS, 100),
             TradeUtils.createSellLocator(1, BiomeKeys.DARK_FOREST, 100),
             TradeUtils.createSellLocator(1, BiomeKeys.DESERT, 100),
             /* Structure Locators */

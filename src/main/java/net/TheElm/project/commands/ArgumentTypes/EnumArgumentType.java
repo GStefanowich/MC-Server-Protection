@@ -74,7 +74,7 @@ public class EnumArgumentType<E extends Enum<E>> implements SuggestionProvider<S
         final String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
         this.enumValues.stream()
             .filter((eVal) -> ((!(eVal instanceof BoolEnums)) || ((BoolEnums)eVal).isEnabled()))
-            .filter((eName) -> CommandSource.method_27136(remaining, eName.name().toLowerCase(Locale.ROOT)))
+            .filter((eName) -> CommandSource.shouldSuggest(remaining, eName.name().toLowerCase(Locale.ROOT)))
             .forEach((eVal) -> {
                 Text text = this.tooltipFormatter != null ? this.tooltipFormatter.apply(eVal) : null;
                 builder.suggest(this.nameFormatter.apply(eVal), text);
