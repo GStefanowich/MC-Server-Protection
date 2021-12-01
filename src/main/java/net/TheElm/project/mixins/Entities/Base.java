@@ -58,7 +58,7 @@ public class Base {
     @Inject(at = @At("HEAD"), method = "onStruckByLightning", cancellable = true)
     public void onLightningHit(ServerWorld world, LightningEntity lightning, CallbackInfo callback) {
         ActionResult result = DamageEntityCallback.EVENT.invoker()
-            .interact((Entity)(Object) this, this.getEntityWorld(), new EntityDamageSource("lightningBolt", lightning), 0F);
+            .interact((Entity)(Object) this, this.getEntityWorld(), new EntityDamageSource("lightningBolt", lightning));
         if (result != ActionResult.PASS && result != ActionResult.SUCCESS)
             callback.cancel();
     }

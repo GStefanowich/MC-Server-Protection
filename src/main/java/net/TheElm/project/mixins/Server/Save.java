@@ -127,7 +127,7 @@ public abstract class Save extends ReentrantThreadExecutor<ServerTask> implement
                 Map.Entry<RegistryKey<DimensionOptions>, DimensionOptions> entry = iterator.next();
                 RegistryKey<DimensionOptions> registryKey = entry.getKey();
                 if (registryKey != DimensionOptions.OVERWORLD) {
-                    RegistryKey<World> key = RegistryKey.of(Registry.DIMENSION, registryKey.getValue());
+                    RegistryKey<World> key = RegistryKey.of(Registry.WORLD_KEY, registryKey.getValue());
                     
                     // Get dimension options
                     DimensionOptions options = entry.getValue();

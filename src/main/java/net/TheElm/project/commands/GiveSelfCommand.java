@@ -82,7 +82,7 @@ public final class GiveSelfCommand {
             ItemEntity itemEntity;
             ItemStack itemStack = itemArg.createStack(MathHelper.clamp(remainder, 1, stackSize), false);
             
-            if (player.inventory.insertStack(itemStack) && itemStack.isEmpty()) {
+            if (player.getInventory().insertStack(itemStack) && itemStack.isEmpty()) {
                 itemStack.setCount(1);
                 itemEntity = player.dropItem(itemStack, false);
                 if (itemEntity != null)

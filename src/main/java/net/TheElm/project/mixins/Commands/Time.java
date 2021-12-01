@@ -45,7 +45,7 @@ public class Time {
      */
     @Overwrite
     public static int executeSet(@NotNull ServerCommandSource source, int time) {
-        for (ServerWorld world : source.getMinecraftServer().getWorlds()) {
+        for (ServerWorld world : source.getServer().getWorlds()) {
             long newTime = 24000L * Math.round(Math.abs(world.getTimeOfDay() / 24000L));
             world.setTimeOfDay(newTime + time);
         }

@@ -54,6 +54,7 @@ import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
@@ -114,6 +115,13 @@ public class WaystoneCommand {
                     .executes(WaystoneCommand::updateLecternToWarpBook)
                 )
             )
+            /*.then(CommandManager.literal("generation")
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
+                .then(CommandManager.literal("cancel")
+                    .executes(WaystoneCommand::cancelGenerators)
+                )
+                .executes(WaystoneCommand::listGenerators)
+            )*/
         );
     }
     
@@ -198,7 +206,7 @@ public class WaystoneCommand {
     private static int sendPlayersToLocation(@NotNull CommandContext<ServerCommandSource> context, @Nullable String location) throws CommandSyntaxException {
         // Get information about the request
         ServerCommandSource source = context.getSource();
-        MinecraftServer server = source.getMinecraftServer();
+        MinecraftServer server = source.getServer();
         PlayerManager manager = server.getPlayerManager();
         
         // Get information about the teleporting players
@@ -261,6 +269,19 @@ public class WaystoneCommand {
                 .formatted(Formatting.YELLOW), true);
             return Command.SINGLE_SUCCESS;
         }
+        return 0;
+    }
+    
+    private static int listGenerators(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        MinecraftServer server = source.getServer();
+        for (ServerWorld world : server.getWorlds()) {
+            
+        }
+        
+        return 0;
+    }
+    private static int cancelGenerators(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return 0;
     }
     

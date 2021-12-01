@@ -40,13 +40,13 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(PlayerListS2CPacket.class)
 public class PlayerList {
     
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/network/packet/s2c/play/PlayerListS2CPacket$Entry.getProfile()Lcom/mojang/authlib/GameProfile;"), method = "write")
+    /*@Redirect(at = @At(value = "INVOKE", target = "net/minecraft/network/packet/s2c/play/PlayerListS2CPacket$Entry.getProfile()Lcom/mojang/authlib/GameProfile;"), method = "write")
     public GameProfile onWriteName(@NotNull PlayerListS2CPacket.Entry entry, @NotNull PacketByteBuf buf) {
         GameProfile profile = entry.getProfile();
         //if (!SewConfig.get(SewConfig.DO_PLAYER_NICKS))
             return profile;
-        /*Text displayName = entry.getDisplayName();
-        return new GameProfile(profile.getId(), displayName.getString());*/
-    }
+        *//*Text displayName = entry.getDisplayName();
+        return new GameProfile(profile.getId(), displayName.getString());*//*
+    }*/
     
 }

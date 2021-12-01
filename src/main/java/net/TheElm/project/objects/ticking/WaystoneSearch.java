@@ -60,11 +60,10 @@ public class WaystoneSearch implements Predicate<DetachedTickable> {
     private @Nullable DetachedTickable child = null;
     private @Nullable ChunkVerifyUnowned search = null;
     
-    public WaystoneSearch(@NotNull ServerPlayerEntity player) {
-        final MinecraftServer server = player.getServer();
+    public WaystoneSearch(@Nullable ServerWorld world, @NotNull ServerPlayerEntity player) {
         String warpName = WarpUtils.PRIMARY_DEFAULT_HOME;
         
-        this.world = server.getWorld(SewConfig.get(SewConfig.WARP_DIMENSION));
+        this.world = world;
         this.worldSpawn = this.world == null ? BlockPos.ORIGIN : WarpUtils.getWorldSpawn(this.world);
         this.player = player;
         this.initFail = this.world == null;
@@ -83,14 +82,15 @@ public class WaystoneSearch implements Predicate<DetachedTickable> {
             
             this.warp = new WarpUtils(
                 warpName,
-                player,
+                this.player,
+                this.world,
                 this.worldSpawn
             );
         }
     }
     
     public boolean isPlayerInWorld() {
-        return this.isPlayerOnline() && !this.player.removed;
+        return this.isPlayerOnline() && !this.player.isRemoved();
     }
     public boolean isPlayerOnline() {
         return !this.player.isDisconnected();
@@ -105,8 +105,8 @@ public class WaystoneSearch implements Predicate<DetachedTickable> {
         if ((detachedTickable.getTicks() % 20 != 0) || (this.child != null && !this.child.isRemoved()))
             return false;
         
-        int counts = detachedTickable.getTicks() / 20;
-        System.out.println(counts);
+        /*int counts = detachedTickable.getTicks() / 20;
+        System.out.println(counts);*/
         
         boolean location  = (this.hasWarpPos || (this.hasWarpPos = this.getNewWarpPosition()));
         boolean unclaimed = location && (this.hasVerified || (this.hasVerified = this.verifyWarpUnclaimed()));

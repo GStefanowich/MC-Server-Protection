@@ -59,14 +59,14 @@ import java.util.stream.Stream;
 public final class CommandUtils {
     
     public static @NotNull CompletableFuture<Suggestions> getOnlinePlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) {
-        PlayerManager manager = context.getSource().getMinecraftServer().getPlayerManager();
+        PlayerManager manager = context.getSource().getServer().getPlayerManager();
         return CommandSource.suggestMatching(manager.getPlayerList().stream()
             .map(( player ) -> player.getGameProfile().getName()), builder);
     }
     public static @NotNull CompletableFuture<Suggestions> getAllPlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         // Get the server that the command came from
         MinecraftServer server = context.getSource()
-            .getMinecraftServer();
+            .getServer();
         
         Set<String> userNames = new HashSet<>(CommandUtils.getOnlinePlayerNames(server));
         
@@ -83,7 +83,7 @@ public final class CommandUtils {
     public static @NotNull CompletableFuture<Suggestions> getFriendPlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         return CommandSource.suggestMatching(
-            CommandUtils.getFriendPlayerNames(source.getMinecraftServer(), source.getPlayer()),
+            CommandUtils.getFriendPlayerNames(source.getServer(), source.getPlayer()),
             builder
         );
     }
@@ -138,7 +138,7 @@ public final class CommandUtils {
         return source.getEntity() instanceof PlayerEntity;
     }
     public static boolean isDedicatedServer(@NotNull ServerCommandSource source) {
-        return source.getMinecraftServer() instanceof DedicatedServer;
+        return source.getServer() instanceof DedicatedServer;
     }
     
     private static class CommandExceptionable<S> implements Command<S> {

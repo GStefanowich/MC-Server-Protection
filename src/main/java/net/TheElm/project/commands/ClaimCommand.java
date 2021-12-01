@@ -241,7 +241,7 @@ public final class ClaimCommand {
                 .requires(CommandPredicate.isEnabled(SewConfig.FRIEND_WHITELIST))
                 .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                     .suggests((context, builder2) -> {
-                        PlayerManager manager = context.getSource().getMinecraftServer().getPlayerManager();
+                        PlayerManager manager = context.getSource().getServer().getPlayerManager();
                         return CommandSource.suggestMatching(manager.getPlayerList().stream()
                             .filter(( player ) -> !manager.getWhitelist().isAllowed(player.getGameProfile()))
                             .map(( player ) -> player.getGameProfile().getName()), builder2);
@@ -743,7 +743,7 @@ public final class ClaimCommand {
     private static int townFound(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get player information
         ServerCommandSource source = context.getSource();
-        MinecraftServer server = source.getMinecraftServer();
+        MinecraftServer server = source.getServer();
         ServerPlayerEntity founder = source.getPlayer();
         
         // Charge the player money
@@ -774,7 +774,7 @@ public final class ClaimCommand {
     private static int townDisband(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get player information
         ServerCommandSource source = context.getSource();
-        MinecraftServer server = source.getMinecraftServer();
+        MinecraftServer server = source.getServer();
         ServerPlayerEntity founder = source.getPlayer();
         
         ClaimantPlayer claimantPlayer = ((PlayerData) founder).getClaim();
@@ -843,7 +843,7 @@ public final class ClaimCommand {
     }
     private static int playerJoinsTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        MinecraftServer server = source.getMinecraftServer();
+        MinecraftServer server = source.getServer();
         ServerPlayerEntity player = source.getPlayer();
         ClaimantPlayer claimant = ((PlayerData) player).getClaim();
         
@@ -868,7 +868,7 @@ public final class ClaimCommand {
     }
     private static int playerPartsTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        MinecraftServer server = source.getMinecraftServer();
+        MinecraftServer server = source.getServer();
         ServerPlayerEntity player = source.getPlayer();
         ClaimantPlayer claimaint = ((PlayerData) player).getClaim();
         
@@ -926,7 +926,7 @@ public final class ClaimCommand {
             .append(town.getName())
             .append("."), false);
         if (added > 0) {
-            town.send(source.getMinecraftServer(), new LiteralText("")
+            town.send(source.getServer(), new LiteralText("")
                 .append(amount)
                 .append(" villagers have been added to your town."),
                 MessageType.SYSTEM,
@@ -1072,7 +1072,7 @@ public final class ClaimCommand {
         player.playSound(SoundEvents.ENTITY_VILLAGER_TRADE, SoundCategory.MASTER, 0.5f, 1f );
         
         // Find the entity of the friend
-        ServerPlayerEntity friendEntity = ServerCore.getPlayer(source.getMinecraftServer(), friend.getId());
+        ServerPlayerEntity friendEntity = ServerCore.getPlayer(source.getServer(), friend.getId());
         if ( friendEntity != null ) {
             // Notify the friend
             friendEntity.sendMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
@@ -1123,7 +1123,7 @@ public final class ClaimCommand {
             player.playSound(SoundEvents.ENTITY_VILLAGER_DEATH, SoundCategory.MASTER, 0.5f, 1f );
             
             // Find the entity of the friend
-            ServerPlayerEntity friendEntity = context.getSource().getMinecraftServer().getPlayerManager().getPlayer( friend.getId() );
+            ServerPlayerEntity friendEntity = context.getSource().getServer().getPlayerManager().getPlayer( friend.getId() );
             
             // If the friend is online
             if ( friendEntity != null ) {
@@ -1175,7 +1175,7 @@ public final class ClaimCommand {
     
     private static int inviteFriend(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        Whitelist whitelist = source.getMinecraftServer().getPlayerManager().getWhitelist();
+        Whitelist whitelist = source.getServer().getPlayerManager().getWhitelist();
         int count = 0;
         
         // Get the reference of the player to whitelist
@@ -1232,7 +1232,7 @@ public final class ClaimCommand {
     }
     private static int invitedList(@NotNull ServerCommandSource source, @NotNull GameProfile player) throws CommandSyntaxException {
         // Get information about the server
-        MinecraftServer server = source.getMinecraftServer();
+        MinecraftServer server = source.getServer();
         UserCache cache = server.getUserCache();
         Whitelist whitelist = server.getPlayerManager().getWhitelist();
         
@@ -1247,7 +1247,7 @@ public final class ClaimCommand {
             if (entry == null)
                 continue;
             if (player.getId().equals(((WhitelistedPlayer)entry).getUUID()))
-                invitedBy = cache.getByUuid(((WhitelistedPlayer)entry).getInvitedBy());
+                invitedBy = cache.getByUuid(((WhitelistedPlayer)entry).getInvitedBy()).orElse(null);
             else if (player.getId().equals(((WhitelistedPlayer) entry).getInvitedBy()))
                 invited.add(entry);
         }

@@ -42,6 +42,7 @@ import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.player.HungerManager;
+import net.minecraft.entity.player.PlayerAbilities;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -142,19 +143,21 @@ public final class AdminCommands {
         return Command.SINGLE_SUCCESS;
     }
     private static boolean toggleFlying(@NotNull ServerPlayerEntity player) {
+        PlayerAbilities abilities = player.getAbilities();
+        
         // Toggle flying for the player
-        player.abilities.allowFlying = !player.abilities.allowFlying;
+        abilities.allowFlying = !abilities.allowFlying;
         player.setNoGravity(false);
         
         // Tell the player
-        TranslatableServerSide.send(player, "player.abilities.flying_self." + (player.abilities.allowFlying ? "enabled" : "disabled"));
+        TranslatableServerSide.send(player, "player.abilities.flying_self." + (abilities.allowFlying ? "enabled" : "disabled"));
         
         // If flying was turned off, stop the playing mid-flight
-        if (!player.abilities.allowFlying)
-            player.abilities.flying = false;
+        if (!abilities.allowFlying)
+            abilities.flying = false;
         
         player.sendAbilitiesUpdate();
-        return player.abilities.allowFlying;
+        return abilities.allowFlying;
     }
     
     private static int selfGod(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -175,13 +178,15 @@ public final class AdminCommands {
         return Command.SINGLE_SUCCESS;
     }
     private static boolean toggleGod(ServerPlayerEntity player) {
+        PlayerAbilities abilities = player.getAbilities();
+        
         // Toggle god mode for the player
-        player.abilities.invulnerable = !player.abilities.invulnerable;
+        abilities.invulnerable = !abilities.invulnerable;
         player.sendAbilitiesUpdate();
     
         // Tell the player
-        TranslatableServerSide.send(player, "player.abilities.godmode_self." + (player.abilities.invulnerable ? "enabled" : "disabled"));
-        return player.abilities.invulnerable;
+        TranslatableServerSide.send(player, "player.abilities.godmode_self." + (abilities.invulnerable ? "enabled" : "disabled"));
+        return abilities.invulnerable;
     }
     
     private static int selfHeal(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

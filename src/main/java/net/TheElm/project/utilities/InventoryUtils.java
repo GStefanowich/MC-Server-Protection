@@ -306,7 +306,7 @@ public final class InventoryUtils {
                     stackSize += clone.getCount();
                     
                     // Insert items into player inventory
-                    playerInventory.offerOrDrop(player.getEntityWorld(), clone);
+                    playerInventory.offerOrDrop(clone);
                 }
             }
         } else {

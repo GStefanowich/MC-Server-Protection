@@ -131,7 +131,7 @@ public abstract class ServerInteraction implements PlayerPermissions, PlayerChat
         if ( result != ActionResult.PASS ) {
             // Send the player a failed notice
             this.player.networkHandler.sendPacket(new PlayerActionResponseS2CPacket(blockPos, this.world.getBlockState(blockPos), action, false, "may not interact"));
-            this.player.networkHandler.sendPacket(new BlockBreakingProgressS2CPacket(this.player.getEntityId(), blockPos, -1));
+            this.player.networkHandler.sendPacket(new BlockBreakingProgressS2CPacket(this.player.getId(), blockPos, -1));
             
             // Update the neighboring blocks on the client
             this.updateNeighboringBlockStates(blockPos);

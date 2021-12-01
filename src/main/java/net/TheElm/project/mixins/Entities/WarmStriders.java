@@ -45,6 +45,7 @@ public abstract class WarmStriders extends MoveToTargetPosGoal {
     /**
      * Change testing of LAVA blocks to WARM_BLOCKS
      * @author TheElm
+     * @reason Vanilla striders only walk to LAVA blocks. Show our love for blocks using BLOCK TAGS!
      * @param world
      * @param pos
      * @return

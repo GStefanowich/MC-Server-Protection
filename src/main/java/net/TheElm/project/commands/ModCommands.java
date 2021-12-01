@@ -147,7 +147,7 @@ public final class ModCommands {
             source.sendFeedback(new LiteralText("Config has been reloaded.").formatted(Formatting.GREEN), true);
             
             // Re-send the command-tree to all players
-            ModCommands.reloadCommandTree(source.getMinecraftServer(), false);
+            ModCommands.reloadCommandTree(source.getServer(), false);
             
             return Command.SINGLE_SUCCESS;
         } catch (IOException e) {
@@ -164,7 +164,7 @@ public final class ModCommands {
         if (!success)
             source.sendFeedback(new LiteralText("Failed to reload permissions, see console for errors").formatted(Formatting.RED), true);
         else{
-            ModCommands.reloadCommandTree(source.getMinecraftServer(), true);
+            ModCommands.reloadCommandTree(source.getServer(), true);
             source.sendFeedback(new LiteralText("Permissions file has been reloaded").formatted(Formatting.GREEN), true);
         }
         
@@ -177,7 +177,7 @@ public final class ModCommands {
         // Clear permissions
         if (reloadPermissions)
             RankUtils.clearRanks();
-
+        
         // Resend the player the command tree
         for (ServerPlayerEntity player : playerManager.getPlayerList())
             playerManager.sendCommandTree(player);
@@ -230,7 +230,7 @@ public final class ModCommands {
     private static int shopSignChangeItemToContainer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerWorld world = source.getWorld();
-
+        
         BlockPos signPos = BlockPosArgumentType.getBlockPos(context, "pos");
         BlockEntity blockEntity = world.getBlockEntity(signPos);
         
@@ -343,7 +343,7 @@ public final class ModCommands {
         
         Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
         for (ServerPlayerEntity player : players)
-            player.inventory.offerOrDrop(player.world, guide.newStack());
+            player.getInventory().offerOrDrop(guide.newStack());
         
         source.sendFeedback(new LiteralText("Gave guide book \"")
             .append(new LiteralText(bookName).formatted(Formatting.AQUA))

@@ -225,17 +225,10 @@ public final class SewConfig extends SewConfigContainer {
     public static final ConfigOption<Integer> SERVER_SALES_TAX = SewConfig.addConfig(ConfigOption.json("money.shops.tax_percentage", 0, 0, 100));
     
     /*
-     * Sleep
-     */
-    
-    public static final ConfigOption<Boolean> DO_SLEEP_VOTE = SewConfig.addConfig(ConfigOption.json("sleep.voting", true));
-    public static final ConfigOption<Integer> SLEEP_PERCENT = SewConfig.addConfig(ConfigOption.json("sleep.percent", 50));
-    
-    /*
      * Worlds
      */
     
-    public static final ConfigOption<RegistryKey<World>> DEFAULT_WORLD = SewConfig.addConfig(ConfigOption.registry("server.worlds.spawn_world", World.OVERWORLD, Registry.DIMENSION));
+    public static final ConfigOption<RegistryKey<World>> DEFAULT_WORLD = SewConfig.addConfig(ConfigOption.registry("server.worlds.spawn_world", World.OVERWORLD, Registry.WORLD_KEY));
     public static final ConfigOption<Boolean> WORLD_DIMENSION_FOLDERS = SewConfig.addConfig(ConfigOption.json("server.worlds.use_dimension_folder", false));
     
     public static final Supplier<Boolean> WORLD_SEPARATE_PROPERTIES = () -> SewConfig.get(SewConfig.WORLD_SPECIFIC_TIME)
@@ -255,7 +248,7 @@ public final class SewConfig extends SewConfigContainer {
      * Warping
      */
     
-    public static final ConfigOption<RegistryKey<World>> WARP_DIMENSION = SewConfig.addConfig(ConfigOption.registry("warp.world", World.OVERWORLD, Registry.DIMENSION));
+    public static final ConfigOption<RegistryKey<World>> WARP_DIMENSION = SewConfig.addConfig(ConfigOption.registry("warp.world", World.OVERWORLD, Registry.WORLD_KEY));
     public static final ConfigOption<Integer> WARP_MAX_DISTANCE = SewConfig.addConfig(ConfigOption.json("warp.max_distance", 1000000));
     public static final ConfigOption<Integer> WARP_WAYSTONE_COST = SewConfig.addConfig(ConfigOption.json("warp.waystone.cost", 2000));
     public static final ConfigOption<Integer> WARP_WAYSTONES_ALLOWED = SewConfig.addConfig(ConfigOption.json("warp.waystone.maximum", 3));
@@ -321,7 +314,7 @@ public final class SewConfig extends SewConfigContainer {
     public static final ConfigOption<Boolean> WANDERING_TRADER_CAMPFIRES = SewConfig.addConfig(ConfigOption.json("fun.mobs.wandering_trader.toggle_campfires", false));
     public static final ConfigOption<Boolean> WANDERING_TRADER_HITCH = SewConfig.addConfig(ConfigOption.json("fun.mobs.wandering_trader.hitch_llamas", false));
     public static final ConfigOption<Boolean> WANDERING_TRADER_FORCE_SPAWN = SewConfig.addConfig(ConfigOption.json("fun.mobs.wandering_trader.force_spawn.enable", false));
-    public static final ConfigOption<RegistryKey<World>> WANDERING_TRADER_FORCE_SPAWN_WORLD = SewConfig.addConfig(ConfigOption.registry("fun.mobs.wandering_trader.force_spawn.world", World.OVERWORLD, Registry.DIMENSION));
+    public static final ConfigOption<RegistryKey<World>> WANDERING_TRADER_FORCE_SPAWN_WORLD = SewConfig.addConfig(ConfigOption.registry("fun.mobs.wandering_trader.force_spawn.world", World.OVERWORLD, Registry.WORLD_KEY));
     public static final ConfigOption<BlockPos> WANDERING_TRADER_FORCE_SPAWN_POS = SewConfig.addConfig(ConfigOption.blockPos("fun.mobs.wandering_trader.force_spawn.pos", BlockPos.ZERO));
     
     public static final ConfigOption<Integer> WOLF_DAMAGE_RESIST = SewConfig.addConfig(ConfigOption.json("fun.mobs.wolf.buffs.resistance_multiplier", 3));

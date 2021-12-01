@@ -60,7 +60,7 @@ public class Stop {
             .then(CommandManager.argument("reason", StringArgumentType.greedyString())
                 .executes((context) -> {
                     ServerCommandSource source = context.getSource();
-                    MinecraftServer server = source.getMinecraftServer();
+                    MinecraftServer server = source.getServer();
                     
                     // Get the reason
                     String reason = StringArgumentType.getString(context, "reason");
@@ -70,7 +70,7 @@ public class Stop {
                     
                     // Disconnect all players with a reason
                     Stop.closeServer(
-                        source.getMinecraftServer(),
+                        server,
                         new TranslatableText("commands.stop.stopping")
                             .append(": ")
                             .append(reason)
@@ -87,7 +87,7 @@ public class Stop {
                 
                 // Disconnect all players with a reason
                 Stop.closeServer(
-                    source.getMinecraftServer(),
+                    source.getServer(),
                     new TranslatableText("commands.stop.stopping")
                 );
                 

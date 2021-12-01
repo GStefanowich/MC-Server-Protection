@@ -214,7 +214,7 @@ public abstract class Death extends Entity {
     /*
      * Check for falling into the Void in The End
      */
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/entity/LivingEntity.damage(Lnet/minecraft/entity/damage/DamageSource;F)Z"), method = "destroy")
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/entity/LivingEntity.damage(Lnet/minecraft/entity/damage/DamageSource;F)Z"), method = "kill")
     protected boolean onDamage(@NotNull LivingEntity self, @NotNull DamageSource source, float damage) {
         if (source.equals(DamageSource.OUT_OF_WORLD) && !self.world.isInBuildLimit(this.getBlockPos())) {
             // If the player isn't actually falling (Break the teleport loop and give time to update ticks)

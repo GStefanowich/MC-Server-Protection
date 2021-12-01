@@ -74,7 +74,7 @@ public final class StructureBuilderUtils {
         this.biome = biome;
         this.name = structureName;
         this.material = this.forBiome(biome);
-        CoreMod.logInfo("Building new " + structureName);
+        CoreMod.logInfo("Building new '" + structureName + "' in '" + world.getRegistryKey().toString() + "'");
     }
     
     public String getName() {
@@ -115,7 +115,7 @@ public final class StructureBuilderUtils {
         BlockState newBlockState = pair.getRight();
         BlockState oldBlockState = this.world.getBlockState(blockPos);
         
-        BlockEntity blockEntity = dropBlocks && oldBlockState.getBlock().hasBlockEntity() ? this.world.getBlockEntity(blockPos) : null;
+        BlockEntity blockEntity = dropBlocks && oldBlockState.hasBlockEntity() ? this.world.getBlockEntity(blockPos) : null;
         
         // Change the block state
         if (newBlockState.getBlock() == this.material.getAirBlock(this.world.getRegistryKey()).getBlock())
@@ -137,7 +137,7 @@ public final class StructureBuilderUtils {
     public boolean build() {
         Pair<BlockPos, BlockState> blocks = this.structureBlocks.poll();
         
-        // Place all of the blocks
+        // Place all the blocks
         if (blocks != null) {
             BlockPos blockPos = blocks.getLeft();
             BlockState state = blocks.getRight();
@@ -162,7 +162,7 @@ public final class StructureBuilderUtils {
             
             // Get the chunk directly (Won't update properly otherwise)
             this.world.getWorldChunk(blockPos) // Update the block entity
-                .setBlockEntity(blockPos, entity);
+                .setBlockEntity(entity);
             
             return true;
         }

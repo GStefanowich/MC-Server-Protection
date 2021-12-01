@@ -176,7 +176,7 @@ public final class MoneyCommand {
                 );
                 
                 // Notify the player
-                MoneyCommand.tellPlayersTransaction(op.getMinecraftServer(),null, target, amount);
+                MoneyCommand.tellPlayersTransaction(op.getServer(),null, target, amount);
             }
         } catch (NbtNotFoundException e) {
             throw PLAYER_NOT_FOUND.create(op);
@@ -195,7 +195,7 @@ public final class MoneyCommand {
         ServerCommandSource op = context.getSource();
         
         // Get the amount to take
-        int amount = IntegerArgumentType.getInteger( context, "amount" );
+        int amount = IntegerArgumentType.getInteger(context, "amount");
         
         try {
             // Take the players money
@@ -210,7 +210,7 @@ public final class MoneyCommand {
                 );
                 
                 // Notify the player
-                MoneyCommand.tellPlayersTransaction(op.getMinecraftServer(), null, target, -amount);
+                MoneyCommand.tellPlayersTransaction(op.getServer(), null, target, -amount);
             }
         } catch (NbtNotFoundException e) {
             throw PLAYER_NOT_FOUND.create( op );
@@ -219,7 +219,7 @@ public final class MoneyCommand {
             e.printStackTrace();
             
         }
-
+        
         return Command.SINGLE_SUCCESS;
     }
     
@@ -233,11 +233,11 @@ public final class MoneyCommand {
         
         try {
             // Get the amount to set
-            int balance = MoneyUtils.getPlayerMoney( target.getId() );
-            int amount = IntegerArgumentType.getInteger( context, "amount" );
+            int balance = MoneyUtils.getPlayerMoney(target.getId());
+            int amount = IntegerArgumentType.getInteger(context, "amount");
             
             // Set the players money
-            if ( MoneyUtils.setPlayerMoney( target.getId(), amount ) ) {
+            if ( MoneyUtils.setPlayerMoney(target.getId(), amount) ) {
                 // Notify the command sender
                 op.sendFeedback(new LiteralText("Set money for ").formatted(Formatting.YELLOW)
                     .append(new LiteralText(target.getName()).formatted(Formatting.DARK_PURPLE))
@@ -248,7 +248,7 @@ public final class MoneyCommand {
                 );
                 
                 // Notify the player
-                MoneyCommand.tellPlayersTransaction(op.getMinecraftServer(), null, target, amount - balance);
+                MoneyCommand.tellPlayersTransaction(op.getServer(), null, target, amount - balance);
             }
         } catch (NbtNotFoundException e) {
             throw PLAYER_NOT_FOUND.create(op);
@@ -307,7 +307,7 @@ public final class MoneyCommand {
                 sent = MoneyUtils.givePlayerMoney(target.getId(), amount);
                 
                 // Alert players
-                MoneyCommand.tellPlayersTransaction(commandSource.getMinecraftServer(), player, target, amount);
+                MoneyCommand.tellPlayersTransaction(commandSource.getServer(), player, target, amount);
             }
         } catch ( NbtNotFoundException e ) {
             throw PLAYER_NOT_FOUND.create(player);
@@ -333,7 +333,7 @@ public final class MoneyCommand {
         
         // Get our player reference
         ServerPlayerEntity player = source.getPlayer();
-        ServerPlayerEntity target = source.getMinecraftServer().getPlayerManager().getPlayer( targetProfile.getId() );
+        ServerPlayerEntity target = source.getServer().getPlayerManager().getPlayer( targetProfile.getId() );
         
         // Get the amount to request
         int amount = IntegerArgumentType.getInteger(context, "amount");

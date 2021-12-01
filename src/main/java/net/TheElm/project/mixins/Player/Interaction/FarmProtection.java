@@ -27,6 +27,7 @@ package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.utilities.ChunkUtils;
 import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
 import net.minecraft.block.FarmlandBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -45,21 +46,21 @@ public abstract class FarmProtection extends Block {
     }
     
     @Inject(at = @At("HEAD"), method = "onLandedUpon", cancellable = true)
-    public void entityLandedUpon(final World world, final BlockPos blockPos, final Entity entity, final float float1, final CallbackInfo callback) {
+    public void entityLandedUpon(final World world, final BlockState state, final BlockPos pos, final Entity entity, final float distance, final CallbackInfo callback) {
         // If entity isn't a player, don't worry about permission checking
         if (!( entity instanceof ServerPlayerEntity))
             return;
         
         // If player is allowed to break in the chunk
         ServerPlayerEntity player = (ServerPlayerEntity) entity;
-        if (ChunkUtils.canPlayerBreakInChunk( player, blockPos ))
+        if (ChunkUtils.canPlayerBreakInChunk( player, pos ))
             return;
         
         // Cancel the event
         callback.cancel();
         
         // Call the super (For fall damage)
-        super.onLandedUpon( world, blockPos, entity, float1 );
+        super.onLandedUpon(world, state, pos, entity, distance);
     }
     
 }

@@ -32,6 +32,7 @@ import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
 import net.minecraft.block.CauldronBlock;
 import net.minecraft.block.ConcretePowderBlock;
 import net.minecraft.block.LeveledCauldronBlock;
@@ -40,6 +41,8 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.fluid.Fluid;
+import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -55,7 +58,9 @@ import net.minecraft.util.math.Box;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
+import net.minecraft.world.biome.Biome;
 import org.jetbrains.annotations.NotNull;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -64,12 +69,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.function.Predicate;
 
 @Mixin(LeveledCauldronBlock.class)
 public abstract class CauldronCleaning extends Block {
     
     @Shadow
-    public native void setLevel(World world_1, BlockPos blockPos_1, BlockState blockState_1, int int_1);
+    protected abstract boolean canBeFilledByDripstone(Fluid fluid);
     
     public CauldronCleaning(Settings block$Settings_1) {
         super(block$Settings_1);
@@ -77,7 +83,7 @@ public abstract class CauldronCleaning extends Block {
     
     @Inject(at = @At("HEAD"), method = "onEntityCollision", cancellable = true)
     public void onEntityCollided(@NotNull BlockState blockState, @NotNull World world, @NotNull BlockPos blockPos, Entity entity, CallbackInfo callback) {
-        if (world.isClient() || (!(entity instanceof ItemEntity)))
+        if (world.isClient() || (!(entity instanceof ItemEntity)) || !this.canBeFilledByDripstone(Fluids.WATER))
             return;
         int waterLevel = blockState.get(LeveledCauldronBlock.LEVEL);
         
@@ -132,7 +138,7 @@ public abstract class CauldronCleaning extends Block {
             // Play a level effect
             ((ServerWorld) world).spawnParticles(ParticleTypes.SPLASH, blockPos.getX() + 0.5, blockPos.getY(), blockPos.getZ() + 0.5, 25, 0.0, 2.0, 0.0, 0.2);
             world.playSound(null, blockPos, SoundEvents.ENTITY_GENERIC_SPLASH, SoundCategory.BLOCKS, 1.0f, 1.0f);
-            this.setLevel(world, blockPos, blockState, 0);
+            world.setBlockState(blockPos, Blocks.CAULDRON.getDefaultState());
             
             // Cause the player to pickup the spawner
             thrower.sendPickup(colliderEntity, colliderStack.getCount());
@@ -163,7 +169,7 @@ public abstract class CauldronCleaning extends Block {
                     
                     // Randomly lower the water level
                     if (world.random.nextInt((8 / decrement) * 4) == 0)
-                        this.setLevel(world, blockPos, blockState, waterLevel - 1);
+                        LeveledCauldronBlock.decrementFluidLevel(blockState, world, blockPos);
                     
                     // Cancel the initial cauldron event
                     callback.cancel();

@@ -65,7 +65,7 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
     @Override
     public boolean handleAttack(Entity entity) {
         if (entity instanceof PlayerEntity) {
-            ActionResult result = DamageEntityCallback.EVENT.invoker().interact(this, this.getEntityWorld(), DamageSource.player((PlayerEntity) entity), 0.0f);
+            ActionResult result = DamageEntityCallback.EVENT.invoker().interact(this, this.getEntityWorld(), DamageSource.player((PlayerEntity) entity));
             if (result != ActionResult.PASS)
                 return result == ActionResult.FAIL;
         }
@@ -100,7 +100,7 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
                     // The amount the player wants to take
                     int putStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
                     
-                    InventoryUtils.playerToChest((ServerPlayerEntity) player, itemFrame.getBlockPos(), player.inventory, chestInventory, itemStack, putStackSize);
+                    InventoryUtils.playerToChest((ServerPlayerEntity) player, itemFrame.getBlockPos(), player.getInventory(), chestInventory, itemStack, putStackSize);
                     callback.setReturnValue(ActionResult.SUCCESS);
                 }
             }

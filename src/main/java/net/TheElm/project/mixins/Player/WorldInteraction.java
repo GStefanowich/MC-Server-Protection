@@ -146,8 +146,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         
         // Set the player to "adventure"-like if they are not allowed to modify the world
         if (!RankUtils.hasPermission(this, Permissions.INTERACT_WORLD)) {
-            this.abilities.allowModifyWorld = false;
-            this.abilities.invulnerable = true;
+            this.getAbilities().allowModifyWorld = false;
+            this.getAbilities().invulnerable = true;
             this.sendAbilitiesUpdate();
         }
     }

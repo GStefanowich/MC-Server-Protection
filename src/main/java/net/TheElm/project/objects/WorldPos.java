@@ -63,18 +63,18 @@ public class WorldPos implements BlockPointer, Position {
     }
     
     @Override
-    public BlockPos getBlockPos() {
+    public BlockPos getPos() {
         return this.blockPos;
     }
     
     @Override
     public BlockState getBlockState() {
-        return this.getWorld().getBlockState(this.getBlockPos());
+        return this.getWorld().getBlockState(this.getPos());
     }
     
     @Override
     public <T extends BlockEntity> T getBlockEntity() {
-        return (T) this.getWorld().getBlockEntity(this.getBlockPos());
+        return (T) this.getWorld().getBlockEntity(this.getPos());
     }
     
     @Override

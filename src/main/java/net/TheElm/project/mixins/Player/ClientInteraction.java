@@ -52,6 +52,7 @@ import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
 import net.minecraft.recipe.Recipe;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.filter.TextStream;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
@@ -138,7 +139,8 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                 ItemStack stack = new ItemStack(item.getKey());
                 stack.setCount(item.getValue());
                 
-                player.inventory.offerOrDrop(player.world, stack);
+                player.getInventory()
+                    .offerOrDrop(stack);
             }
             
             // Give the player all of the games recipes
@@ -207,14 +209,14 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
     }
     
     // Change the chat format
-    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/server/PlayerManager.broadcastChatMessage(Lnet/minecraft/text/Text;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"), method = "method_31286", cancellable = true)
-    public void onChatMessage(String string, CallbackInfo callback) {
+    @Inject(at = @At(value = "INVOKE", target = "net/minecraft/server/PlayerManager.broadcast(Lnet/minecraft/text/Text;Ljava/util/function/Function;Lnet/minecraft/network/MessageType;Ljava/util/UUID;)V"), method = "handleMessage", cancellable = true)
+    public void onChatMessage(TextStream.Message message, CallbackInfo callback) {
         if (!SewConfig.get(SewConfig.CHAT_MODIFY))
             return;
         
         try {
             // Parse the users message
-            String rawString = StringUtils.normalizeSpace(string);
+            String rawString = StringUtils.normalizeSpace(message.getRaw());
             
             // The chatroom to send the message in
             ChatRooms room = ((PlayerChat)this.player).getChatRoom();

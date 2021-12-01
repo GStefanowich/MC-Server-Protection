@@ -254,7 +254,7 @@ public final class ChunkUtils {
         BlockPos max = region.getUpper();
         
         // Log the blocks being claimed
-        CoreMod.logDebug("Claiming " + MessageUtils.xyzToString(min) + " to " + MessageUtils.xyzToString(max));
+        CoreMod.logDebug("Claiming " + MessageUtils.xyzToString(min) + " to " + MessageUtils.xyzToString(max) + " in '" + world.getRegistryKey().toString() + "'.");
         
         // Iterate through the blocks
         for (int x = min.getX(); x <= max.getX(); x++) {
@@ -343,10 +343,7 @@ public final class ChunkUtils {
         return Optional.ofNullable( ((IClaimedChunk)world.getChunk( pos )).getOwner() );
     }
     
-    public static boolean lightChunk(WorldChunk chunk) {
-        if (!(chunk.getLightingProvider() instanceof ServerLightingProvider)) return false;
-        ServerLightingProvider lighting = (ServerLightingProvider) chunk.getLightingProvider();
-        
+    /*public static boolean lightChunk(WorldChunk chunk) {
         ChunkPos pos = chunk.getPos();
         
         // For X
@@ -368,15 +365,15 @@ public final class ChunkUtils {
                         continue;
                     
                     // TODO: Update the light level
-                    /*int lvl = lighting.get(LightType.BLOCK).getLightLevel(lightPos);
+                    *//*int lvl = lighting.get(LightType.BLOCK).getLightLevel(lightPos);
                     if (lvl > 0)
-                        System.out.println(MessageUtils.blockPosToString(lightPos) + ": " + lvl);*/
+                        System.out.println(MessageUtils.blockPosToString(lightPos) + ": " + lvl);*//*
                 }
             }
         }
         
         return true;
-    }
+    }*/
     
     /*
      * Chunk claim classes

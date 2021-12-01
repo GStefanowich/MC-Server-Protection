@@ -33,9 +33,9 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.world.World;
 
 public interface DamageEntityCallback {
-    Event<DamageEntityCallback> EVENT = EventFactory.createArrayBacked(DamageEntityCallback.class, (listeners) -> (target, world, source, damage) -> {
+    Event<DamageEntityCallback> EVENT = EventFactory.createArrayBacked(DamageEntityCallback.class, (listeners) -> (target, world, source) -> {
         for (DamageEntityCallback event : listeners) {
-            ActionResult result = event.interact(target, world, source, damage);
+            ActionResult result = event.interact(target, world, source);
             if (result != ActionResult.PASS)
                 return result;
         }
@@ -43,5 +43,5 @@ public interface DamageEntityCallback {
         return ActionResult.PASS;
     });
     
-    ActionResult interact(Entity target, World world, DamageSource source, float damage);
+    ActionResult interact(Entity target, World world, DamageSource source);
 }

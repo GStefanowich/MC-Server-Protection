@@ -83,7 +83,7 @@ public abstract class TamedLead extends LivingEntity {
      * @param hand The hand the player interacted with
      * @param callback The callback
      */
-    @Inject(at = @At("HEAD"), method = "method_29506", cancellable = true)
+    @Inject(at = @At("HEAD"), method = "interactWithItem", cancellable = true)
     private void attachLeash(@NotNull final PlayerEntity player, @NotNull final Hand hand, @NotNull final CallbackInfoReturnable<ActionResult> callback) {
         // If player is in creative mode, bypass permissions
         if ((player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())

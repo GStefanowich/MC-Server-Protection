@@ -108,7 +108,7 @@ public final class WorldCommand {
     private static int updateServerSpawnToPlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         return WorldCommand.updateServerSpawn(
-            source.getMinecraftServer(),
+            source.getServer(),
             DimensionArgumentType.getDimensionArgument(context, "world"),
             new BlockPos(source.getPosition())
         );
@@ -116,7 +116,7 @@ public final class WorldCommand {
     private static int updateServerSpawnToPos(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         return WorldCommand.updateServerSpawn(
-            source.getMinecraftServer(),
+            source.getServer(),
             DimensionArgumentType.getDimensionArgument(context, "world"),
             BlockPosArgumentType.getBlockPos(context, "pos")
         );

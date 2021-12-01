@@ -70,7 +70,7 @@ public abstract class Cow extends AnimalEntity {
         this.world.addParticle(ParticleTypes.EXPLOSION, this.getX(), this.getBodyY(0.5D), this.getZ(), 0.0D, 0.0D, 0.0D);
         if (!this.world.isClient) {
             // Remove this entity
-            this.remove();
+            this.kill();
             
             MooshroomEntity mooshroom = EntityType.MOOSHROOM.create(this.world);
             assert mooshroom != null;
@@ -79,7 +79,7 @@ public abstract class Cow extends AnimalEntity {
             mooshroom.setHealth(this.getHealth());
             
             // Update positioning
-            mooshroom.refreshPositionAndAngles(this.getX(), this.getY(), this.getZ(), this.yaw, this.pitch);
+            mooshroom.refreshPositionAndAngles(this.getX(), this.getY(), this.getZ(), this.getYaw(), this.getPitch());
             mooshroom.bodyYaw = this.bodyYaw;
             mooshroom.setBreedingAge(this.getBreedingAge());
             

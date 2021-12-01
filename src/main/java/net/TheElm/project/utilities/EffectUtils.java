@@ -186,7 +186,7 @@ public final class EffectUtils {
         if (absY > absX && absY > absZ && absY != 0)
             helper = elevationChange > 0 ? "Ascend" : "Descend";
         else {
-            double angle = (player.yaw + BlockUtils.angleBetween(end, now)) % 360;
+            double angle = (player.getYaw() + BlockUtils.angleBetween(end, now)) % 360;
             if (angle < 0)
                 angle += 360;
             
@@ -227,7 +227,7 @@ public final class EffectUtils {
         
         // Spawn obsidian particles for each node of the path
         for (int i = 0; i < path.getLength(); i++) {
-            BlockPos navPos = path.method_31031(i);
+            BlockPos navPos = path.getNodePos(i);
             player.networkHandler.sendPacket(new ParticleS2CPacket(
                 particle,
                 false,

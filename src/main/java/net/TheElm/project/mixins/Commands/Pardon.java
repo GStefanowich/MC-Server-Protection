@@ -31,7 +31,7 @@ public class Pardon {
         dispatcher.register(CommandManager.literal("pardon")
             .requires(CommandPredicate.opLevel(OpLevels.KICK_BAN_OP).or(Permissions.VANILLA_COMMAND_UNBAN))
             .then(CommandManager.argument("targets", GameProfileArgumentType.gameProfile())
-                .suggests((context, suggestionsBuilder) -> CommandSource.suggestMatching(context.getSource().getMinecraftServer().getPlayerManager().getUserBanList().getNames(), suggestionsBuilder))
+                .suggests((context, suggestionsBuilder) -> CommandSource.suggestMatching(context.getSource().getServer().getPlayerManager().getUserBanList().getNames(), suggestionsBuilder))
                 .executes((context) -> Pardon.pardon(context.getSource(), GameProfileArgumentType.getProfileArgument(context, "targets")))
             )
         );

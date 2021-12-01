@@ -82,7 +82,7 @@ public final class EntityAttack {
      * @param source The damage source, damage applied, attacker, etc
      * @return SUCCESS - Cancel and return true; PASS - Allow the interaction; FAIL - Cancel the interaction
      */
-    private static ActionResult attack(@NotNull final Entity target, @NotNull final World world, @NotNull final DamageSource source, float damage) {
+    private static ActionResult attack(@NotNull final Entity target, @NotNull final World world, @NotNull final DamageSource source) {
         final Entity attacker = EntityAttack.getRootAttacker(source);
         SoundEvent sound = null;
         
@@ -122,7 +122,7 @@ public final class EntityAttack {
                             // The amount the player wants to take
                             int takeStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
                             
-                            InventoryUtils.chestToPlayer((ServerPlayerEntity) player, containerPos, containerInventory, player.inventory, itemStack, takeStackSize);
+                            InventoryUtils.chestToPlayer((ServerPlayerEntity) player, containerPos, containerInventory, player.getInventory(), itemStack, takeStackSize);
                             return ActionResult.FAIL;
                         }
                     }

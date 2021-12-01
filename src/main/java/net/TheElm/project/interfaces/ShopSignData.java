@@ -62,6 +62,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 
 public interface ShopSignData {
     @NotNull StyleApplicator APPLICATOR_GREEN = new StyleApplicator("#32CD32");
@@ -76,12 +77,12 @@ public interface ShopSignData {
     void setShopOwner(@Nullable UUID uuid);
     @Nullable UUID getShopOwner();
     
-    default @Nullable GameProfile getShopOwnerProfile() {
+    default @NotNull Optional<GameProfile> getShopOwnerProfile() {
         UUID uuid = this.getShopOwner();
         if (uuid == null)
             return null;
         if (Objects.equals(uuid, CoreMod.SPAWN_ID))
-            return new GameProfile(uuid, "Server");
+            return Optional.of(new GameProfile(uuid, "Server"));
         UserCache cache = ServerCore.get()
             .getUserCache();
         return cache.getByUuid(uuid);
@@ -146,8 +147,9 @@ public interface ShopSignData {
             .append(translatable.formatted(Formatting.DARK_AQUA));
     }
     default MutableText textParseOwner() {
-        GameProfile profile = this.getShopOwnerProfile();
-        return profile == null || Objects.equals(CoreMod.SPAWN_ID, profile.getId()) ? new LiteralText("") : new LiteralText(profile.getName());
+        Optional<GameProfile> lookup = this.getShopOwnerProfile();
+        return lookup.map(profile -> Objects.equals(CoreMod.SPAWN_ID, profile.getId()) ? null : new LiteralText(profile.getName()))
+            .orElseGet(() -> new LiteralText(""));
     }
     
     default boolean renderSign() {
@@ -157,7 +159,7 @@ public interface ShopSignData {
     default void removeEditor() {
         SignBlockEntity sign = this.getSign();
         
-        PlayerEntity editor = sign.getEditor();
+        UUID editor = sign.getEditor();
         
         // Close the sign editor screen if still editing the sign
         if (editor != null) {

@@ -90,7 +90,7 @@ public final class GameModesCommand {
         Text gmText = new TranslatableText("gameMode." + gameMode.getName());
         
         source.sendFeedback(new TranslatableText("commands.gamemode.success.self", gmText), true);
-        player.setGameMode(gameMode);
+        player.changeGameMode(gameMode);
         
         return Command.SINGLE_SUCCESS;
     }
@@ -100,7 +100,7 @@ public final class GameModesCommand {
         Text gmText = new TranslatableText("gameMode." + gameMode.getName());
         
         source.sendFeedback(new TranslatableText("commands.gamemode.success.other", player.getDisplayName(), gmText), true);
-        player.setGameMode(gameMode);
+        player.changeGameMode(gameMode);
         player.sendSystemMessage(new TranslatableText("gameMode.changed", gmText), Util.NIL_UUID);
         
         return Command.SINGLE_SUCCESS;

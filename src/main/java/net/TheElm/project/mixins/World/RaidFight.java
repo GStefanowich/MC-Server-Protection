@@ -13,11 +13,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(RaidManager.class)
 public abstract class RaidFight extends PersistentState {
-    
-    public RaidFight(String string) {
-        super(string);
-    }
-    
     @Inject(at = @At("HEAD"), method = "startRaid", cancellable = true)
     public void onStartRaid(ServerPlayerEntity player, CallbackInfoReturnable<Raid> callback) {
         // Get the players position

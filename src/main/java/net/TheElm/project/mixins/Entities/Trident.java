@@ -56,13 +56,13 @@ public abstract class Trident extends PersistentProjectileEntity {
      * When the entity is out of world
      */
     @Override
-    protected void destroy() {
+    public void kill() {
         Entity entity = this.getOwner();
         if ((this.dealtDamage || this.isNoClip()) && entity != null)
             return;
         int i = this.dataTracker.get(Trident.LOYALTY);
         if (i == 0)
-            super.destroy();
+            super.kill();
         else this.dealtDamage = true;
     }
 }

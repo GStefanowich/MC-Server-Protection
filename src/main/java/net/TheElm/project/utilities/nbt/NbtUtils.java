@@ -323,7 +323,7 @@ public final class NbtUtils {
         return NbtUtils.blockPosToTag(blockPointer, null);
     }
     public static @NotNull NbtCompound blockPosToTag(@NotNull WorldPos blockPointer, @Nullable Direction direction) {
-        return NbtUtils.blockPosToTag(blockPointer.getWorld(), blockPointer.getBlockPos(), direction);
+        return NbtUtils.blockPosToTag(blockPointer.getWorld(), blockPointer.getPos(), direction);
     }
     public static @NotNull NbtCompound blockPosToTag(@Nullable World world, @Nullable BlockPos blockPos) {
         return NbtUtils.blockPosToTag(world, blockPos, null);

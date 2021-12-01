@@ -82,8 +82,8 @@ public class PlayerNoBreak implements Predicate<DetachedTickable> {
         CoreMod.logInfo("Sending a packet");
         if (!this.player.hasStatusEffect(StatusEffects.MINING_FATIGUE)) {
             if (isMining)
-                this.sendPacket(new EntityStatusEffectS2CPacket(this.player.getEntityId(), PlayerNoBreak.FATIGUE));
-            else this.sendPacket(new RemoveEntityStatusEffectS2CPacket(this.player.getEntityId(), StatusEffects.MINING_FATIGUE));
+                this.sendPacket(new EntityStatusEffectS2CPacket(this.player.getId(), PlayerNoBreak.FATIGUE));
+            else this.sendPacket(new RemoveEntityStatusEffectS2CPacket(this.player.getId(), StatusEffects.MINING_FATIGUE));
         }
         return isMining;
     }

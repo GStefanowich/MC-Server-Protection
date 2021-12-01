@@ -31,11 +31,10 @@ public abstract class HopperBlock extends LootableContainerBlockEntity implement
     }
     
     @Inject(at = @At("HEAD"), method = "getOutputInventory", cancellable = true)
-    private void onGetOutput(CallbackInfoReturnable<Inventory> callback) {
-        World world = this.getWorld();
+    private static void onGetOutput(World world, BlockPos pos, BlockState state, CallbackInfoReturnable<Inventory> callback) {
         if (world != null) {
-            Direction direction = this.getCachedState().get(net.minecraft.block.HopperBlock.FACING);
-            if (!BlockUtils.canBlockModifyBlock(world, this.pos.offset(direction), this.pos, ClaimPermissions.STORAGE))
+            Direction direction = state.get(net.minecraft.block.HopperBlock.FACING);
+            if (!BlockUtils.canBlockModifyBlock(world, pos.offset(direction), pos, ClaimPermissions.STORAGE))
                 callback.setReturnValue(null);
         }
     }

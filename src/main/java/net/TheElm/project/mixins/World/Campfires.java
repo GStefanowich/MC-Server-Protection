@@ -51,7 +51,7 @@ public abstract class Campfires extends BlockEntity implements Clearable {
     }
     
     @Inject(at = @At("TAIL"), method = "litServerTick")
-    public static void onTick(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull CampfireBlockEntity campfire, @NotNull CallbackInfo callback) {
+    private static void onTick(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull CampfireBlockEntity campfire, @NotNull CallbackInfo callback) {
         if ((!world.isClient) && SewConfig.get(SewConfig.EXTINGUISH_CAMPFIRES)) {
             BlockState blockState = campfire.getCachedState();
             boolean isLit = blockState.get(CampfireBlock.LIT);

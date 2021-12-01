@@ -104,9 +104,9 @@ public final class WarpUtils {
     private @Nullable BlockPos createWarpAt;
     private BlockRange region;
     
-    public WarpUtils(@NotNull final String name, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos pos) {
+    public WarpUtils(@NotNull final String name, @NotNull final ServerPlayerEntity player, @NotNull ServerWorld world, @NotNull final BlockPos pos) {
         this.name = name;
-        this.world = player.getServerWorld();
+        this.world = world;
         
         WarpUtils.GENERATING_PLAYERS.add(player.getUuid());
         this.updateWarpPos(pos);
@@ -129,7 +129,7 @@ public final class WarpUtils {
         int x = this.createWarpAt.getX();
         int z = this.createWarpAt.getZ();
         
-        CoreMod.logInfo("Finding a new warp position!");
+        CoreMod.logInfo("Finding a new warp position in '" + this.world.getRegistryKey().toString() + "'..");
         this.updateWarpPos(new BlockPos(WarpUtils.getRandom(x), 256, WarpUtils.getRandom(z)));
         
         // Return if the warp is a valid position
@@ -338,7 +338,7 @@ public final class WarpUtils {
             
             boolean completed = !(structure.hasDestroy() || structure.hasBuild() || structure.hasRunnable());
             if (completed)
-                CoreMod.logInfo("Completed constructing new " + structure.getName());
+                CoreMod.logInfo("Completed constructing new '" + structure.getName() + "' in '" + this.world.getRegistryKey().toString() + "'.");
             return completed;
         });
         
@@ -509,10 +509,11 @@ public final class WarpUtils {
     public static Warp teleportPlayerAndAttached(@NotNull ServerPlayerEntity player, @Nullable String location) {
         Warp warp = WarpUtils.getWarp(player, location);
         if (warp != null)
-            WarpUtils.teleportPlayerAndAttached( warp, player );
+            WarpUtils.teleportPlayerAndAttached(warp, player);
         return warp;
     }
     public static void teleportPlayerAndAttached(@NotNull final Warp warp, @NotNull final ServerPlayerEntity player) {
+        TitleUtils.showPlayerTitle(player, "", warp.name, Formatting.AQUA);
         WarpUtils.teleportPlayerAndAttached(warp.world, player, warp.warpPos);
     }
     public static void teleportPlayerAndAttached(@NotNull final RegistryKey<World> dimension, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {

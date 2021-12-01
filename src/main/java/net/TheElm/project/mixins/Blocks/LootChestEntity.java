@@ -30,12 +30,12 @@ public abstract class LootChestEntity extends LootableContainerBlockEntity imple
      * NBT Saving / Loading
      */
     
-    @Inject(at = @At("TAIL"), method = "nbtRead")
-    public void onNbtRead(BlockState state, NbtCompound tag, CallbackInfo callback) {
+    @Inject(at = @At("TAIL"), method = "readNbt")
+    public void onNbtRead(NbtCompound tag, CallbackInfo callback) {
         this.bossLootLinkedIdentifier = (tag.contains("BossLootContainer", NbtType.STRING) ? new Identifier(tag.getString("BossLootContainer")) : null);
     }
     
-    @Inject(at = @At("TAIL"), method = "nbtWrite")
+    @Inject(at = @At("TAIL"), method = "writeNbt")
     public void onNbtWrite(NbtCompound tag, CallbackInfoReturnable<NbtCompound> callback) {
         if (this.bossLootLinkedIdentifier != null)
             tag.putString("BossLootContainer", this.bossLootLinkedIdentifier.toString());

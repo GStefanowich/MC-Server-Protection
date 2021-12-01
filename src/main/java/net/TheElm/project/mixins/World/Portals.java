@@ -25,11 +25,11 @@
 
 package net.TheElm.project.mixins.World;
 
-import net.minecraft.class_5459;
 import net.minecraft.entity.EntityDimensions;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.world.BlockLocating;
 import net.minecraft.world.TeleportTarget;
 import net.minecraft.world.dimension.AreaHelper;
 import org.spongepowered.asm.mixin.Mixin;
@@ -45,12 +45,12 @@ public abstract class Portals {
     public void onCreatePortal(CallbackInfo callback) {
     }
     
-    @Inject(at = @At("HEAD"), method = "method_30494")
-    private static void onX(class_5459.class_5460 arg, Direction.Axis axis, Vec3d vec3d, EntityDimensions size, CallbackInfoReturnable<Vec3d> callback) {
+    @Inject(at = @At("HEAD"), method = "entityPosInPortal")
+    private static void onX(BlockLocating.Rectangle rect, Direction.Axis axis, Vec3d vec3d, EntityDimensions size, CallbackInfoReturnable<Vec3d> callback) {
     }
     
-    @Inject(at = @At("HEAD"), method = "method_30484")
-    private static void onY(ServerWorld world, class_5459.class_5460 arg, Direction.Axis axis, Vec3d vec3d, EntityDimensions size, Vec3d vec3d2, float f, float g, CallbackInfoReturnable<TeleportTarget> callback) {
+    @Inject(at = @At("HEAD"), method = "getNetherTeleportTarget")
+    private static void onY(ServerWorld world, BlockLocating.Rectangle rect, Direction.Axis axis, Vec3d vec3d, EntityDimensions size, Vec3d vec3d2, float f, float g, CallbackInfoReturnable<TeleportTarget> callback) {
     }
     
     /*@Shadow @Final private ServerWorld world;

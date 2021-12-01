@@ -76,6 +76,8 @@ import net.minecraft.text.TextColor;
 import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.RegistryKey;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -150,7 +152,7 @@ public enum ShopSigns {
                         return Either.left(TranslatableServerSide.text(player, "shop.error.chest_open"));
                     
                     // If player does not have any of item
-                    if (InventoryUtils.getInventoryCount(player.inventory, sign::itemMatchPredicate) < sign.getShopItemCount())
+                    if (InventoryUtils.getInventoryCount(player.getInventory(), sign::itemMatchPredicate) < sign.getShopItemCount())
                         return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
                 }
                 /*
@@ -162,7 +164,7 @@ public enum ShopSigns {
                         return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
                     
                     // Put players item into chest
-                    if (!InventoryUtils.playerToChest(player, signPos, player.inventory, chestInventory, sign::itemMatchPredicate, sign.getShopItemCount(), true)) {
+                    if (!InventoryUtils.playerToChest(player, signPos, player.getInventory(), chestInventory, sign::itemMatchPredicate, sign.getShopItemCount(), true)) {
                         // Refund the shopkeeper
                         if (!(sign.getShopOwner().equals(CoreMod.SPAWN_ID)))
                             MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
@@ -292,7 +294,7 @@ public enum ShopSigns {
                         return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                     
                     // Give item to player from chest
-                    if (!InventoryUtils.chestToPlayer(player, signPos, chestInventory, player.inventory, sign::itemMatchPredicate, sign.getShopItemCount(), true, sign::createItemStack)) {
+                    if (!InventoryUtils.chestToPlayer(player, signPos, chestInventory, player.getInventory(), sign::itemMatchPredicate, sign.getShopItemCount(), true, sign::createItemStack)) {
                         // Refund the player
                         MoneyUtils.givePlayerMoney(player, sign.getShopItemPrice());
                         
@@ -413,7 +415,7 @@ public enum ShopSigns {
                 }
                 
                 // Give item to player from chest
-                if (!InventoryUtils.chestToPlayer(player, signPos, chestInventory, player.inventory, sign::itemMatchPredicate, sign.getShopItemCount(), true ))
+                if (!InventoryUtils.chestToPlayer(player, signPos, chestInventory, player.getInventory(), sign::itemMatchPredicate, sign.getShopItemCount(), true ))
                     return Either.left(new LiteralText("Chest is out of " + sign.getShopItemDisplay() + "."));
                 
                 ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
@@ -511,8 +513,15 @@ public enum ShopSigns {
             return SewConfig.get(SewConfig.WARP_MAX_DISTANCE) > 0;
         }
         private boolean generateNewWarp(@NotNull final ServerPlayerEntity player) {
-            ServerWorld world = player.getServerWorld();
+            MinecraftServer server = player.getServer();
+            RegistryKey<World> registryKey = SewConfig.get(SewConfig.WARP_DIMENSION);
+            
+            ServerWorld world = server.getWorld(registryKey);
+            if (world == null)
+                world = player.getServerWorld();
+            
             ((LogicalWorld)world).addTickableEvent(new WaystoneSearch(
+                world,
                 player
             ));
             return true;
@@ -574,7 +583,7 @@ public enum ShopSigns {
                 if (!MoneyUtils.takePlayerMoney(player, SewConfig.get(SewConfig.WARP_WAYSTONE_COST)))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
                 
-                WarpUtils warp = new WarpUtils(warpName, player, signPos.down());
+                WarpUtils warp = new WarpUtils(warpName, player, player.getServerWorld(),signPos.down());
                 if (!warp.claimAndBuild(() -> warp.save(warp.getSafeTeleportPos(), player))) {
                     // Notify the player
                     player.sendMessage(

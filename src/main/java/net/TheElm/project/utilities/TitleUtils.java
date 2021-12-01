@@ -27,10 +27,13 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.packet.s2c.play.ClearTitleS2CPacket;
+import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
+import net.minecraft.network.packet.s2c.play.TitleFadeS2CPacket;
 import net.minecraft.network.packet.s2c.play.TitleS2CPacket;
-import net.minecraft.network.packet.s2c.play.TitleS2CPacket.Action;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
+import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
@@ -41,17 +44,11 @@ import org.jetbrains.annotations.NotNull;
 
 public final class TitleUtils {
     
-    public static void showPlayerAlert(final PlayerEntity player, final Formatting formatting, final Text... text) {
-        TitleUtils.showPlayerAlert( (ServerPlayerEntity) player, formatting, text );
+    public static void showPlayerAlert(@NotNull final PlayerEntity player, final Formatting formatting, final Text... text) {
+        TitleUtils.showPlayerAlert((ServerPlayerEntity) player, formatting, text );
     }
-    public static void showPlayerAlert(final ServerPlayerEntity player, final Formatting formatting, final Text... text) {
-        player.networkHandler.sendPacket(new TitleS2CPacket(
-            Action.ACTIONBAR,
-            TitleUtils.combineTextChunks(formatting, text),
-            1,
-            20,
-            1
-        ));
+    public static void showPlayerAlert(@NotNull final ServerPlayerEntity player, final Formatting formatting, final Text... text) {
+        player.sendMessage(TitleUtils.combineTextChunks(formatting, text), true);
     }
     
     public static void showPlayerAlert(@NotNull final ServerWorld world, Text... text) {
@@ -59,32 +56,25 @@ public final class TitleUtils {
         
         CoreMod.logInfo( builtText );
         
-        for ( ServerPlayerEntity player : world.getPlayers() ) {
-            player.networkHandler.sendPacket(new TitleS2CPacket(Action.CLEAR, null));
-            player.networkHandler.sendPacket(new TitleS2CPacket(
-                Action.ACTIONBAR,
-                builtText,
-                1,
-                5,
-                1
-            ));
-        }
+        for (ServerPlayerEntity player : world.getPlayers())
+            player.sendMessage(builtText, true);
     }
     public static void showPlayerAlert(@NotNull final MinecraftServer server, Text... text) {
         PlayerManager playerManager = server.getPlayerManager();
         
-        Text builtText = combineTextChunks( Formatting.YELLOW, text );
+        Text builtText = TitleUtils.combineTextChunks(Formatting.YELLOW, text);
+        CoreMod.logInfo(builtText);
         
-        CoreMod.logInfo( builtText );
-        
-        playerManager.sendToAll(new TitleS2CPacket(Action.CLEAR, null));
-        playerManager.sendToAll(new TitleS2CPacket(
-            Action.ACTIONBAR,
-            builtText,
-            1,
-            5,
-            1
-        ));
+        for (ServerPlayerEntity player : playerManager.getPlayerList())
+            player.sendMessage(builtText, true);
+    }
+    
+    public static void showPlayerTitle(@NotNull ServerPlayerEntity player, @NotNull String base, @NotNull String sub, Formatting... formatting) {
+        ServerPlayNetworkHandler networkHandler = player.networkHandler;
+        networkHandler.sendPacket(new ClearTitleS2CPacket(false));
+        networkHandler.sendPacket(new TitleFadeS2CPacket(10, 40, 20));
+        networkHandler.sendPacket(new SubtitleS2CPacket(new LiteralText(sub).formatted(formatting)));
+        networkHandler.sendPacket(new TitleS2CPacket(new LiteralText(base)));
     }
     
     private static Text combineTextChunks(Formatting formatting, Text... text) {
@@ -95,5 +85,4 @@ public final class TitleUtils {
         }
         return literalText;
     }
-    
 }

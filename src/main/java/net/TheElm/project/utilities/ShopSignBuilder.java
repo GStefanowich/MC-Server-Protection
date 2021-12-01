@@ -340,11 +340,11 @@ public final class ShopSignBuilder implements ShopSignData {
      */
     private static final Map<String, ShopSignBuilder> buildingSigns = Collections.synchronizedMap(new HashMap<>());
     public static ShopSignBuilder create(@NotNull final World world, @NotNull final BlockPos blockPos, @NotNull final SignBlockEntity sign) {
-        String worldLocation = createIdentifier( world, blockPos);
-        if (buildingSigns.containsKey( worldLocation ))
-            return buildingSigns.get( worldLocation );
+        String worldLocation = ShopSignBuilder.createIdentifier(world, blockPos);
+        if (buildingSigns.containsKey(worldLocation))
+            return buildingSigns.get(worldLocation);
         
-        ShopSignBuilder builder = new ShopSignBuilder( world, blockPos, sign );
+        ShopSignBuilder builder = new ShopSignBuilder(world, blockPos, sign);
         buildingSigns.put( worldLocation, builder );
         
         return builder;

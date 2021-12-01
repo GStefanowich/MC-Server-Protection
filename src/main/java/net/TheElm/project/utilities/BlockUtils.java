@@ -51,6 +51,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 public final class BlockUtils {
@@ -162,7 +163,7 @@ public final class BlockUtils {
         return ((IClaimedChunk) protectedChunk).canPlayerDo(protectedPos, ((IClaimedChunk) sourceChunk).getOwner(sourcePos), permission);
     }
     
-    public static @NotNull <T extends BlockEntity> Either<T, String> getLecternBlockEntity(@NotNull World world, @NotNull Entity entity, Class<T> klass, Supplier<T> supplier) {
+    public static @NotNull <T extends BlockEntity> Either<T, String> getLecternBlockEntity(@NotNull World world, @NotNull Entity entity, Class<T> klass, BiFunction<BlockPos, BlockState, T> supplier) {
         // Get the targeted block
         BlockHitResult hitResult = BlockUtils.getLookingBlock(world, entity);
         if (hitResult.getType() == HitResult.Type.MISS)
@@ -191,7 +192,7 @@ public final class BlockUtils {
             }
             
             // Update the BlockEntity to the new one
-            T newBlockEntity = supplier.get();
+            T newBlockEntity = supplier.apply(lecternPos, state);
             world.addBlockEntity(newBlockEntity);
             return Either.left(newBlockEntity);
         } else {

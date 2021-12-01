@@ -184,7 +184,7 @@ public final class TeleportsCommand {
         final ServerPlayerEntity porter = source.getPlayer();
         
         return TeleportsCommand.tpaToPlayer(
-            source.getMinecraftServer(),
+            source.getServer(),
             porter,
             porter.getGameProfile(),
             location
@@ -296,7 +296,7 @@ public final class TeleportsCommand {
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         return TeleportsCommand.tpaToPlayer(
-            source.getMinecraftServer(),
+            source.getServer(),
             porter,
             target,
             location

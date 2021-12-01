@@ -18,7 +18,6 @@
     "Commands.Time",
     "Commands.Whisper",
     
-    "Blocks.AbstractFurnace",
     "Blocks.BeeNest",
     "Blocks.FireSpread",
     "Blocks.HopperBlock",
@@ -30,7 +29,6 @@
     
     "Items.LocatorPearls",
     "Items.RepairCost",
-    "Items.Shovel",
     "Items.SpawnEggs",
     "Items.UsableItems",
     

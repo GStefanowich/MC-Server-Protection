@@ -204,8 +204,8 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
      * Mixin methods
      */
     
-    @Inject(at = @At("RETURN"), method = "setTextOnRow")
-    public void onRowUpdated(int lineNum, Text text, final CallbackInfo callback) {
+    @Inject(at = @At("RETURN"), method = "setTextOnRow(ILnet/minecraft/text/Text;Lnet/minecraft/text/Text;)V")
+    public void onRowUpdated(int lineNum, Text text, Text filtered, final CallbackInfo callback) {
         if ( this.getEditor() != null ) {
             // Get the sign
             ShopSignBuilder builder = ShopSignBuilder.create(this.world, this.getPos(), (SignBlockEntity)(BlockEntity)this);
@@ -250,7 +250,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
      * NBT read/write
      */
     
-    @Inject(at = @At("RETURN"), method = "nbtWrite", cancellable = true)
+    @Inject(at = @At("RETURN"), method = "writeNbt", cancellable = true)
     public void onNbtWrite(@NotNull NbtCompound originalTag, @NotNull CallbackInfoReturnable<NbtCompound> callback) {
         NbtCompound tag = callback.getReturnValue();
         
@@ -285,8 +285,8 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
         callback.setReturnValue(tag);
     }
     
-    @Inject(at = @At("RETURN"), method = "nbtRead")
-    public void onNbtRead(@NotNull BlockState state, @NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
+    @Inject(at = @At("RETURN"), method = "readNbt")
+    public void onNbtRead(@NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
         // Shop signs
         if ((this.shopSign_Type = ShopSigns.valueOf(this.texts[0])) != null) {
             NbtUtils.tryGet(tag, NbtGet.UUID, "shop_owner", (uuid) -> {

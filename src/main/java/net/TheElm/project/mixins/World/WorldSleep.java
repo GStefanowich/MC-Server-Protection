@@ -33,30 +33,23 @@ import net.TheElm.project.objects.DetachedTickable;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.IntUtils;
-import net.TheElm.project.utilities.SleepUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.boss.WitherEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.ProgressListener;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.DynamicRegistryManager;
 import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.world.GameRules;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.ServerWorldAccess;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
-import net.minecraft.world.level.ServerWorldProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -66,7 +59,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.text.NumberFormat;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -79,11 +71,6 @@ import java.util.function.Supplier;
 
 @Mixin(ServerWorld.class)
 public abstract class WorldSleep extends World implements LogicalWorld, ServerWorldAccess {
-    // Shadows from ServerWorld
-    @Shadow @Final private List<ServerPlayerEntity> players;
-    @Shadow @Final private ServerWorldProperties worldProperties;
-    @Shadow private boolean allPlayersSleeping;
-    
     private final @NotNull Queue<DetachedTickable> detachedTickableQueue = new ArrayDeque<>();
     private final @NotNull List<DetachedTickable> detachedEvents = new LinkedList<>();
     
@@ -91,53 +78,10 @@ public abstract class WorldSleep extends World implements LogicalWorld, ServerWo
         super(properties, registryRef, dimensionType, profiler, isClient, debugWorld, seed);
     }
     
-    @Shadow private native void resetWeather();
-    @Shadow public native void setTimeOfDay(long timeOfDay);
     @Shadow public native DynamicRegistryManager getRegistryManager();
     
-    @Inject(at = @At("HEAD"), method = "tick")
+    @Inject(at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "net/minecraft/server/world/ServerWorld.setTimeOfDay(J)V"), method = "tick")
     public void onTick(BooleanSupplier booleanSupplier, CallbackInfo callback) {
-        // If Naturally Sleeping, Disabled, or Not enough Percentage
-        int sleepingPercentage;
-        if ( (!this.getDimension().isBedWorking())
-                || ( this.players.size() <= 0 ) // If nobody is online
-                //|| this.allPlayersSleeping // If everyone is already sleeping (Vanilla default)
-                || (!SewConfig.get(SewConfig.DO_SLEEP_VOTE)) // If sleep voting is disabled
-                || ( SewConfig.get(SewConfig.SLEEP_PERCENT) <= 0 ) // If the required sleeping percentage is 0 (disabled)
-                || ((sleepingPercentage = SleepUtils.getSleepingPercentage( this )) < SewConfig.get(SewConfig.SLEEP_PERCENT) )
-        ) return;
-        
-        this.allPlayersSleeping = false;
-        
-        // Set the time back to day
-        if (this.getGameRules().getBoolean(GameRules.DO_DAYLIGHT_CYCLE)) {
-            long time = this.getTimeOfDay() + 24000L;
-            this.setTimeOfDay(time - time % 24000L);
-        }
-        
-        // Wake all players up
-        this.players.stream().filter(LivingEntity::isSleeping).forEach((serverPlayerEntity_1) -> {
-            serverPlayerEntity_1.wakeUp(false, false);
-        });
-        
-        // Change the weather
-        if (this.getGameRules().getBoolean(GameRules.DO_WEATHER_CYCLE)) {
-            boolean raining = this.properties.isRaining();
-            boolean thunder = this.properties.isThundering();
-            
-            // If currently raining, end
-            if (raining || thunder)
-                this.resetWeather();
-            else if (this.random.nextInt(40) <= 0) {
-                // Random chance to start raining
-                this.worldProperties.setClearWeatherTime(0);
-                this.worldProperties.setRainTime(IntUtils.random(this.random, 300, 1200) * 20);
-                this.worldProperties.setRaining(true);
-                this.worldProperties.setThunderTime(0);
-                this.worldProperties.setThundering(false);
-            }
-        }
-        
         long worldDay = IntUtils.timeToDays(this);
         long worldYear = worldDay / SewConfig.get(SewConfig.CALENDAR_DAYS);
         worldDay = worldDay - (worldYear * SewConfig.get(SewConfig.CALENDAR_DAYS));
@@ -202,29 +146,4 @@ public abstract class WorldSleep extends World implements LogicalWorld, ServerWo
         this.detachedTickableQueue.add(tickable);
         return tickable;
     }
-    
-    @Override
-    public void updatePlayersSleeping() {
-        this.allPlayersSleeping = false;
-        
-        if (!this.players.isEmpty()) {
-            int spectators = 0;
-            int sleeping = 0;
-            
-            Iterator players = this.players.iterator();
-            
-            while( players.hasNext() ) {
-                ServerPlayerEntity serverPlayerEntity_1 = (ServerPlayerEntity)players.next();
-                if (serverPlayerEntity_1.isSpectator()) {
-                    ++spectators;
-                } else if (serverPlayerEntity_1.isSleeping()) {
-                    ++sleeping;
-                }
-            }
-            
-            // If ALL players are sleeping
-            this.allPlayersSleeping = ( sleeping > 0 ) && ( sleeping >= ( this.players.size() - spectators ));
-        }
-    }
-    
 }

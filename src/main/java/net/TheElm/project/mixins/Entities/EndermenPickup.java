@@ -72,7 +72,6 @@ public abstract class EndermenPickup extends Goal implements EndermanGoal {
         
         // Get the block info
         BlockState blockState = world.getBlockState(blockPos);
-        Block block = blockState.getBlock();
         
         // Get the vector
         Vec3d vec3d_1 = new Vec3d((double) MathHelper.floor(this.enderman.getX()) + 0.5D, (double) int_2 + 0.5D, (double) MathHelper.floor(this.enderman.getZ()) + 0.5D);
@@ -84,7 +83,7 @@ public abstract class EndermenPickup extends Goal implements EndermanGoal {
         boolean bool = blockHitResult.getType() != HitResult.Type.MISS && blockHitResult.getBlockPos().equals(blockPos);
         
         // If the block is able to be held my endermen
-        if (block.isIn(BlockTags.ENDERMAN_HOLDABLE) && bool) {
+        if (blockState.isIn(BlockTags.ENDERMAN_HOLDABLE) && bool) {
             
             // Get the chunk permissions
             WorldChunk chunk = world.getWorldChunk( blockPos );
