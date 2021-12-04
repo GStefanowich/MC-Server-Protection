@@ -41,14 +41,19 @@ import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
+import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ChunkStatus;
+import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 public final class StructureBuilderUtils {
@@ -57,6 +62,8 @@ public final class StructureBuilderUtils {
     public static final @NotNull StructureBuilderMaterial DEFAULT_END = new StructureBuilderMaterial(Blocks.PURPUR_BLOCK, Blocks.END_STONE_BRICKS, Blocks.PURPUR_PILLAR, Blocks.STONE_PRESSURE_PLATE, Blocks.END_ROD);
     public static final @NotNull StructureBuilderMaterial DESERT = new StructureBuilderMaterial(Blocks.SMOOTH_SANDSTONE, Blocks.RED_SANDSTONE, Blocks.REDSTONE_LAMP, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
     public static final @NotNull StructureBuilderMaterial BEACH = new StructureBuilderMaterial(Blocks.DARK_PRISMARINE, Blocks.PRISMARINE_BRICKS, Blocks.SEA_LANTERN, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE);
+    public static final @NotNull StructureBuilderMaterial COLD = new StructureBuilderMaterial(Blocks.SMOOTH_QUARTZ, Blocks.CALCITE, Blocks.REDSTONE_LAMP, Blocks.STONE_PRESSURE_PLATE);
+    public static final @NotNull StructureBuilderMaterial DEEP_DARK = new StructureBuilderMaterial(Blocks.DEEPSLATE_TILES, Blocks.POLISHED_DEEPSLATE, Blocks.AMETHYST_BLOCK, Blocks.POLISHED_BLACKSTONE_PRESSURE_PLATE, Blocks.LIGHT);
     
     private final @NotNull String name;
     public final @NotNull World world;
@@ -64,17 +71,18 @@ public final class StructureBuilderUtils {
     public final @NotNull StructureBuilderMaterial material;
     private final int delay = 1;
     
+    private @NotNull final Queue<BlockPos> locations = new ArrayDeque<>();
     private @NotNull final Queue<Pair<BlockPos, BlockState>> destroyBlocks = new ArrayDeque<>();
     private @NotNull final Queue<Pair<BlockPos, BlockState>> structureBlocks = new ArrayDeque<>();
-    private @NotNull final Queue<Pair<BlockPos, Supplier<BlockEntity>>> structureEntity = new ArrayDeque<>();
+    private @NotNull final Queue<Pair<BlockPos, Function<BlockEntity, BlockEntity>>> structureEntity = new ArrayDeque<>();
     private @NotNull final Queue<Runnable> runnables = new ArrayDeque<>();
     
-    public StructureBuilderUtils(@NotNull World world, @NotNull RegistryKey<Biome> biome, @NotNull String structureName) {
+    public StructureBuilderUtils(@NotNull World world, @NotNull BlockPos pos, @NotNull RegistryKey<Biome> biome, @NotNull String structureName) {
         this.world = world;
         this.biome = biome;
         this.name = structureName;
-        this.material = this.forBiome(biome);
-        CoreMod.logInfo("Building new '" + structureName + "' in '" + world.getRegistryKey().toString() + "'");
+        this.material = this.forBiome(biome, pos);
+        CoreMod.logInfo("Building new '" + structureName + "' in '" + DimensionUtils.dimensionIdentifier(world) + "'");
     }
     
     public String getName() {
@@ -85,12 +93,14 @@ public final class StructureBuilderUtils {
     }
     
     public void addBlock(@NotNull BlockPos blockPos, @NotNull BlockState blockState) {
+        this.locations.add(blockPos);
         Pair<BlockPos, BlockState> pair = new Pair<>(blockPos, blockState);
         this.destroyBlocks.add(pair);
         this.structureBlocks.add(pair);
     }
-    public void addEntity(@NotNull BlockPos blockPos, @NotNull Supplier<BlockEntity> blockEntity) {
-        this.structureEntity.add(new Pair<>(blockPos, blockEntity));
+    public void addEntity(@NotNull BlockPos blockPos, @NotNull Function<BlockEntity, BlockEntity> function) {
+        this.locations.add(blockPos);
+        this.structureEntity.add(new Pair<>(blockPos, function));
     }
     public void add(@NotNull Runnable runnable) {
         this.runnables.add(runnable);
@@ -104,6 +114,23 @@ public final class StructureBuilderUtils {
     }
     public boolean hasRunnable() {
         return this.runnables.peek() != null;
+    }
+    
+    public boolean generating() {
+        // If there are still locations to peek at
+        if (!this.locations.isEmpty()) {
+            // Peek at the first block position
+            BlockPos pos = this.locations.peek();
+            
+            // Get the chunk at the location
+            Chunk chunk = this.world.getChunk(ChunkSectionPos.getSectionCoord(pos.getX()), ChunkSectionPos.getSectionCoord(pos.getZ()), ChunkStatus.EMPTY, true);
+            
+            // Chunks must be fully generated
+            if (chunk.getStatus() == ChunkStatus.FULL)
+                this.locations.remove(pos);
+            return true;
+        }
+        return false;
     }
     
     public boolean destroy(boolean dropBlocks) {
@@ -131,7 +158,6 @@ public final class StructureBuilderUtils {
                 Block.dropStacks(oldBlockState, this.world, blockPos, blockEntity, null, ItemStack.EMPTY);
         }
         
-        //Thread.sleep(this.delay);
         return true;
     }
     public boolean build() {
@@ -153,16 +179,16 @@ public final class StructureBuilderUtils {
             return true;
         }
         
-        Pair<BlockPos, Supplier<BlockEntity>> entities = this.structureEntity.poll();
-        
         // Update the block entities
+        Pair<BlockPos, Function<BlockEntity, BlockEntity>> entities = this.structureEntity.poll();
         if (entities != null) {
             BlockPos blockPos = entities.getLeft();
-            BlockEntity entity = entities.getRight().get();
+            Function<BlockEntity, BlockEntity> function = entities.getRight();
             
             // Get the chunk directly (Won't update properly otherwise)
-            this.world.getWorldChunk(blockPos) // Update the block entity
-                .setBlockEntity(entity);
+            WorldChunk worldChunk = this.world.getWorldChunk(blockPos);// Update the block entity
+            BlockEntity entity = worldChunk.getBlockEntity(blockPos, WorldChunk.CreationType.IMMEDIATE);
+            worldChunk.setBlockEntity(function.apply(entity));
             
             return true;
         }
@@ -195,7 +221,7 @@ public final class StructureBuilderUtils {
         this.world.playSound(null, blockPos, sound, SoundCategory.MASTER, 1.0f, 1.0f);
     }
     
-    public @NotNull StructureBuilderMaterial forBiome(@NotNull RegistryKey<Biome> biome) {
+    public @NotNull StructureBuilderMaterial forBiome(@NotNull RegistryKey<Biome> biome, @NotNull BlockPos pos) {
         RegistryKey<World> dimension = this.world.getRegistryKey();
         Identifier identifier = biome.getValue();
         String path = identifier.getPath();
@@ -203,10 +229,12 @@ public final class StructureBuilderUtils {
         if (dimension.equals(World.OVERWORLD)) {
             if (path.contains("desert"))
                 return StructureBuilderUtils.DESERT;
-            /*if (path.contains("snow"))
-                return COLD;*/
+            if (path.contains("snow"))
+                return StructureBuilderUtils.COLD;
             if (path.contains("ocean") || path.contains("beach"))
                 return StructureBuilderUtils.BEACH;
+            if (pos.getY() < 0)
+                return StructureBuilderUtils.DEEP_DARK;
         }
         else if (dimension.equals(World.NETHER)) {
             return StructureBuilderUtils.DEFAULT_NETHER;

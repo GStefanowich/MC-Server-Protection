@@ -29,9 +29,11 @@ import com.mojang.datafixers.util.Either;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.BlockRange;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.CampfireBlock;
+import net.minecraft.block.CarpetBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.LecternBlockEntity;
 import net.minecraft.entity.Entity;
@@ -163,6 +165,17 @@ public final class BlockUtils {
         return ((IClaimedChunk) protectedChunk).canPlayerDo(protectedPos, ((IClaimedChunk) sourceChunk).getOwner(sourcePos), permission);
     }
     
+    public static boolean isBlockCarpet(@NotNull BlockState state) {
+        Block block = state.getBlock();
+        return block instanceof CarpetBlock
+            || block == Blocks.MOSS_CARPET
+            || block == Blocks.SNOW;
+    }
+    
+    public static boolean isHollowBlock(@NotNull BlockState state) {
+        return BlockUtils.isBlockCarpet(state) || state.isAir();
+    }
+    
     public static @NotNull <T extends BlockEntity> Either<T, String> getLecternBlockEntity(@NotNull World world, @NotNull Entity entity, Class<T> klass, BiFunction<BlockPos, BlockState, T> supplier) {
         // Get the targeted block
         BlockHitResult hitResult = BlockUtils.getLookingBlock(world, entity);
@@ -177,9 +190,8 @@ public final class BlockUtils {
             return Either.left((T) blockEntity);
         } else if (state.getBlock() == Blocks.LECTERN) { // If the Block is a Lectern
             // Get the existing LecternBlock BlockEntity
-            if (blockEntity instanceof LecternBlockEntity) {
+            if (blockEntity instanceof LecternBlockEntity old) {
                 // Drop the book on the lectern
-                LecternBlockEntity old = ((LecternBlockEntity)blockEntity);
                 if (old.hasBook()) {
                     ItemStack book = old.getBook();
                     

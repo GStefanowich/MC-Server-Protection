@@ -38,12 +38,10 @@ import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.TheElm.project.utilities.text.TextUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.Material;
 import net.minecraft.block.MushroomBlock;
-import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.Entity;
@@ -52,6 +50,7 @@ import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
@@ -60,6 +59,7 @@ import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.tag.BlockTags;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
@@ -126,47 +126,47 @@ public final class WarpUtils {
     }
     
     public boolean getNewWarpPositionIn() {
-        int x = this.createWarpAt.getX();
-        int z = this.createWarpAt.getZ();
+        int x = WarpUtils.getRandom(this.createWarpAt.getX());
+        int z = WarpUtils.getRandom(this.createWarpAt.getZ());
+        int height = this.world.getDimension().getHeight();
         
-        CoreMod.logInfo("Finding a new warp position in '" + this.world.getRegistryKey().toString() + "'..");
-        this.updateWarpPos(new BlockPos(WarpUtils.getRandom(x), 256, WarpUtils.getRandom(z)));
+        WarpUtils.logSearchBegin(this.world, x, z);
+        this.updateWarpPos(new BlockPos(x, height, z));
         
         // Return if the warp is a valid position
-        return this.updateWarpPos(this.isValid(this.world, this.createWarpAt,50));
+        return this.updateWarpPos(WarpUtils.isValid(this.world, this.createWarpAt,height, 10, true));
     }
     public @Nullable BlockPos getLastWarpPositionIn() {
         return this.createWarpAt;
     }
     public BlockPos getSafeTeleportPos() {
-        BlockPos tpPos;
+        final BlockPos start = this.createWarpAt.up();
+        BlockPos tpPos = start;
         
-        int count = 1;
-        int maxHeight = ( this.world.getDimension().hasSkyLight() ? 256 : this.createWarpAt.getY() + 10 );
-        boolean negX = false;
-        boolean negZ = false;
+        // Get the max X/Z (Spawn Radius)
+        int maxX = 4;
+        int maxI = 1 + ((maxX * maxX) * 4) + (maxX * 4);
         
-        do {
-            int x = this.createWarpAt.getX() + ( 2 * count * ( negX ? -1 : 1 ));
-            int z = this.createWarpAt.getZ() + ( 2 * count * ( negZ ? -1 : 1 ));
-
-            tpPos = new BlockPos(x, maxHeight, z);
-            
-            if (!negX) {
-                negX = true;
-            } else {
-                if (!negZ) {
-                    negZ = true;
-                } else {
-                    negX = false;
-                    negZ = false;
-                    ++count;
-                }
+        int x = 0;
+        int z = 0;
+        int dX = 0;
+        int dZ = -1;
+        
+        for (int i = 0; i < maxI; i++) {
+            BlockPos check = new BlockPos(x + start.getX(), start.getY(), z + start.getZ());
+            if ((tpPos = WarpUtils.isValid(this.world, check, 5, 10, true)) != null)
+                return tpPos.up(2);
+            if ((x == z) || ((x < 0) && (x == -z)) || ((x > 0) && (x == 1 - z))) {
+                maxX = dX;
+                dX = -dZ;
+                dZ = maxX;
             }
-            
-        } while ((tpPos = this.isValid(this.world, tpPos, this.createWarpAt.getY() - 5)) == null);
+            x += dX;
+            z += dZ;
+        }
         
-        return tpPos.up( 2 );
+        System.out.println("Could not get valid teleport position at " + MessageUtils.xyzToString(this.createWarpAt));
+        return this.createWarpAt.up(2);
     }
     
     private static int getRandom(int position) {
@@ -177,27 +177,57 @@ public final class WarpUtils {
         return ( 16 * Math.round(random >> 4) ) + 8;
     }
     
-    private @Nullable BlockPos isValid(@NotNull final World world, @NotNull final BlockPos startingPos, final int minY) {
+    private static @Nullable BlockPos isValid(@NotNull final World world, @NotNull final BlockPos startingPos, final int maxDown, final int maxUp, boolean verbose) {
+        int count = 0;
+        int steps = maxDown + maxUp;
+        
         BlockPos pos = startingPos;
         BlockState blockState;
+        Material material;
         do {
-            if ( pos.getY() <= minY )
+            if ( count > steps ) {
+                if (verbose)
+                    WarpUtils.logSearchFailure(world, startingPos, SearchFailures.VOID);
                 return null;
+            }
             
-            pos = pos.down();
+            pos = count++ > maxDown ? pos.up() : pos.down();
             blockState = world.getBlockState(pos);
-        } while (blockState.isAir() || blockState.getMaterial().isReplaceable() || blockState.getMaterial() == Material.SNOW_LAYER || blockState.getMaterial() == Material.PLANT);
+            material = blockState.getMaterial();
+            
+        } while (blockState.isAir() || material.isReplaceable() || BlockUtils.isBlockCarpet(blockState) || blockState.getMaterial() == Material.PLANT);
         
-        Material material = blockState.getMaterial();
+        SearchFailures failure = WarpUtils.getFailureReason(world, blockState, material, pos);
+        if (failure != null) {
+            if (verbose)
+                WarpUtils.logSearchFailure(world, startingPos, failure);
+            return null;
+        }
         
-        // Don't set up a warp in a liquid (Water/Lava) or in Fire or on top of Trees
-        return (!material.isLiquid())
-            && (!( blockState.getBlock() instanceof MushroomBlock ))
-            && ( material != Material.FIRE )
-            && ( material != Material.LEAVES )
-            && ( material != Material.ICE )
-            && ( material != Material.DENSE_ICE )
-            && ( world.getBlockState( pos.up() ).isAir() ) ? pos : null;
+        return pos;
+    }
+    private static @Nullable SearchFailures getFailureReason(@NotNull World world, @NotNull BlockState state, @NotNull Material material, @NotNull BlockPos pos) {
+        // Don't set up a warp in a liquid (Water/Lava)
+        if (material.isLiquid())
+            return SearchFailures.FLUID;
+        
+        // Don't set up a warp in Fire
+        if (material == Material.FIRE)
+            return SearchFailures.FIRE;
+
+        // Don't set up a warp on top of Trees
+        if (material == Material.LEAVES || state.getBlock() instanceof MushroomBlock)
+            return SearchFailures.TREE_COLLISION;
+        
+        // Don't spawn on top of ice blocks
+        if (material == Material.ICE || material == Material.DENSE_ICE)
+            return SearchFailures.ICE;
+        
+        // Not enough space for a player
+        if (!BlockUtils.isHollowBlock(world.getBlockState(pos.up())) )
+            return SearchFailures.SUFFOCATION;
+        
+        return null;
     }
     
     public boolean claimAndBuild(@NotNull final Runnable runnable) {
@@ -222,7 +252,7 @@ public final class WarpUtils {
         RegistryKey<Biome> biomeKey = RegistryUtils.getFromRegistry(this.world.getServer(), Registry.BIOME_KEY, biome);
         
         // Create the structure
-        StructureBuilderUtils structure = new StructureBuilderUtils(this.world, biomeKey, "waystone");
+        StructureBuilderUtils structure = new StructureBuilderUtils(this.world, this.createWarpAt, biomeKey, "waystone");
         final BlockState air = structure.material.getAirBlock(this.world.getRegistryKey());
         
         // Light-source blocks
@@ -289,10 +319,9 @@ public final class WarpUtils {
         for ( BlockPos blockPos : commandBlocks ) {
             // Place the command block
             structure.addBlock(blockPos, cmdBlock);
-            structure.addEntity(blockPos, () -> {
-                CommandBlockBlockEntity blockEntity = BlockEntityType.COMMAND_BLOCK.instantiate(blockPos, Blocks.COMMAND_BLOCK.getDefaultState());
-                if (blockEntity != null) {
-                    blockEntity.getCommandExecutor()
+            structure.addEntity(blockPos, blockEntity -> {
+                if (blockEntity instanceof CommandBlockBlockEntity commandBlockBlock) {
+                    commandBlockBlock.getCommandExecutor()
                         .setCommand("spawn @a[x=" + this.createWarpAt.getX() + ",z=" + this.createWarpAt.getZ() + ",y=" + this.createWarpAt.getY() + ",distance=0..2]");
                     
                     CoreMod.logDebug("Setting the warp command block entity");
@@ -317,12 +346,15 @@ public final class WarpUtils {
         structure.add(() -> structure.particlesSound(ParticleTypes.HAPPY_VILLAGER, SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f, 1.0f, 1.0f, 12, this.createWarpAt.add(1, 2, -1)));
         structure.add(() -> structure.particlesSound(ParticleTypes.HAPPY_VILLAGER, SoundEvents.ENTITY_PLAYER_LEVELUP, 1.0f, 1.0f, 1.0f, 1.0f, 12, this.createWarpAt.add(-1, 1, 1)));
         
-        //try {
         ((LogicalWorld)this.world).addTickableEvent(tickable -> {
             if (tickable.isRemoved())
                 return true;
             
             if (tickable.getTicks() % structure.getDelay() == 0) {
+                // If any of the chunks that are used for blocks are still being generated
+                if (structure.generating())
+                    return false;
+                
                 // Destroy the blocks where the waystone goes
                 if (structure.destroy(dropBlocks))
                     return false;
@@ -338,7 +370,7 @@ public final class WarpUtils {
             
             boolean completed = !(structure.hasDestroy() || structure.hasBuild() || structure.hasRunnable());
             if (completed)
-                CoreMod.logInfo("Completed constructing new '" + structure.getName() + "' in '" + this.world.getRegistryKey().toString() + "'.");
+                CoreMod.logInfo("Completed constructing new '" + structure.getName() + "' in '" + DimensionUtils.dimensionIdentifier(this.world) + "'.");
             return completed;
         });
         
@@ -404,8 +436,8 @@ public final class WarpUtils {
         return Collections.emptyMap();
     }
     public static @NotNull Map<String, WarpUtils.Warp> getWarps(@NotNull final PlayerEntity player) {
-        if (player instanceof PlayerData)
-            return ((PlayerData)player).getWarps();
+        if (player instanceof PlayerData playerData)
+            return playerData.getWarps();
         return WarpUtils.EMPTY;
     }
     public static @NotNull Stream<WarpUtils.Warp> getWarpStream(@NotNull final PlayerEntity player) {
@@ -432,7 +464,7 @@ public final class WarpUtils {
         Map<String, WarpUtils.Warp> warps = new ConcurrentHashMap<>();
         
         // Read the player warp location after restarting
-        if (mainNBT.contains("playerWarpX", NbtType.NUMBER) && mainNBT.contains("playerWarpY", NbtType.NUMBER) && mainNBT.contains("playerWarpZ", NbtType.NUMBER)) {
+        if (mainNBT.contains("playerWarpX", NbtElement.NUMBER_TYPE) && mainNBT.contains("playerWarpY", NbtElement.NUMBER_TYPE) && mainNBT.contains("playerWarpZ", NbtElement.NUMBER_TYPE)) {
             warps.put(WarpUtils.PRIMARY_DEFAULT_HOME, new Warp(
                 WarpUtils.PRIMARY_DEFAULT_HOME,
                 NbtUtils.worldRegistryFromTag(mainNBT.get("playerWarpD")),
@@ -443,15 +475,15 @@ public final class WarpUtils {
                 ),
                 true
             ));
-        } else if (mainNBT.contains("playerWarps", NbtType.COMPOUND)) {
+        } else if (mainNBT.contains("playerWarps", NbtElement.COMPOUND_TYPE)) {
             NbtCompound warpsNBT = mainNBT.getCompound("playerWarps");
             if (warpsNBT != null) {
                 Set<String> warpNames = warpsNBT.getKeys();
                 for (String warpName : warpNames) {
-                    if (!warpsNBT.contains(warpName, NbtType.COMPOUND))
+                    if (!warpsNBT.contains(warpName, NbtElement.COMPOUND_TYPE))
                         continue;
                     NbtCompound warpNBT = warpsNBT.getCompound(warpName);
-                    if (warpNBT.contains("x", NbtType.NUMBER) && warpNBT.contains("y", NbtType.NUMBER) && warpNBT.contains("z", NbtType.NUMBER)) {
+                    if (warpNBT.contains("x", NbtElement.NUMBER_TYPE) && warpNBT.contains("y", NbtElement.NUMBER_TYPE) && warpNBT.contains("z", NbtElement.NUMBER_TYPE)) {
                         warps.put(warpName, new Warp(
                             warpName,
                             NbtUtils.worldRegistryFromTag(warpNBT.get("d")),
@@ -460,7 +492,7 @@ public final class WarpUtils {
                                 warpNBT.getInt("y"),
                                 warpNBT.getInt("z")
                             ),
-                            warpNBT.contains("fav", NbtType.BYTE) && warpNBT.getBoolean("fav")
+                            warpNBT.contains("fav", NbtElement.BYTE_TYPE) && warpNBT.getBoolean("fav")
                         ));
                     }
                 }
@@ -486,8 +518,8 @@ public final class WarpUtils {
     
     public static boolean hasWarp(@NotNull final ServerCommandSource source) {
         Entity entity = source.getEntity();
-        if (entity instanceof ServerPlayerEntity)
-            return WarpUtils.hasWarp((ServerPlayerEntity) entity);
+        if (entity instanceof ServerPlayerEntity serverPlayer)
+            return WarpUtils.hasWarp(serverPlayer);
         return false;
     }
     public static boolean hasWarp(@NotNull final UUID uuid) {
@@ -579,9 +611,7 @@ public final class WarpUtils {
         entity.setVelocity(Vec3d.ZERO);
         entity.fallDistance = 0.0F;
         
-        if (entity instanceof ServerPlayerEntity) {
-            ServerPlayerEntity player = (ServerPlayerEntity)entity;
-            
+        if (entity instanceof ServerPlayerEntity player) {
             // Unbind player from entities
             player.stopRiding();
             if (player.isSleeping()) // Make sure that the player is not sleeping
@@ -621,7 +651,7 @@ public final class WarpUtils {
         }
         
         // Change the entity to not falling
-        if (!(entity instanceof LivingEntity) || !((LivingEntity)entity).isFallFlying()) {
+        if (!(entity instanceof LivingEntity livingEntity) || !livingEntity.isFallFlying()) {
             entity.setVelocity(entity.getVelocity().multiply(1.0D, 0.0D, 1.0D));
             entity.setOnGround(true);
         }
@@ -660,9 +690,9 @@ public final class WarpUtils {
         WarpUtils.teleportPoof(world, blockPos, Vec3d.ofBottomCenter(blockPos), departing);
     }
     private static void teleportPoof(@Nullable final World world, @NotNull final BlockPos blockPos, final Vec3d swirlPos, boolean departing) {
-        if (world instanceof ServerWorld) {
+        if (world instanceof ServerWorld serverWorld) {
             world.playSound(null, blockPos, SoundEvents.BLOCK_BEACON_POWER_SELECT, SoundCategory.MASTER, 1.0f, 1.0f);
-            EffectUtils.particleSwirl(ParticleTypes.WITCH, (ServerWorld) world, swirlPos, departing, 10);
+            EffectUtils.particleSwirl(ParticleTypes.WITCH, serverWorld, swirlPos, departing, 10);
         }
     }
     public static @NotNull BlockPos getWorldSpawn(@NotNull final ServerWorld world) {
@@ -707,6 +737,13 @@ public final class WarpUtils {
         }
         
         return builder.buildFuture();
+    }
+    
+    private static void logSearchBegin(@NotNull World world, int x, int z) {
+        CoreMod.logInfo("Verifying warp position in '" + DimensionUtils.dimensionIdentifier(world) + "' at " + x + ", ~, " + z);
+    }
+    private static void logSearchFailure(@NotNull World world, @NotNull BlockPos pos, @Nullable SearchFailures failure) {
+        CoreMod.logInfo("Failed to validate warp position in '" + DimensionUtils.dimensionIdentifier(world) + "' at " + pos.getX() + ", ~, " + pos.getZ() + " due to 'Reason: " + (failure == null ? "null" : failure.name()) + "'.");
     }
     
     public static class Warp {
@@ -772,5 +809,13 @@ public final class WarpUtils {
             
             return tag;
         }
+    }
+    public enum SearchFailures {
+        VOID,
+        FLUID,
+        FIRE,
+        ICE,
+        TREE_COLLISION,
+        SUFFOCATION
     }
 }

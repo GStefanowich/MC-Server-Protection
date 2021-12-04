@@ -79,8 +79,7 @@ public final class WrittenBookBuilder {
         String newLines = StringUtils.repeat('\n', count);
         if (obj.has("text")) {
             JsonElement element = obj.get("text");
-            if (element instanceof JsonPrimitive) {
-                JsonPrimitive primitive = (JsonPrimitive) element;
+            if (element instanceof JsonPrimitive primitive) {
                 if (primitive.isString()) {
                     obj.addProperty("text", primitive.getAsString() + newLines);
                     return this;

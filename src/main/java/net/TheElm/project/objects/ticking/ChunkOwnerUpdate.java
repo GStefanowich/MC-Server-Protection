@@ -187,20 +187,18 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
                 
                 IClaimedChunk chunk = (IClaimedChunk) worldChunk;
                 Claimant claimant = Objects.requireNonNull(update.getClaimant());
-                ClaimantTown town;
                 
-                if (claimant instanceof ClaimantTown) {
-                    town = (ClaimantTown) claimant;
-                    if (!Objects.equals(chunk.getOwner(), town.getOwner()))
+                if (claimant instanceof ClaimantTown claimantTown) {
+                    if (!Objects.equals(chunk.getOwner(), claimantTown.getOwner()))
                         return ActionResult.FAIL;
-                    if (chunk.getTown() != null && chunk.getTown() != town)
+                    if (chunk.getTown() != null && chunk.getTown() != claimantTown)
                         throw ClaimCommand.CHUNK_ALREADY_OWNED.create(player);
                     
-                    town.addToCount(worldChunk);
+                    claimantTown.addToCount(worldChunk);
                     chunk.updateTownOwner(claimant.getId());
-                } else if (claimant instanceof ClaimantPlayer) {
+                } else if (claimant instanceof ClaimantPlayer claimantPlayer) {
                     // Check if it's available
-                    if (update.getVerify() && !chunk.canPlayerClaim((ClaimantPlayer) claimant, update.getInitialSize() <= 1))
+                    if (update.getVerify() && !chunk.canPlayerClaim(claimantPlayer, update.getInitialSize() <= 1))
                         return ActionResult.FAIL;
                     
                     // Check if the chunk is owned by another player
@@ -212,8 +210,9 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
                     chunk.updatePlayerOwner(claimant.getId());
                     
                     // Set the town too
-                    if ((town = ((ClaimantPlayer) claimant).getTown()) != null)
-                        town.addToCount(worldChunk);
+                    ClaimantTown claimantTown = claimantPlayer.getTown();
+                    if (claimantTown != null)
+                        claimantTown.addToCount(worldChunk);
                 }
                 
                 worldChunk.setShouldSave(true);

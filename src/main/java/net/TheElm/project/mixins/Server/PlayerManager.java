@@ -27,33 +27,36 @@ package net.TheElm.project.mixins.Server;
 
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.objects.WanderingTraderProfileCollection;
 import net.TheElm.project.utilities.DimensionUtils;
-import net.TheElm.project.utilities.EffectUtils;
-import net.TheElm.project.utilities.LegacyConverter;
+import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.TeamUtils;
-import net.TheElm.project.utilities.WarpUtils;
+import net.minecraft.entity.Entity;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.s2c.play.ExperienceBarUpdateS2CPacket;
-import net.minecraft.particle.ParticleTypes;
+import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
+import net.minecraft.world.level.ServerWorldProperties;
 import org.jetbrains.annotations.NotNull;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.net.SocketAddress;
+import java.util.UUID;
 
 @Mixin(net.minecraft.server.PlayerManager.class)
-public class PlayerManager {
+public abstract class PlayerManager {
+    
+    @Shadow @Final
+    private MinecraftServer server;
     
     /**
      * Prevent players from joining the server if an update is running
@@ -61,6 +64,16 @@ public class PlayerManager {
     @Inject(at = @At("RETURN"), method = "onPlayerConnect")
     public void onPlayerConnect(ClientConnection connection, ServerPlayerEntity player, CallbackInfo callback) {
         TeamUtils.applyTeams(player);
+        
+        // Get the world that the wandering trader spawns in
+        ServerWorld world = this.server.getWorld(SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD));
+        if (world != null) {
+            // Check if the wandering trader is still in the world
+            UUID uuid = EntityUtils.getWanderingTraderId(this.server);
+            Entity entity = world.getEntity(uuid);
+            if (entity != null)
+                player.networkHandler.sendPacket(new WanderingTraderProfileCollection().getPacket(PlayerListS2CPacket.Action.ADD_PLAYER));
+        }
     }
     
     @Inject(at = @At("HEAD"), method = "setMainWorld", cancellable = true)

@@ -33,7 +33,6 @@ import net.TheElm.project.utilities.InventoryUtils;
 import net.TheElm.project.utilities.ShopSignBuilder;
 import net.TheElm.project.utilities.nbt.NbtGet;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.BlockEntityType;
@@ -47,6 +46,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -60,7 +60,6 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Map;
 import java.util.UUID;
@@ -218,7 +217,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
                 
                 // Ignore if this isn't actually a shop sign
                 PlayerEntity editor = this.world.getPlayerByUuid(this.getEditor());
-                if (!(editor instanceof ServerPlayerEntity) || !builder.build((ServerPlayerEntity) editor) )
+                if (!(editor instanceof ServerPlayerEntity serverPlayer) || !builder.build(serverPlayer) )
                     return;
                 
                 this.shopSign_Type = builder.getType();
@@ -251,9 +250,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
      */
     
     @Inject(at = @At("RETURN"), method = "writeNbt", cancellable = true)
-    public void onNbtWrite(@NotNull NbtCompound originalTag, @NotNull CallbackInfoReturnable<NbtCompound> callback) {
-        NbtCompound tag = callback.getReturnValue();
-        
+    public void onNbtWrite(@NotNull NbtCompound tag, CallbackInfo callback) {
         if ( this.shopSign_Owner == null )
             return;
         
@@ -281,8 +278,6 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
         // Put where to play the sound from
         if (this.shopSign_soundSourcePlayFromPos != null)
             tag.putLong("shop_sound_location", this.shopSign_soundSourcePlayFromPos.asLong());
-        
-        callback.setReturnValue(tag);
     }
     
     @Inject(at = @At("RETURN"), method = "readNbt")
@@ -293,27 +288,27 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
                 String signItem = "";
                 try {
                     // Get the ITEM for the shop
-                    if (tag.contains("shop_item_mod", NbtType.STRING) && tag.contains("shop_item_name", NbtType.STRING)) {
+                    if (tag.contains("shop_item_mod", NbtElement.STRING_TYPE) && tag.contains("shop_item_name", NbtElement.STRING_TYPE)) {
                         this.shopSign_item = new Identifier(signItem = (tag.getString("shop_item_mod") + ":" + tag.getString("shop_item_name")));
-                    } else if (tag.contains("shop_item", NbtType.STRING))
+                    } else if (tag.contains("shop_item", NbtElement.STRING_TYPE))
                         this.shopSign_item = new Identifier(signItem = tag.getString("shop_item"));
                 } catch (InvalidIdentifierException e) {
                     CoreMod.logError("Invalid item identifier \"" + signItem + "\" for shop sign.", e);
                 }
                 
                 // Get the BLOCK POSITIONS for deed
-                if (tag.contains("shop_blockPosA", NbtType.LONG) && tag.contains("shop_blockPosB", NbtType.LONG)) {
+                if (tag.contains("shop_blockPosA", NbtElement.LONG_TYPE) && tag.contains("shop_blockPosB", NbtElement.LONG_TYPE)) {
                     this.shopSign_posA = BlockPos.fromLong(tag.getLong("shop_blockPosA"));
                     this.shopSign_posB = BlockPos.fromLong(tag.getLong("shop_blockPosB"));
                 }
                 
                 // Get the BLOCK POSITION to play sounds from
-                if (tag.contains("shop_sound_location", NbtType.LONG))
+                if (tag.contains("shop_sound_location", NbtElement.LONG_TYPE))
                     this.shopSign_soundSourcePlayFromPos = BlockPos.fromLong(tag.getLong("shop_sound_location"));
                 
                 // Load the enchantments from the tag
-                if (tag.contains("shop_item_enchants", NbtType.LIST))
-                    this.shopSign_itemEnchants.putAll(NbtUtils.enchantsFromTag(tag.getList("shop_item_enchants", NbtType.COMPOUND)));
+                if (tag.contains("shop_item_enchants", NbtElement.LIST_TYPE))
+                    this.shopSign_itemEnchants.putAll(NbtUtils.enchantsFromTag(tag.getList("shop_item_enchants", NbtElement.COMPOUND_TYPE)));
                 
                 // Save the shop owner UUID
                 this.shopSign_Owner = uuid;

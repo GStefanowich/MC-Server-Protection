@@ -59,6 +59,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.EulerAngle;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -71,16 +72,13 @@ public final class DeathChestUtils {
     public static @Nullable BlockPos getChestPosition(@NotNull final World world, @NotNull final BlockPos deathPoint) {
         BlockPos out;
         
-        int dimensionHeight = world.getDimension()
-            .getHeight();
-        
         // Get the max Y (Spawn Height)
         int maxY = SewConfig.get(SewConfig.MAX_DEATH_ELEVATION);
         if (maxY < 0)
-            maxY = dimensionHeight;
+            maxY = world.getDimension().getHeight();
         
         // Get the max upper height of the death spawn point
-        int upper = Collections.min(Arrays.asList(dimensionHeight, deathPoint.getY() + maxY));
+        int upper = Collections.min(Arrays.asList(world.getTopY(), deathPoint.getY() + maxY));
         
         // Get the max X/Z (Spawn Radius)
         int maxX = SewConfig.get(SewConfig.MAX_DEATH_SCAN);
@@ -131,10 +129,17 @@ public final class DeathChestUtils {
     public static boolean createDeathChestFor(@NotNull final PlayerEntity player, @NotNull BlockPos deathPos) {
         final PlayerInventory inventory = player.getInventory();
         final PlayerBackpack backpack = ((BackpackCarrier)player).getBackpack();
-        World world = player.world;
+        final World world = player.world;
+        final DimensionType dimension = world.getDimension();
         
-        if (deathPos.getY() < 0)
-            deathPos = new BlockPos(deathPos.getX(), 0, deathPos.getZ());
+        final int elevation = deathPos.getY();
+        final int minimum = dimension.getMinimumY();
+        final int maximum = minimum + dimension.getHeight();
+        
+        if (elevation < minimum) // If in the void
+            deathPos = new BlockPos(deathPos.getX(), minimum + 1, deathPos.getZ());
+        else if (elevation > maximum) // If over the void
+            deathPos = new BlockPos(deathPos.getX(), maximum, deathPos.getZ());
         
         // Check if the ground is a liquid, and move up
         BlockState groundBlockState = world.getBlockState(deathPos);

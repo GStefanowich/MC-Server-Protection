@@ -34,18 +34,18 @@ public abstract class LootChest extends BlockWithEntity {
     
     @Inject(at = @At("HEAD"), method = "onUse", cancellable = true)
     public void onInteract(BlockState blockState, World world, BlockPos blockPos, PlayerEntity player, Hand hand, BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> callback) {
-        if (!world.isClient) {
+        if (!world.isClient && player instanceof ServerPlayerEntity serverPlayer) {
             BlockEntity blockEntity = world.getBlockEntity(blockPos);
-            if (blockEntity instanceof BossLootableContainer) {
-                Identifier identifier = ((BossLootableContainer)blockEntity).getBossLootIdentifier();
+            if (blockEntity instanceof BossLootableContainer lootableContainer) {
+                Identifier identifier = lootableContainer.getBossLootIdentifier();
                 if (identifier != null) {
                     BossLootRewards rewards = BossLootRewards.get(identifier);
                     if (rewards == null)
-                        ((ServerPlayerEntity)player).sendMessage(new LiteralText("Couldn't find any loot for that boss.").formatted(Formatting.RED), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
+                        serverPlayer.sendMessage(new LiteralText("Couldn't find any loot for that boss.").formatted(Formatting.RED), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
                     else {
                         LootInventory inventory = rewards.getPlayerLoot(player.getUuid());
                         if (inventory.isEmpty())
-                            ((ServerPlayerEntity)player).sendMessage(new LiteralText("You don't have any loot from the ").formatted(Formatting.RED).append(rewards.getEntityName()).append("."), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
+                            serverPlayer.sendMessage(new LiteralText("You don't have any loot from the ").formatted(Formatting.RED).append(rewards.getEntityName()).append("."), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
                         else {
                             player.openHandledScreen(new SimpleNamedScreenHandlerFactory((i, playerInventory, playerEntity) ->
                                 inventory.createContainer(i, playerInventory),

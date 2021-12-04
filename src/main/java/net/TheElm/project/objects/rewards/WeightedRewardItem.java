@@ -79,9 +79,9 @@ public class WeightedRewardItem extends WeightedReward {
     
     @Override
     public boolean isRewardEquals(@NotNull WeightedReward reward) {
-        return (reward instanceof WeightedRewardItem)
-            && ((WeightedRewardItem)reward).getReward() == this.getReward()
-            && ((WeightedRewardItem)reward).getConsumer() == this.getConsumer();
+        return (reward instanceof WeightedRewardItem rewardItem)
+            && rewardItem.getReward() == this.getReward()
+            && rewardItem.getConsumer() == this.getConsumer();
     }
     
     @Override

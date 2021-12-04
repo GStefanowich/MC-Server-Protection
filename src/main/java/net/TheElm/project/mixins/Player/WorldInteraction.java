@@ -52,7 +52,6 @@ import net.TheElm.project.utilities.RankUtils;
 import net.TheElm.project.utilities.SleepUtils;
 import net.TheElm.project.utilities.WarpUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.pathing.LandPathNodeMaker;
@@ -66,6 +65,7 @@ import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.ZombieEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.network.MessageType;
 import net.minecraft.network.packet.c2s.play.ClientSettingsC2SPacket;
 import net.minecraft.network.packet.s2c.play.PlayerSpawnPositionS2CPacket;
@@ -236,8 +236,8 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             this.updateHealthBar();
             
             // Add the attacker to the healthbar
-            if ((damageSource.getAttacker() instanceof PlayerEntity) && (damageSource.getAttacker() != this))
-                this.getHealthBar().addPlayer((ServerPlayerEntity) damageSource.getAttacker());
+            if ((damageSource.getAttacker() instanceof ServerPlayerEntity serverPlayer) && (damageSource.getAttacker() != this))
+                this.getHealthBar().addPlayer(serverPlayer);
         }
     }
     private void updateHealthBar() {
@@ -351,7 +351,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         if ( !this.isSleeping() )
             return;
         
-        SleepUtils.entityBedToggle( this, this.isSleeping(), false );
+        SleepUtils.entityBedToggle(this, this.isSleeping());
     }
     
     @Inject(at = @At("HEAD"), method = "setSpawnPoint", cancellable = true)
@@ -391,7 +391,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
             return;
         
         // Announce bed left
-        SleepUtils.entityBedToggle(this, !leftBed, false);
+        SleepUtils.entityBedToggle(this, !leftBed);
     }
     
     /*
@@ -453,27 +453,27 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
         this.warps.putAll(WarpUtils.fromNBT(tag));
         
         // Get the nickname
-        if (tag.contains("PlayerNickname", NbtType.STRING))
+        if (tag.contains("PlayerNickname", NbtElement.STRING_TYPE))
             this.playerNickname = Text.Serializer.fromJson(tag.getString("PlayerNickname"));
         
         // Get when first joined
-        if (tag.contains("FirstJoinedAtTime", NbtType.LONG))
+        if (tag.contains("FirstJoinedAtTime", NbtElement.LONG_TYPE))
             this.firstJoinedAt = tag.getLong("FirstJoinedAtTime");
         
         // Get when last joined
-        if (tag.contains("LastJoinedAtTime", NbtType.LONG))
+        if (tag.contains("LastJoinedAtTime", NbtElement.LONG_TYPE))
             this.lastJoinedAt = tag.getLong("LastJoinedAtTime");
         
         // Get the entered overworld portal
-        if (tag.contains("LastPortalOverworld", NbtType.COMPOUND))
+        if (tag.contains("LastPortalOverworld", NbtElement.COMPOUND_TYPE))
             this.overworldPortal = NbtUtils.tagToBlockPos(tag.getCompound("LastPortalOverworld"));
         
         // Get the entered nether portal
-        if (tag.contains("LastPortalNether", NbtType.COMPOUND))
+        if (tag.contains("LastPortalNether", NbtElement.COMPOUND_TYPE))
             this.theNetherPortal = NbtUtils.tagToBlockPos(tag.getCompound("LastPortalNether"));
         
         // Read if player is muted
-        if (tag.contains("chatMuted", NbtType.BYTE))
+        if (tag.contains("chatMuted", NbtElement.BYTE_TYPE))
             this.toggleMute(tag.getBoolean("chatMuted"));
     }
     @Inject(at = @At("TAIL"), method = "copyFrom")

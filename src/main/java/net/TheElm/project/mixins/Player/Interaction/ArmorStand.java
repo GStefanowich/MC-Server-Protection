@@ -37,7 +37,6 @@ import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.Block;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityType;
@@ -345,10 +344,10 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
     public void onReadingData(NbtCompound tag, CallbackInfo callback) {
         if ( NbtUtils.hasUUID(tag, "corpsePlayerUUID") ) {
             this.corpsePlayerUUID = NbtUtils.getUUID(tag, "corpsePlayerUUID");
-            if (tag.contains("corpsePlayerItems", NbtType.LIST))
-                this.corpsePlayerItems = tag.getList("corpsePlayerItems", NbtType.COMPOUND);
-            if (tag.contains("corpsePlayerBackpack", NbtType.LIST))
-                this.corpsePlayerBackpack = tag.getList("corpsePlayerBackpack", NbtType.COMPOUND);
+            if (tag.contains("corpsePlayerItems", NbtElement.LIST_TYPE))
+                this.corpsePlayerItems = tag.getList("corpsePlayerItems", NbtElement.COMPOUND_TYPE);
+            if (tag.contains("corpsePlayerBackpack", NbtElement.LIST_TYPE))
+                this.corpsePlayerBackpack = tag.getList("corpsePlayerBackpack", NbtElement.COMPOUND_TYPE);
         }
     }
 }

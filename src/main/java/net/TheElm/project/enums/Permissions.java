@@ -110,8 +110,8 @@ public class Permissions {
         if (permission.getDescription().isEmpty()) CoreMod.logDebug("Permission \"" + permission.getNode() + "\"'s description is empty.");
         
         // Store the secondary permission in the Set
-        if (permission instanceof OtherInflictableNode)
-            Permissions.storePermission(((OtherInflictableNode)permission).onOther());
+        if (permission instanceof OtherInflictableNode otherInflictableNode)
+            Permissions.storePermission(otherInflictableNode.onOther());
         
         // Return the stored permission
         return permission;

@@ -32,10 +32,8 @@ public final class RideCommand {
         
         Entity entity = EntityArgumentType.getEntity(context, "entity");
         boolean riding = player.startRiding(entity);
-        if (riding && entity instanceof ServerPlayerEntity) {
-            ServerPlayerEntity mountedPlayer = (ServerPlayerEntity) entity;
+        if (riding && entity instanceof ServerPlayerEntity mountedPlayer)
             mountedPlayer.networkHandler.sendPacket(new EntityPassengersSetS2CPacket(mountedPlayer));
-        }
         
         return riding ? 1 : 0;
     }

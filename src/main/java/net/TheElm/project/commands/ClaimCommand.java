@@ -1240,10 +1240,13 @@ public final class ClaimCommand {
         for (WhitelistEntry entry : whitelist.values()) {
             if (entry == null)
                 continue;
-            if (player.getId().equals(((WhitelistedPlayer)entry).getUUID()))
-                invitedBy = cache.getByUuid(((WhitelistedPlayer)entry).getInvitedBy()).orElse(null);
-            else if (player.getId().equals(((WhitelistedPlayer) entry).getInvitedBy()))
-                invited.add(entry);
+            UUID invitedById = ((WhitelistedPlayer)entry).getInvitedBy();
+            if (invitedById != null) {
+                if (player.getId().equals(((WhitelistedPlayer)entry).getUUID()))
+                    invitedBy = cache.getByUuid(invitedById).orElse(null);
+                else if (player.getId().equals(invitedById))
+                    invited.add(entry);
+            }
         }
         
         Entity entity = source.getEntity();

@@ -29,14 +29,11 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.mixins.Interfaces.PowderBlockAccessor;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.CauldronBlock;
 import net.minecraft.block.ConcretePowderBlock;
 import net.minecraft.block.LeveledCauldronBlock;
-import net.minecraft.block.cauldron.CauldronBehavior;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
@@ -47,6 +44,7 @@ import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
@@ -83,11 +81,10 @@ public abstract class CauldronCleaning extends Block {
     
     @Inject(at = @At("HEAD"), method = "onEntityCollision", cancellable = true)
     public void onEntityCollided(@NotNull BlockState blockState, @NotNull World world, @NotNull BlockPos blockPos, Entity entity, CallbackInfo callback) {
-        if (world.isClient() || (!(entity instanceof ItemEntity)) || !this.canBeFilledByDripstone(Fluids.WATER))
+        if (world.isClient() || (!(entity instanceof ItemEntity colliderEntity)) || !this.canBeFilledByDripstone(Fluids.WATER))
             return;
         int waterLevel = blockState.get(LeveledCauldronBlock.LEVEL);
         
-        ItemEntity colliderEntity = (ItemEntity) entity;
         ItemStack colliderStack = colliderEntity.getStack();
         
         UUID owner = colliderEntity.getThrower();
@@ -123,7 +120,7 @@ public abstract class CauldronCleaning extends Block {
             // Get the entity IDs on the spawner
             NbtCompound spawnerTag = colliderStack.getOrCreateNbt();
             NbtList entityIds;
-            if ((!spawnerTag.contains("EntityIds", NbtType.LIST)) || ((entityIds = spawnerTag.getList("EntityIds", NbtType.STRING)).size() < 2))
+            if ((!spawnerTag.contains("EntityIds", NbtElement.LIST_TYPE)) || ((entityIds = spawnerTag.getList("EntityIds", NbtElement.STRING_TYPE)).size() < 2))
                 return;
             
             // Remove the first spawn type
@@ -152,8 +149,8 @@ public abstract class CauldronCleaning extends Block {
             BlockItem blockItem = ((BlockItem)colliderStack.getItem());
             
             // If the block item is one of the Concrete Powder Blocks
-            if (blockItem.getBlock() instanceof ConcretePowderBlock) {
-                BlockState hardened = ((PowderBlockAccessor)blockItem.getBlock()).getHardenedState();
+            if (blockItem.getBlock() instanceof ConcretePowderBlock concretePowderBlock) {
+                BlockState hardened = ((PowderBlockAccessor)concretePowderBlock).getHardenedState();
                 Block solid = hardened.getBlock();
                 
                 Vec3d scatter = colliderEntity.getPos();

@@ -117,9 +117,7 @@ public final class BlockBreak {
         if (entity == null && DevUtils.isDebugging())
             CoreMod.logError(new NullPointerException("'entity' is a Null."));
         
-        if (entity instanceof ServerPlayerEntity) {
-            ServerPlayerEntity player = (ServerPlayerEntity) entity;
-            
+        if (entity instanceof ServerPlayerEntity player) {
             // If player is in creative
             if ((player.isCreative() && SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS)) || (action == Action.ABORT_DESTROY_BLOCK))
                 return ActionResult.PASS;
@@ -228,21 +226,21 @@ public final class BlockBreak {
             if (!ChunkUtils.isSetting(ClaimSettings.CREEPER_GRIEFING, world, blockPos))
                 return ActionResult.FAIL;
         }
-        else if (entity instanceof ConstructableEntity) {
+        else if (entity instanceof ConstructableEntity constructableEntity) {
             /*
-             * Prevent an origin-based entity from breaking blocks outside of its origin
+             * Prevent an origin-based entity from breaking blocks outside of it's origin
              */
-            UUID entitySource = ((ConstructableEntity)entity).getEntityOwner();
+            UUID entitySource = constructableEntity.getEntityOwner();
             Optional<UUID> chunkOwner = ChunkUtils.getPosOwner(world, blockPos);
             if (chunkOwner.isPresent() && !ChunkUtils.canPlayerBreakInChunk(entitySource, world, blockPos))
                 return ActionResult.FAIL;
         }
-        else if (entity instanceof ExplosiveProjectileEntity) {
+        else if (entity instanceof ExplosiveProjectileEntity explosiveProjectile) {
             /*
              * Get the owner of the projectile
              */
             return BlockBreak.canBlockBreak(
-                ((ExplosiveProjectileEntity)entity).getOwner(),
+                explosiveProjectile.getOwner(),
                 world,
                 hand,
                 blockPos,

@@ -30,6 +30,7 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.ShopSignData;
+import net.TheElm.project.mixins.Server.ServerWorldPropertiesAccessor;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.AnvilBlock;
@@ -130,6 +131,7 @@ import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.village.VillagerData;
 import net.minecraft.village.VillagerType;
 import net.minecraft.world.World;
+import net.minecraft.world.level.ServerWorldProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -138,6 +140,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.UUID;
@@ -170,8 +173,7 @@ public final class EntityUtils {
     }
     public static SoundEvent getLockSound(@NotNull Block block, @Nullable BlockState blockState, @Nullable BlockEntity blockEntity) {
         if (blockEntity != null) {
-            if ( blockEntity instanceof BeehiveBlockEntity) {
-                BeehiveBlockEntity hive = ((BeehiveBlockEntity) blockEntity);
+            if ( blockEntity instanceof BeehiveBlockEntity hive) {
                 if (!hive.hasNoBees())
                     return SoundEvents.BLOCK_BEEHIVE_WORK;
                 return (blockState != null && (BeehiveBlockEntity.getHoneyLevel(blockState) > 0) ? SoundEvents.BLOCK_BEEHIVE_DRIP : EntityUtils.getDefaultLockSound());
@@ -465,8 +467,8 @@ public final class EntityUtils {
      * Player methods
      */
     public static void resendInventory(@NotNull PlayerEntity player) {
-        if (player instanceof ServerPlayerEntity)
-            EntityUtils.resendInventory((ServerPlayerEntity)player);
+        if (player instanceof ServerPlayerEntity serverPlayer)
+            EntityUtils.resendInventory(serverPlayer);
     }
     public static void resendInventory(@NotNull ServerPlayerEntity player) {
         //player.refreshScreenHandler(player.playerScreenHandler);
@@ -533,6 +535,22 @@ public final class EntityUtils {
             .append(EntityUtils.getEntityRegionName(trader))
             .append("."));
     }
+    public static boolean isEntityWanderingTrader(@NotNull Entity entity) {
+        return Objects.equals(entity.getUuid(), EntityUtils.getWanderingTraderId(entity.getServer()));
+    }
+    public static @Nullable UUID getWanderingTraderId(@NotNull World world) {
+        return EntityUtils.getWanderingTraderId(world.getServer());
+    }
+    public static @Nullable UUID getWanderingTraderId(@Nullable MinecraftServer server) {
+        if (server == null)
+            return null;
+        
+        // Wandering Trader ID is only stored in the overworld
+        ServerWorld overworld = server.getOverworld();
+        ServerWorldProperties properties = ((ServerWorldPropertiesAccessor)overworld).getProperties();
+        return properties.getWanderingTraderId();
+    }
+    
     public static Text getEntityRegionName(@NotNull Entity entity) {
         World world = entity.getEntityWorld();
         IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(entity.getBlockPos());
@@ -600,15 +618,12 @@ public final class EntityUtils {
         return i;
     }
     public static <T extends Entity> boolean hitWithLightning(@NotNull T entity) {
-        if (entity.getEntityWorld() instanceof ServerWorld) {
-            ServerWorld world = (ServerWorld) entity.getEntityWorld();
-            if (!entity.isSpectator()) {
-                LightningEntity lightning = new LightningEntity(EntityType.LIGHTNING_BOLT, world);
-                lightning.setPos(entity.getX(), entity.getY(), entity.getZ());
-                
-                world.spawnEntity(lightning);
-                return true;
-            }
+        if (entity.getEntityWorld() instanceof ServerWorld world && !entity.isSpectator()) {
+            LightningEntity lightning = new LightningEntity(EntityType.LIGHTNING_BOLT, world);
+            lightning.setPos(entity.getX(), entity.getY(), entity.getZ());
+            
+            world.spawnEntity(lightning);
+            return true;
         }
         return false;
     }

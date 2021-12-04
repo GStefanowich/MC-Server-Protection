@@ -77,9 +77,9 @@ public class WeightedRewardEnchantedBook extends WeightedReward {
     
     @Override
     public boolean isRewardEquals(@NotNull WeightedReward reward) {
-        return (reward instanceof WeightedRewardEnchantedBook)
-            && ((WeightedRewardEnchantedBook)reward).getEnchantment() == this.getEnchantment()
-            && ((WeightedRewardEnchantedBook)reward).getLevel() == this.getLevel();
+        return (reward instanceof WeightedRewardEnchantedBook book)
+            && book.getEnchantment() == this.getEnchantment()
+            && book.getLevel() == this.getLevel();
     }
     
     @Override

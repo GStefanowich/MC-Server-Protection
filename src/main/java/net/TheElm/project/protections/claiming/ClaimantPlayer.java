@@ -32,13 +32,12 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
-import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.objects.ClaimTag;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -178,7 +177,7 @@ public final class ClaimantPlayer extends Claimant {
         this.town = town;
         
         // Additional claim limit
-        this.additionalClaims = (tag.contains("claimLimit", NbtType.INT) ? tag.getInt("claimLimit") : 0);
+        this.additionalClaims = (tag.contains("claimLimit", NbtElement.INT_TYPE) ? tag.getInt("claimLimit") : 0);
         
         // Read from SUPER
         super.readCustomDataFromTag(tag);

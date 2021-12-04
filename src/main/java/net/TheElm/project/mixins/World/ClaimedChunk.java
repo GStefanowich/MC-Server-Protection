@@ -38,7 +38,6 @@ import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.ChunkUtils.ClaimSlice;
 import net.TheElm.project.utilities.ChunkUtils.InnerClaim;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
@@ -87,7 +86,7 @@ public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim
             town = ClaimantTown.get(owner);
         
         // Make sure we have the towns permissions cached
-        this.chunkTown = (town == null ? null : new WeakReference<>( town ));
+        this.chunkTown = (town == null ? null : new WeakReference<>(town));
         
         if ( fresh )
             this.setShouldSave(true);
@@ -153,8 +152,11 @@ public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim
         
         // Get all owners
         Set<UUID> owners = new HashSet<>();
-        for (int y = yMin; y <= yMax; y++)
-            owners.add(slice.get(y).getOwner());
+        for (int y = yMin; y <= yMax; y++) {
+            InnerClaim claim = slice.get(y);
+            if (claim != null)
+                owners.add(claim.getOwner());
+        }
         
         return owners.toArray(new UUID[0]);
     }
@@ -199,10 +201,10 @@ public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim
             ClaimSlice slice = claimSlices[slicePos];
             
             // Get the players Y position
-            InnerClaim claim = slice.get( pos );
+            InnerClaim claim = slice.get(pos);
             
             // Check that the player is within the Y
-            if (claim.lower() <= pos.getY() && claim.upper() >= pos.getY())
+            if (claim != null && claim.isWithin(pos))
                 return claim.getOwner();
         }
         return this.getOwner();
@@ -305,10 +307,10 @@ public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim
     public void deserializeSlices(@NotNull NbtList serialized) {
         for (NbtElement tag : serialized) {
             // Must be compound tags
-            if (!(tag instanceof NbtCompound)) continue;
-            NbtCompound sliceTag = (NbtCompound) tag;
+            if (!(tag instanceof NbtCompound sliceTag))
+                continue;
             
-            NbtList claimsTag = sliceTag.getList("claims", NbtType.COMPOUND);
+            NbtList claimsTag = sliceTag.getList("claims", NbtElement.COMPOUND_TYPE);
             int i = sliceTag.getInt("i");
             
             for (NbtElement claimTag : claimsTag) {

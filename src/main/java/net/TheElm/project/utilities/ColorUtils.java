@@ -205,14 +205,14 @@ public final class ColorUtils {
     }
     
     public static @NotNull MutableText format(@NotNull Text text, @NotNull Formatting... formatting) {
-        if (text instanceof MutableText)
-            return ((MutableText)text).formatted(formatting);
+        if (text instanceof MutableText mutableText)
+            return mutableText.formatted(formatting);
         return ColorUtils.format(new LiteralText("")
             .append(text), formatting);
     }
     public static @NotNull MutableText format(@NotNull Text text, @NotNull TextColor color) {
-        if (text instanceof MutableText)
-            return ((MutableText)text).styled((style) -> style.withColor(color));
+        if (text instanceof MutableText mutableText)
+            return mutableText.styled((style) -> style.withColor(color));
         return ColorUtils.format(new LiteralText("")
             .append(text), color);
     }

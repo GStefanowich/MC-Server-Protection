@@ -30,7 +30,6 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.objects.PlayerBookPropertyDelegate;
 import net.TheElm.project.utilities.GuideUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LecternBlock;
 import net.minecraft.block.entity.BlockEntity;
@@ -39,6 +38,7 @@ import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.screen.LecternScreenHandler;
 import net.minecraft.screen.NamedScreenHandlerFactory;
@@ -142,8 +142,8 @@ public class LecternGuideBlockEntity extends BlockEntity implements NamedScreenH
                 if (id != 3)
                     return super.onButtonClick(player, id);
                 ItemStack book = LecternGuideBlockEntity.this.getBook();
-                if (player instanceof ServerPlayerEntity)
-                    ((ServerPlayerEntity)player).closeHandledScreen();
+                if (player instanceof ServerPlayerEntity serverPlayer)
+                    serverPlayer.closeHandledScreen();
                 return player.getInventory()
                     .insertStack(book);
             }
@@ -164,9 +164,8 @@ public class LecternGuideBlockEntity extends BlockEntity implements NamedScreenH
     }
 
     public static <T extends BlockEntity> void tick(@NotNull World world, BlockPos blockPos, BlockState blockState, T blockEntity) {
-        if (world.isClient || !(blockEntity instanceof LecternGuideBlockEntity))
+        if (world.isClient || !(blockEntity instanceof LecternGuideBlockEntity warpsBlock))
             return;
-        LecternGuideBlockEntity warpsBlock = (LecternGuideBlockEntity) blockEntity;
         if (warpsBlock.ticks++ > 0 && (warpsBlock.ticks % 20) == 0) {
             if (warpsBlock.random.nextInt(4) == 0) {
                 for (int i = 0; i < 4; ++i) {
@@ -198,7 +197,7 @@ public class LecternGuideBlockEntity extends BlockEntity implements NamedScreenH
         super.readNbt(tag);
         
         // Load the book name
-        if (tag.contains("guide_book", NbtType.STRING))
+        if (tag.contains("guide_book", NbtElement.STRING_TYPE))
             this.bookName = tag.getString("guide_book");
     }
     

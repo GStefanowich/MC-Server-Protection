@@ -25,12 +25,12 @@
 
 package net.TheElm.project.mixins.Items;
 
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.EnderEyeItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
@@ -72,7 +72,7 @@ public abstract class LocatorPearls extends Item {
             location = generator.locateStructure(world, feature, center, radius, skipExistingChunks);
         else {
             int uses = 0;
-            if (throwDat.contains("uses", NbtType.NUMBER))
+            if (throwDat.contains("uses", NbtElement.NUMBER_TYPE))
                 uses = throwDat.getInt("uses");
             else {
                 // Destroy the item that has no more uses
@@ -82,16 +82,16 @@ public abstract class LocatorPearls extends Item {
             
             int strength = 0;
             NbtCompound baseDat = inHand.getOrCreateNbt();
-            if (baseDat.contains("strength", NbtType.NUMBER))
+            if (baseDat.contains("strength", NbtElement.NUMBER_TYPE))
                 strength = baseDat.getInt("strength");
             
             // Try to locate the biome given in the NBT
-            if (throwDat.contains("biome", NbtType.STRING)) {
+            if (throwDat.contains("biome", NbtElement.STRING_TYPE)) {
                 Identifier biomeId = new Identifier(throwDat.getString("biome"));
                 Biome biome = world.getRegistryManager().get(Registry.BIOME_KEY).get(biomeId);
                 if (biome != null)
                     location = world.locateBiome(biome, center, (radius * 10) * (6 + strength * 2), 8);
-            } else if (throwDat.contains("structure", NbtType.STRING)) {
+            } else if (throwDat.contains("structure", NbtElement.STRING_TYPE)) {
                 StructureFeature<?> structure = StructureFeature.STRUCTURES.get(throwDat.getString("structure").toLowerCase(Locale.ROOT));
                 if (structure != null)
                     location = generator.locateStructure(world, structure, center, (radius * 10) * (6 + strength * 2), skipExistingChunks);

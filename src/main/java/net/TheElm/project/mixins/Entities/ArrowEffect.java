@@ -47,8 +47,8 @@ public abstract class ArrowEffect extends PersistentProjectileEntity {
     @Inject(at = @At("HEAD"), method = "tick")
     public void onTick(CallbackInfo callback) {
         Vec3d velocity = this.getVelocity();
-        if (this.isOnFire() && (!this.onGround) && (this.world instanceof ServerWorld) && (this.age > 5))
-            ((ServerWorld)this.world).spawnParticles(
+        if (this.isOnFire() && (!this.onGround) && (this.world instanceof ServerWorld serverWorld) && (this.age > 5))
+            serverWorld.spawnParticles(
                 ParticleTypes.FLAME,
                 this.getX(),
                 this.getY(),

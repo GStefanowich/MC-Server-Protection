@@ -33,7 +33,6 @@ import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.objects.WorldPos;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.utilities.LegacyConverter;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityType;
@@ -239,9 +238,7 @@ public final class NbtUtils {
     private static @NotNull NbtCompound writeWorldDatToTag(@NotNull ServerWorld world, @NotNull WorldProperties properties) {
         NbtCompound data = new NbtCompound();
         
-        if (properties instanceof ServerWorldProperties) {
-            ServerWorldProperties serverProperties = (ServerWorldProperties)properties;
-            
+        if (properties instanceof ServerWorldProperties serverProperties) {
             data.putInt("GameType", serverProperties.getGameMode().getId());
             data.putInt("clearWeatherTime", serverProperties.getClearWeatherTime());
             data.putInt("rainTime", serverProperties.getRainTime());
@@ -357,8 +354,8 @@ public final class NbtUtils {
     }
     public static @NotNull RegistryKey<World> worldRegistryFromTag(@Nullable NbtElement nbt) {
         if (nbt != null) {
-            if (nbt instanceof AbstractNbtNumber)
-                return LegacyConverter.getWorldFromId(((AbstractNbtNumber) nbt).byteValue());
+            if (nbt instanceof AbstractNbtNumber abstractNbtNumber)
+                return LegacyConverter.getWorldFromId(abstractNbtNumber.byteValue());
             DataResult<RegistryKey<World>> worlds = World.CODEC.parse(NbtOps.INSTANCE, nbt);
             return worlds.resultOrPartial(CoreMod::logError)
                 .orElse(World.OVERWORLD);
@@ -372,13 +369,13 @@ public final class NbtUtils {
     
     public static @Nullable BlockPos tagToBlockPos(@Nullable NbtCompound compound) {
         if (compound != null) {
-            if (compound.contains("x", NbtType.NUMBER) && compound.contains("y", NbtType.NUMBER) && compound.contains("z", NbtType.NUMBER))
+            if (compound.contains("x", NbtElement.NUMBER_TYPE) && compound.contains("y", NbtElement.NUMBER_TYPE) && compound.contains("z", NbtElement.NUMBER_TYPE))
                 return new BlockPos(compound.getDouble("x"), compound.getDouble("y"), compound.getDouble("z"));
         }
         return null;
     }
     public static @Nullable WorldPos tagToWorldPos(@Nullable NbtCompound compound) {
-        if ((compound != null) && compound.contains("world", NbtType.STRING)) {
+        if ((compound != null) && compound.contains("world", NbtElement.STRING_TYPE)) {
             RegistryKey<World> dimension = RegistryKey.of(Registry.WORLD_KEY, new Identifier(compound.getString("world")));
             BlockPos blockPos = NbtUtils.tagToBlockPos(compound);
             if ( blockPos != null )
@@ -387,7 +384,7 @@ public final class NbtUtils {
         return null;
     }
     public static @Nullable Direction tagToDirection(@Nullable NbtCompound compound) {
-        if (compound != null && compound.contains("direction", NbtType.NUMBER))
+        if (compound != null && compound.contains("direction", NbtElement.NUMBER_TYPE))
             return Direction.byId(compound.getInt("direction"));
         return null;
     }
@@ -414,20 +411,20 @@ public final class NbtUtils {
     public static boolean hasUUID(@Nullable NbtCompound tag, @NotNull String key) {
         if (tag == null)
             return false;
-        return (tag.contains(key + "Most", NbtType.LONG) && tag.contains(key + "Least", NbtType.LONG)) || tag.contains(key, NbtType.INT_ARRAY);
+        return (tag.contains(key + "Most", NbtElement.LONG_TYPE) && tag.contains(key + "Least", NbtElement.LONG_TYPE)) || tag.contains(key, NbtElement.INT_ARRAY_TYPE);
     }
     public static @Nullable UUID getUUID(@Nullable NbtCompound tag, @NotNull String key) {
         if (tag != null) {
             // Check for old 64-bit ints
             final String kMost = key + "Most";
             final String kLeast = key + "Least";
-            if (tag.contains(kMost, NbtType.LONG) && tag.contains(kLeast, NbtType.LONG)) {
+            if (tag.contains(kMost, NbtElement.LONG_TYPE) && tag.contains(kLeast, NbtElement.LONG_TYPE)) {
                 long most = tag.getLong(kMost);
                 long least = tag.getLong(kLeast);
                 return new UUID(most, least);
             }
             // Get 32-bit int array
-            if (tag.contains(key, NbtType.INT_ARRAY))
+            if (tag.contains(key, NbtElement.INT_ARRAY_TYPE))
                 return tag.getUuid(key);
         }
         return null;
@@ -452,6 +449,32 @@ public final class NbtUtils {
         return false;
     }
     
+    public static void withSpawnerEntities(final @NotNull NbtCompound base, final @NotNull Consumer<NbtString> consumer) {
+        NbtList list = base.getList("SpawnPotentials", NbtElement.COMPOUND_TYPE);
+        System.out.println(base);
+        
+        // Save to the item (The mob)
+        if (list.isEmpty())
+            NbtUtils.withInnerSpawnerData(base.getCompound("SpawnData"), consumer);
+        else for (NbtElement tag : list)
+            NbtUtils.withInnerSpawnerData(((NbtCompound) tag), consumer);
+    }
+    private static void withInnerSpawnerData(final @NotNull NbtCompound base, final @NotNull Consumer<NbtString> consumer) {
+        NbtCompound data = base.contains("data", NbtElement.COMPOUND_TYPE) ? base.getCompound("data") : base;
+        
+        // Get entity details
+        if (!data.contains("entity", NbtElement.COMPOUND_TYPE))
+            return;
+        NbtCompound entity = data.getCompound("entity");
+        
+        // Get entity Id
+        if (!entity.contains("id", NbtElement.STRING_TYPE))
+            return;
+        String entityId = entity.getString("id");
+        if (entityId != null && !entityId.isEmpty())
+            consumer.accept(NbtString.of(entityId));
+    }
+    
     /*
      * Spawner Lore
      */
@@ -462,7 +485,7 @@ public final class NbtUtils {
             // Get the mob entity name
             String mobTag = entityTag.asString();
             
-            Optional<EntityType<?>> entityType = EntityType.get( mobTag );
+            Optional<EntityType<?>> entityType = EntityType.get(mobTag);
             EntityType<?> entity;
             if ((entity = entityType.orElse( null )) != null) {
                 // Create the display of mobs

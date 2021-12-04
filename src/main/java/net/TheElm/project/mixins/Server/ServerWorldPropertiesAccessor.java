@@ -25,37 +25,17 @@
 
 package net.TheElm.project.mixins.Server;
 
-import net.TheElm.project.utilities.TradeUtils;
-import net.minecraft.world.level.LevelProperties;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.level.ServerWorldProperties;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.UUID;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
 /**
- * Created on Mar 14 2021 at 3:15 PM.
+ * Created on Dec 02 2021 at 11:25 PM.
  * By greg in SewingMachineMod
  */
-@Mixin(LevelProperties.class)
-public abstract class WorldProperties implements ServerWorldProperties {
-    
-    @Shadow
-    private @Nullable UUID wanderingTraderId;
-    
-    @Inject(at = @At("RETURN"), method = "<init>*")
-    private void onInit(CallbackInfo callback) {
-        if (this.wanderingTraderId != null)
-            TradeUtils.updateWanderingTraderUuid(this.wanderingTraderId);
-    }
-    
-    @Inject(at = @At("RETURN"), method = "setWanderingTraderId")
-    private void updateWanderingTrader(@Nullable UUID uuid, @NotNull CallbackInfo callback) {
-        TradeUtils.updateWanderingTraderUuid(uuid);
-    }
+@Mixin(ServerWorld.class)
+public interface ServerWorldPropertiesAccessor {
+    @Accessor("worldProperties")
+    ServerWorldProperties getProperties();
 }

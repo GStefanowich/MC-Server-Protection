@@ -46,6 +46,6 @@ public abstract class Paintings extends AbstractDecorationEntity {
     
     @Override
     public boolean damage(DamageSource source, float amount) {
-        return (!(source.getAttacker() instanceof PlayerEntity) || ChunkUtils.canPlayerBreakInChunk((PlayerEntity) source.getAttacker(), this.getBlockPos())) && super.damage(source, amount);
+        return (!(source.getAttacker() instanceof PlayerEntity player) || ChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos())) && super.damage(source, amount);
     }
 }

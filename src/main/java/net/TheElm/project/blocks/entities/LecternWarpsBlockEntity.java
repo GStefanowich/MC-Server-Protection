@@ -103,8 +103,8 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
                     player.sendMessage(new LiteralText("Can't take this book.")
                         .formatted(Formatting.RED), true);
                 }
-                if (player instanceof ServerPlayerEntity)
-                    ((ServerPlayerEntity) player).closeHandledScreen();
+                if (player instanceof ServerPlayerEntity serverPlayer)
+                    serverPlayer.closeHandledScreen();
                 return !failed;
             }
         };
@@ -116,9 +116,8 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
     }
     
     public static <T extends BlockEntity> void tick(@NotNull World world, BlockPos blockPos, BlockState blockState, T blockEntity) {
-        if (world.isClient || !(blockEntity instanceof LecternWarpsBlockEntity))
+        if (world.isClient || !(blockEntity instanceof LecternWarpsBlockEntity warpsBlock))
             return;
-        LecternWarpsBlockEntity warpsBlock = (LecternWarpsBlockEntity) blockEntity;
         if (warpsBlock.ticks++ > 0 && (warpsBlock.ticks % 20) == 0) {
             if (warpsBlock.random.nextInt(3) == 0) {
                 for (int i = 0; i < 4; ++i) {
@@ -246,10 +245,10 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
         public boolean teleport() {
             int page = this.delegate.get(0);
             WarpUtils.Warp warp = (page + 1) > this.warps.size() ? null : this.warps.get(page);
-            if (warp != null && this.player instanceof ServerPlayerEntity) {
+            if (warp != null && this.player instanceof ServerPlayerEntity serverPlayer) {
                 TeleportsCommand.feedback(this.player, warp);
                 
-                WarpUtils.teleportPlayerAndAttached(warp, (ServerPlayerEntity) this.player);
+                WarpUtils.teleportPlayerAndAttached(warp, serverPlayer);
                 
                 return true;
             }

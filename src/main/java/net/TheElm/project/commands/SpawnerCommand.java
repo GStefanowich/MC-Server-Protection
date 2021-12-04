@@ -31,12 +31,13 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.interfaces.CommandPredicate;
-import net.fabricmc.fabric.api.util.NbtType;
+import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.command.argument.EntitySummonArgumentType;
 import net.minecraft.command.suggestion.SuggestionProviders;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.server.command.CommandManager;
@@ -69,14 +70,15 @@ public final class SpawnerCommand {
                     // Add mob to the list
                     NbtCompound tag = spawner.getOrCreateNbt();
                     NbtList list;
-                    if (tag.contains("EntityIds", NbtType.LIST))
-                        list = tag.getList("EntityIds", NbtType.STRING);
+                    if (tag.contains("EntityIds", NbtElement.LIST_TYPE))
+                        list = tag.getList("EntityIds", NbtElement.STRING_TYPE);
                     else {
                         list = new NbtList();
                         tag.put("EntityIds", list);
                     }
                     
                     list.add(mob);
+                    tag.put("display", NbtUtils.getSpawnerDisplay(list));
                     
                     // Give the spawner
                     player.getInventory()

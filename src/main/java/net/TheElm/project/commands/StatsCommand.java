@@ -245,9 +245,9 @@ public final class StatsCommand {
     
     private static int getStatMined(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         Item item = StatsCommand.getItem(context, "block");
-        if (!(item instanceof BlockItem))
+        if (!(item instanceof BlockItem blockItem))
             return 0;
-        int count = StatsCommand.getStatOf(context.getSource(), Stats.MINED, ((BlockItem) item).getBlock());
+        int count = StatsCommand.getStatOf(context.getSource(), Stats.MINED, blockItem.getBlock());
         
         return StatsCommand.sendMessageAs(context.getSource(), new LiteralText("I have mined ")
             .append(new LiteralText("[x")
@@ -262,13 +262,13 @@ public final class StatsCommand {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
         int difference = IntegerArgumentType.getInteger(context, "amount");
         Item item = StatsCommand.getItem(context, "block");
-        if (!(item instanceof BlockItem))
+        if (!(item instanceof BlockItem blockItem))
             difference = 0;
         else {
             StatsCommand.addToStatOf(
                 player,
                 Stats.MINED,
-                ((BlockItem) item).getBlock(),
+                blockItem.getBlock(),
                 difference
             );
         }
@@ -287,13 +287,13 @@ public final class StatsCommand {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
         int difference = IntegerArgumentType.getInteger(context, "amount");
         Item item = StatsCommand.getItem(context, "block");
-        if (!(item instanceof BlockItem))
+        if (!(item instanceof BlockItem blockItem))
             difference = 0;
         else {
             StatsCommand.removeFromStatOf(
                 player,
                 Stats.MINED,
-                ((BlockItem) item).getBlock(),
+                blockItem.getBlock(),
                 difference
             );
         }

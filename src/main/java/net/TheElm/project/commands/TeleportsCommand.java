@@ -445,8 +445,8 @@ public final class TeleportsCommand {
     private static int sendEntitiesToEnd(@NotNull ServerCommandSource source, @NotNull Collection<? extends Entity> entities) throws CommandSyntaxException {
         // Move the player to the end
         for (Entity entity : entities)
-            if (entity instanceof ServerPlayerEntity)
-                WarpUtils.teleportPlayerAndAttached(World.END, (ServerPlayerEntity) entity);
+            if (entity instanceof ServerPlayerEntity serverPlayer)
+                WarpUtils.teleportPlayerAndAttached(World.END, serverPlayer);
             else
                 WarpUtils.teleportEntity(World.END, entity);
         

@@ -26,8 +26,8 @@
 package net.TheElm.project.objects;
 
 import net.TheElm.project.utilities.LegacyConverter;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtIntArray;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.ChunkPos;
@@ -86,7 +86,7 @@ public final class ClaimTag extends NbtCompound {
     }
     
     public static @Nullable ClaimTag fromCompound(@NotNull NbtCompound compoundTag) {
-        if (!(compoundTag.contains("dimension", NbtType.STRING) && compoundTag.contains("x", NbtType.INT) && compoundTag.contains("z", NbtType.INT)))
+        if (!(compoundTag.contains("dimension", NbtElement.STRING_TYPE) && compoundTag.contains("x", NbtElement.INT_TYPE) && compoundTag.contains("z", NbtElement.INT_TYPE)))
             return null;
         else {
             ClaimTag tag = new ClaimTag();

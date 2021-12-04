@@ -41,9 +41,9 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.TheElm.project.utilities.text.StyleApplicator;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.ClickEvent;
@@ -245,7 +245,7 @@ public final class PlayerNameUtils {
     private static @Nullable MutableText getOfflinePlayerNickname(@NotNull UUID uuid) {
         try {
             NbtCompound tag = NbtUtils.readOfflinePlayerData(uuid);
-            if ((tag != null) && tag.contains("PlayerNickname", NbtType.STRING))
+            if ((tag != null) && tag.contains("PlayerNickname", NbtElement.STRING_TYPE))
                 return Text.Serializer.fromJson(tag.getString("PlayerNickname"));
         } catch (NbtNotFoundException ignored) {}
         return null;

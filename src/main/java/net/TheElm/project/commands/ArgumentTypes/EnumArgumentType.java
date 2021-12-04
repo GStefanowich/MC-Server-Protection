@@ -73,7 +73,7 @@ public class EnumArgumentType<E extends Enum<E>> implements SuggestionProvider<S
     public @NotNull CompletableFuture<Suggestions> getSuggestions(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) {
         final String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
         this.enumValues.stream()
-            .filter((eVal) -> ((!(eVal instanceof BoolEnums)) || ((BoolEnums)eVal).isEnabled()))
+            .filter((eVal) -> ((!(eVal instanceof BoolEnums boolEnum)) || boolEnum.isEnabled()))
             .filter((eName) -> CommandSource.shouldSuggest(remaining, eName.name().toLowerCase(Locale.ROOT)))
             .forEach((eVal) -> {
                 Text text = this.tooltipFormatter != null ? this.tooltipFormatter.apply(eVal) : null;

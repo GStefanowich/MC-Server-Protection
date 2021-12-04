@@ -47,9 +47,9 @@ public abstract class EndCrystal extends Entity {
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
     public void damage(DamageSource damageSource, float damage, CallbackInfoReturnable<Boolean> callback) {
         // If attacker is a player
-        if ((this.world instanceof ServerWorld) && (damageSource.getAttacker() instanceof PlayerEntity)) {
+        if ((this.world instanceof ServerWorld serverWorld) && (damageSource.getAttacker() instanceof PlayerEntity)) {
             // If end the end, and ender dragon exists
-            if ((this.world.getDimension().hasEnderDragonFight()) && (((ServerWorld) this.world).getAliveEnderDragons().size() <= 0))
+            if ((this.world.getDimension().hasEnderDragonFight()) && (serverWorld.getAliveEnderDragons().size() <= 0))
                 callback.setReturnValue(false);
         }
     }

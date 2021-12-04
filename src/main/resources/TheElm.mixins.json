@@ -5,6 +5,8 @@
   "mixins": [
   ],
   "server": [
+    "VersionUpgrade",
+    
     "Interfaces.InteractionManagerAccessor",
     "Interfaces.WhitelistAccessor",
     "Interfaces.PowderBlockAccessor",
@@ -112,9 +114,9 @@
     "Server.PlayerManager",
     "Server.Save",
     "Server.SaveFolder",
+    "Server.ServerWorldPropertiesAccessor",
     "Server.WanderingSpawns",
-    "Server.Whitelist",
-    "Server.WorldProperties"
+    "Server.Whitelist"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -304,8 +304,8 @@ public final class DynamicLevelProperties implements ServerWorldProperties {
     }
     
     public NbtCompound writeToTag(DynamicRegistryManager registryManager) {
-        if (SewConfig.get(SewConfig.WORLD_SEPARATE_PROPERTIES) && this.dynamic instanceof LevelProperties)
-            return ((LevelProperties)this.dynamic).cloneWorldNbt(registryManager, null);
+        if (SewConfig.get(SewConfig.WORLD_SEPARATE_PROPERTIES) && this.dynamic instanceof LevelProperties levelProperties)
+            return levelProperties.cloneWorldNbt(registryManager, null);
         return new NbtCompound();
     }
     

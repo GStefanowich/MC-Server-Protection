@@ -36,7 +36,6 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.DevUtils;
-import net.TheElm.project.utilities.LegacyConverter;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
@@ -85,25 +84,25 @@ public abstract class CoreMod {
     // MySQL Host
     private static MySQLHost MySQL = null;
     public static MySQLHost getSQL() {
-        if ( MySQL == null ) {
+        if ( CoreMod.MySQL == null ) {
             synchronized ( CoreMod.class ) {
-                if ( MySQL == null )
-                    MySQL = ( SewConfig.get(SewConfig.DB_LITE) ?
+                if ( CoreMod.MySQL == null )
+                    CoreMod.MySQL = ( SewConfig.get(SewConfig.DB_LITE) ?
                         new MySQLite() : new MySQLConnection()
                     );
             }
         }
-        return MySQL;
+        return CoreMod.MySQL;
     }
     
     /*
      * Claimant storage
      */
     public static void addToCache(Claimant claimant) {
-        if (claimant instanceof ClaimantPlayer)
-            PLAYER_CLAIM_CACHE.put(claimant.getId(), new WeakReference<>((ClaimantPlayer) claimant));
-        else if (claimant instanceof ClaimantTown)
-            TOWN_CLAIM_CACHE.put(claimant.getId(), new WeakReference<>((ClaimantTown) claimant));
+        if (claimant instanceof ClaimantPlayer claimantPlayer)
+            PLAYER_CLAIM_CACHE.put(claimant.getId(), new WeakReference<>(claimantPlayer));
+        else if (claimant instanceof ClaimantTown claimantTown)
+            TOWN_CLAIM_CACHE.put(claimant.getId(), new WeakReference<>(claimantTown));
     }
     @Nullable
     public static Claimant removeFromCache(Claimant claimant) {
@@ -164,10 +163,10 @@ public abstract class CoreMod {
      */
     public static Either<MinecraftServer, MinecraftClient> getGameInstance() {
         Object instance = getFabric().getGameInstance();
-        if (instance instanceof MinecraftServer)
-            return Either.left((MinecraftServer) instance);
-        if (instance instanceof MinecraftClient)
-            return Either.right((MinecraftClient) instance);
+        if (instance instanceof MinecraftServer server)
+            return Either.left(server);
+        if (instance instanceof MinecraftClient client)
+            return Either.right(client);
         throw new RuntimeException("Could not access game instance.");
     }
     public static @NotNull FabricLoader getFabric() {

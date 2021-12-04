@@ -61,8 +61,7 @@ public abstract class AnimalInteract extends AnimalEntity {
         BlockPos mobPositioning = this.getBlockPos();
         
         // Check if the mob is owned by the player interacting
-        if (((AnimalEntity)this) instanceof TameableEntity) {
-            TameableEntity tameable = (TameableEntity)(AnimalEntity) this;
+        if (((AnimalEntity)this) instanceof TameableEntity tameable) {
             if (Objects.equals(tameable.getOwnerUuid(), player.getUuid()))
                 return;
         }

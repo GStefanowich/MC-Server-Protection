@@ -25,7 +25,6 @@
 
 package net.TheElm.project.utilities;
 
-import net.TheElm.project.CoreMod;
 import net.minecraft.entity.Entity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -47,9 +46,7 @@ import net.minecraft.world.gen.feature.StructureFeature;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
 import java.util.Random;
-import java.util.UUID;
 
 public class TradeUtils {
     
@@ -63,25 +60,15 @@ public class TradeUtils {
         return TradeUtils.createSellItem(countEmeralds, Items.EMERALD, countOffers, itemOffers, maxTrades);
     }
     public static @NotNull TradeOffers.Factory createSellSpawnEgg(int minimumEmeralds, @NotNull Item itemOffers, int maxTrades) {
-        if (!(itemOffers instanceof SpawnEggItem))
+        if (!(itemOffers instanceof SpawnEggItem spawnEggItem))
             throw new IllegalArgumentException("Provided trade item is not a Spawn Egg.");
-        return new EggTradeFactory((SpawnEggItem) itemOffers, minimumEmeralds,maxTrades);
+        return new EggTradeFactory(spawnEggItem, minimumEmeralds,maxTrades);
     }
     public static @NotNull <FC extends FeatureConfig> TradeOffers.Factory createSellLocator(int minimumEmeralds, @NotNull StructureFeature<FC> structure, int pearlUses) {
         return new StructureEnderLocatorTradeFactory<>(structure, minimumEmeralds, pearlUses);
     }
     public static @NotNull TradeOffers.Factory createSellLocator(int minimumEmeralds, @NotNull RegistryKey<Biome> biome, int pearlUses) {
         return new BiomeEnderLocatorTradeFactory(biome, minimumEmeralds, pearlUses);
-    }
-    
-    private static @Nullable UUID WANDERING_TRADER_UUID;
-    
-    public static void updateWanderingTraderUuid(@Nullable UUID uuid) {
-        CoreMod.logInfo("Wandering Trader set to: " + (uuid == null ? "NULL" : uuid.toString()));
-        TradeUtils.WANDERING_TRADER_UUID = uuid;
-    }
-    public static boolean isEntityWanderingTrader(@NotNull Entity entity) {
-        return Objects.equals(TradeUtils.WANDERING_TRADER_UUID, entity.getUuid());
     }
     
     private static class SellTradeFactory implements TradeOffers.Factory {
@@ -224,7 +211,7 @@ public class TradeUtils {
             String structureName = this.structure.getName();
             
             ItemStack pearl = super.createPearl(new LiteralText(this.description(structureName)));
-            NbtCompound throwDat = pearl.getSubNbt("throw");
+            NbtCompound throwDat = pearl.getOrCreateSubNbt("throw");
             
             throwDat.putString("structure", structureName);
             throwDat.putInt("uses", this.uses);

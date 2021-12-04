@@ -378,9 +378,9 @@ public final class MessageUtils {
             .append(ColorUtils.format(text, chatRoom.getFormatting()));
     }
     public static @NotNull MutableText formatPlayerMessage(@NotNull ServerCommandSource source, ChatRooms chatRoom, Text text) {
-        if (source.getEntity() instanceof ServerPlayerEntity)
-            return MessageUtils.formatPlayerMessage((ServerPlayerEntity) source.getEntity(), chatRoom, text);
-        return PlayerNameUtils.getServerChatDisplay( chatRoom )
+        if (source.getEntity() instanceof ServerPlayerEntity player)
+            return MessageUtils.formatPlayerMessage(player, chatRoom, text);
+        return PlayerNameUtils.getServerChatDisplay(chatRoom)
             .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
             .append(ColorUtils.format(text, chatRoom.getFormatting()));
     }

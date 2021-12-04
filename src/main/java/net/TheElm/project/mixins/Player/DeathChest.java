@@ -34,7 +34,6 @@ import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.utilities.DeathChestUtils;
 import net.TheElm.project.utilities.InventoryUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
 import net.minecraft.entity.Entity;
@@ -49,6 +48,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.RangedWeaponItem;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -208,7 +208,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
     @Inject(at = @At("TAIL"), method = "writeCustomDataToNbt")
     public void onSavingData(NbtCompound tag, CallbackInfo callback) {
         // Save the players money
-        tag.putInt( MoneyHolder.SAVE_KEY, this.getPlayerWallet() );
+        tag.putInt(MoneyHolder.SAVE_KEY, this.getPlayerWallet());
         
         // Store the players backpack
         if (this.backpack != null) {
@@ -223,16 +223,16 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
     @Inject(at = @At("TAIL"), method = "readCustomDataFromNbt")
     public void onReadingData(NbtCompound tag, CallbackInfo callback) {
         // Read the players money
-        if (tag.contains( MoneyHolder.SAVE_KEY, NbtType.NUMBER ))
+        if (tag.contains(MoneyHolder.SAVE_KEY, NbtElement.NUMBER_TYPE))
             this.dataTracker.set( MONEY, tag.getInt( MoneyHolder.SAVE_KEY ) );
-    
-        // Read the players backpack
-        if (tag.contains("BackpackSize", NbtType.NUMBER) && tag.contains("Backpack", NbtType.LIST)) {
-            this.backpack = new PlayerBackpack((PlayerEntity)(LivingEntity)this, tag.getInt("BackpackSize"));
-            this.backpack.readTags(tag.getList("Backpack", NbtType.COMPOUND));
         
-            if (tag.contains("BackpackPickup", NbtType.LIST))
-                this.backpack.readPickupTags(tag.getList("BackpackPickup", NbtType.STRING));
+        // Read the players backpack
+        if (tag.contains("BackpackSize", NbtElement.NUMBER_TYPE) && tag.contains("Backpack", NbtElement.LIST_TYPE)) {
+            this.backpack = new PlayerBackpack((PlayerEntity)(LivingEntity)this, tag.getInt("BackpackSize"));
+            this.backpack.readTags(tag.getList("Backpack", NbtElement.COMPOUND_TYPE));
+            
+            if (tag.contains("BackpackPickup", NbtElement.LIST_TYPE))
+                this.backpack.readPickupTags(tag.getList("BackpackPickup", NbtElement.STRING_TYPE));
         } else {
             int startingBackpack = SewConfig.get(SewConfig.BACKPACK_STARTING_ROWS);
             if ( startingBackpack > 0 )

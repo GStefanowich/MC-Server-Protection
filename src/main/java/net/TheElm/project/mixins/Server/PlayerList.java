@@ -25,13 +25,8 @@
 
 package net.TheElm.project.mixins.Server;
 
-import com.mojang.authlib.GameProfile;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
-import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 /**
  * Created on Sep 02 2021 at 3:42 PM.

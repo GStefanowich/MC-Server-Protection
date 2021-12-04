@@ -125,8 +125,8 @@ public final class EventLogger implements Runnable {
         return true;
     }
     private boolean saveToDatabase(LoggableEvent event) {
-        if (event instanceof BlockEvent) return saveToDatabase((BlockEvent) event);
-        if (event instanceof TransferEvent) return saveToDatabase((TransferEvent) event);
+        if (event instanceof BlockEvent blockEvent) return saveToDatabase(blockEvent);
+        if (event instanceof TransferEvent transferEvent) return saveToDatabase(transferEvent);
         CoreMod.logError(new Exception("Missing handler for " + event.getClass().getName()));
         return false;
     }
@@ -134,11 +134,10 @@ public final class EventLogger implements Runnable {
     // Static method for logging interactions
     public static boolean log(LoggableEvent action) {
         // If logging is disabled for a certain type, ignore
-        if (action instanceof BlockEvent) {
-            BlockEvent blockAction = (BlockEvent) action;
+        if (action instanceof BlockEvent blockEvent) {
             if (
-                (blockAction.getAction() == BlockAction.BREAK) && (!SewConfig.get(SewConfig.LOG_BLOCKS_BREAKING))
-                || (blockAction.getAction() == BlockAction.PLACE) && (!SewConfig.get(SewConfig.LOG_BLOCKS_PLACING))
+                (blockEvent.getAction() == BlockAction.BREAK) && (!SewConfig.get(SewConfig.LOG_BLOCKS_BREAKING))
+                || (blockEvent.getAction() == BlockAction.PLACE) && (!SewConfig.get(SewConfig.LOG_BLOCKS_PLACING))
             ) return false;
         }
         // Store the log action

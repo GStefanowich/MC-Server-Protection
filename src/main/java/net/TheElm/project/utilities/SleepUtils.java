@@ -25,79 +25,35 @@
 
 package net.TheElm.project.utilities;
 
-import net.TheElm.project.interfaces.LogicalWorld;
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
-import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
 public final class SleepUtils {
     
-    public static void entityBedToggle(@NotNull final LivingEntity entity, final boolean isInBed, final boolean isSleeping) {
-        if (!( entity instanceof ServerPlayerEntity))
+    public static void entityBedToggle(@NotNull final LivingEntity entity, final boolean isInBed) {
+        if (!( entity instanceof ServerPlayerEntity player))
             return;
         
-        SleepUtils.playerBedToggle((ServerPlayerEntity)entity, isInBed, isSleeping );
-    }
-    public static void playerBedToggle(@NotNull final PlayerEntity player, final boolean isInBed, final boolean isSleeping) {
         // Get the server object
         MinecraftServer server = player.getServer();
+        
+        // If the server isn't null
         if ( server != null ) {
-            World world = player.getEntityWorld();
-            int percentage;
+            ServerWorld world = player.getWorld();
             
-            if ( isInBed ) {
-                // Get the percentage (AFTER updating the list of UUIDs)
-                percentage = SleepUtils.getSleepingPercentage( world );
-                
-                if ( world.getPlayers().size() > 1 ) {
-                    TitleUtils.showPlayerAlert((ServerWorld) player.world,
-                        PlayerNameUtils.getPlayerRawName(player).formatted(Formatting.AQUA),
-                        new LiteralText(isSleeping ? " is now sleeping (" + percentage + "%)." : " is now in bed")
-                    );
-                }
-                
-            } else {
-                // Get the percentage (AFTER updating the list of UUIDs)
-                percentage = SleepUtils.getSleepingPercentage( world );
-                
-                if ( world.getPlayers().size() > 1 ) {
-                    TitleUtils.showPlayerAlert((ServerWorld) player.world,
-                        PlayerNameUtils.getPlayerRawName(player).formatted(Formatting.AQUA),
-                        new LiteralText(" left their bed.")
-                    );
-                }
+            // Only announce if there is more than 1 player around
+            if ( world.getPlayers().size() > 1 ) {
+                TitleUtils.showPlayerAlert(world,
+                    PlayerNameUtils.getPlayerRawName(player).formatted(Formatting.AQUA),
+                    new LiteralText(isInBed ? " is now in bed" : " left their bed.")
+                );
             }
         }
-    }
-    
-    /**
-     * @param world The world in which to get the sleeping count (Per world setup)
-     * @return An int between (0 - 100)
-     */
-    public static int getSleepingPercentage(@NotNull final World world) {
-        if (!(world instanceof LogicalWorld))
-            return 0;
-        LogicalWorld sleepingWorld = (LogicalWorld) world;
-        
-        int applicablePlayers = world.getPlayers().size();
-        
-        // Don't divide by zero
-        if ( applicablePlayers == 0 )
-            return 100;
-        
-        // Get actually sleeping players
-        long remSleepers = world.getPlayers().stream().filter((player) -> player.isSleeping() && player.isSleeping()).count();
-        
-        int percentage = (int)( ( (float)remSleepers / (float)applicablePlayers ) * 100.0f );
-        
-        // If percentage meets
-        return percentage;
     }
     
     public static @NotNull String timeFromMillis(long millis) {

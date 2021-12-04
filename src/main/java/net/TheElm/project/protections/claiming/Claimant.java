@@ -32,7 +32,6 @@ import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.objects.ClaimTag;
 import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -252,24 +251,24 @@ public abstract class Claimant {
             throw new RuntimeException("Invalid NBT data match");
         
         // Get the claim size
-        if (tag.contains("landChunks", NbtType.LIST)) {
+        if (tag.contains("landChunks", NbtElement.LIST_TYPE)) {
             ClaimTag claim;
             
             // Get from Int Array
-            for (NbtElement it : tag.getList("landChunks",NbtType.INT_ARRAY)) {
+            for (NbtElement it : tag.getList("landChunks",NbtElement.INT_ARRAY_TYPE)) {
                 claim = ClaimTag.fromArray((NbtIntArray) it);
                 if (claim != null) this.CLAIMED_CHUNKS.add(claim);
             }
             // Get from Compound
-            for (NbtElement it : tag.getList("landChunks", NbtType.COMPOUND)) {
+            for (NbtElement it : tag.getList("landChunks", NbtElement.COMPOUND_TYPE)) {
                 claim = ClaimTag.fromCompound((NbtCompound) it);
                 if (claim != null) this.CLAIMED_CHUNKS.add(claim);
             }
         }
         
         // Read friends
-        if (tag.contains(rankNbtTag(this), NbtType.LIST)) {
-            for (NbtElement it : tag.getList(rankNbtTag(this), NbtType.COMPOUND)) {
+        if (tag.contains(rankNbtTag(this), NbtElement.LIST_TYPE)) {
+            for (NbtElement it : tag.getList(rankNbtTag(this), NbtElement.COMPOUND_TYPE)) {
                 NbtCompound friend = (NbtCompound) it;
                 this.USER_RANKS.put(
                     NbtUtils.getUUID(friend, "i"),
@@ -279,8 +278,8 @@ public abstract class Claimant {
         }
         
         // Read permissions
-        if (tag.contains("permissions", NbtType.LIST)) {
-            for (NbtElement it : tag.getList("permissions", NbtType.COMPOUND)) {
+        if (tag.contains("permissions", NbtElement.LIST_TYPE)) {
+            for (NbtElement it : tag.getList("permissions", NbtElement.COMPOUND_TYPE)) {
                 NbtCompound permission = (NbtCompound) it;
                 this.RANK_PERMISSIONS.put(
                     ClaimPermissions.valueOf(permission.getString("k")),
@@ -290,8 +289,8 @@ public abstract class Claimant {
         }
         
         // Read settings
-        if (tag.contains("settings", NbtType.LIST)) {
-            for (NbtElement it : tag.getList("settings", NbtType.COMPOUND)) {
+        if (tag.contains("settings", NbtElement.LIST_TYPE)) {
+            for (NbtElement it : tag.getList("settings", NbtElement.COMPOUND_TYPE)) {
                 NbtCompound setting = (NbtCompound) it;
                 this.CHUNK_CLAIM_OPTIONS.put(
                     ClaimSettings.valueOf(setting.getString("k")),

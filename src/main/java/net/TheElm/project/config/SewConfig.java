@@ -421,10 +421,10 @@ public final class SewConfig extends SewConfigContainer {
     
     public static boolean isTrue( ConfigOption config ) {
         Object val = config.get();
-        if (val instanceof Boolean)
-            return (Boolean)val;
-        if (val instanceof Number)
-            return ((Number)val).longValue() >= 0;
+        if (val instanceof Boolean bool)
+            return bool;
+        if (val instanceof Number number)
+            return number.longValue() >= 0;
         return val != null;
     }
     public static boolean isFalse( ConfigOption config ) {
@@ -556,11 +556,8 @@ public final class SewConfig extends SewConfigContainer {
     
     private static JsonElement sortObject(JsonElement element) {
         // If not an object, no sort
-        if (!(element instanceof JsonObject))
+        if (!(element instanceof JsonObject object))
             return element;
-        
-        // Get our element as an object
-        JsonObject object = element.getAsJsonObject();
         
         // Create our new blank object
         JsonObject sorted = new JsonObject();

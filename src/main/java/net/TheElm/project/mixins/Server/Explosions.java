@@ -40,6 +40,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.World;
 import net.minecraft.world.explosion.Explosion;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 
 /**
@@ -56,9 +57,9 @@ public abstract class Explosions extends Entity {
     }
     
     @Override
-    public boolean canExplosionDestroyBlock(Explosion explosion, BlockView world, BlockPos blockPos, BlockState blockState, float damage) {
-        if ((!blockState.isAir()) && (world instanceof ServerWorld)) {
-            ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this, (ServerWorld)world, Hand.MAIN_HAND, blockPos, null, null);
+    public boolean canExplosionDestroyBlock(Explosion explosion, BlockView world, BlockPos blockPos, @NotNull BlockState blockState, float damage) {
+        if ((!blockState.isAir()) && (world instanceof ServerWorld serverWorld)) {
+            ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this, serverWorld, Hand.MAIN_HAND, blockPos, null, null);
             if (result != ActionResult.PASS)
                 return (result == ActionResult.SUCCESS);
         }

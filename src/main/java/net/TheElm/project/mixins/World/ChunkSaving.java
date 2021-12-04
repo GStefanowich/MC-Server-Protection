@@ -27,32 +27,41 @@ package net.TheElm.project.mixins.World;
 
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.ChunkSerializer;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.ProtoChunk;
+import net.minecraft.world.chunk.ReadOnlyChunk;
 import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.poi.PointOfInterestStorage;
+import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 
 @Mixin(ChunkSerializer.class)
 public class ChunkSaving {
-    
     private static final String sewingMachineSerializationPlayer = "sewingMachineOwnerUUID";
     private static final String sewingMachineSerializationTown = "sewingMachineTownUUID";
     private static final String sewingMachineSerializationSlices = "sewingMachineOwnerSlices";
     
-    @Inject(at = @At("TAIL"), method = "serialize")
-    private static void saveSewingOwner(ServerWorld world, Chunk chunk, CallbackInfoReturnable<NbtCompound> callback) {
-        NbtCompound mainTag = callback.getReturnValue();
-        NbtCompound levelTag = mainTag.getCompound( "Level" );
+    @Inject(at = @At("RETURN"), method = "serialize")
+    private static void saveSewingOwner(@NotNull ServerWorld world, @NotNull Chunk chunk, @NotNull CallbackInfoReturnable<NbtCompound> callback) {
+        NbtCompound levelTag = callback.getReturnValue();
+        
+        // Get the WorldChunk to read data from
+        WorldChunk worldChunk = null;
+        if (chunk instanceof WorldChunk)
+            worldChunk = (WorldChunk) chunk;
+        else if (chunk instanceof ReadOnlyChunk readOnlyChunk)
+            worldChunk = readOnlyChunk.getWrappedChunk();
         
         // Only add the chunks if they're an ownable chunk
         if ( chunk instanceof WorldChunk ) {
@@ -63,7 +72,7 @@ public class ChunkSaving {
             if ((player = ((IClaimedChunk) chunk).getOwner()) != null)
                 levelTag.putUuid(sewingMachineSerializationPlayer, player);
             
-            NbtList slices = ((IClaimedChunk) chunk).serializeSlices();
+            NbtList slices = ((IClaimedChunk) worldChunk).serializeSlices();
             
             // Save the inner claims
             levelTag.put(sewingMachineSerializationSlices, slices);
@@ -74,19 +83,24 @@ public class ChunkSaving {
         }
     }
     
-    @Inject(at = @At("RETURN"), method = "serializeTicks")
-    private static void loadSewingOwner(ServerWorld world, NbtCompound levelTag, WorldChunk chunk, CallbackInfo callback) {
-        // Update the chunks player-owner
-        if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationPlayer) )
-            ((IClaimedChunk) chunk).updatePlayerOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationPlayer), false);
-        
-        // Load the inner claims
-        if (levelTag.contains(sewingMachineSerializationSlices, NbtType.LIST))
-            ((IClaimedChunk) chunk).deserializeSlices(levelTag.getList(sewingMachineSerializationSlices, NbtType.COMPOUND));
-        
-        // Update the chunks town
-        if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationTown) )
-            ((IClaimedChunk) chunk).updateTownOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationTown), false);
+    @Inject(at = @At("RETURN"), method = "deserialize")
+    private static void loadSewingOwner(@NotNull ServerWorld world, @NotNull PointOfInterestStorage poiStorage, @NotNull ChunkPos chunkPos, @NotNull NbtCompound levelTag, @NotNull CallbackInfoReturnable<ProtoChunk> callback) {
+        ProtoChunk chunk = callback.getReturnValue();
+        if (chunk instanceof ReadOnlyChunk readOnlyChunk) {
+            WorldChunk worldChunk = readOnlyChunk.getWrappedChunk();
+            
+            // Update the chunks player-owner
+            if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationPlayer) )
+                ((IClaimedChunk) worldChunk).updatePlayerOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationPlayer), false);
+            
+            // Load the inner claims
+            if (levelTag.contains(sewingMachineSerializationSlices, NbtElement.LIST_TYPE))
+                ((IClaimedChunk) worldChunk).deserializeSlices(levelTag.getList(sewingMachineSerializationSlices, NbtElement.COMPOUND_TYPE));
+            
+            // Update the chunks town
+            if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationTown) )
+                ((IClaimedChunk) worldChunk).updateTownOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationTown), false);
+        }
     }
     
 }

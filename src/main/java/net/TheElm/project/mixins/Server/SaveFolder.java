@@ -10,6 +10,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 @Mixin(DimensionType.class)
 public class SaveFolder {
@@ -20,9 +22,9 @@ public class SaveFolder {
      * @param root Root file directory
      */
     @Inject(at = @At("HEAD"), method = "getSaveDirectory", cancellable = true)
-    private static void getSaveDirectory(RegistryKey<World> worldRef, File root, CallbackInfoReturnable<File> callback) {
+    private static void getSaveDirectory(RegistryKey<Path> worldRef, Path root, CallbackInfoReturnable<Path> callback) {
         if (SewConfig.get(SewConfig.WORLD_DIMENSION_FOLDERS))
-            callback.setReturnValue(new File(root, "dimensions/" + worldRef.getValue().getNamespace() + "/" + worldRef.getValue().getPath()));
+            callback.setReturnValue(Paths.get(root.toString(), "dimensions/" + worldRef.getValue().getNamespace() + "/" + worldRef.getValue().getPath()));
     }
     
 }

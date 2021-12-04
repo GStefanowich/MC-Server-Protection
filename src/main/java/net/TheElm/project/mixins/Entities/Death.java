@@ -27,11 +27,9 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.utilities.CallbackUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.WarpUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.advancement.criterion.Criteria;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.enchantment.Enchantments;
@@ -46,6 +44,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -92,15 +91,14 @@ public abstract class Death extends Entity {
             return;
         
         // If attacker is not a player
-        if (!(damageSource.getAttacker() instanceof ServerPlayerEntity))
+        if (!(damageSource.getAttacker() instanceof ServerPlayerEntity player))
             return;
         
         NbtCompound spawnerTag;
         
         // Get the attacker
-        ServerPlayerEntity player = (ServerPlayerEntity) damageSource.getAttacker();
         ItemStack itemStack = player.getStackInHand(Hand.OFF_HAND);
-        if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getNbt()) == null) || ((spawnerTag = spawnerTag.copy()) == null) || (!spawnerTag.contains("EntityIds", NbtType.LIST)))
+        if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getNbt()) == null) || ((spawnerTag = spawnerTag.copy()) == null) || (!spawnerTag.contains("EntityIds", NbtElement.LIST_TYPE)))
             return;
         
         // Check if mob type is allowed to be spawned
@@ -112,7 +110,7 @@ public abstract class Death extends Entity {
         NbtString mobId = NbtString.of(EntityType.getId(type).toString());
         
         // Get current entity IDs
-        NbtList entityIds = spawnerTag.getList("EntityIds", NbtType.STRING);
+        NbtList entityIds = spawnerTag.getList("EntityIds", NbtElement.STRING_TYPE);
         int rolls = 1 + EnchantmentHelper.getLevel(Enchantments.LOOTING, player.getMainHandStack());
         for (int roll = 0; roll < rolls; ++roll) {
             Integer random = null;
@@ -173,8 +171,7 @@ public abstract class Death extends Entity {
             }
             
             // Check the inventory
-            if (totem == null && (entity instanceof ServerPlayerEntity) && SewConfig.get(SewConfig.TOTEM_ANYWHERE)) {
-                ServerPlayerEntity player = (ServerPlayerEntity)entity;
+            if (totem == null && (entity instanceof ServerPlayerEntity player) && SewConfig.get(SewConfig.TOTEM_ANYWHERE)) {
                 for (int slot = 0; slot < player.getInventory().size(); slot++) {
                     ItemStack pack = player.getInventory().getStack(slot);
                     if (pack.getItem() == Items.TOTEM_OF_UNDYING) {
@@ -188,10 +185,9 @@ public abstract class Death extends Entity {
             // If a totem was found
             if (totem != null) {
                 // If totem user is a player, increase stats
-                if (entity instanceof ServerPlayerEntity) {
-                    ServerPlayerEntity player = (ServerPlayerEntity)entity;
-                    player.incrementStat(Stats.USED.getOrCreateStat(Items.TOTEM_OF_UNDYING));
-                    Criteria.USED_TOTEM.trigger(player, totem);
+                if (entity instanceof ServerPlayerEntity serverPlayer) {
+                    serverPlayer.incrementStat(Stats.USED.getOrCreateStat(Items.TOTEM_OF_UNDYING));
+                    Criteria.USED_TOTEM.trigger(serverPlayer, totem);
                 }
                 
                 // Set the health back
@@ -214,7 +210,7 @@ public abstract class Death extends Entity {
     /*
      * Check for falling into the Void in The End
      */
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/entity/LivingEntity.damage(Lnet/minecraft/entity/damage/DamageSource;F)Z"), method = "kill")
+    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/entity/LivingEntity.damage(Lnet/minecraft/entity/damage/DamageSource;F)Z"), method = "tickInVoid")
     protected boolean onDamage(@NotNull LivingEntity self, @NotNull DamageSource source, float damage) {
         if (source.equals(DamageSource.OUT_OF_WORLD) && !self.world.isInBuildLimit(this.getBlockPos())) {
             // If the player isn't actually falling (Break the teleport loop and give time to update ticks)

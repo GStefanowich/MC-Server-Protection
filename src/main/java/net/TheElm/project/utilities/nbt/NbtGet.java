@@ -25,8 +25,8 @@
 
 package net.TheElm.project.utilities.nbt;
 
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
@@ -37,16 +37,16 @@ import java.util.UUID;
  */
 public final class NbtGet<T> {
     
-    public static final NbtGet<UUID> UUID = new NbtGet<>(NbtType.INT_ARRAY, NbtUtils::getUUID);
-    public static final NbtGet<Byte> BYTE = new NbtGet<>(NbtType.BYTE, NbtCompound::getByte);
-    public static final NbtGet<Short> SHORT = new NbtGet<>(NbtType.SHORT, NbtCompound::getShort);
-    public static final NbtGet<Integer> INT = new NbtGet<>(NbtType.INT, NbtCompound::getInt);
-    public static final NbtGet<Long> LONG = new NbtGet<>(NbtType.LONG, NbtCompound::getLong);
-    public static final NbtGet<Float> FLOAT = new NbtGet<>(NbtType.FLOAT, NbtCompound::getFloat);
-    public static final NbtGet<Double> DOUBLE = new NbtGet<>(NbtType.DOUBLE, NbtCompound::getDouble);
-    public static final NbtGet<String> STRING = new NbtGet<>(NbtType.STRING, NbtCompound::getString);
-    public static final NbtGet<NbtCompound> COMPOUND = new NbtGet<>(NbtType.COMPOUND, NbtCompound::getCompound);
-    //public static final NbtGet<NbtList> LIST = new NbtGet<>(NbtType.LIST, NbtCompound::getList);
+    public static final NbtGet<UUID> UUID = new NbtGet<>(NbtElement.INT_ARRAY_TYPE, NbtUtils::getUUID);
+    public static final NbtGet<Byte> BYTE = new NbtGet<>(NbtElement.BYTE_TYPE, NbtCompound::getByte);
+    public static final NbtGet<Short> SHORT = new NbtGet<>(NbtElement.SHORT_TYPE, NbtCompound::getShort);
+    public static final NbtGet<Integer> INT = new NbtGet<>(NbtElement.INT_TYPE, NbtCompound::getInt);
+    public static final NbtGet<Long> LONG = new NbtGet<>(NbtElement.LONG_TYPE, NbtCompound::getLong);
+    public static final NbtGet<Float> FLOAT = new NbtGet<>(NbtElement.FLOAT_TYPE, NbtCompound::getFloat);
+    public static final NbtGet<Double> DOUBLE = new NbtGet<>(NbtElement.DOUBLE_TYPE, NbtCompound::getDouble);
+    public static final NbtGet<String> STRING = new NbtGet<>(NbtElement.STRING_TYPE, NbtCompound::getString);
+    public static final NbtGet<NbtCompound> COMPOUND = new NbtGet<>(NbtElement.COMPOUND_TYPE, NbtCompound::getCompound);
+    //public static final NbtGet<NbtList> LIST = new NbtGet<>(NbtElement.LIST_TYPE, NbtCompound::getList);
     
     private final int nbtType;
     private final CompoundTagGetter<T> applicator;

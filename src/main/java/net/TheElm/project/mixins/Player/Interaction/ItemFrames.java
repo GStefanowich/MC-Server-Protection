@@ -64,8 +64,8 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
     
     @Override
     public boolean handleAttack(Entity entity) {
-        if (entity instanceof PlayerEntity) {
-            ActionResult result = DamageEntityCallback.EVENT.invoker().interact(this, this.getEntityWorld(), DamageSource.player((PlayerEntity) entity));
+        if (entity instanceof PlayerEntity player) {
+            ActionResult result = DamageEntityCallback.EVENT.invoker().interact(this, this.getEntityWorld(), DamageSource.player(player));
             if (result != ActionResult.PASS)
                 return result == ActionResult.FAIL;
         }
@@ -114,9 +114,8 @@ public abstract class ItemFrames extends AbstractDecorationEntity {
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
     public void onDamage(@NotNull DamageSource damageSource, float damage, final @NotNull CallbackInfoReturnable<Boolean> callback) {
         Entity attacker = damageSource.getAttacker();
-        if (!(attacker instanceof PlayerEntity))
+        if (!(attacker instanceof PlayerEntity player))
             return;
-        PlayerEntity player = (PlayerEntity) attacker;
         
         // If player should be able to interact with the item frame
         if (!ChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos()))

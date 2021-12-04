@@ -27,14 +27,12 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.VillagerTownie;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.ColorUtils;
 import net.TheElm.project.utilities.EntityUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.InteractionObserver;
@@ -44,6 +42,7 @@ import net.minecraft.entity.passive.PassiveEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.stat.Stats;
@@ -182,7 +181,7 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
     }
     @Inject(at = @At("TAIL"), method = "readCustomDataFromNbt")
     public void onReadingData(NbtCompound tag, CallbackInfo callback) {
-        if (tag.contains("smTown", NbtType.STRING)) {
+        if (tag.contains("smTown", NbtElement.STRING_TYPE)) {
             // Load the UUID from the tag
             this.town = UUID.fromString(tag.getString("smTown"));
             

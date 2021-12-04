@@ -102,10 +102,10 @@ public class DebugCommands {
     }
     private static <E extends Entity, P extends ParticleEffect> int execute(@NotNull Collection<E> entities, P particle, int count) {
         for(E entity : entities) {
-            if (entity instanceof LivingEntity)
-                EffectUtils.particleSwirl(particle, (LivingEntity) entity, true, count);
-            else 
-                EffectUtils.particleSwirl(particle, (ServerWorld) entity.getEntityWorld(), entity.getPos(), true,count);
+            if (entity instanceof LivingEntity livingEntity)
+                EffectUtils.particleSwirl(particle, livingEntity, true, count);
+            else if (entity.getWorld() instanceof ServerWorld world)
+                EffectUtils.particleSwirl(particle, world, entity.getPos(), true,count);
         }
         return Command.SINGLE_SUCCESS;
     }

@@ -27,11 +27,13 @@ package net.TheElm.project.mixins.Server;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.objects.WanderingTraderProfileCollection;
 import net.TheElm.project.utilities.BlockUtils;
 import net.TheElm.project.utilities.EntityUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.passive.WanderingTraderEntity;
+import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.world.ServerWorld;
@@ -137,8 +139,13 @@ public abstract class WanderingSpawns implements Spawner {
                 if (SewConfig.get(SewConfig.WANDERING_TRADER_CAMPFIRES))
                     BlockUtils.igniteNearbyLightSources(world, trader.getBlockPos());
                 
+                // Announce the wandering trader
                 if (SewConfig.get(SewConfig.ANNOUNCE_WANDERING_TRADER))
                     EntityUtils.wanderingTraderArrival(trader);
+                
+                // Add the wandering trader to the players list
+                server.getPlayerManager()
+                    .sendToAll(new WanderingTraderProfileCollection().getPacket(PlayerListS2CPacket.Action.ADD_PLAYER));
                 
                 return true;
             }

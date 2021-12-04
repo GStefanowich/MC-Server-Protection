@@ -35,9 +35,9 @@ import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.TheElm.project.utilities.TownNameUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.network.MessageType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -188,13 +188,13 @@ public final class ClaimantTown extends Claimant {
         this.ownerId = (NbtUtils.hasUUID(tag, "owner") ? NbtUtils.getUUID(tag, "owner") : null);
         
         // Get the town name
-        if (tag.contains("name", NbtType.STRING))
+        if (tag.contains("name", NbtElement.STRING_TYPE))
             this.name = Text.Serializer.fromJson(tag.getString("name"));
         
         // Get the towns villagers
         this.villagers = new HashSet<>();
-        if (tag.contains("villagers", NbtType.LIST))
-            this.villagers.addAll(NbtUtils.fromList(tag.getList("villagers", NbtType.STRING), UUID::fromString));
+        if (tag.contains("villagers", NbtElement.LIST_TYPE))
+            this.villagers.addAll(NbtUtils.fromList(tag.getList("villagers", NbtElement.STRING_TYPE), UUID::fromString));
         
         // Read from tag
         super.readCustomDataFromTag( tag );

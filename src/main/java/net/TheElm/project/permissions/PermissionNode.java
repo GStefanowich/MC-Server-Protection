@@ -32,8 +32,8 @@ public class PermissionNode {
     
     @Override
     public boolean equals(Object obj) {
-        if (obj instanceof PermissionNode)
-            return Objects.equals(this.node, obj.toString());
+        if (obj instanceof PermissionNode other)
+            return Objects.equals(this.node, other.getNode());
         return false;
     }
     

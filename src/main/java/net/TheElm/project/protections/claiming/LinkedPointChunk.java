@@ -214,9 +214,8 @@ public class LinkedPointChunk {
     
     @Override
     public boolean equals(Object unknown) {
-        if (!(unknown instanceof LinkedPointChunk))
+        if (!(unknown instanceof LinkedPointChunk other))
             return false;
-        LinkedPointChunk other = (LinkedPointChunk) unknown;
         return this.x == other.x
             && this.z == other.z;
     }

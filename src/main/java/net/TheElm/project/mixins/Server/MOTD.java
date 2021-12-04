@@ -126,7 +126,7 @@ public abstract class MOTD {
     @Inject(at = @At("RETURN"), method = "getPlayers", cancellable = true)
     public void onGetPlayers(@NotNull CallbackInfoReturnable<ServerMetadata.Players> callback) {
         ServerMetadata.Players players = callback.getReturnValue();
-        GameProfile[] profiles = players.getSample();
+        GameProfile[] profiles = players == null ? null : players.getSample();
         if (profiles == null)
             return;
         

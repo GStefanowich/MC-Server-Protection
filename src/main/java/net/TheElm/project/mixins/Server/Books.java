@@ -25,9 +25,9 @@
 
 package net.TheElm.project.mixins.Server;
 
-import net.fabricmc.fabric.api.util.NbtType;
 import net.minecraft.item.WritableBookItem;
 import net.minecraft.nbt.NbtCompound;
+import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -48,11 +48,11 @@ public class Books {
     public static boolean isValid(@Nullable NbtCompound compound) {
         if (compound == null)
             return false;
-        if (!compound.contains("pages", NbtType.LIST))
+        if (!compound.contains("pages", NbtElement.LIST_TYPE))
             return false;
         
         int bytes = 0;
-        NbtList pages = compound.getList("pages", NbtType.STRING);
+        NbtList pages = compound.getList("pages", NbtElement.STRING_TYPE);
         
         // Iterate pages
         for(int i = 0; i < pages.size(); ++i) {

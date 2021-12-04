@@ -30,8 +30,8 @@ public class BeeNest {
         if (callback.getReturnValue() == ActionResult.PASS && hand == Hand.MAIN_HAND && player.getStackInHand(hand).isEmpty()) {
             // If the block entity is a hive
             BlockEntity hiveEntity = world.getBlockEntity(pos);
-            if (hiveEntity instanceof BeehiveBlockEntity) {
-                int bees = ((BeehiveBlockEntity)hiveEntity).getBeeCount();
+            if (hiveEntity instanceof BeehiveBlockEntity beehiveBlock) {
+                int bees = beehiveBlock.getBeeCount();
                 
                 // Get the translation key for the count of bees
                 MutableText hiveInfo = TranslatableServerSide.text(player, "bee_hive." + bees);

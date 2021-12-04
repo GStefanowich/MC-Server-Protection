@@ -57,7 +57,7 @@ public class AvoidRainGoal extends Goal {
         if (!world.isRaining())
             return false;
         // If tamed mob is sitting (Stay put)
-        if ((this.mob instanceof TameableEntity) && ((TameableEntity) this.mob).isSitting())
+        if ((this.mob instanceof TameableEntity tameableEntity) && tameableEntity.isSitting())
             return false;
         Box box = this.mob.getBoundingBox();
         // If mob isn't visible to the sky

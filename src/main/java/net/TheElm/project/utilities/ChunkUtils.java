@@ -35,17 +35,13 @@ import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.utilities.text.MessageUtils;
-import net.minecraft.block.AirBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerLightingProvider;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.HeightLimitView;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.Chunk;
@@ -54,7 +50,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
@@ -238,11 +233,7 @@ public final class ChunkUtils {
     
     public static boolean isSetting(@NotNull ClaimSettings setting, @NotNull WorldView world, @NotNull BlockPos blockPos) {
         Chunk chunk = world.getChunk(blockPos);
-        if (chunk instanceof IClaimedChunk) {
-            return ((IClaimedChunk) chunk)
-                .isSetting(blockPos, setting);
-        }
-        return setting.getDefault(null);
+        return chunk instanceof IClaimedChunk claimedChunk ? claimedChunk.isSetting(blockPos, setting) : setting.getDefault(null);
     }
     
     /*
@@ -254,7 +245,7 @@ public final class ChunkUtils {
         BlockPos max = region.getUpper();
         
         // Log the blocks being claimed
-        CoreMod.logDebug("Claiming " + MessageUtils.xyzToString(min) + " to " + MessageUtils.xyzToString(max) + " in '" + world.getRegistryKey().toString() + "'.");
+        CoreMod.logDebug("Claiming " + MessageUtils.xyzToString(min) + " to " + MessageUtils.xyzToString(max) + " in '" + DimensionUtils.dimensionIdentifier(world) + "'.");
         
         // Iterate through the blocks
         for (int x = min.getX(); x <= max.getX(); x++) {
@@ -381,16 +372,16 @@ public final class ChunkUtils {
     public static final class ClaimSlice {
         
         private final NavigableMap<Integer, InnerClaim> innerChunks = Collections.synchronizedNavigableMap(new TreeMap<>());
+        private final HeightLimitView view;
         private final int chunkPos;
         
-        public ClaimSlice(World world, int chunkPos) {
-            this.innerChunks.put(DimensionUtils.getWorldDepth(world) - 1, InnerClaim.WILDERNESS);
+        public ClaimSlice(@NotNull HeightLimitView view, int chunkPos) {
+            this.view = view;
             this.chunkPos = chunkPos;
         }
         
         public boolean has(int y) {
-            return !this.get(y)
-                .isBottom();
+            return this.get(y) != null;
         }
         public boolean hasUpperNeighbor(@NotNull InnerClaim claim) {
             return this.has(claim.upper() + 1);
@@ -414,18 +405,19 @@ public final class ChunkUtils {
             return this.innerChunks.remove(y);
         }
         
-        public @NotNull InnerClaim get(int y) {
-            Map.Entry<Integer, InnerClaim> claim = this.innerChunks.floorEntry(y);
-            if (claim == null)
-                return InnerClaim.WILDERNESS;
-            return claim.getValue();
+        public @Nullable InnerClaim get(int y) {
+            Map.Entry<Integer, InnerClaim> pair = this.innerChunks.floorEntry(y);
+            if (pair == null)
+                return null;
+            InnerClaim claim = pair.getValue();
+            return claim.isWithin(y) ? claim : null;
         }
-        public @NotNull InnerClaim get(BlockPos blockPos) {
+        public @Nullable InnerClaim get(@NotNull BlockPos blockPos) {
             return this.get(blockPos.getY());
         }
         
         public void insert(@Nullable UUID owner, int upper, int lower) {
-            this.displace(new InnerClaim(owner, upper, lower));
+            this.displace(new InnerClaim(this.view, owner, upper, lower));
         }
         public void displace(@NotNull InnerClaim newClaim) {
             List<InnerClaim> updates = new ArrayList<>();
@@ -440,9 +432,9 @@ public final class ChunkUtils {
                 }
                 
                 if (claim.upper() > newClaim.upper())
-                    updates.add(new InnerClaim(claim.getOwner(), claim.upper(), newClaim.upper()));
+                    updates.add(new InnerClaim(this.view, claim.getOwner(), claim.upper(), newClaim.upper()));
                 if (claim.lower() < newClaim.lower())
-                    updates.add(new InnerClaim(claim.getOwner(), newClaim.lower(), claim.lower()));
+                    updates.add(new InnerClaim(this.view, claim.getOwner(), newClaim.lower(), claim.lower()));
             }
             
             // Add updated regions into the heightmap
@@ -470,23 +462,16 @@ public final class ChunkUtils {
         }
     }
     public static final class InnerClaim implements Claim {
-        protected static final InnerClaim WILDERNESS = new InnerClaim(null);
         private final @Nullable ClaimantPlayer owner;
         private final int yUpper;
         private final int yLower;
         
-        public InnerClaim(@Nullable UUID owner) {
-            this(owner, -1, -1);
-        }
-        public InnerClaim(@Nullable UUID owner, int upper, int lower) {
+        public InnerClaim(@NotNull HeightLimitView view, @Nullable UUID owner, int upper, int lower) {
             this.owner = (owner == null ? null : ClaimantPlayer.get( owner ));
-            this.yUpper = ( upper > 256 ? 256 : Collections.max(Arrays.asList( upper, lower )));
-            this.yLower = Math.max( lower, -1 );
+            this.yUpper = Integer.min(view.getTopY(), Integer.max(upper, lower));
+            this.yLower = Math.max(lower, view.getBottomY() - 1);
         }
         
-        public boolean isBottom() {
-            return this.upper() == -1 && this.lower() == -1;
-        }
         public boolean hasOwner() {
             return this.getOwner() != null;
         }
@@ -504,6 +489,9 @@ public final class ChunkUtils {
         public boolean isWithin(int y) {
             return y >= this.lower() && y <= this.upper();
         }
+        public boolean isWithin(@NotNull BlockPos pos) {
+            return this.isWithin(pos.getY());
+        }
         
         @Override
         public boolean canPlayerDo(@Nullable UUID player, @Nullable ClaimPermissions perm) {
@@ -516,7 +504,7 @@ public final class ChunkUtils {
             ClaimRanks permReq = this.owner.getPermissionRankRequirement(perm);
             
             // Return the test if the user can perform the action (If friend of chunk owner OR if friend of town and chunk owned by town owner)
-            return permReq.canPerform( userRank );
+            return permReq.canPerform(userRank);
         }
         
         @Override

@@ -53,9 +53,9 @@ public abstract class WeightedReward {
     public final boolean equals(Object object) {
         if (object == this)
             return true;
-        return (object instanceof WeightedReward)
-            && (((WeightedReward) object).getWeight() == this.getWeight())
-            && (((WeightedReward) object).isRewardEquals(this));
+        return object instanceof WeightedReward reward
+            && reward.getWeight() == this.getWeight()
+            && reward.isRewardEquals(this);
     }
     @Override
     public int hashCode() {

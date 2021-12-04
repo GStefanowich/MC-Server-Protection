@@ -61,72 +61,72 @@ public final class TranslatableServerSide {
     }
     
     public static @NotNull MutableText text(@NotNull ServerCommandSource source, String key, Object... objects) {
-        if (source.getEntity() instanceof ServerPlayerEntity)
-            return TranslatableServerSide.text( (ServerPlayerEntity)source.getEntity(), key, objects );
+        if (source.getEntity() instanceof ServerPlayerEntity serverPlayer)
+            return TranslatableServerSide.text(serverPlayer, key, objects );
         return TranslatableServerSide.text( Locale.getDefault(), key, objects );
     }
     public static @NotNull MutableText text(@NotNull PlayerEntity player, String key, Object... objects) {
-        if (!(player instanceof ServerPlayerEntity))
+        if (!(player instanceof ServerPlayerEntity serverPlayer))
             return null;
-        return TranslatableServerSide.text((ServerPlayerEntity) player, key, objects);
+        return TranslatableServerSide.text(serverPlayer, key, objects);
     }
     public static @NotNull MutableText text(@NotNull ServerPlayerEntity player, String key, Object... objects) {
         return TranslatableServerSide.text(((PlayerServerLanguage)player).getClientLanguage(), key, objects);
     }
-    public static @NotNull MutableText text(@NotNull Locale language, String key, @NotNull Object... objects) {
-        String text = TranslatableServerSide.getTranslation(language, key);
+    public static @NotNull MutableText text(@NotNull Locale language, @NotNull String key, @NotNull Object... objects) {
+        String translation = TranslatableServerSide.getTranslation(language, key);
         
         for (int i = 0; i < objects.length; ++i) {
             Object obj = objects[i];
-            if (obj instanceof Text) {
-                objects[i] = ((Text) obj).shallowCopy();
+            if (obj instanceof Text text) {
+                objects[i] = text.shallowCopy();
             } else if (obj == null) {
                 objects[i] = "null";
             }
         }
         
-        return TranslatableServerSide.replace( language, text, objects);
+        return TranslatableServerSide.replace(language, translation, objects);
     }
-    private static @NotNull MutableText replace(@NotNull Locale language, String text, @NotNull Object... objects) {
+    private static @NotNull MutableText replace(@NotNull Locale language, @NotNull String text, @NotNull Object... objects) {
         if ( objects.length <= 0 )
-            return new LiteralText( text );
+            return new LiteralText(text);
         String[] separated = text.split( "((?<=%[a-z])|(?=%[a-z]))" );
         
         // Get the formatter for numbers
         NumberFormat formatter = NumberFormat.getInstance( language );
-        int O = 0;
-    
+        int c = 0;
+        
         MutableText out = null;
         for ( String seg : separated ) {
             // If is a variable
             if ( matchAny( seg, "%s", "%d", "%f" ) ) {
                 // Get the objects that were provided
-                Object obj = objects[ O++ ];
-                if (obj instanceof ServerTranslatable)
-                    obj = ((ServerTranslatable)obj).translate( language ).formatted(Formatting.AQUA);
+                Object obj = objects[c++];
+                if (obj instanceof ServerTranslatable translatable)
+                    obj = translatable.translate(language).formatted(Formatting.AQUA);
                 
-                if ( ("%s".equalsIgnoreCase( seg )) && ( obj instanceof MutableText ) ) {
+                if ( ("%s".equalsIgnoreCase(seg)) && ( obj instanceof MutableText mutableText) ) {
                     // Create if null
                     if (out == null) out = new LiteralText("");
                     // Color translations
-                    if (obj instanceof TranslatableText) ((MutableText) obj).formatted(Formatting.DARK_AQUA);
+                    if (obj instanceof TranslatableText translatableText) translatableText.formatted(Formatting.DARK_AQUA);
                     // Append
-                    out.append( (Text)obj );
-                } else if ( ("%d".equalsIgnoreCase( seg )) && ( obj instanceof Number ) ) {
+                    out.append(mutableText);
+                } else if ( ("%d".equalsIgnoreCase( seg )) && (obj instanceof Number number) ) {
                     // Create if null
                     if (out == null) out = new LiteralText("");
                     // Append
-                    out.append(new LiteralText( formatter.format( ((Number) obj).longValue() ) ).formatted(Formatting.AQUA));
+                    out.append(new LiteralText(formatter.format(number.longValue())).formatted(Formatting.AQUA));
                 } else {
                     // Create if null
-                    if (out == null) out = new LiteralText( obj.toString() );
+                    if (out == null) out = new LiteralText(obj.toString());
                     // Append if not null
-                    else out.append( obj.toString() );
+                    else out.append(obj.toString());
                 }
             } else {
                 // If not a variable
-                if (out == null) out = new LiteralText( seg );
-                else out.append( seg );
+                if (out == null) out = new LiteralText(seg);
+                else out.append(seg);
             }
         }
         

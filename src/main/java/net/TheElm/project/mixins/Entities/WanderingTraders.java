@@ -29,6 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.objects.WanderingTraderProfileCollection;
 import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.IntUtils;
 import net.TheElm.project.utilities.TradeUtils;
@@ -37,6 +38,8 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.MerchantEntity;
 import net.minecraft.entity.passive.WanderingTraderEntity;
 import net.minecraft.item.Items;
+import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.village.TradeOffer;
 import net.minecraft.village.TradeOfferList;
@@ -44,6 +47,7 @@ import net.minecraft.village.TradeOffers;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.BiomeKeys;
 import net.minecraft.world.gen.feature.StructureFeature;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -58,7 +62,8 @@ public abstract class WanderingTraders extends MerchantEntity {
         super(entityType_1, world_1);
     }
     
-    private static Int2ObjectMap<TradeOffers.Factory[]> copyToFastUtilMap(ImmutableMap<Integer, TradeOffers.Factory[]> immutableMap_1) {
+    @Contract("_ -> new")
+    private static @NotNull Int2ObjectMap<TradeOffers.Factory[]> copyToFastUtilMap(ImmutableMap<Integer, TradeOffers.Factory[]> immutableMap_1) {
         return new Int2ObjectOpenHashMap<>(immutableMap_1);
     }
     
@@ -94,14 +99,24 @@ public abstract class WanderingTraders extends MerchantEntity {
      */
     @Inject(at = @At("HEAD"), method = "getWanderTarget", cancellable = true)
     protected void onGetHomePosition(@NotNull CallbackInfoReturnable<BlockPos> callback) {
-        if (SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN) && SewConfig.equals(SewConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD, this.world.getRegistryKey()) && TradeUtils.isEntityWanderingTrader(this))
+        if (SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN) && SewConfig.equals(SewConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD, this.world.getRegistryKey()) && EntityUtils.isEntityWanderingTrader(this))
             callback.setReturnValue(SewConfig.get(SewConfig.WANDERING_TRADER_FORCE_SPAWN_POS));
     }
     
     @Override
     public void remove(RemovalReason removalReason) {
-        if (!this.world.isClient && TradeUtils.isEntityWanderingTrader(this))
-            EntityUtils.wanderingTraderDeparture((WanderingTraderEntity)(Entity) this);
+        if (!this.world.isClient && EntityUtils.isEntityWanderingTrader(this)) {
+            // Announce the removal of the wandering trader
+            if (SewConfig.get(SewConfig.ANNOUNCE_WANDERING_TRADER))
+                EntityUtils.wanderingTraderDeparture((WanderingTraderEntity) (Entity) this);
+            
+            // Remove wandering trader from player list
+            MinecraftServer server = this.getServer();
+            if (server != null) {
+                server.getPlayerManager()
+                    .sendToAll(new WanderingTraderProfileCollection().getPacket(PlayerListS2CPacket.Action.REMOVE_PLAYER));
+            }
+        }
         super.remove(removalReason);
     }
     

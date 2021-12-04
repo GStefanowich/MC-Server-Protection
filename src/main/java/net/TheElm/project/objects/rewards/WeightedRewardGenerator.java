@@ -70,8 +70,8 @@ public class WeightedRewardGenerator extends WeightedReward {
     
     @Override
     public boolean isRewardEquals(@NotNull WeightedReward reward) {
-        return (reward instanceof WeightedRewardGenerator)
-            && ((WeightedRewardGenerator)reward).getFunction() == this.getFunction();
+        return (reward instanceof WeightedRewardGenerator rewardGenerator)
+            && rewardGenerator.getFunction() == this.getFunction();
     }
     
     @Override

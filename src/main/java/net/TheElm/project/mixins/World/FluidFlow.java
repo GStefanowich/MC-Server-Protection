@@ -55,10 +55,10 @@ public abstract class FluidFlow extends Fluid {
     @Inject(at = @At("HEAD"), method = {"canFlowThrough", "canFlow"}, cancellable = true)
     protected void gettingFluidDirections(BlockView world, Fluid fluid, BlockPos sourcePos, BlockState sourceState, Direction flowDirection, BlockPos flowPos, BlockState flowState, FluidState fluidState, CallbackInfoReturnable<Boolean> callback) {
         // If world is Server World
-        if (world instanceof ServerWorld) {
+        if (world instanceof ServerWorld serverWorld) {
             // Get chunks
-            WorldChunk startingChunk = ((ServerWorld) world).getWorldChunk( sourcePos );
-            WorldChunk nextChunk = ((ServerWorld) world).getWorldChunk( flowPos );
+            WorldChunk startingChunk = serverWorld.getWorldChunk( sourcePos );
+            WorldChunk nextChunk = serverWorld.getWorldChunk( flowPos );
             
             // If chunk is the same chunk, Allow
             if (startingChunk == nextChunk)

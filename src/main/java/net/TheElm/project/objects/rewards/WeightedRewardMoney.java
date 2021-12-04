@@ -66,8 +66,8 @@ public class WeightedRewardMoney extends WeightedReward {
     
     @Override
     public boolean isRewardEquals(@NotNull WeightedReward reward) {
-        return (reward instanceof WeightedRewardMoney)
-            && ((WeightedRewardMoney)reward).getMoney() == this.getMoney();
+        return reward instanceof WeightedRewardMoney rewardMoney
+            && rewardMoney.getMoney() == this.getMoney();
     }
     
     @Override

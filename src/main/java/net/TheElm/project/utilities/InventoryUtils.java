@@ -76,8 +76,8 @@ public final class InventoryUtils {
         BlockState blockState = world.getBlockState(container.getPos());
         Block block = blockState.getBlock();
         
-        if (block instanceof ChestBlock)
-            return ChestBlock.getInventory((ChestBlock)block, blockState, world, container.getPos(), true);
+        if (block instanceof ChestBlock chestBlock)
+            return ChestBlock.getInventory(chestBlock, blockState, world, container.getPos(), true);
         return container;
     }
     public static @NotNull ItemStack getFirstStack(@NotNull Inventory inventory) {

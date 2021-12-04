@@ -90,11 +90,9 @@ public final class BlockInteraction {
         final Lazy<WorldChunk> claimedChunkInfo = new Lazy<>(() -> player.getEntityWorld().getWorldChunk(blockPos));
         
         // Check if the block interacted with is a sign (For shop signs)
-        if ( blockEntity instanceof ShopSignData && blockEntity instanceof SignBlockEntity) {
-            SignBlockEntity sign = (SignBlockEntity) blockEntity;
-            ShopSignData shopSign = (ShopSignData) sign;
-            
+        if ( blockEntity instanceof ShopSignData shopSign && blockEntity instanceof SignBlockEntity sign) {
             ShopSigns shopSignType;
+            
             // Interact with the sign
             if ((shopSign.getShopOwner() != null) && ((shopSignType = shopSign.getShopType()) != null)) {
                 shopSignType.onInteract(player, blockPos, shopSign)
@@ -215,8 +213,8 @@ public final class BlockInteraction {
         // Test if allowed
         ActionResult result;
         if (((result = BlockInteraction.canBlockPlace(player, blockPos, blockHitResult)) != ActionResult.FAIL) && SewConfig.get(SewConfig.LOG_BLOCKS_BREAKING)) {
-            if (item instanceof BlockItem)
-                EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, ((BlockItem)item).getBlock(), blockPos));
+            if (item instanceof BlockItem blockItem)
+                EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, blockItem.getBlock(), blockPos));
             else
                 CoreMod.logDebug("Player \"placed\" non-block item \"" + item.getTranslationKey() + "\" at " + MessageUtils.xyzToString(blockPos));
         }

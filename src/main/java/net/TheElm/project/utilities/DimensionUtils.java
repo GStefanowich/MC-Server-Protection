@@ -77,13 +77,13 @@ public final class DimensionUtils {
         return DimensionUtils.getWorldDepth(world.getDimension());
     }
     public static int getWorldDepth(@NotNull DimensionType dimension) {
-        return 0;
+        return dimension.getMinimumY();
     }
     public static int getWorldHeight(@NotNull World world) {
         return DimensionUtils.getWorldHeight(world.getDimension());
     }
     public static int getWorldHeight(@NotNull DimensionType dimension) {
-        return dimension.getLogicalHeight();
+        return DimensionUtils.getWorldDepth(dimension) + dimension.getHeight();
     }
     
     public static boolean isWithinProtectedZone(@NotNull World world, BlockPos pos) {
@@ -98,6 +98,12 @@ public final class DimensionUtils {
         return false;
     }
     
+    public static @NotNull String dimensionIdentifier(@NotNull World world) {
+        return DimensionUtils.dimensionIdentifier(world.getRegistryKey());
+    }
+    public static @NotNull String dimensionIdentifier(@Nullable RegistryKey<World> world) {
+        return world == null ? "" : world.getValue().toString();
+    }
     public static @NotNull MutableText longDimensionName(@Nullable RegistryKey<World> world) {
         if (World.OVERWORLD.equals(world))
             return new LiteralText("Surface");

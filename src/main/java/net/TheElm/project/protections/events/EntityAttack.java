@@ -90,16 +90,13 @@ public final class EntityAttack {
         if (target == attacker)
             return ActionResult.PASS;
         
-        if (attacker instanceof PlayerEntity) {
-            final PlayerEntity player = (PlayerEntity) attacker;
-            
+        if (attacker instanceof PlayerEntity player) {
             // Always allow defending self from hostiles
-            if (target instanceof HostileEntity && ((!(target instanceof AbstractPiglinEntity)) || (((AbstractPiglinEntity)target).getTarget() instanceof PlayerEntity)))
+            if (target instanceof HostileEntity && (!(target instanceof AbstractPiglinEntity abstractPiglin) || abstractPiglin.getTarget() instanceof PlayerEntity))
                 return ActionResult.PASS;
             
             // Do special item frame interaction if NOT CROUCHING and HOLDING A TOOL
-            if ((target instanceof ItemFrameEntity) && (!(player.isSneaking() && player.getMainHandStack().isDamageable()))) {
-                ItemFrameEntity itemFrame = (ItemFrameEntity) target;
+            if ((target instanceof ItemFrameEntity itemFrame) && (!(player.isSneaking() && player.getMainHandStack().isDamageable()))) {
                 Direction direction = itemFrame.getHorizontalFacing().getOpposite();
                 
                 // Get the item in the item frame
@@ -154,9 +151,9 @@ public final class EntityAttack {
             }
             
             // Check if the tamed entity is tamed
-            if ((target instanceof TameableEntity) && (((TameableEntity) target).getOwnerUuid() != null)) {
+            if ((target instanceof TameableEntity tameableEntity) && (((TameableEntity) target).getOwnerUuid() != null)) {
                 // Deny if the entity belongs to the attacker (Can't hurt friendlies)
-                if (player.getUuid().equals(((TameableEntity) target).getOwnerUuid()))
+                if (player.getUuid().equals(tameableEntity.getOwnerUuid()))
                     return ActionResult.FAIL;
                 
                 // If player can interact with tameable mobs
@@ -177,8 +174,7 @@ public final class EntityAttack {
             
         } else if (attacker instanceof CreeperEntity) {
             // Protect item frames if creeper damage is off
-            if (target instanceof ItemFrameEntity) {
-                ItemFrameEntity itemFrame = (ItemFrameEntity) target;
+            if (target instanceof ItemFrameEntity itemFrame) {
                 WorldChunk chunk = world.getWorldChunk(itemFrame.getBlockPos());
                 if ((chunk == null) || ((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.CREEPER_GRIEFING))
                     return ActionResult.PASS;
@@ -207,10 +203,10 @@ public final class EntityAttack {
         Entity child = null;
         if (source instanceof LightningEntity)
             child = ((LightningAccessor) source).getChanneler();
-        else if (source instanceof TntEntity)
-            child = ((TntEntity) source).getCausingEntity();
-        else if (source instanceof ProjectileEntity)
-            child = ((ProjectileEntity) source).getOwner();
+        else if (source instanceof TntEntity tntEntity)
+            child = tntEntity.getCausingEntity();
+        else if (source instanceof ProjectileEntity projectileEntity)
+            child = projectileEntity.getOwner();
         return child == null ? source : EntityAttack.getRootAttacker(child);
     }
 }

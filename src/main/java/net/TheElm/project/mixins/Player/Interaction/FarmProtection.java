@@ -48,11 +48,10 @@ public abstract class FarmProtection extends Block {
     @Inject(at = @At("HEAD"), method = "onLandedUpon", cancellable = true)
     public void entityLandedUpon(final World world, final BlockState state, final BlockPos pos, final Entity entity, final float distance, final CallbackInfo callback) {
         // If entity isn't a player, don't worry about permission checking
-        if (!( entity instanceof ServerPlayerEntity))
+        if (!(entity instanceof ServerPlayerEntity player))
             return;
         
         // If player is allowed to break in the chunk
-        ServerPlayerEntity player = (ServerPlayerEntity) entity;
         if (ChunkUtils.canPlayerBreakInChunk( player, pos ))
             return;
         

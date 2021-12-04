@@ -59,8 +59,8 @@ public abstract class Lecterns extends BlockWithEntity {
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/block/LecternBlock.openScreen(Lnet/minecraft/world/World;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/entity/player/PlayerEntity;)V"), method = "onUse")
     private void onOpenScreen(@NotNull LecternBlock self, @NotNull World world, @NotNull BlockPos pos, @NotNull PlayerEntity player) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
-        if (blockEntity instanceof NamedScreenHandlerFactory) {
-            player.openHandledScreen((NamedScreenHandlerFactory) blockEntity);
+        if (blockEntity instanceof NamedScreenHandlerFactory handlerFactory) {
+            player.openHandledScreen(handlerFactory);
             player.incrementStat(Stats.INTERACT_WITH_LECTERN);
         }
     }

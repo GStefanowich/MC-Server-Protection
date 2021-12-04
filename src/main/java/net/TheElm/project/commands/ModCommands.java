@@ -202,13 +202,10 @@ public final class ModCommands {
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // If the shop sign block was not found
-        if (!(blockEntity instanceof ShopSignData)) {
+        if (!(blockEntity instanceof ShopSignData shop)) {
             source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
             return 0;
         }
-        
-        // Get the entity as the shop sign
-        ShopSignData shop = (ShopSignData) blockEntity;
         
         // Update the owner of the shop to the target
         shop.setShopOwner(targetPlayer.getId());
@@ -235,13 +232,12 @@ public final class ModCommands {
         BlockEntity blockEntity = world.getBlockEntity(signPos);
         
         // If the shop sign block was not found
-        if (!(blockEntity instanceof ShopSignData)) {
+        if (!(blockEntity instanceof ShopSignData shop)) {
             source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
             return 0;
         }
         
         // Get the entity as the shop sign
-        ShopSignData shop = (ShopSignData) blockEntity;
         if (Objects.equals(shop.getShopOwner(), CoreMod.SPAWN_ID)) {
             source.sendError(new LiteralText("Cannot get attached containers of infinite Shop Signs."));
             return 0;
@@ -274,7 +270,7 @@ public final class ModCommands {
         BlockEntity blockEntity = world.getBlockEntity(signPos);
         
         // If the shop sign block was not found
-        if (!(blockEntity instanceof ShopSignData)) {
+        if (!(blockEntity instanceof ShopSignData shop)) {
             source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
             return 0;
         }
@@ -284,9 +280,6 @@ public final class ModCommands {
             source.sendError(new LiteralText("Cannot change the Shop Sign to that item."));
             return 0;
         }
-        
-        // Get the entity as the shop sign
-        ShopSignData shop = (ShopSignData) blockEntity;
         
         // Update the item of the shop
         shop.setItem(stack);
@@ -317,13 +310,12 @@ public final class ModCommands {
         BlockEntity blockEntity = world.getBlockEntity(signPos);
         
         // If the shop sign block was not found
-        if (!(blockEntity instanceof ShopSignData)) {
+        if (!(blockEntity instanceof ShopSignData shop)) {
             source.sendError(new LiteralText("Block at that position is not a Shop Sign."));
             return 0;
         }
         
-        // Get the entity as the shop sign
-        ShopSignData shop = (ShopSignData) blockEntity;
+        // Set the sounce source of the shop
         shop.setSoundSourcePosition(setSoundSource);
         
         source.sendFeedback(new LiteralText("Updated sound location.").formatted(Formatting.GREEN), false);

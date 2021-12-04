@@ -138,18 +138,16 @@ public class ConfigOption<T extends Object> extends ConfigBase<T> {
     public static @NotNull ConfigOption<BlockPos> blockPos(@NotNull String location, Vec3i def) {
         return new ConfigOption<>(location, (def instanceof BlockPos ? (BlockPos)def : new BlockPos(def)), (e) -> {
             try {
-                if (e instanceof JsonArray) {
+                if (e instanceof JsonArray array) {
                     // Get the X, Y, Z coordinates
-                    JsonArray array = (JsonArray)e;
                     return new BlockPos(
                         array.get(0).getAsInt(),
                         array.get(1).getAsInt(),
                         array.get(2).getAsInt()
                     );
-                } else if (e instanceof JsonPrimitive) {
-                    JsonPrimitive prim = (JsonPrimitive)e;
-                    return BlockPos.fromLong(prim.getAsLong());
-                }
+                } else if (e instanceof JsonPrimitive primitive)
+                    return BlockPos.fromLong(primitive.getAsLong());
+                
             } catch (NumberFormatException ex) {
                 CoreMod.logError(new Exception("Failed to parse BlockPos in config, using fallback value", ex));
             }

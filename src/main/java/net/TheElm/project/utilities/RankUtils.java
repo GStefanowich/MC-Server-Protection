@@ -150,7 +150,7 @@ public final class RankUtils {
         if ((!SewConfig.get(SewConfig.HANDLE_PERMISSIONS)) || (permission == null))
             return false;
         Entity entity = source.getEntity();
-        return ((entity instanceof ServerPlayerEntity) && RankUtils.hasPermission(((ServerPlayerEntity) entity), permission));
+        return ((entity instanceof ServerPlayerEntity serverPlayer) && RankUtils.hasPermission(serverPlayer, permission));
     }
     public static boolean hasPermission(@NotNull ServerPlayerEntity player, @NotNull PermissionNode permission) {
         boolean result = false;
@@ -168,8 +168,9 @@ public final class RankUtils {
         return result;
     }
     public static boolean hasPermission(@NotNull PlayerEntity player, @NotNull PermissionNode permission) {
-        if (!(player instanceof ServerPlayerEntity)) return true;
-        return RankUtils.hasPermission((ServerPlayerEntity)player, permission);
+        if (!(player instanceof ServerPlayerEntity serverPlayer))
+            return true;
+        return RankUtils.hasPermission(serverPlayer, permission);
     }
     
     public static boolean reload() {
@@ -235,16 +236,14 @@ public final class RankUtils {
     }
     private static @NotNull JsonObject fileRanks() throws FileNotFoundException {
         JsonObject main = RankUtils.fileLoad();
-        JsonElement ranks;
-        if (main.has("ranks") && ((ranks = main.get("ranks")) instanceof JsonObject))
-            return (JsonObject) ranks;
+        if (main.has("ranks") && (main.get("ranks") instanceof JsonObject jsonObject))
+            return jsonObject;
         return new JsonObject();
     }
     private static @NotNull JsonObject filePlayers() throws FileNotFoundException {
         JsonObject main = RankUtils.fileLoad();
-        JsonElement players;
-        if (main.has("players") && ((players = main.get("players")) instanceof JsonObject))
-            return (JsonObject) players;
+        if (main.has("players") && (main.get("players") instanceof JsonObject jsonObject))
+            return jsonObject;
         return new JsonObject();
     }
     private static @NotNull JsonObject fileLoad() throws FileNotFoundException {

@@ -70,10 +70,10 @@ public abstract class TamedLead extends LivingEntity {
     
     @Nullable
     private UUID getOwnerUuid() {
-        if ( ((LivingEntity) this) instanceof TameableEntity )
-            return ( (TameableEntity)(LivingEntity) this ).getOwnerUuid();
-        if ( ((LivingEntity) this) instanceof HorseBaseEntity )
-            return ( (HorseBaseEntity)(LivingEntity) this ).getOwnerUuid();
+        if ( ((LivingEntity) this) instanceof TameableEntity tameableEntity )
+            return tameableEntity.getOwnerUuid();
+        if ( ((LivingEntity) this) instanceof HorseBaseEntity horseBaseEntity )
+            return horseBaseEntity.getOwnerUuid();
         return null;
     }
     

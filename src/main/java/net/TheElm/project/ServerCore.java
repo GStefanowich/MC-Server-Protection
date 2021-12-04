@@ -61,7 +61,6 @@ import net.TheElm.project.commands.WhereCommand;
 import net.TheElm.project.commands.WorldCommand;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.protections.claiming.LinkedPointChunk;
 import net.TheElm.project.protections.events.BlockBreak;
 import net.TheElm.project.protections.events.BlockInteraction;
 import net.TheElm.project.protections.events.EntityAttack;
@@ -70,7 +69,6 @@ import net.TheElm.project.protections.events.ItemUse;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.MapUtils;
-import net.TheElm.project.utilities.text.MessageUtils;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
@@ -251,8 +249,8 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     
     public static @NotNull BlockPos getSpawn(@NotNull World world) {
         // Get the forced position of TheEnd
-        if ((world instanceof ServerWorld) && (world.getRegistryKey() == World.END) && (!SewConfig.get(SewConfig.WORLD_SPECIFIC_SPAWN))) {
-            BlockPos pos = ((ServerWorld)world).getSpawnPos();
+        if ((world instanceof ServerWorld serverWorld) && (world.getRegistryKey() == World.END) && (!SewConfig.get(SewConfig.WORLD_SPECIFIC_SPAWN))) {
+            BlockPos pos = serverWorld.getSpawnPos();
             // Only if the forced position is set
             if (pos != null)
                 return pos;
@@ -285,8 +283,8 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         world.getChunkManager().markForUpdate(pos);
     }
     public static void markDirty(@NotNull World world, @NotNull BlockPos pos) {
-        if (world instanceof ServerWorld)
-            ServerCore.markDirty((ServerWorld) world, pos);
+        if (world instanceof ServerWorld serverWorld)
+            ServerCore.markDirty(serverWorld, pos);
     }
     
     public static boolean isIntegratedServer() {

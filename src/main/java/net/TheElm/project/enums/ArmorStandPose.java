@@ -394,8 +394,8 @@ public enum ArmorStandPose {
     }
     
     public static void apply(@NotNull ArmorStandPose pose, @NotNull Entity entity) {
-        if (entity instanceof ArmorStandEntity)
-            ArmorStandPose.apply(pose, (ArmorStandEntity) entity);
+        if (entity instanceof ArmorStandEntity armorStand)
+            ArmorStandPose.apply(pose, armorStand);
     }
     public static void apply(@NotNull ArmorStandPose pose, @NotNull ArmorStandEntity entity) {
         entity.setHeadRotation(pose.getHeadRotation());

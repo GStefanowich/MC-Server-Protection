@@ -100,10 +100,10 @@ public abstract class WorldSleep extends World implements LogicalWorld, ServerWo
     
     @Inject(at = @At("TAIL"), method = "spawnEntity")
     public void onSpawnMob(@NotNull Entity entity, @NotNull CallbackInfoReturnable<Boolean> callback) {
-        if (entity instanceof ConstructableEntity) {
+        if (entity instanceof ConstructableEntity constructableEntity) {
             Optional<UUID> chunkOwner;
             if ((chunkOwner = ChunkUtils.getPosOwner(this.toServerWorld(), entity.getBlockPos() )).isPresent())
-                ((ConstructableEntity)entity).setEntityOwner( chunkOwner.get() );
+                constructableEntity.setEntityOwner(chunkOwner.get());
             
             if (entity instanceof WitherEntity)
                 CoreMod.logInfo("A new Wither Boss was summoned at " + MessageUtils.xyzToString(entity.getBlockPos()));
