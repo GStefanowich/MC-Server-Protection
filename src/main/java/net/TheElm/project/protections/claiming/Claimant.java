@@ -299,9 +299,10 @@ public abstract class Claimant {
             }
         }
         
-        new ChunkZone.Builder(this)
+        // TODO: Use the zone and write to bluemap
+        /*new ChunkZone.Builder(this)
             .add(this.CLAIMED_CHUNKS)
-            .build();
+            .build();*/
     }
     
     private static @NotNull String rankNbtTag(@Nullable Claimant claimant) {

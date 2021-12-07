@@ -23,19 +23,15 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Server;
+package net.TheElm.project.interfaces;
 
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.world.level.ServerWorldProperties;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import net.minecraft.server.MinecraftServer;
 
 /**
- * Created on Dec 02 2021 at 11:25 PM.
+ * Created on Dec 04 2021 at 10:52 PM.
  * By greg in SewingMachineMod
  */
-@Mixin(ServerWorld.class)
-public interface ServerWorldPropertiesAccessor {
-    @Accessor("worldProperties")
-    ServerWorldProperties getProperties();
+@FunctionalInterface
+public interface MotdFunction {
+    String parseVar(MinecraftServer server);
 }

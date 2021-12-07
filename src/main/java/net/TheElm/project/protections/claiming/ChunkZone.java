@@ -199,8 +199,7 @@ public class ChunkZone {
             return this.regions;
         }
         
-        private @NotNull
-        ChunkZone addRegion(@NotNull ClaimTag tag) {
+        private @NotNull ChunkZone addRegion(@NotNull ClaimTag tag) {
             ChunkZone region = new ChunkZone(tag, this.claimant);
             
             this.regions.add(region);

@@ -31,35 +31,34 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class CasingUtils {
-    
-    public static String Words( @NotNull String modify ) {
-        String[] split = CasingUtils.Lower( modify ).split(" ");
+    public static @NotNull String words(@NotNull String modify ) {
+        String[] split = CasingUtils.lower( modify ).split(" ");
         List<String> out = new ArrayList<>();
         for ( String seg : split ) {
-            out.add( CasingUtils.Sentence( seg ) );
+            out.add( CasingUtils.sentence( seg ) );
         }
         return String.join( " ", out );
     }
     
-    public static String Sentence( @NotNull String modify ) {
+    public static @NotNull String sentence(@NotNull String modify ) {
         if ( "".equals(modify) )
             return modify;
-        String out = CasingUtils.Lower(modify);
+        String out = CasingUtils.lower(modify);
         return out.substring( 0, 1 ).toUpperCase() + out.substring( 1 );
     }
     
-    public static String Upper( @NotNull String modify ) {
+    public static @NotNull String upper(@NotNull String modify ) {
         return modify.toLowerCase();
     }
     
-    public static String Lower( @NotNull String modify ) {
+    public static @NotNull String lower(@NotNull String modify ) {
         return modify.toLowerCase();
     }
     
-    public static String Acronym( @NotNull String modify ) {
-        return CasingUtils.Acronym( modify, false );
+    public static @NotNull String acronym(@NotNull String modify ) {
+        return CasingUtils.acronym(modify, false);
     }
-    public static String Acronym( @NotNull String modify, boolean dots ) {
+    public static @NotNull String acronym(@NotNull String modify, boolean dots ) {
         StringBuilder acronym = new StringBuilder();
         
         for (String split : modify.split(" ")) {

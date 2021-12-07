@@ -31,6 +31,7 @@ import com.google.gson.JsonElement;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
@@ -39,15 +40,23 @@ public final class ConfigArray<T extends Object> extends ConfigBase<T> {
     
     private final Function<JsonElement, T> setter;
     private final List<T> value;
+    private final boolean shuffle;
     
     public ConfigArray(@NotNull String location, Function<JsonElement, T> setter) {
-        this( location, new ArrayList<>(), setter );
+        this(location, new ArrayList<>(), setter, false);
+    }
+    public ConfigArray(@NotNull String location, Function<JsonElement, T> setter, boolean shuffle) {
+        this(location, new ArrayList<>(), setter, shuffle);
     }
     public ConfigArray(@NotNull String location, List<T> defaultValue, Function<JsonElement, T> setter) {
-        super( location );
+        this(location, defaultValue, setter, false);
+    }
+    public ConfigArray(@NotNull String location, List<T> defaultValue, Function<JsonElement, T> setter, boolean shuffle) {
+        super(location);
         
         this.value = defaultValue;
         this.setter = setter;
+        this.shuffle = shuffle;
     }
     
     @Override
@@ -75,24 +84,29 @@ public final class ConfigArray<T extends Object> extends ConfigBase<T> {
         if (value == null) return;
         
         // Add all values
-        if (value instanceof JsonArray) {
-            for (JsonElement element : value.getAsJsonArray())
-                this.value.add(this.setter.apply(element));
-            return;
-        }
-        this.value.add(this.setter.apply( value ));
+        if (!(value instanceof JsonArray))
+            this.value.add(this.setter.apply(value));
+        else for (JsonElement element : value.getAsJsonArray())
+            this.value.add(this.setter.apply(element));
+        
+        // Shuffle the array
+        if (this.shuffle)
+            Collections.shuffle(this.value);
     }
     
-    public static ConfigArray<Integer> jInt(@NotNull String location) {
+    public static @NotNull ConfigArray<Integer> jInt(@NotNull String location) {
         return new ConfigArray<>(location, JsonElement::getAsInt);
     }
-    public static ConfigArray<Long> jLong(@NotNull String location) {
+    public static @NotNull ConfigArray<Long> jLong(@NotNull String location) {
         return new ConfigArray<>(location, JsonElement::getAsLong);
     }
-    public static ConfigArray<Boolean> jBool(@NotNull String location) {
+    public static @NotNull ConfigArray<Boolean> jBool(@NotNull String location) {
         return new ConfigArray<>(location, JsonElement::getAsBoolean);
     }
-    public static ConfigArray<String> jString(@NotNull String location) {
+    public static @NotNull ConfigArray<String> jString(@NotNull String location) {
         return new ConfigArray<>(location, JsonElement::getAsString);
+    }
+    public static @NotNull ConfigArray<String> jString(@NotNull String location, boolean shuffled) {
+        return new ConfigArray<>(location, JsonElement::getAsString, shuffled);
     }
 }

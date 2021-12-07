@@ -23,16 +23,25 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.interfaces;
+package net.TheElm.project.mixins.Server;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.chunk.Chunk;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.world.gen.Spawner;
+import net.minecraft.world.level.ServerWorldProperties;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-public interface PlayerMovement {
+import java.util.List;
+
+/**
+ * Created on Dec 02 2021 at 11:25 PM.
+ * By greg in SewingMachineMod
+ */
+@Mixin(ServerWorld.class)
+public interface ServerWorldAccessor {
+    @Accessor("worldProperties")
+    ServerWorldProperties getProperties();
     
-    void movedPlayer(final ServerPlayerEntity player);
-    void showPlayerNewLocation(@NotNull PlayerEntity player, Chunk local);
-    
+    @Accessor("spawners")
+    List<Spawner> getSpawners();
 }

@@ -31,6 +31,7 @@ import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.utilities.ChunkUtils;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.text.LiteralText;
@@ -119,6 +120,8 @@ public interface IClaimedChunk {
     }
     void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo, boolean fresh);
     UUID[] getSliceOwner(int slicePos, int yFrom, int yTo);
+    @NotNull ChunkUtils.ClaimSlice[] getSlices();
+    void setSlices(@NotNull ChunkUtils.ClaimSlice[] slices);
     
     /*
      * Statics

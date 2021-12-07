@@ -56,51 +56,39 @@ public class ChunkSaving {
     private static void saveSewingOwner(@NotNull ServerWorld world, @NotNull Chunk chunk, @NotNull CallbackInfoReturnable<NbtCompound> callback) {
         NbtCompound levelTag = callback.getReturnValue();
         
-        // Get the WorldChunk to read data from
-        WorldChunk worldChunk = null;
-        if (chunk instanceof WorldChunk)
-            worldChunk = (WorldChunk) chunk;
-        else if (chunk instanceof ReadOnlyChunk readOnlyChunk)
-            worldChunk = readOnlyChunk.getWrappedChunk();
+        // Save the chunks owned-player
+        UUID player = ((IClaimedChunk)chunk).getOwner();
+        if (player != null)
+            levelTag.putUuid(sewingMachineSerializationPlayer, player);
         
-        // Only add the chunks if they're an ownable chunk
-        if ( chunk instanceof WorldChunk ) {
-            // If the chunk is Claimed, save that players ID
-            UUID player, town;
-            
-            // Save the chunks owned-player
-            if ((player = ((IClaimedChunk) chunk).getOwner()) != null)
-                levelTag.putUuid(sewingMachineSerializationPlayer, player);
-            
-            NbtList slices = ((IClaimedChunk) worldChunk).serializeSlices();
-            
-            // Save the inner claims
-            levelTag.put(sewingMachineSerializationSlices, slices);
-            
-            // Save the chunks town
-            if ((town = ((IClaimedChunk) chunk).getTownId()) != null)
-                levelTag.putUuid(sewingMachineSerializationTown, town);
-        }
+        NbtList slices = ((IClaimedChunk) chunk).serializeSlices();
+        
+        // Save the inner claims
+        levelTag.put(sewingMachineSerializationSlices, slices);
+        
+        // Save the chunks town
+        UUID town = ((IClaimedChunk)chunk).getTownId();
+        if (town != null)
+            levelTag.putUuid(sewingMachineSerializationTown, town);
     }
     
     @Inject(at = @At("RETURN"), method = "deserialize")
     private static void loadSewingOwner(@NotNull ServerWorld world, @NotNull PointOfInterestStorage poiStorage, @NotNull ChunkPos chunkPos, @NotNull NbtCompound levelTag, @NotNull CallbackInfoReturnable<ProtoChunk> callback) {
-        ProtoChunk chunk = callback.getReturnValue();
-        if (chunk instanceof ReadOnlyChunk readOnlyChunk) {
-            WorldChunk worldChunk = readOnlyChunk.getWrappedChunk();
-            
-            // Update the chunks player-owner
-            if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationPlayer) )
-                ((IClaimedChunk) worldChunk).updatePlayerOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationPlayer), false);
-            
-            // Load the inner claims
-            if (levelTag.contains(sewingMachineSerializationSlices, NbtElement.LIST_TYPE))
-                ((IClaimedChunk) worldChunk).deserializeSlices(levelTag.getList(sewingMachineSerializationSlices, NbtElement.COMPOUND_TYPE));
-            
-            // Update the chunks town
-            if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationTown) )
-                ((IClaimedChunk) worldChunk).updateTownOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationTown), false);
-        }
+        Chunk chunk = callback.getReturnValue();
+        if (chunk instanceof ReadOnlyChunk readOnlyChunk)
+            chunk = readOnlyChunk.getWrappedChunk();
+        
+        // Update the chunks player-owner
+        if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationPlayer) )
+            ((IClaimedChunk) chunk).updatePlayerOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationPlayer), false);
+        
+        // Load the inner claims
+        if (levelTag.contains(sewingMachineSerializationSlices, NbtElement.LIST_TYPE))
+            ((IClaimedChunk) chunk).deserializeSlices(levelTag.getList(sewingMachineSerializationSlices, NbtElement.COMPOUND_TYPE));
+        
+        // Update the chunks town
+        if ( NbtUtils.hasUUID(levelTag, sewingMachineSerializationTown) )
+            ((IClaimedChunk) chunk).updateTownOwner(NbtUtils.getUUID(levelTag, sewingMachineSerializationTown), false);
     }
     
 }

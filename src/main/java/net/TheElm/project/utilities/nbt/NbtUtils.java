@@ -451,7 +451,6 @@ public final class NbtUtils {
     
     public static void withSpawnerEntities(final @NotNull NbtCompound base, final @NotNull Consumer<NbtString> consumer) {
         NbtList list = base.getList("SpawnPotentials", NbtElement.COMPOUND_TYPE);
-        System.out.println(base);
         
         // Save to the item (The mob)
         if (list.isEmpty())

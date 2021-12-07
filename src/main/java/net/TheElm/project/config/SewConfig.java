@@ -276,7 +276,7 @@ public final class SewConfig extends SewConfigContainer {
      * Server list MOTD
      */
     
-    public static final ConfigArray<String> SERVER_MOTD_LIST = SewConfig.addConfig(ConfigArray.jString("server.motd"));
+    public static final ConfigArray<String> SERVER_MOTD_LIST = SewConfig.addConfig(ConfigArray.jString("server.motd", true));
     public static final ConfigArray<String> SERVER_ICON_LIST = SewConfig.addConfig(ConfigArray.jString("server.icons"));
     
     /*
@@ -474,13 +474,12 @@ public final class SewConfig extends SewConfigContainer {
         }
     }
     private static JsonObject loadFromFile(File configFile) throws FileNotFoundException {
-        JsonParser jp = new JsonParser();
-        JsonElement element = jp.parse(new FileReader(configFile));
-        return element.getAsJsonObject();
+        return JsonParser.parseReader(new FileReader(configFile))
+            .getAsJsonObject();
     }
     
     protected JsonElement loadFromJSON(JsonObject json) {
-        CoreMod.logInfo("Loading configuration file (" + FormattingUtils.number(this.configOptions.size()) + " options).");
+        CoreMod.logInfo("Loading configuration file (" + FormattingUtils.format(this.configOptions.size()) + " options).");
         for ( ConfigBase config : this.configOptions ) {
             JsonObject inner = json;
             String[] path = config.getPath().split("\\.");

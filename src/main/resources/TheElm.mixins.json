@@ -5,8 +5,6 @@
   "mixins": [
   ],
   "server": [
-    "VersionUpgrade",
-    
     "Interfaces.InteractionManagerAccessor",
     "Interfaces.WhitelistAccessor",
     "Interfaces.PowderBlockAccessor",
@@ -81,7 +79,6 @@
     "Player.Interaction.Paintings",
     "Player.Interaction.ShopSign",
     
-    "Player.AnvilCost",
     "Player.FullInventory",
     "Player.DeathChest",
     
@@ -95,6 +92,7 @@
     "World.MobSpawners",
     "World.Campfires",
     "World.Saw",
+    "World.ChunkBuild",
     "World.ChunkSaving",
     "World.ClaimedChunk",
     "World.DragonFight",
@@ -114,9 +112,12 @@
     "Server.PlayerManager",
     "Server.Save",
     "Server.SaveFolder",
-    "Server.ServerWorldPropertiesAccessor",
+    "Server.ServerWorldAccessor",
     "Server.WanderingSpawns",
-    "Server.Whitelist"
+    "Server.Whitelist",
+    
+    "Ui.AnvilCost",
+    "Ui.Smithing"
   ],
   "injectors": {
     "defaultRequire": 1

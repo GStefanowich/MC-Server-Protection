@@ -401,7 +401,7 @@ public final class MessageUtils {
         return MessageUtils.formatNumber("", number, suffix, formatting);
     }
     public static @NotNull MutableText formatNumber(@NotNull String prefix, @NotNull Number number, @NotNull String suffix, @NotNull Formatting... formatting) {
-        MutableText out = new LiteralText(prefix + FormattingUtils.number(number) + suffix);
+        MutableText out = new LiteralText(prefix + FormattingUtils.format(number) + suffix);
         if (formatting.length > 0)
             return out.formatted(formatting);
         return out.formatted(Formatting.AQUA);
@@ -451,7 +451,7 @@ public final class MessageUtils {
             output.append(")");
         }
         
-        output.append(" x" + FormattingUtils.number(stack.getCount()));
+        output.append(" x" + FormattingUtils.format(stack.getCount()));
         
         return output;
     }

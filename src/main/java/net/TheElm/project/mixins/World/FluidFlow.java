@@ -33,12 +33,12 @@ import net.minecraft.fluid.FlowableFluid;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.Fluids;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.BlockView;
+import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.chunk.Chunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -53,12 +53,12 @@ public abstract class FluidFlow extends Fluid {
     protected abstract boolean isInfinite();
     
     @Inject(at = @At("HEAD"), method = {"canFlowThrough", "canFlow"}, cancellable = true)
-    protected void gettingFluidDirections(BlockView world, Fluid fluid, BlockPos sourcePos, BlockState sourceState, Direction flowDirection, BlockPos flowPos, BlockState flowState, FluidState fluidState, CallbackInfoReturnable<Boolean> callback) {
+    protected void gettingFluidDirections(BlockView view, Fluid fluid, BlockPos sourcePos, BlockState sourceState, Direction flowDirection, BlockPos flowPos, BlockState flowState, FluidState fluidState, CallbackInfoReturnable<Boolean> callback) {
         // If world is Server World
-        if (world instanceof ServerWorld serverWorld) {
+        if (view instanceof World world) {
             // Get chunks
-            WorldChunk startingChunk = serverWorld.getWorldChunk( sourcePos );
-            WorldChunk nextChunk = serverWorld.getWorldChunk( flowPos );
+            Chunk startingChunk = world.getChunk(sourcePos);
+            Chunk nextChunk = world.getChunk(flowPos);
             
             // If chunk is the same chunk, Allow
             if (startingChunk == nextChunk)

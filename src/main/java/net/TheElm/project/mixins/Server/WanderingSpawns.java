@@ -145,7 +145,7 @@ public abstract class WanderingSpawns implements Spawner {
                 
                 // Add the wandering trader to the players list
                 server.getPlayerManager()
-                    .sendToAll(new WanderingTraderProfileCollection().getPacket(PlayerListS2CPacket.Action.ADD_PLAYER));
+                    .sendToAll(new WanderingTraderProfileCollection(trader).getPacket(PlayerListS2CPacket.Action.ADD_PLAYER));
                 
                 return true;
             }

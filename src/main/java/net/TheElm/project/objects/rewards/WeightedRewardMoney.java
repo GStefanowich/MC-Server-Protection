@@ -27,7 +27,6 @@ package net.TheElm.project.objects.rewards;
 
 import net.TheElm.project.utilities.FormattingUtils;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.item.ItemStack;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -54,7 +53,7 @@ public class WeightedRewardMoney extends WeightedReward {
     
     @Override
     public @Nullable RewardContext create(@Nullable PlayerEntity player) {
-        return new RewardContext(new LiteralText("$" + FormattingUtils.number(this.money)), true);
+        return new RewardContext(new LiteralText("$" + FormattingUtils.format(this.money)), true);
     }
     
     @Override

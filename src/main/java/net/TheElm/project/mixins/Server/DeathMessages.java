@@ -30,7 +30,7 @@ public abstract class DeathMessages {
             long worldYear = worldDay / SewConfig.get(SewConfig.CALENDAR_DAYS);
             worldDay = worldDay - (worldYear * SewConfig.get(SewConfig.CALENDAR_DAYS));
             
-            String year = CasingUtils.Acronym(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH), true);
+            String year = CasingUtils.acronym(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH), true);
             MutableText yearText = MessageUtils.formatNumber(worldYear);
             if (!year.isEmpty()) {
                 yearText.append(" " + year);

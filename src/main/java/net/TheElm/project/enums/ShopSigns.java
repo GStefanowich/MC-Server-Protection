@@ -184,14 +184,14 @@ public enum ShopSigns {
                         player,
                         Formatting.YELLOW,
                         new LiteralText("You sold "),
-                        new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
+                        new LiteralText(FormattingUtils.format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
                         new TranslatableText(sign.getShopItemTranslationKey()).formatted(Formatting.AQUA),
                         new LiteralText(" to "),
                         permissions.getName().formatted(Formatting.AQUA)
                     );
                     
                     // Log the event
-                    CoreMod.logInfo(player.getName().getString() + " sold " + NumberFormat.getInstance().format(sign.getShopItemCount()) + " " + sign.getShopItemIdentifier() + " for $" + NumberFormat.getInstance().format(sign.getShopItemPrice()) + " to " + permissions.getName().getString());
+                    CoreMod.logInfo(player.getName().getString() + " sold " + FormattingUtils.format(sign.getShopItemCount()) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format(sign.getShopItemPrice()) + " to " + permissions.getName().getString());
                     player.increaseStat(ShopStats.SHOP_TYPE_SOLD.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
                     
                     return Either.right(true);
@@ -321,14 +321,14 @@ public enum ShopSigns {
                         player,
                         Formatting.YELLOW,
                         new LiteralText("You bought "),
-                        new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
+                        new LiteralText(FormattingUtils.format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
                         new TranslatableText(sign.getShopItemTranslationKey()).formatted(Formatting.AQUA),
                         new LiteralText(" from "),
                         permissions.getName().formatted(Formatting.AQUA)
                     );
                     
                     // Log the event
-                    CoreMod.logInfo(player.getName().getString() + " bought " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemIdentifier() + " for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) + " from " + permissions.getName().asString() );
+                    CoreMod.logInfo(player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format( sign.getShopItemPrice() ) + " from " + permissions.getName().asString() );
                     player.increaseStat(ShopStats.SHOP_TYPE_BOUGHT.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
                     
                     return Either.right(true);
@@ -421,7 +421,7 @@ public enum ShopSigns {
                 ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
                 
                 // Log the event
-                CoreMod.logInfo(player.getName().getString() + " got " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay() + " from " + permissions.getName().getString());
+                CoreMod.logInfo(player.getName().getString() + " got " + FormattingUtils.format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay() + " from " + permissions.getName().getString());
                 
                 return Either.right( true );
             }
@@ -558,7 +558,7 @@ public enum ShopSigns {
             if (name == null)
                 return false;
 
-            Text priceText = new LiteralText("$" + FormattingUtils.number(shop.getShopItemPrice())).formatted(Formatting.DARK_BLUE);
+            Text priceText = new LiteralText("$" + FormattingUtils.format(shop.getShopItemPrice())).formatted(Formatting.DARK_BLUE);
             
             // Set the text for the sign
             shop.setSignLine(1, new LiteralText(name.getString()).formatted(Formatting.GREEN));
@@ -635,7 +635,7 @@ public enum ShopSigns {
                     if (!(creator.getUuid().equals(town.getOwner())) && creator.getUuid().equals(((IClaimedChunk) chunk).getOwner()))
                         throw new ShopBuilderException(new LiteralText("Deed signs may only be placed in chunks belonging to the town owner, by the town owner."));
                     
-                    sign.setTextOnRow(1, new LiteralText(CasingUtils.Sentence(deedType)));
+                    sign.setTextOnRow(1, new LiteralText(CasingUtils.sentence(deedType)));
                     break;
                 }
                 case "region": {
@@ -762,16 +762,16 @@ public enum ShopSigns {
                 ((PlayerData) player).getClaim().increaseMaxChunkLimit( sign.getShopItemCount() );
                 
                 // Log the transaction
-                CoreMod.logInfo( player.getName().getString() + " bought " + NumberFormat.getInstance().format( sign.getShopItemCount() ) + " chunks for $" + NumberFormat.getInstance().format( sign.getShopItemPrice() ) );
+                CoreMod.logInfo( player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " chunks for $" + FormattingUtils.format( sign.getShopItemPrice() ) );
                 
             } catch (NotEnoughMoneyException e) {
                 return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
             }
             
             player.sendMessage(new LiteralText("Chunks claimed ").formatted(Formatting.YELLOW)
-                .append(new LiteralText(NumberFormat.getInstance().format( claim.getCount() )).formatted(Formatting.AQUA))
+                .append(new LiteralText(FormattingUtils.format(claim.getCount())).formatted(Formatting.AQUA))
                 .append(" / ")
-                .append(new LiteralText(NumberFormat.getInstance().format( claim.getMaxChunkLimit() )).formatted(Formatting.AQUA)),
+                .append(new LiteralText(FormattingUtils.format(claim.getMaxChunkLimit())).formatted(Formatting.AQUA)),
                 MessageType.SYSTEM,
                 ServerCore.SPAWN_ID
             );
@@ -903,13 +903,13 @@ public enum ShopSigns {
                 ));
                 
                 player.sendMessage(new LiteralText("Backpack size is now ").formatted(Formatting.YELLOW)
-                    .append(new LiteralText(NumberFormat.getInstance().format( sign.getShopItemCount() )).formatted(Formatting.AQUA)),
+                    .append(new LiteralText(FormattingUtils.format( sign.getShopItemCount() )).formatted(Formatting.AQUA)),
                     MessageType.SYSTEM,
                     ServerCore.SPAWN_ID
                 );
                 
                 // Log the transaction
-                CoreMod.logInfo(player.getName().getString() + " bought a " + NumberFormat.getInstance().format(sign.getShopItemCount()) + " slot backpack for $" + NumberFormat.getInstance().format(sign.getShopItemPrice()));
+                CoreMod.logInfo(player.getName().getString() + " bought a " + FormattingUtils.format(sign.getShopItemCount()) + " slot backpack for $" + FormattingUtils.format(sign.getShopItemPrice()));
                 
             } catch (NotEnoughMoneyException e) {
                 return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));

@@ -72,7 +72,7 @@ public abstract class PlayerManager {
             UUID uuid = EntityUtils.getWanderingTraderId(this.server);
             Entity entity = world.getEntity(uuid);
             if (entity != null)
-                player.networkHandler.sendPacket(new WanderingTraderProfileCollection().getPacket(PlayerListS2CPacket.Action.ADD_PLAYER));
+                player.networkHandler.sendPacket(new WanderingTraderProfileCollection(entity).getPacket(PlayerListS2CPacket.Action.ADD_PLAYER));
         }
     }
     

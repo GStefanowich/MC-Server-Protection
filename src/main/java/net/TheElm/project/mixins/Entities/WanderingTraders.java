@@ -50,6 +50,7 @@ import net.minecraft.world.gen.feature.StructureFeature;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -62,10 +63,8 @@ public abstract class WanderingTraders extends MerchantEntity {
         super(entityType_1, world_1);
     }
     
-    @Contract("_ -> new")
-    private static @NotNull Int2ObjectMap<TradeOffers.Factory[]> copyToFastUtilMap(ImmutableMap<Integer, TradeOffers.Factory[]> immutableMap_1) {
-        return new Int2ObjectOpenHashMap<>(immutableMap_1);
-    }
+    @Shadow
+    private native int getDespawnDelay();
     
     /*
      * Created customized traders for the trader
@@ -95,6 +94,37 @@ public abstract class WanderingTraders extends MerchantEntity {
     }
     
     /*
+     * Tick when the wandering trader will despawn
+     */
+    @Inject(at = @At("RETURN"), method = "tickDespawnDelay")
+    private void onTickDespawning(CallbackInfo callback) {
+        boolean sendPacket = false;
+        int despawn = this.getDespawnDelay();
+        if (despawn >= 0) {
+            // If despawn time remaining is over a minute, run every 1m
+            if (despawn >= 1200 && despawn % 1200 == 0) {
+                // If this entity is THE wandering trader
+                if ((sendPacket = EntityUtils.isEntityWanderingTrader(this)) && despawn % 12000 == 0)
+                    EntityUtils.wanderingTraderTimeRemaining((WanderingTraderEntity) (Entity) this);
+            }
+            // If despawn time remaining is less than a minute, run every 2s
+            else if (despawn < 1200 && despawn % 20 == 0) {
+                // If this entity is THE wandering trader
+                sendPacket = EntityUtils.isEntityWanderingTrader(this);
+            }
+        }
+        
+        if (sendPacket) {
+            // Update the player list time
+            MinecraftServer server = this.getServer();
+            if (server != null) {
+                server.getPlayerManager()
+                    .sendToAll(new WanderingTraderProfileCollection(this).getPacket(PlayerListS2CPacket.Action.UPDATE_DISPLAY_NAME));
+            }
+        }
+    }
+    
+    /*
      * Change the wander target of the Trader to be their home
      */
     @Inject(at = @At("HEAD"), method = "getWanderTarget", cancellable = true)
@@ -118,6 +148,11 @@ public abstract class WanderingTraders extends MerchantEntity {
             }
         }
         super.remove(removalReason);
+    }
+    
+    @Contract("_ -> new")
+    private static @NotNull Int2ObjectMap<TradeOffers.Factory[]> copyToFastUtilMap(ImmutableMap<Integer, TradeOffers.Factory[]> immutableMap_1) {
+        return new Int2ObjectOpenHashMap<>(immutableMap_1);
     }
     
     private static final Int2ObjectMap<TradeOffers.Factory[]> WANDERING_TRADER_TRADES = copyToFastUtilMap(ImmutableMap.of(

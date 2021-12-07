@@ -43,7 +43,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.world.chunk.WorldChunk;
+import net.minecraft.world.chunk.Chunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -144,7 +144,7 @@ public final class ClaimantPlayer extends Claimant {
         this.markDirty();
         return (this.additionalClaims += by) + SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT);
     }
-    public final boolean canClaim(WorldChunk chunk) {
+    public final boolean canClaim(Chunk chunk) {
         // If chunk is already claimed, allow
         if (this.CLAIMED_CHUNKS.contains(ClaimTag.of(chunk)))
             return true;

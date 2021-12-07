@@ -37,6 +37,7 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
@@ -62,6 +63,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
@@ -73,7 +75,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.text.NumberFormat;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Map;
@@ -174,7 +175,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                     // Tell them they were awarded money
                     player.sendSystemMessage(new LiteralText("You were given $")
                         .formatted(Formatting.YELLOW)
-                        .append(new LiteralText(NumberFormat.getInstance().format(allowance)).formatted(Formatting.AQUA, Formatting.BOLD))
+                        .append(new LiteralText(FormattingUtils.format(allowance)).formatted(Formatting.AQUA, Formatting.BOLD))
                         .append(" for logging in today!"), Util.NIL_UUID);
                 }
             }
@@ -248,9 +249,9 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
         World world = player.getEntityWorld();
         BlockPos blockPos = player.getBlockPos();
         
-        WorldChunk chunk = world.getWorldChunk( blockPos );
+        WorldChunk chunk = world.getWorldChunk(blockPos);
         if ( !CoreMod.PLAYER_LOCATIONS.containsKey( player ) ) {
-            this.showPlayerNewLocation( player, chunk );
+            this.showPlayerNewLocation(player, chunk);
             
         } else {
             UUID playerLocation = CoreMod.PLAYER_LOCATIONS.get( player );
@@ -258,21 +259,21 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
             
             // If the location has changed
             if ((( playerLocation != null ) && (!playerLocation.equals( chunkOwner )) ) || ( ( chunkOwner != null ) && (!chunkOwner.equals(playerLocation)))) {
-                this.showPlayerNewLocation( player, chunk );
+                this.showPlayerNewLocation(player, chunk);
             }
         }
     }
     
-    public void showPlayerNewLocation(@NotNull final PlayerEntity player, @Nullable final WorldChunk local) {
+    public void showPlayerNewLocation(@NotNull final PlayerEntity player, @Nullable final Chunk local) {
         BlockPos playerPos = player.getBlockPos();
         UUID locationOwner;
         
         if (( local == null ) || ((locationOwner = ((IClaimedChunk) local).getOwner(playerPos)) == null )) {
-            MutableText popupText = ChunkUtils.getPlayerWorldWilderness( player )
+            MutableText popupText = ChunkUtils.getPlayerWorldWilderness(player)
                 .append(
-                    new LiteralText( " [" ).formatted(Formatting.RED)
-                        .append( TranslatableServerSide.text( player, "claim.chunk.pvp" ) )
-                        .append("]" )
+                    new LiteralText(" [").formatted(Formatting.RED)
+                        .append(TranslatableServerSide.text(player, "claim.chunk.pvp"))
+                        .append("]")
                 );
             
             // If the player is in the wilderness
@@ -310,7 +311,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                     }
                     
                     // If player is in another players area (No Town)
-                    popupText.append(owner.getName( player ))
+                    popupText.append(owner.getName(player))
                         .append(new LiteralText("'s " + landName));
                     return;
                 }
@@ -318,10 +319,10 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                 // If player is in another players town
                 popupText.append(town.getName(player.getUuid())); // Town name
                 if (!locationOwner.equals(town.getOwner())) // Append the chunk owner (If not the towns)
-                    popupText.append(" - ").append(claimedChunk.getOwnerName( player ));
+                    popupText.append(" - ").append(claimedChunk.getOwnerName(player));
                 popupText.append( // Town type
                     new LiteralText(" (")
-                        .append(new LiteralText(CasingUtils.Words(town.getTownType())).formatted(Formatting.DARK_AQUA))
+                        .append(new LiteralText(CasingUtils.words(town.getTownType())).formatted(Formatting.DARK_AQUA))
                         .append(")")
                 );
                 

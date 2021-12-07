@@ -227,7 +227,7 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
                 page.addLine()
                     .addString("Weather", Formatting.GOLD)
                     .addString(": ", Formatting.BLACK)
-                    .addString(world.isThundering() ? "Thunder" : precipitation == Biome.Precipitation.NONE ? "Clear" : CasingUtils.Sentence(precipitation.name()), Formatting.RED);
+                    .addString(world.isThundering() ? "Thunder" : precipitation == Biome.Precipitation.NONE ? "Clear" : CasingUtils.sentence(precipitation.name()), Formatting.RED);
                 
                 // Block Position
                 page.addLine()
@@ -235,10 +235,10 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
                     .addString(": ", Formatting.BLACK)
                     .addLine()
                     .addString(" X ", Formatting.BLACK)
-                        .addString(FormattingUtils.number(warp.warpPos.getX()), Formatting.RED)
+                        .addString(FormattingUtils.format(warp.warpPos.getX()), Formatting.RED)
                     .addLine()
                     .addString(" Z ", Formatting.BLACK)
-                        .addString(FormattingUtils.number(warp.warpPos.getZ()), Formatting.RED);
+                        .addString(FormattingUtils.format(warp.warpPos.getZ()), Formatting.RED);
             }
         }
         

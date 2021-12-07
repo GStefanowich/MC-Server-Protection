@@ -103,59 +103,50 @@ public final class FormattingUtils {
         }
         return formatting.toArray(new Formatting[0]);
     }
-    private static @Nullable Formatting codeToFormat(String code) {
-        if (code.length() != 2) return null;
-        switch (code) {
-            case "&0":
-                return Formatting.BLACK;
-            case "&1":
-                return Formatting.DARK_BLUE;
-            case "&2":
-                return Formatting.DARK_GREEN;
-            case "&3":
-                return Formatting.DARK_AQUA;
-            case "&4":
-                return Formatting.DARK_RED;
-            case "&5":
-                return Formatting.DARK_PURPLE;
-            case "&6":
-                return Formatting.GOLD;
-            case "&7":
-                return Formatting.GRAY;
-            case "&8":
-                return Formatting.DARK_GRAY;
-            case "&9":
-                return Formatting.BLUE;
-            case "&a":
-                return Formatting.GREEN;
-            case "&b":
-                return Formatting.AQUA;
-            case "&c":
-                return Formatting.RED;
-            case "&d":
-                return Formatting.LIGHT_PURPLE;
-            case "&e":
-                return Formatting.YELLOW;
-            case "&f":
-                return Formatting.WHITE;
-            case "&k":
-                return Formatting.OBFUSCATED;
-            case "&l":
-                return Formatting.BOLD;
-            case "&m":
-                return Formatting.STRIKETHROUGH;
-            case "&n":
-                return Formatting.UNDERLINE;
-            case "&o":
-                return Formatting.ITALIC;
-            case "&r":
-                return Formatting.RESET;
-        }
-        return null;
+    private static @Nullable Formatting codeToFormat(@NotNull String code) {
+        if (code.length() != 2)
+            return null;
+        return switch (code) {
+            case "&0" -> Formatting.BLACK;
+            case "&1" -> Formatting.DARK_BLUE;
+            case "&2" -> Formatting.DARK_GREEN;
+            case "&3" -> Formatting.DARK_AQUA;
+            case "&4" -> Formatting.DARK_RED;
+            case "&5" -> Formatting.DARK_PURPLE;
+            case "&6" -> Formatting.GOLD;
+            case "&7" -> Formatting.GRAY;
+            case "&8" -> Formatting.DARK_GRAY;
+            case "&9" -> Formatting.BLUE;
+            case "&a" -> Formatting.GREEN;
+            case "&b" -> Formatting.AQUA;
+            case "&c" -> Formatting.RED;
+            case "&d" -> Formatting.LIGHT_PURPLE;
+            case "&e" -> Formatting.YELLOW;
+            case "&f" -> Formatting.WHITE;
+            case "&k" -> Formatting.OBFUSCATED;
+            case "&l" -> Formatting.BOLD;
+            case "&m" -> Formatting.STRIKETHROUGH;
+            case "&n" -> Formatting.UNDERLINE;
+            case "&o" -> Formatting.ITALIC;
+            case "&r" -> Formatting.RESET;
+            default -> null;
+        };
     }
     
-    public static String number(Number number) {
-        return NumberFormat.getInstance().format(number);
+    public static @NotNull String format(@NotNull Number number) {
+        return NumberFormat.getInstance()
+            .format(number);
     }
-    
+    public static @NotNull String format(int number) {
+        return NumberFormat.getNumberInstance()
+            .format(number);
+    }
+    public static @NotNull String format(long number) {
+        return NumberFormat.getNumberInstance()
+            .format(number);
+    }
+    public static @NotNull String format(float number) {
+        return NumberFormat.getNumberInstance()
+            .format(number);
+    }
 }

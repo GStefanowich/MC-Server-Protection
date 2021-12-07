@@ -638,9 +638,12 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     @Override
     public @Nullable Path findPathToAny(@NotNull Set<BlockPos> positions, int range, boolean bl, int distance) {
+        // If there is no path nodes
         if (positions.isEmpty())
             return null;
-        if (this.getY() < 0.0D)
+        
+        // If the player is not within the world height
+        if (this.world.isOutOfHeightLimit(this.getBlockY()))
             return null;
         
         // Push the profiler

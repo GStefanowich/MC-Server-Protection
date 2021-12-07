@@ -23,25 +23,21 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Player;
+package net.TheElm.project.mixins.Ui;
 
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.utilities.Assert;
 import net.TheElm.project.utilities.InventoryUtils;
-import net.TheElm.project.utilities.nbt.NbtUtils;
+import net.TheElm.project.utilities.ItemUtils;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.CraftingResultInventory;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NbtCompound;
 import net.minecraft.screen.AnvilScreenHandler;
 import net.minecraft.screen.ForgingScreenHandler;
 import net.minecraft.screen.Property;
 import net.minecraft.screen.ScreenHandlerContext;
 import net.minecraft.screen.ScreenHandlerType;
-import net.minecraft.text.LiteralText;
-import net.minecraft.text.Text;
-import net.minecraft.text.TranslatableText;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -50,8 +46,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Redirect;
-
-import java.util.Arrays;
 
 @Mixin(AnvilScreenHandler.class)
 public abstract class AnvilCost extends ForgingScreenHandler {
@@ -72,21 +66,11 @@ public abstract class AnvilCost extends ForgingScreenHandler {
     
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/inventory/CraftingResultInventory.setStack(ILnet/minecraft/item/ItemStack;)V"), method = "updateResult")
     public void onUpdateOutput(@NotNull CraftingResultInventory inventory, int slot, @NotNull ItemStack item) {
-        if ((!item.isEmpty()) && item.hasEnchantments()) {
-            NbtCompound display = item.getSubNbt("display");;
-            
-            // Get the rarity of the new output item
-            InventoryUtils.ItemRarity rarity = InventoryUtils.getItemRarity(item);
-            
-            // Generate the lore
-            Text lore = new LiteralText("One ")
-                .append(new LiteralText(rarity.name()))
-                .append(" ").append(new TranslatableText(item.getTranslationKey()));
-            Text madeBy = new LiteralText("Forged by ")
-                .append(this.player.getEntityName());
-            display.put("Lore", NbtUtils.toList(Arrays.asList(lore, madeBy), Text.Serializer::toJson));
-        }
+        // If the output is a stack that has enchantments
+        if ((!item.isEmpty()) && item.hasEnchantments())
+            ItemUtils.setStackAuthor(item, this.player);
         
+        // Still do the vanilla
         inventory.setStack(slot, item);
     }
     

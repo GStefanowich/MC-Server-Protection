@@ -42,16 +42,9 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.world.BlockView;
 import net.minecraft.world.HeightLimitView;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.Biome;
 import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkSection;
-import net.minecraft.world.chunk.UpgradeData;
-import net.minecraft.world.chunk.WorldChunk;
-import net.minecraft.world.gen.chunk.BlendingData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -64,8 +57,8 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
 
-@Mixin(WorldChunk.class)
-public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim {
+@Mixin(Chunk.class)
+public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
     
     private final ClaimSlice[] claimSlices = new ClaimSlice[256];
     
@@ -73,11 +66,10 @@ public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim
     private ClaimantPlayer chunkPlayer = null;
     
     @Shadow @Final
-    private World world;
+    protected HeightLimitView heightLimitView;
     
-    public ClaimedChunk(ChunkPos pos, UpgradeData upgradeData, HeightLimitView heightLimitView, Registry<Biome> biome, long inhabitedTime, @Nullable ChunkSection[] sectionArrayInitializer, @Nullable BlendingData blendingData) {
-        super(pos, upgradeData, heightLimitView, biome, inhabitedTime, sectionArrayInitializer, blendingData);
-    }
+    @Shadow
+    public native void setShouldSave(boolean shouldSave);
     
     @Override
     public ClaimantTown updateTownOwner(@Nullable UUID owner, boolean fresh) {
@@ -124,12 +116,12 @@ public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim
     @Override
     public void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo, boolean fresh) {
         // If heights are invalid
-        if (this.world.isOutOfHeightLimit(yFrom) || this.world.isOutOfHeightLimit(yTo))
+        if (this.heightLimitView.isOutOfHeightLimit(yFrom) || this.heightLimitView.isOutOfHeightLimit(yTo))
             return;
         
         ClaimSlice slice;
         if ((slice = this.claimSlices[slicePos]) == null)
-            slice = (this.claimSlices[slicePos] = new ClaimSlice(this.world, slicePos));
+            slice = (this.claimSlices[slicePos] = new ClaimSlice(this.heightLimitView, slicePos));
         
         // Get upper and lower positioning
         int yMax = Math.max(yFrom, yTo);
@@ -160,6 +152,16 @@ public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim
         
         return owners.toArray(new UUID[0]);
     }
+    @Override
+    public @NotNull ClaimSlice[] getSlices() {
+        return this.claimSlices;
+    }
+    @Override
+    public void setSlices(@NotNull ClaimSlice[] slices) {
+        int c = slices.length;
+        for (int i = 0; i < c; i++)
+            this.claimSlices[i] = slices[i];
+    }
     
     public @NotNull Claim getClaim(BlockPos blockPos) {
         int slicePos = ChunkUtils.getPositionWithinChunk( blockPos );
@@ -167,10 +169,10 @@ public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim
         ClaimSlice slice;
         if ((slice = this.claimSlices[slicePos]) != null) {
             // Get inside claim
-            InnerClaim inner = slice.get( blockPos.getY() );
+            InnerClaim inner = slice.get(blockPos.getY());
             
             // If claim inner is not nobody
-            if (inner.getOwner() != null && inner.isWithin(blockPos.getY()))
+            if (inner != null && inner.getOwner() != null && inner.isWithin(blockPos.getY()))
                 return inner;
         }
         
@@ -185,7 +187,7 @@ public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim
             return false;
         }
         // Check claims limit (If the player is spawn, always allow)
-        if (!player.getId().equals(CoreMod.SPAWN_ID) && !player.canClaim((WorldChunk)(Chunk) this))
+        if (!player.getId().equals(CoreMod.SPAWN_ID) && !player.canClaim((Chunk)(Object) this))
             throw new TranslationKeyException("claim.chunk.error.max");
         return true;
     }
@@ -318,7 +320,7 @@ public abstract class ClaimedChunk extends Chunk implements IClaimedChunk, Claim
                 int upper = ((NbtCompound) claimTag).getInt("upper");
                 int lower = ((NbtCompound) claimTag).getInt("lower");
                 
-                this.updateSliceOwner( owner, i, lower, upper, false );
+                this.updateSliceOwner(owner, i, lower, upper, false);
             }
         }
     }

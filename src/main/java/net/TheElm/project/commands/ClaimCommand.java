@@ -64,7 +64,7 @@ import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.CommandUtils;
 import net.TheElm.project.utilities.EffectUtils;
-import net.TheElm.project.utilities.LegacyConverter;
+import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.text.MessageUtils;
@@ -98,12 +98,12 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.UserCache;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.sql.SQLException;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -584,7 +584,7 @@ public final class ClaimCommand {
         
         ClaimantPlayer claimant = ((PlayerData) player).getClaim();
         
-        WorldChunk chunk = (WorldChunk) world.getChunk(player.getBlockPos());
+        Chunk chunk = world.getChunk(player.getBlockPos());
         if (((IClaimedChunk) chunk).getTownId() == null)
             throw CHUNK_NOT_OWNED.create( player );
         
@@ -598,7 +598,7 @@ public final class ClaimCommand {
         ((IClaimedChunk) chunk).updateTownOwner( null );
         
         // Notify the players in claimed chunks
-        ClaimCommand.notifyChangedClaimed( player.getUuid() );
+        ClaimCommand.notifyChangedClaimed(player.getUuid());
         
         return Command.SINGLE_SUCCESS;
     }
@@ -743,9 +743,9 @@ public final class ClaimCommand {
         // Charge the player money
         try {
             if ((SewConfig.get(SewConfig.TOWN_FOUND_COST) > 0) && (!MoneyUtils.takePlayerMoney(founder, SewConfig.get(SewConfig.TOWN_FOUND_COST))))
-                throw NOT_ENOUGH_MONEY.create(founder, "$" + NumberFormat.getInstance().format(SewConfig.get(SewConfig.TOWN_FOUND_COST)));
+                throw NOT_ENOUGH_MONEY.create(founder, "$" + FormattingUtils.format(SewConfig.get(SewConfig.TOWN_FOUND_COST)));
         } catch (NotEnoughMoneyException e) {
-            throw NOT_ENOUGH_MONEY.create(founder, "$" + NumberFormat.getInstance().format(SewConfig.get(SewConfig.TOWN_FOUND_COST)));
+            throw NOT_ENOUGH_MONEY.create(founder, "$" + FormattingUtils.format(SewConfig.get(SewConfig.TOWN_FOUND_COST)));
         }
         try {
             // Get town information
@@ -913,7 +913,7 @@ public final class ClaimCommand {
                 added++;
         }
         
-        Text amount = new LiteralText(NumberFormat.getInstance().format(added)).formatted(Formatting.AQUA);
+        Text amount = new LiteralText(FormattingUtils.format(added)).formatted(Formatting.AQUA);
         source.sendFeedback(new LiteralText("Added ")
             .append(amount)
             .append(" villagers to ")
@@ -962,9 +962,9 @@ public final class ClaimCommand {
         
         // Notify the player
         player.sendMessage(new LiteralText("Interacting with ").formatted(Formatting.WHITE)
-            .append(new LiteralText(CasingUtils.Sentence(permissions.name())).formatted(Formatting.AQUA))
+            .append(new LiteralText(CasingUtils.sentence(permissions.name())).formatted(Formatting.AQUA))
             .append(new LiteralText(" is now limited to ").formatted(Formatting.WHITE))
-            .append(new LiteralText(CasingUtils.Sentence(rank.name())).formatted(Formatting.AQUA))
+            .append(new LiteralText(CasingUtils.sentence(rank.name())).formatted(Formatting.AQUA))
             .append(new LiteralText(".").formatted(Formatting.WHITE)),
             MessageType.SYSTEM,
             ServerCore.SPAWN_ID
@@ -988,9 +988,9 @@ public final class ClaimCommand {
             
             // Notify the player
             player.sendMessage(new LiteralText("Interacting with ").formatted(Formatting.WHITE)
-                .append(new LiteralText(CasingUtils.Sentence(permissions.name())).formatted(Formatting.AQUA))
+                .append(new LiteralText(CasingUtils.sentence(permissions.name())).formatted(Formatting.AQUA))
                 .append(new LiteralText(" is now limited to ").formatted(Formatting.WHITE))
-                .append(new LiteralText(CasingUtils.Sentence(rank.name())).formatted(Formatting.AQUA))
+                .append(new LiteralText(CasingUtils.sentence(rank.name())).formatted(Formatting.AQUA))
                 .append(new LiteralText(".").formatted(Formatting.WHITE)),
                 MessageType.SYSTEM,
                 ServerCore.SPAWN_ID
@@ -1018,7 +1018,7 @@ public final class ClaimCommand {
         }
         
         // Notify the player
-        player.sendMessage(new LiteralText(CasingUtils.Words(setting.name().replace("_", " "))).formatted(Formatting.AQUA)
+        player.sendMessage(new LiteralText(CasingUtils.words(setting.name().replace("_", " "))).formatted(Formatting.AQUA)
             .append(new LiteralText(" is now ").formatted(Formatting.WHITE))
             .append(new LiteralText( enabled ? "Enabled" : "Disabled" ).formatted(setting.getAttributeColor( enabled )))
             .append(new LiteralText(" in your claimed area.").formatted(Formatting.WHITE)),
@@ -1056,7 +1056,7 @@ public final class ClaimCommand {
         player.sendMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
             .append( new LiteralText( friend.getName() ).formatted(Formatting.DARK_PURPLE) )
             .append( new LiteralText(" is now an ") )
-            .append( new LiteralText( CasingUtils.Sentence(rank.name()) ).formatted(Formatting.AQUA) )
+            .append( new LiteralText( CasingUtils.sentence(rank.name()) ).formatted(Formatting.AQUA) )
             .append( new LiteralText("." ).formatted(Formatting.WHITE) ),
             MessageType.SYSTEM,
             ServerCore.SPAWN_ID

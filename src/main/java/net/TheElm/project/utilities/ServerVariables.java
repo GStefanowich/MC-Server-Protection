@@ -26,9 +26,10 @@
 package net.TheElm.project.utilities;
 
 import com.mojang.bridge.game.GameVersion;
-import net.TheElm.project.ServerCore;
+import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.interfaces.MotdFunction;
 import net.minecraft.SharedConstants;
-import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.SaveProperties;
@@ -39,7 +40,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.stream.StreamSupport;
 
 /**
@@ -47,12 +47,12 @@ import java.util.stream.StreamSupport;
  * By greg in SewingMachineMod
  */
 public class ServerVariables {
-    private static final @NotNull Map<String, Function<MinecraftServer, String>> VARIABLES;
+    private static final @NotNull Map<String, MotdFunction> VARIABLES;
     static {
         /*
          * Save our Variables to parse
          */
-        Map<String, Function<MinecraftServer, String>> variables = new HashMap<>();
+        Map<String, MotdFunction> variables = new HashMap<>();
         
         // Version
         variables.put("version", server -> {
@@ -62,11 +62,60 @@ public class ServerVariables {
             return version.getId();
         });
         
-        // Time
+        // Time (Ingame time of day)
         variables.put("time", server -> {
             ServerWorld world = server.getWorld(World.OVERWORLD);
             if (world == null) return "time";
             return SleepUtils.timeFromMillis(world.getTimeOfDay());
+        });
+        
+        // Time (Ingame day)
+        variables.put("time.day", server -> {
+            ServerWorld world = server.getWorld(World.OVERWORLD);
+            long worldDay;
+            
+            if (world == null)
+                worldDay = 0L;
+            else {
+                worldDay = IntUtils.timeToDays(world);
+                long worldYear = worldDay / SewConfig.get(SewConfig.CALENDAR_DAYS);
+                worldDay = worldDay - (worldYear * SewConfig.get(SewConfig.CALENDAR_DAYS));
+            }
+            
+            return FormattingUtils.format(worldDay);
+        });
+        
+        // Time (Ingame year)
+        variables.put("time.year", server -> {
+            ServerWorld world = server.getWorld(World.OVERWORLD);
+            long worldYear;
+            
+            if (world == null)
+                worldYear = 0L;
+            else {
+                long worldDay = IntUtils.timeToDays(world);
+                worldYear = worldDay / SewConfig.get(SewConfig.CALENDAR_DAYS);
+            }
+            
+            return FormattingUtils.format(worldYear);
+        });
+        
+        // Players online
+        variables.put("players", server -> {
+            PlayerManager playerManager = server.getPlayerManager();
+            return FormattingUtils.format(playerManager == null ? 0 : playerManager.getCurrentPlayerCount());
+        });
+        
+        // Max player count
+        variables.put("slots", server -> {
+            PlayerManager playerManager = server.getPlayerManager();
+            return FormattingUtils.format(playerManager == null ? 0 : playerManager.getMaxPlayerCount());
+        });
+        
+        // Number of players that can join
+        variables.put("slots.free", server -> {
+            PlayerManager playerManager = server.getPlayerManager();
+            return FormattingUtils.format(playerManager == null ? 0 : Math.max(0, playerManager.getMaxPlayerCount() - playerManager.getCurrentPlayerCount()));
         });
         
         // Weather
@@ -105,10 +154,13 @@ public class ServerVariables {
             return difficulty.getName();
         });
         
+        // Year epoch
+        variables.put("config.epoch", server -> CasingUtils.acronym(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH), true));
+        
         VARIABLES = Collections.unmodifiableMap(variables);
     }
     
-    public static @NotNull Set<Map.Entry<String, Function<MinecraftServer, String>>> entrySet() {
+    public static @NotNull Set<Map.Entry<String, MotdFunction>> entrySet() {
         return ServerVariables.VARIABLES.entrySet();
     }
 }

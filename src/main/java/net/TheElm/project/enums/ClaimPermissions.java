@@ -53,7 +53,7 @@ public enum ClaimPermissions {
         this.defaultRank = defaultRank;
         this.description = new LiteralText(description)
             .append(" (Default: ")
-            .append(new LiteralText(CasingUtils.Sentence(this.defaultRank.name()))
+            .append(new LiteralText(CasingUtils.sentence(this.defaultRank.name()))
                 .formatted(this.defaultRank.getColor()))
             .append(")");
     }

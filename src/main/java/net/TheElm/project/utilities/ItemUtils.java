@@ -27,6 +27,7 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.utilities.nbt.NbtUtils;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.BucketItem;
 import net.minecraft.item.EndCrystalItem;
@@ -41,7 +42,9 @@ import net.minecraft.item.WritableBookItem;
 import net.minecraft.item.WrittenBookItem;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TranslatableText;
 import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -101,6 +104,21 @@ public final class ItemUtils {
         return !stack1.isEmpty() && !stack2.isEmpty() // Neither stack is empty
             && stack1.getItem() == stack2.getItem() // Items are both the same
             && Objects.equals(stack1.getNbt(), stack2.getNbt()); // Tags are both equal
+    }
+    
+    public static void setStackAuthor(@NotNull ItemStack stack, @NotNull PlayerEntity player) {
+        NbtCompound display = stack.getOrCreateSubNbt("display");;
+        
+        // Get the rarity of the new output item
+        InventoryUtils.ItemRarity rarity = InventoryUtils.getItemRarity(stack);
+        
+        // Generate the lore
+        Text lore = new LiteralText("One ")
+            .append(new LiteralText(rarity.name()))
+            .append(" ").append(new TranslatableText(stack.getTranslationKey()));
+        Text madeBy = new LiteralText("Forged by ")
+            .append(player.getEntityName());
+        display.put("Lore", NbtUtils.toList(Arrays.asList(lore, madeBy), Text.Serializer::toJson));
     }
     
     @Contract("_, _ -> new")

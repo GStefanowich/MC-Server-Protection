@@ -32,6 +32,7 @@ import io.netty.buffer.Unpooled;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.interfaces.MotdFunction;
 import net.TheElm.project.protections.ranks.PlayerRank;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.FormattingUtils;
@@ -63,9 +64,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -112,10 +111,15 @@ public abstract class MOTD {
     public void onGetDescription(@NotNull CallbackInfoReturnable<Text> callback) {
         // Get MOTDs and if empty, cancel
         List<String> configMOTD = SewConfig.get(SewConfig.SERVER_MOTD_LIST);
-        if (configMOTD.size() <= 0) return;
+        if (configMOTD.size() <= 0)
+            return;
+        
+        // Cycle the MOTD every 10 seconds
+        int i = configMOTD.size() == 1 ? 0 : (int) ((System.currentTimeMillis() / 10000) % configMOTD.size());
+        int clamp = Integer.min(configMOTD.size() - 1, i);
         
         // Get the formatted MOTD
-        String raw = this.descriptionReplaceVariables(SewConfig.getRandom(SewConfig.SERVER_MOTD_LIST));
+        String raw = this.descriptionReplaceVariables(configMOTD.get(clamp));
         if (raw != null) {
             Text motd = FormattingUtils.stringToText(raw);
             if (motd != null)
@@ -166,7 +170,7 @@ public abstract class MOTD {
             MinecraftServer server = ServerCore.get();
             
             // For all keys
-            for (Map.Entry<String, Function<MinecraftServer, String>> row : ServerVariables.entrySet()) {
+            for (Map.Entry<String, MotdFunction> row : ServerVariables.entrySet()) {
                 // If description contains
                 Pattern pattern = Pattern.compile("\\$\\{(" + row.getKey() + "[\\^_]{0,2})}");
                 Matcher matcher = pattern.matcher(description);
@@ -175,16 +179,16 @@ public abstract class MOTD {
                     String key = matcher.group(1);
                     String val;
                     try {
-                        val = row.getValue().apply(server);
+                        val = row.getValue().parseVar(server);
                         if (val == null) continue;
                         
                         // Change val casing
                         if (key.endsWith("__"))
-                            val = CasingUtils.Lower(val);
+                            val = CasingUtils.lower(val);
                         else if (key.endsWith("^^"))
-                            val = CasingUtils.Upper(val);
+                            val = CasingUtils.upper(val);
                         else if (key.endsWith("^"))
-                            val = CasingUtils.Words(val);
+                            val = CasingUtils.words(val);
                         
                     } catch (Exception e) { CoreMod.logError(new Exception("Error in MOTD variable \"" + row.getKey() + "\"", e)); return null; }
                     

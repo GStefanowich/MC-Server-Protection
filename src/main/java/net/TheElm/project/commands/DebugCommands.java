@@ -27,11 +27,13 @@ package net.TheElm.project.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.DragonLoot;
+import net.TheElm.project.mixins.Server.ServerWorldAccessor;
 import net.TheElm.project.objects.rewards.WeightedReward;
 import net.TheElm.project.utilities.BossLootRewards;
 import net.TheElm.project.utilities.EffectUtils;
@@ -40,14 +42,20 @@ import net.minecraft.command.argument.ParticleEffectArgumentType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.particle.ParticleEffect;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
+import net.minecraft.util.Formatting;
+import net.minecraft.world.WanderingTraderManager;
+import net.minecraft.world.gen.Spawner;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 public class DebugCommands {
     private DebugCommands() {}
@@ -63,6 +71,13 @@ public class DebugCommands {
                 )
                 .executes(DebugCommands::executeParticle)
             )
+        );
+        
+        ServerCore.register(dispatcher, "Tick Wandering Trader", builder -> builder
+            .then(CommandManager.argument("force", BoolArgumentType.bool())
+                .executes(DebugCommands::forceTraderSpawn)
+            )
+            .executes(DebugCommands::forceTrader)
         );
         
         ServerCore.register(dispatcher, "Dragon Loot", builder -> builder
@@ -122,4 +137,44 @@ public class DebugCommands {
         return Command.SINGLE_SUCCESS;
     }
     
+    private static int forceTrader(@NotNull CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        
+        int spawn = DebugCommands.forceTraderSpawn(context, false);
+        source.sendFeedback(new LiteralText(spawn > 0 ? "Spawned wandering trader" : "Failed to spawn wandering trader").formatted(spawn > 0 ? Formatting.GREEN : Formatting.RED), false);
+        
+        return spawn;
+    }
+    private static int forceTraderSpawn(@NotNull CommandContext<ServerCommandSource> context) {
+        ServerCommandSource source = context.getSource();
+        
+        int spawn = DebugCommands.forceTraderSpawn(context, BoolArgumentType.getBool(context, "force"));
+        source.sendFeedback(new LiteralText(spawn > 0 ? "Spawned wandering trader" : "Failed to spawn wandering trader").formatted(spawn > 0 ? Formatting.GREEN : Formatting.RED), false);
+        
+        return spawn;
+    }
+    private static int forceTraderSpawn(@NotNull CommandContext<ServerCommandSource> context, boolean force) {
+        ServerCommandSource source = context.getSource();
+        MinecraftServer server = source.getServer();
+        ServerWorld world = server.getOverworld();
+        
+        Optional<WanderingTraderManager> optional = ((ServerWorldAccessor)world).getSpawners()
+            .stream()
+            .filter(spawner -> spawner instanceof WanderingTraderManager)
+            .map(spawner -> (WanderingTraderManager)spawner)
+            .findFirst();
+        if (optional.isEmpty())
+            return 0;
+        
+        WanderingTraderManager manager = optional.get();
+        int spawn;
+        
+        if (!force)
+            spawn = manager.spawn(world, false, false);
+        else do {
+            spawn = manager.spawn(world, false, false);
+        } while (spawn <= 0);
+        
+        return spawn;
+    }
 }

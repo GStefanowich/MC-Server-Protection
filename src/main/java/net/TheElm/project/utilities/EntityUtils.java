@@ -30,7 +30,7 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.ShopSignData;
-import net.TheElm.project.mixins.Server.ServerWorldPropertiesAccessor;
+import net.TheElm.project.mixins.Server.ServerWorldAccessor;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.AnvilBlock;
@@ -535,6 +535,12 @@ public final class EntityUtils {
             .append(EntityUtils.getEntityRegionName(trader))
             .append("."));
     }
+    public static @NotNull Text wanderingTraderDepartureTime(@NotNull WanderingTraderEntity trader) {
+        int despawn = trader.getDespawnDelay();
+        
+        return (despawn >= 1200 ? new LiteralText((despawn / 1200) + "m") : new LiteralText((despawn / 20) + "s"))
+            .formatted(Formatting.AQUA);
+    }
     public static boolean isEntityWanderingTrader(@NotNull Entity entity) {
         return Objects.equals(entity.getUuid(), EntityUtils.getWanderingTraderId(entity.getServer()));
     }
@@ -547,7 +553,7 @@ public final class EntityUtils {
         
         // Wandering Trader ID is only stored in the overworld
         ServerWorld overworld = server.getOverworld();
-        ServerWorldProperties properties = ((ServerWorldPropertiesAccessor)overworld).getProperties();
+        ServerWorldProperties properties = ((ServerWorldAccessor)overworld).getProperties();
         return properties.getWanderingTraderId();
     }
     
@@ -698,7 +704,7 @@ public final class EntityUtils {
                 name.append(schema.get(random, i + 1));
             
             // Convert the name to a Text object
-            return new LiteralText(CasingUtils.Sentence(name.toString()));
+            return new LiteralText(CasingUtils.sentence(name.toString()));
         }
         
         private static abstract class NamedVillagers {

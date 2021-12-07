@@ -87,7 +87,7 @@ public abstract class WorldSleep extends World implements LogicalWorld, ServerWo
         worldDay = worldDay - (worldYear * SewConfig.get(SewConfig.CALENDAR_DAYS));
         
         NumberFormat formatter = NumberFormat.getInstance();
-        String year = CasingUtils.Acronym(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH), true);
+        String year = CasingUtils.acronym(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH), true);
         TitleUtils.showPlayerAlert((ServerWorld)(World) this,
             new LiteralText("Rise and shine! Day ")
                 .append(formatter.format( worldDay ))

@@ -63,9 +63,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
 
 public final class PlayerNameUtils {
     
@@ -105,7 +103,7 @@ public final class PlayerNameUtils {
             
             // Add the players title
             if (player.getUuid().equals(town.getOwner()))
-                format.append( CasingUtils.Sentence( town.getOwnerTitle() ) + " " );
+                format.append( CasingUtils.sentence( town.getOwnerTitle() ) + " " );
             
         } else {
             format.append("] ");
@@ -156,7 +154,7 @@ public final class PlayerNameUtils {
             .styled(MessageUtils.simpleHoverText(longer.styled(formatting)));
     }
     public static @NotNull MutableText formattedChat(@NotNull ChatRooms chatRoom) {
-        String name = CasingUtils.Sentence( chatRoom.name() );
+        String name = CasingUtils.sentence( chatRoom.name() );
         return new LiteralText( name.substring( 0, 1 ) )
             .formatted( Formatting.DARK_GRAY )
             .styled((style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( name ).formatted( Formatting.WHITE )))));

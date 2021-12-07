@@ -34,6 +34,7 @@ import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
+import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -42,17 +43,30 @@ public final class ClaimTag extends NbtCompound {
     private ClaimTag() {
         super();
     }
-    public ClaimTag(@NotNull World world, @NotNull ChunkPos chunk) {
+    public ClaimTag(@NotNull Chunk chunk, @NotNull ChunkPos pos) {
+        super();
+        
+        if (chunk instanceof WorldChunk worldChunk) {
+            World world = worldChunk.getWorld();
+            RegistryKey<World> dimType = world.getRegistryKey();
+            if (dimType != null)
+                this.putString("dimension", dimType.getValue().toString());
+        }
+        this.putInt("x", pos.x);
+        this.putInt("z", pos.z);
+    }
+    public ClaimTag(@NotNull World world, @NotNull ChunkPos pos) {
         super();
         
         RegistryKey<World> dimType = world.getRegistryKey();
         if (dimType != null)
             this.putString("dimension", dimType.getValue().toString());
-        this.putInt("x", chunk.x);
-        this.putInt("z", chunk.z);
+        
+        this.putInt("x", pos.x);
+        this.putInt("z", pos.z);
     }
-    public ClaimTag(@NotNull WorldChunk chunk) {
-        this(chunk.getWorld(), chunk.getPos());
+    public ClaimTag(@NotNull Chunk chunk) {
+        this(chunk, chunk.getPos());
     }
     
     public int getX() {
@@ -113,7 +127,7 @@ public final class ClaimTag extends NbtCompound {
         return tag;
     }
     
-    public static @NotNull ClaimTag of(@NotNull WorldChunk chunk) {
+    public static @NotNull ClaimTag of(@NotNull Chunk chunk) {
         return new ClaimTag(chunk);
     }
     public static @NotNull ClaimTag of(@NotNull World world, @NotNull ChunkPos chunkPos) {

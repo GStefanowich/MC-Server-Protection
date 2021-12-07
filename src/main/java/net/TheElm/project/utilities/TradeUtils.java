@@ -221,26 +221,26 @@ public class TradeUtils {
         
         @Override
         protected @NotNull Text itemName(int strength) {
-            switch (strength) {
-                case 0: return new LiteralText("Weak Structure Locator");
-                case 1: return new LiteralText("Normal Structure Locator");
-                default: return new LiteralText("Strong Structure Locator");
-            }
+            return switch (strength) {
+                case 0 -> new LiteralText("Weak Structure Locator");
+                case 1 -> new LiteralText("Normal Structure Locator");
+                default -> new LiteralText("Strong Structure Locator");
+            };
         }
         
         protected @NotNull String description(@Nullable String key) {
             if (key == null)
                 return "Unknown";
-            switch (key) {
-                case "bastion_remnant": return "Bastion";
-                case "desert_pyramid": return "Desert Pyramid";
-                case "endcity": return "End City";
-                case "village": return "Village";
-                case "fortress": return "Fortress";
-                case "mansion": return "Mansion";
-                case "jungle_pyramid": return "Jungle Pyramid";
-                default: return CasingUtils.Sentence(key);
-            }
+            return switch (key) {
+                case "bastion_remnant" -> "Bastion";
+                case "desert_pyramid" -> "Desert Pyramid";
+                case "endcity" -> "End City";
+                case "village" -> "Village";
+                case "fortress" -> "Fortress";
+                case "mansion" -> "Mansion";
+                case "jungle_pyramid" -> "Jungle Pyramid";
+                default -> CasingUtils.sentence(key);
+            };
         }
     }
     private static class BiomeEnderLocatorTradeFactory extends EnderLocatorTradeFactory implements TradeOffers.Factory {
@@ -265,11 +265,11 @@ public class TradeUtils {
         
         @Override
         protected @NotNull Text itemName(int strength) {
-            switch (strength) {
-                case 0: return new LiteralText("Weak Biome Locator");
-                case 1: return new LiteralText("Normal Biome Locator");
-                default: return new LiteralText("Strong Biome Locator");
-            }
+            return switch (strength) {
+                case 0 -> new LiteralText("Weak Biome Locator");
+                case 1 -> new LiteralText("Normal Biome Locator");
+                default -> new LiteralText("Strong Biome Locator");
+            };
         }
         
         protected @NotNull MutableText description(@Nullable Identifier identifier) {

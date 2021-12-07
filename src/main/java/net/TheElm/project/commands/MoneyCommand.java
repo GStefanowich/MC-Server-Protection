@@ -42,6 +42,7 @@ import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.utilities.ColorUtils;
 import net.TheElm.project.utilities.CommandUtils;
+import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TitleUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
@@ -59,7 +60,6 @@ import net.minecraft.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.text.NumberFormat;
 import java.util.Collection;
 
 public final class MoneyCommand {
@@ -168,7 +168,7 @@ public final class MoneyCommand {
             if ( MoneyUtils.givePlayerMoney( target.getId(), amount ) ) {
                 // Notify the command sender
                 op.sendFeedback(new LiteralText("Gave ").formatted(Formatting.YELLOW)
-                    .append(new LiteralText("$" + NumberFormat.getInstance().format(amount)).formatted(Formatting.GREEN))
+                    .append(new LiteralText("$" + FormattingUtils.format(amount)).formatted(Formatting.GREEN))
                     .append(" to ")
                     .append(new LiteralText(target.getName()).formatted(Formatting.DARK_PURPLE))
                     .append("."),
@@ -201,11 +201,11 @@ public final class MoneyCommand {
             // Take the players money
             if ( MoneyUtils.takePlayerMoney( target.getId(), amount ) ) {
                 // Notify the command sender
-                op.sendFeedback( new LiteralText( "Took " ).formatted(Formatting.YELLOW)
-                    .append( new LiteralText( "$" + NumberFormat.getInstance().format( amount ) ).formatted(Formatting.RED) )
-                    .append( " from " )
-                    .append( new LiteralText( target.getName() ).formatted(Formatting.DARK_PURPLE) )
-                    .append( "." ),
+                op.sendFeedback(new LiteralText("Took ").formatted(Formatting.YELLOW)
+                    .append(new LiteralText("$" + FormattingUtils.format(amount)).formatted(Formatting.RED))
+                    .append(" from ")
+                    .append(new LiteralText( target.getName() ).formatted(Formatting.DARK_PURPLE))
+                    .append("."),
                     true
                 );
                 
@@ -242,7 +242,7 @@ public final class MoneyCommand {
                 op.sendFeedback(new LiteralText("Set money for ").formatted(Formatting.YELLOW)
                     .append(new LiteralText(target.getName()).formatted(Formatting.DARK_PURPLE))
                     .append(" to ")
-                    .append(new LiteralText("$" + NumberFormat.getInstance().format(amount)).formatted(amount >= 0 ? Formatting.GREEN : Formatting.RED))
+                    .append(new LiteralText("$" + FormattingUtils.format(amount)).formatted(amount >= 0 ? Formatting.GREEN : Formatting.RED))
                     .append("."),
                     true
                 );
@@ -272,7 +272,7 @@ public final class MoneyCommand {
             op.sendFeedback( new LiteralText( "Set money for " ).formatted(Formatting.YELLOW)
                 .append( new LiteralText( target.getName() ).formatted(Formatting.DARK_PURPLE) )
                 .append( " to " )
-                .append( new LiteralText( "$" + NumberFormat.getInstance().format(startingMoney)).formatted( startingMoney >= 0 ? Formatting.GREEN : Formatting.RED ) )
+                .append( new LiteralText( "$" + FormattingUtils.format(startingMoney)).formatted( startingMoney >= 0 ? Formatting.GREEN : Formatting.RED ) )
                 .append( "." ),
                 true
             );
@@ -347,7 +347,7 @@ public final class MoneyCommand {
                 new LiteralText("").formatted(Formatting.YELLOW)
                     .append(ColorUtils.format(player.getDisplayName(), Formatting.AQUA))
                     .append(" is requesting ")
-                    .append(new LiteralText("$" + NumberFormat.getInstance().format(amount)).formatted(Formatting.AQUA))
+                    .append(new LiteralText("$" + FormattingUtils.format(amount)).formatted(Formatting.AQUA))
                     .append(" from you. ")
                     .append(new LiteralText("Click Here").formatted(Formatting.BLUE, Formatting.BOLD).styled((style) -> style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/pay " + amount + " " + player.getName().getString()))))
                     .append(" to pay."),
@@ -392,12 +392,12 @@ public final class MoneyCommand {
             if (payer == null) {
                 TitleUtils.showPlayerAlert(recipientEntity, ( amount > 0 ? Formatting.GREEN : Formatting.RED ),
                     new LiteralText("You " + ( amount > 0 ? "received" : "lost" )),
-                    new LiteralText(" $" + NumberFormat.getInstance().format(Math.abs( amount ))).formatted(Formatting.AQUA, Formatting.BOLD)
+                    new LiteralText(" $" + FormattingUtils.format(Math.abs( amount ))).formatted(Formatting.AQUA, Formatting.BOLD)
                 );
             } else {
                 TitleUtils.showPlayerAlert(recipientEntity, Formatting.GREEN,
                     new LiteralText("You received"),
-                    new LiteralText(" $" + NumberFormat.getInstance().format(Math.abs( amount ))).formatted(Formatting.AQUA, Formatting.BOLD),
+                    new LiteralText(" $" + FormattingUtils.format(Math.abs( amount ))).formatted(Formatting.AQUA, Formatting.BOLD),
                     new LiteralText(" from "),
                     ColorUtils.format(payer.getName(), Formatting.DARK_PURPLE)
                 );

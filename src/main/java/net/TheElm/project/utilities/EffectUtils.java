@@ -192,14 +192,14 @@ public final class EffectUtils {
             
             int force = 0;
             if (angle >= 165 && angle <= 195)
-                helper = "Go Forward";
+                helper = "Straight Ahead";
             else if (angle >= 0 && angle < 165) {
                 force = (int)((180 - angle) / 30);
-                helper = "Go Right";
+                helper = "Turn Right";
                 suffix = StringUtils.repeat(">", force);
             } else if (angle <= 360 && angle > 195) {
                 force = (int)((angle - 180) / 30);
-                helper = "Go Left";
+                helper = "Turn Left";
                 prefix = StringUtils.repeat("<", force);
             }
         }

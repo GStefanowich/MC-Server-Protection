@@ -26,8 +26,10 @@
 package net.TheElm.project.objects;
 
 import com.mojang.authlib.GameProfile;
-import net.TheElm.project.utilities.text.TextUtils;
+import net.TheElm.project.utilities.EntityUtils;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
+import net.minecraft.entity.passive.WanderingTraderEntity;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
@@ -52,12 +54,17 @@ public class WanderingTraderProfileCollection implements Collection<ServerPlayer
     private final @NotNull Text name;
     
     public WanderingTraderProfileCollection() {
+        this((Entity) null);
+    }
+    public WanderingTraderProfileCollection(Entity entity) {
+        this(entity instanceof WanderingTraderEntity trader ? EntityUtils.wanderingTraderDepartureTime(trader) : new LiteralText("Mob").formatted(Formatting.RED));
+    }
+    public WanderingTraderProfileCollection(Text text) {
         this.profile = new GameProfile(UUID.fromString("bd482739-767c-45dc-a1f8-c33c40530952"), "MHF_VILLAGER");
         this.name = new LiteralText("").formatted(Formatting.WHITE)
             .append(new TranslatableText(EntityType.WANDERING_TRADER.getTranslationKey()).formatted(Formatting.BLUE))
-            .append(" [")
-            .append(new LiteralText("Mob").formatted(Formatting.RED))
-            .append("]");
+            .append(" - ")
+            .append(text);
         
         this.entry = new PlayerListS2CPacket.Entry(this.profile, 0, GameMode.DEFAULT, this.name);
     }

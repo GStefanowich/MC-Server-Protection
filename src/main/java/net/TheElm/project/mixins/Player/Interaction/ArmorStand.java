@@ -176,7 +176,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
                     ArmorStandPose.apply(pose, this);
                     
                     // Tell the player
-                    player.sendMessage(new LiteralText(CasingUtils.Words(pose.name()
+                    player.sendMessage(new LiteralText(CasingUtils.words(pose.name()
                         .replace('_', ' '))).formatted(Formatting.YELLOW), true);
                     
                     // Eat the interaction
