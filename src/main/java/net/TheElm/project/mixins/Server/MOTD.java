@@ -62,6 +62,7 @@ import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
@@ -72,6 +73,7 @@ import java.util.regex.Pattern;
 public abstract class MOTD {
     
     private final List<CharBuffer> base64 = new ArrayList<>();
+    private final List<String> motds = new ArrayList<>();
     
     @Shadow private ServerMetadata.Players players;
     @Shadow private ServerMetadata.Version version;
@@ -105,21 +107,24 @@ public abstract class MOTD {
                 }
             }
         }
+        
+        // Get all of the MOTDs and shuffle
+        SewConfig.afterReload(this::refreshMotd);
+        this.refreshMotd();
     }
     
     @Inject(at = @At("HEAD"), method = "getDescription", cancellable = true)
     public void onGetDescription(@NotNull CallbackInfoReturnable<Text> callback) {
         // Get MOTDs and if empty, cancel
-        List<String> configMOTD = SewConfig.get(SewConfig.SERVER_MOTD_LIST);
-        if (configMOTD.size() <= 0)
+        if (this.motds.size() <= 0)
             return;
         
         // Cycle the MOTD every 10 seconds
-        int i = configMOTD.size() == 1 ? 0 : (int) ((System.currentTimeMillis() / 10000) % configMOTD.size());
-        int clamp = Integer.min(configMOTD.size() - 1, i);
+        int i = this.motds.size() == 1 ? 0 : (int) ((System.currentTimeMillis() / 10000) % this.motds.size());
+        int clamp = Integer.min(this.motds.size() - 1, i);
         
         // Get the formatted MOTD
-        String raw = this.descriptionReplaceVariables(configMOTD.get(clamp));
+        String raw = this.descriptionReplaceVariables(this.motds.get(clamp));
         if (raw != null) {
             Text motd = FormattingUtils.stringToText(raw);
             if (motd != null)
@@ -163,6 +168,12 @@ public abstract class MOTD {
             return;
         CharBuffer random = this.base64.get(ThreadLocalRandom.current().nextInt(this.base64.size()));
         callback.setReturnValue("data:image/png;base64," + random);
+    }
+    
+    private void refreshMotd() {
+        this.motds.clear();
+        this.motds.addAll(SewConfig.get(SewConfig.SERVER_MOTD_LIST));
+        Collections.shuffle(this.motds);
     }
     
     private @Contract("null -> null") String descriptionReplaceVariables(@Nullable String description) {

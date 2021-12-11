@@ -96,7 +96,7 @@ public class HeadCommand {
         
         ItemUtils.insertItems(source.getPlayer(), Items.PLAYER_HEAD, count, stack -> {
             // Assign the Properties
-            NbtCompound skullOwner = stack.getSubNbt("SkullOwner"),
+            NbtCompound skullOwner = stack.getOrCreateSubNbt("SkullOwner"),
                 listItem = new NbtCompound(),
                 properties;
             listItem.putString("Value", base64);

@@ -40,23 +40,15 @@ public final class ConfigArray<T extends Object> extends ConfigBase<T> {
     
     private final Function<JsonElement, T> setter;
     private final List<T> value;
-    private final boolean shuffle;
     
     public ConfigArray(@NotNull String location, Function<JsonElement, T> setter) {
-        this(location, new ArrayList<>(), setter, false);
-    }
-    public ConfigArray(@NotNull String location, Function<JsonElement, T> setter, boolean shuffle) {
-        this(location, new ArrayList<>(), setter, shuffle);
+        this(location, new ArrayList<>(), setter);
     }
     public ConfigArray(@NotNull String location, List<T> defaultValue, Function<JsonElement, T> setter) {
-        this(location, defaultValue, setter, false);
-    }
-    public ConfigArray(@NotNull String location, List<T> defaultValue, Function<JsonElement, T> setter, boolean shuffle) {
         super(location);
         
         this.value = defaultValue;
         this.setter = setter;
-        this.shuffle = shuffle;
     }
     
     @Override
@@ -88,10 +80,6 @@ public final class ConfigArray<T extends Object> extends ConfigBase<T> {
             this.value.add(this.setter.apply(value));
         else for (JsonElement element : value.getAsJsonArray())
             this.value.add(this.setter.apply(element));
-        
-        // Shuffle the array
-        if (this.shuffle)
-            Collections.shuffle(this.value);
     }
     
     public static @NotNull ConfigArray<Integer> jInt(@NotNull String location) {
@@ -105,8 +93,5 @@ public final class ConfigArray<T extends Object> extends ConfigBase<T> {
     }
     public static @NotNull ConfigArray<String> jString(@NotNull String location) {
         return new ConfigArray<>(location, JsonElement::getAsString);
-    }
-    public static @NotNull ConfigArray<String> jString(@NotNull String location, boolean shuffled) {
-        return new ConfigArray<>(location, JsonElement::getAsString, shuffled);
     }
 }

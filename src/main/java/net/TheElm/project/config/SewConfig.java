@@ -276,7 +276,7 @@ public final class SewConfig extends SewConfigContainer {
      * Server list MOTD
      */
     
-    public static final ConfigArray<String> SERVER_MOTD_LIST = SewConfig.addConfig(ConfigArray.jString("server.motd", true));
+    public static final ConfigArray<String> SERVER_MOTD_LIST = SewConfig.addConfig(ConfigArray.jString("server.motd"));
     public static final ConfigArray<String> SERVER_ICON_LIST = SewConfig.addConfig(ConfigArray.jString("server.icons"));
     
     /*
