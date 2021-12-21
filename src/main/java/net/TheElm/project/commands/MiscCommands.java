@@ -47,15 +47,14 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TranslatableText;
-import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
 public final class MiscCommands {
     
-    private static String FLIP = "(╯°□°)╯︵ ┻━┻";
-    private static String SHRUG = "¯\\_(ツ)_/¯";
+    private static final @NotNull String FLIP = "(╯°□°)╯︵ ┻━┻";
+    private static final @NotNull String SHRUG = "¯\\_(ツ)_/¯";
     
     private MiscCommands() {}
     
@@ -127,22 +126,15 @@ public final class MiscCommands {
     }
     
     public static int playerSendsMessageAndData(@NotNull ServerPlayerEntity player, @NotNull String message, @NotNull String main) {
-        return MiscCommands.playerSendsMessageAndData(player, message, new LiteralText( main ));
+        MutableText text = new LiteralText(message);
+        if (!message.isEmpty())
+            text.append(" ");
+        return MiscCommands.playerSendsMessageAndData(player, text.append(main));
     }
-    public static int playerSendsMessageAndData(@NotNull ServerPlayerEntity player, @NotNull String message, @NotNull Text main) {
-        MutableText text;
+    public static int playerSendsMessageAndData(@NotNull ServerPlayerEntity player, @NotNull Text main) {
+        Text text;
         if (SewConfig.get(SewConfig.CHAT_MODIFY)) {
-            // Create the player display for chat
-            text = PlayerNameUtils.getPlayerChatDisplay(player, ((PlayerChat) player).getChatRoom())
-                .append(new LiteralText(": ").formatted(Formatting.GRAY));
-            
-            // Append the users message
-            if (!"".equals(message))
-                text.append(message)
-                    .append(" ");
-            
-            // Append the main information
-            text.append(main);
+            text = MessageUtils.formatPlayerMessage(player, ((PlayerChat)player).getChatRoom(), main);
         } else {
             text = new TranslatableText("chat.type.text", player.getDisplayName(), main);
         }

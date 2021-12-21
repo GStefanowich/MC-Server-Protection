@@ -25,14 +25,14 @@
 
 package net.TheElm.project.utilities.text;
 
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.objects.ChatFormat;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
-import net.TheElm.project.utilities.ColorUtils;
 import net.TheElm.project.utilities.FormattingUtils;
-import net.TheElm.project.utilities.PlayerNameUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.block.Block;
 import net.minecraft.client.option.ChatVisibility;
@@ -109,7 +109,7 @@ public final class MessageUtils {
     // Send a text blob from a target to a player
     public static void sendAsWhisper(@NotNull ServerCommandSource sender, @NotNull ServerPlayerEntity target, @NotNull Text text) {
         if (!MessageUtils.sendAsWhisper( ( sender.getEntity() instanceof ServerPlayerEntity ? (ServerPlayerEntity) sender.getEntity() : null ), target, text ))
-            sender.sendFeedback(new LiteralText("")
+            sender.sendFeedback(TextUtils.literal()
                 .append(target.getDisplayName())
                 .append(" could not receive your message.")
                 .formatted(Formatting.RED, Formatting.ITALIC), false);
@@ -300,7 +300,7 @@ public final class MessageUtils {
     }
     public static MutableText dimensionToTextComponent(@NotNull final String separator, final int x, final int y, final int z, Formatting... formatting) {
         String[] pos = MessageUtils.posToString(x, y, z);
-        return new LiteralText("")
+        return TextUtils.literal()
             .append(new LiteralText(pos[0]).formatted(formatting))
             .append(separator)
             .append(new LiteralText(pos[1]).formatted(formatting))
@@ -369,20 +369,20 @@ public final class MessageUtils {
     }
     
     // Format a message to chat from a player
-    public static @NotNull MutableText formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, String raw) {
+    public static @NotNull Text formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, String raw) {
         return MessageUtils.formatPlayerMessage(player, chatRoom, new LiteralText(raw));
     }
-    public static @NotNull MutableText formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, Text text) {
-        return PlayerNameUtils.getPlayerChatDisplay(player, chatRoom)
-            .append(new LiteralText(": ").formatted(Formatting.GRAY))
-            .append(ColorUtils.format(text, chatRoom.getFormatting()));
+    public static @NotNull Text formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, Text text) {
+        return MessageUtils.formatPlayerMessage(player.getCommandSource(), chatRoom, text);
     }
-    public static @NotNull MutableText formatPlayerMessage(@NotNull ServerCommandSource source, ChatRooms chatRoom, Text text) {
-        if (source.getEntity() instanceof ServerPlayerEntity player)
-            return MessageUtils.formatPlayerMessage(player, chatRoom, text);
-        return PlayerNameUtils.getServerChatDisplay(chatRoom)
-            .append(new LiteralText( ": " ).formatted(Formatting.GRAY))
-            .append(ColorUtils.format(text, chatRoom.getFormatting()));
+    public static @NotNull Text formatPlayerMessage(@NotNull ServerCommandSource source, ChatRooms chatRoom, @NotNull Text text) {
+        try {
+            ChatFormat format = chatRoom.getFormat();
+            return format.format(source, text);
+        } catch (StackOverflowError e) {
+            CoreMod.logError(e);
+        }
+        return TextUtils.literal();
     }
     
     public static @NotNull MutableText formatObject(@NotNull Item item) {
@@ -419,7 +419,7 @@ public final class MessageUtils {
     public static @NotNull MutableText detailedItem(@NotNull ItemStack stack) {
         List<Text> infos = new LinkedList<>();
         Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(stack);
-        MutableText output = new LiteralText("")
+        MutableText output = TextUtils.literal()
             .append(MessageUtils.detailedItem(stack.getItem()));
         
         if (stack.getItem().isDamageable() && !stack.isDamageable())

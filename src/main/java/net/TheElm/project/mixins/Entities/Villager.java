@@ -33,6 +33,7 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.ColorUtils;
 import net.TheElm.project.utilities.EntityUtils;
+import net.TheElm.project.utilities.text.TextUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.InteractionObserver;
@@ -162,7 +163,7 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
                 }
                 
                 town.send(this.getServer(), ((pName != null && sName != null && bName != null) ?
-                    new LiteralText("").append(pName).append(" and ")
+                    TextUtils.literal().append(pName).append(" and ")
                         .append(sName).append(" have welcome a new villager, ")
                         .append(bName).append(", into your town.")
                     : (bName != null ?

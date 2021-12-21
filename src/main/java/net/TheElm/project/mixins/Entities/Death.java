@@ -47,7 +47,9 @@ import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.stat.Stats;
@@ -112,6 +114,19 @@ public abstract class Death extends Entity {
         // Get current entity IDs
         NbtList entityIds = spawnerTag.getList("EntityIds", NbtElement.STRING_TYPE);
         int rolls = 1 + EnchantmentHelper.getLevel(Enchantments.LOOTING, player.getMainHandStack());
+        
+        // Spawn particles
+        ((ServerWorld) this.world).spawnParticles(ParticleTypes.SOUL,
+            this.getX(),
+            this.getY(),
+            this.getZ(),
+            8 * rolls,
+            0.25D,
+            0.5D,
+            0.25D,
+            0.01D
+        );
+        
         for (int roll = 0; roll < rolls; ++roll) {
             Integer random = null;
             // Test the odds
@@ -128,10 +143,10 @@ public abstract class Death extends Entity {
                 this.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 60, 1, false, false));
                 
                 // Should drop a new spawner
-                boolean dropNew = false;
+                boolean dropNew = itemStack.getCount() > 1;
                 
                 // Update the existing item in hand
-                if (dropNew = (itemStack.getCount() > 1)) {
+                if (dropNew) {
                     // Update a new item (NOT an entire stack)
                     itemStack.decrement(1);
                     itemStack = new ItemStack(Items.SPAWNER);
@@ -146,6 +161,7 @@ public abstract class Death extends Entity {
                         .offerOrDrop(itemStack);
                 break;
             }
+            System.out.println(random);
         }
     }
     

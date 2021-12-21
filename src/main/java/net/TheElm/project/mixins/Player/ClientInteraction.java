@@ -218,11 +218,11 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
         try {
             // Parse the users message
             String rawString = StringUtils.normalizeSpace(message.getRaw());
-            
+
             // The chatroom to send the message in
-            ChatRooms room = ((PlayerChat)this.player).getChatRoom();
-            
-            if ((room != ChatRooms.TOWN) && ((PlayerChat)this.player).isMuted()) {
+            ChatRooms room = ((PlayerChat) this.player).getChatRoom();
+
+            if ((room != ChatRooms.TOWN) && ((PlayerChat) this.player).isMuted()) {
                 this.player.sendSystemMessage(TranslatableServerSide.text(
                     this.player,
                     "chat.muted",

@@ -23,46 +23,42 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.enums;
+package net.TheElm.project.utilities.text;
 
-import net.TheElm.project.config.ConfigOption;
-import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.interfaces.ServerTranslatable;
-import net.TheElm.project.objects.ChatFormat;
-import net.TheElm.project.utilities.TranslatableServerSide;
-import net.minecraft.text.MutableText;
-import net.minecraft.util.Formatting;
+import net.TheElm.project.interfaces.chat.TextModifier;
+import net.minecraft.text.LiteralText;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.Locale;
-
-public enum ChatRooms implements ServerTranslatable {
-    WHISPER(SewConfig.CHAT_WHISPER_FORMAT, Formatting.GRAY, Formatting.ITALIC),
-    LOCAL(SewConfig.CHAT_LOCAL_FORMAT, Formatting.BLUE),
-    GLOBAL(SewConfig.CHAT_GLOBAL_FORMAT, Formatting.WHITE),
-    TOWN(SewConfig.CHAT_TOWN_FORMAT, Formatting.GREEN);
+/**
+ * Created on Dec 20 2021 at 5:57 PM.
+ * By greg in SewingMachineMod
+ */
+public class VariableText extends LiteralText {
+    private @Nullable String text;
     
-    private final ConfigOption<ChatFormat> format;
-    private final Formatting[] formatting;
-    
-    ChatRooms(ConfigOption<ChatFormat> format, Formatting... formattings) {
-        this.format = format;
-        this.formatting = formattings;
+    public VariableText(@Nullable String raw) {
+        super("");
+        
+        this.text = raw;
     }
     
     @Override
-    public @NotNull MutableText translate(@NotNull Locale locale) {
-        return TranslatableServerSide.text(
-            locale,
-            "chat.room." + this.name().toLowerCase()
-        );
+    public String getRawString() {
+        return this.text;
     }
     
-    public ChatFormat getFormat() {
-        return SewConfig.get(this.format);
+    @Override
+    public String asString() {
+        return this.text;
     }
     
-    public Formatting[] getFormatting() {
-        return this.formatting;
+    public void visit(@NotNull TextModifier modifier) {
+        this.text = modifier.modify(this, this.text);
+    }
+    
+    @Override
+    public VariableText copy() {
+        return new VariableText(this.text);
     }
 }

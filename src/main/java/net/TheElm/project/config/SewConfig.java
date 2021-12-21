@@ -66,7 +66,7 @@ public final class SewConfig extends SewConfigContainer {
     private static final String MODULE_KEY = "_";
     private boolean fileExists;
     
-    protected final List<Runnable> reloadFunctions = new ArrayList<>();
+    private final List<Runnable> reloadFunctions = new ArrayList<>();
     private final Map<String, SewConfig> configModules = new ConcurrentHashMap<>();
     
     // Mod API Modules
@@ -76,7 +76,7 @@ public final class SewConfig extends SewConfigContainer {
     public static final ConfigOption<String> CONFIG_VERSION = SewConfig.addConfig(ConfigOption.json(SewConfig.VERSION_KEY, CoreMod.getModVersion()));
     
     // Database
-    public static final ConfigOption<Boolean> DB_LITE = SewConfig.addConfig(ConfigOption.json("database.sqlite", true));
+    public static final ConfigOption<Boolean> DB_LITE = /*SewConfig.addConfig(*/ConfigOption.json("database.sqlite", true)/*)*/;
     
     /*
      * Database handling
@@ -94,7 +94,13 @@ public final class SewConfig extends SewConfigContainer {
     
     public static final ConfigOption<Boolean> CHAT_MODIFY = SewConfig.addConfig(ConfigOption.json("chat.modify", true));
     public static final ConfigOption<Boolean> CHAT_SHOW_TOWNS = SewConfig.addConfig(ConfigOption.json("chat.show_towns", true));
-    public static final ConfigOption<ChatFormat> CHAT_FORMAT = SewConfig.addConfig(new ConfigOption<>("chat.format", ChatFormat.parse("[%w] %n: %m"), ChatFormat::parse, ChatFormat::serializer));
+    
+    public static final ConfigOption<ChatFormat> CHAT_WHISPER_FORMAT = SewConfig.addConfig(ConfigOption.chat("chat.formatting.whisper", "&7&o[Whisper] ${nick}&r&o: ${message}"));
+    public static final ConfigOption<ChatFormat> CHAT_GLOBAL_FORMAT = SewConfig.addConfig(ConfigOption.chat("chat.formatting.global", "[${world}] &b${nick}&r: ${message}"));
+    public static final ConfigOption<ChatFormat> CHAT_LOCAL_FORMAT = SewConfig.addConfig(ConfigOption.chat("chat.formatting.local", "&9[Local] &b${nick}&r: ${message}"));
+    public static final ConfigOption<ChatFormat> CHAT_TOWN_FORMAT = SewConfig.addConfig(ConfigOption.chat("chat.formatting.town", "&a[${town}] &2${nick}&r: ${message}"));
+    
+    //public static final ConfigOption<ChatFormat> CHAT_SERVER_FORMAT = SewConfig.addConfig(ConfigOption.chat("chat.formatting.server", "&7Server&r: ${message}"));
     
     public static final ConfigOption<Boolean> CHAT_MUTE_SELF = SewConfig.addConfig(ConfigOption.json("chat.mute.personal_mute", true));
     public static final ConfigOption<Boolean> CHAT_MUTE_OP = SewConfig.addConfig(ConfigOption.json("chat.mute.moderator_mute", true));
@@ -368,7 +374,7 @@ public final class SewConfig extends SewConfigContainer {
                 r.run();
         }
     }
-    public final @Nullable JsonElement reload(File config) throws IOException {
+    public @Nullable JsonElement reload(File config) throws IOException {
         //Read the existing config
         return this.loadFromJSON(SewConfig.loadFromFile(config));
     }
@@ -478,7 +484,7 @@ public final class SewConfig extends SewConfigContainer {
             .getAsJsonObject();
     }
     
-    protected JsonElement loadFromJSON(JsonObject json) {
+    private JsonElement loadFromJSON(JsonObject json) {
         CoreMod.logInfo("Loading configuration file (" + FormattingUtils.format(this.configOptions.size()) + " options).");
         for ( ConfigBase config : this.configOptions ) {
             JsonObject inner = json;

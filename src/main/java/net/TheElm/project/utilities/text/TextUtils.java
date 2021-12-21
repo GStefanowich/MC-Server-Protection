@@ -25,14 +25,15 @@
 
 package net.TheElm.project.utilities.text;
 
+import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ColorUtils;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Style;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
-import net.minecraft.text.TranslatableText;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,7 +49,10 @@ public final class TextUtils {
     private TextUtils() {}
     
     public static @NotNull MutableText literal() {
-        return new LiteralText("");
+        return TextUtils.literal("");
+    }
+    public static @NotNull MutableText literal(@NotNull String text, @NotNull CasingUtils.Casing casing) {
+        return TextUtils.literal(casing.apply(text));
     }
     public static @NotNull MutableText literal(@NotNull String text) {
         return new LiteralText(text);
@@ -77,6 +81,15 @@ public final class TextUtils {
         }
         
         return Objects.requireNonNull(main);
+    }
+    public static @NotNull MutableText literal(int i) {
+        return new LiteralText(i + "");
+    }
+    public static @NotNull MutableText literal(long l) {
+        return new LiteralText(l + "");
+    }
+    public static @NotNull MutableText literal(double d) {
+        return new LiteralText(d + "");
     }
     
     public static @NotNull String legacyConvert(@NotNull Text text) {
@@ -124,5 +137,20 @@ public final class TextUtils {
     }
     public static @NotNull MutableText quoteWrap(@NotNull MutableText text) {
         return new LiteralText("\"").append(text).append("\"");
+    }
+    
+    public static @Contract("!null -> !null") Text deepCopy(@Nullable Text formatted) {
+        if (formatted == null)
+            return null;
+        MutableText copy = formatted.copy();
+        
+        // Deep copy siblings
+        for (Text sibling : formatted.getSiblings())
+            copy.append(TextUtils.deepCopy(sibling));
+        
+        // Copy the style
+        copy.setStyle(formatted.getStyle());
+        
+        return copy;
     }
 }

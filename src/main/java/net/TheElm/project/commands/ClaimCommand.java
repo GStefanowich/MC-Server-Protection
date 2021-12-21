@@ -68,6 +68,7 @@ import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.text.MessageUtils;
+import net.TheElm.project.utilities.text.TextUtils;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -920,7 +921,7 @@ public final class ClaimCommand {
             .append(town.getName())
             .append("."), false);
         if (added > 0) {
-            town.send(source.getServer(), new LiteralText("")
+            town.send(source.getServer(), TextUtils.literal()
                 .append(amount)
                 .append(" villagers have been added to your town."),
                 MessageType.SYSTEM,

@@ -28,47 +28,41 @@ package net.TheElm.project.objects;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonSerializationContext;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.enums.ChatRooms;
-import net.TheElm.project.utilities.DimensionUtils;
-import net.TheElm.project.utilities.text.MessageUtils;
-import net.TheElm.project.utilities.text.StyleApplicator;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.TheElm.project.interfaces.chat.ChatFunction;
+import net.TheElm.project.utilities.CasingUtils;
+import net.TheElm.project.utilities.ChatVariables;
+import net.TheElm.project.utilities.FormattingUtils;
+import net.TheElm.project.utilities.text.TextUtils;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.world.World;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.lang.reflect.Type;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class ChatFormat {
-    
     private final String raw;
+    private final Text formatted;
     
-    private ChatFormat( String raw ) {
+    private ChatFormat(@NotNull String raw) {
         this.raw = raw;
+        this.formatted = FormattingUtils.stringToText(raw);
         
         // Debug
         CoreMod.logDebug(raw);
     }
     
-    @Nullable
-    public Text format(ChatRooms room, ServerPlayerEntity player) {
-        return null;
-    }
-    
-    private Text worldText(@NotNull RegistryKey<World> dimension, boolean showAsLong) {
-        // Create the text
-        MutableText longer = DimensionUtils.longDimensionName(dimension);
-        MutableText shorter = DimensionUtils.shortDimensionName(dimension);
-        
-        // Create the hover event
-        StyleApplicator formatting = DimensionUtils.dimensionColor(dimension);
-        
-        return ( showAsLong ? longer : shorter )
-            .styled(formatting)
-            .styled(MessageUtils.simpleHoverText(longer.styled(formatting)));
+    public @NotNull Text format(@NotNull final ServerCommandSource source, @NotNull final Text message) {
+        try {
+            return FormattingUtils.visitVariables(TextUtils.deepCopy(this.formatted), (text, segment) -> ChatFormat.replaceVariables(text, segment, source, message));
+        } catch (Error e) {
+            CoreMod.logError(e);
+        }
+        return TextUtils.literal();
     }
     
     @Override
@@ -84,5 +78,47 @@ public final class ChatFormat {
     }
     public static JsonElement serializer(@NotNull ChatFormat src, Type type, @NotNull JsonSerializationContext context) {
         return context.serialize(src.toString());
+    }
+    private static @Contract("null, _, _, _ -> null") String replaceVariables(@NotNull final MutableText text, @Nullable final String segment, @NotNull final ServerCommandSource source, @NotNull final Text message) {
+        String out = segment;
+        if (out != null) {
+            // If description contains
+            Pattern pattern = Pattern.compile("\\$\\{([A-Za-z.]+)([\\^_]{0,2})}");
+            Matcher matcher = pattern.matcher(segment);
+            int end = 0;
+            
+            while (matcher.find()) {
+                String key = matcher.group(1);
+                ChatFunction function = ChatVariables.get(key.toLowerCase());
+                if (function != null) {
+                    if (!function.canBeParsed(source))
+                        continue;
+                    
+                    // Change val casing
+                    String mod = matcher.group(2);
+                    CasingUtils.Casing casing = switch (mod) {
+                        case "__" -> CasingUtils.Casing.LOWER;
+                        case "^^" -> CasingUtils.Casing.UPPER;
+                        case "^" -> CasingUtils.Casing.WORDS;
+                        default -> CasingUtils.Casing.DEFAULT;
+                    };
+                    
+                    // Prefixed text
+                    String pre = segment.substring(end, matcher.start());
+                    if (end == 0) out = pre; else text.append(pre);
+                    
+                    // Add
+                    text.append(function.parseVar(source, message, casing));
+                    
+                    // Suffixed text
+                    end = matcher.end();
+                }
+            }
+            
+            // Append anything trailing the text
+            if (end != 0)
+                text.append(segment.substring(end));
+        }
+        return out;
     }
 }

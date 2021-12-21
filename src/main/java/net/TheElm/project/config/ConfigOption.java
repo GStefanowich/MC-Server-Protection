@@ -31,6 +31,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
 import com.google.gson.JsonSerializer;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.objects.ChatFormat;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3i;
@@ -90,6 +91,10 @@ public class ConfigOption<T extends Object> extends ConfigBase<T> {
         if (src != null && serializer != null)
             builder.registerTypeAdapter(src.getClass(), serializer);
         return builder.create().toJsonTree( src );
+    }
+    
+    public static @NotNull ConfigOption<ChatFormat> chat(@NotNull String location, @NotNull String defaultFormat) {
+        return new ConfigOption<>(location, ChatFormat.parse(defaultFormat), ChatFormat::parse, ChatFormat::serializer);
     }
     
     public static @NotNull ConfigOption<String> json(@NotNull String location, @Nullable String defaultValue) {

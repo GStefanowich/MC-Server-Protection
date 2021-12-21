@@ -29,15 +29,16 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 public final class CasingUtils {
-    public static @NotNull String words(@NotNull String modify ) {
-        String[] split = CasingUtils.lower( modify ).split(" ");
+    public static @NotNull String words(@NotNull String modify) {
+        String[] split = CasingUtils.lower(modify).split(" ");
         List<String> out = new ArrayList<>();
         for ( String seg : split ) {
-            out.add( CasingUtils.sentence( seg ) );
+            out.add(CasingUtils.sentence(seg));
         }
-        return String.join( " ", out );
+        return String.join(" ", out);
     }
     
     public static @NotNull String sentence(@NotNull String modify ) {
@@ -48,17 +49,17 @@ public final class CasingUtils {
     }
     
     public static @NotNull String upper(@NotNull String modify ) {
-        return modify.toLowerCase();
+        return modify.toUpperCase();
     }
     
     public static @NotNull String lower(@NotNull String modify ) {
         return modify.toLowerCase();
     }
     
-    public static @NotNull String acronym(@NotNull String modify ) {
+    public static @NotNull String acronym(@NotNull String modify) {
         return CasingUtils.acronym(modify, false);
     }
-    public static @NotNull String acronym(@NotNull String modify, boolean dots ) {
+    public static @NotNull String acronym(@NotNull String modify, boolean dots) {
         StringBuilder acronym = new StringBuilder();
         
         for (String split : modify.split(" ")) {
@@ -71,4 +72,22 @@ public final class CasingUtils {
         return acronym.toString();
     }
     
+    public enum Casing {
+        DEFAULT(s -> s),
+        WORDS(CasingUtils::words),
+        SENTENCE(CasingUtils::sentence),
+        UPPER(CasingUtils::upper),
+        LOWER(CasingUtils::lower),
+        ACRONYM(CasingUtils::acronym);
+        
+        private final UnaryOperator<String> operator;
+        
+        Casing(UnaryOperator<String> operator) {
+            this.operator = operator;
+        }
+        
+        public String apply(String string) {
+            return this.operator.apply(string);
+        }
+    }
 }

@@ -101,7 +101,7 @@ public final class HoldingCommand {
             .append(new TranslatableText(item.getTranslationKey()))
             .append("]");
         
-        return MiscCommands.playerSendsMessageAndData( player, message, output );
+        return MiscCommands.playerSendsMessageAndData( player, new LiteralText(message).append(" ").append(output));
     }
     
 }

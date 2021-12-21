@@ -228,42 +228,25 @@ public final class ColorUtils {
         return new Color(ColorUtils.formatToInt( color ));
     }
     private static int formatToInt(@NotNull Formatting color) {
-        switch ( color ) {
-            case BLACK:
-                return 0;
-            case DARK_BLUE:
-                return 170;
-            case DARK_GREEN:
-                return 43520;
-            case DARK_AQUA:
-                return 43690;
-            case DARK_RED:
-                return 11141120;
-            case DARK_PURPLE:
-                return 11141290;
-            case GOLD:
-                return 16755200;
-            case GRAY:
-                return 11184810;
-            case DARK_GRAY:
-                return 5592405;
-            case BLUE:
-                return 5592575;
-            case GREEN:
-                return 5635925;
-            case AQUA:
-                return 5636095;
-            case RED:
-                return 16733525;
-            case LIGHT_PURPLE:
-                return 16733695;
-            case YELLOW:
-                return 16777045;
-            case WHITE:
-                return 16777215;
-            default:
-                throw new IllegalArgumentException(( color.isColor() ? "Unhandled color " + color.name() : "Invalid formatting, " + color.name() + " is not a color." ));
-        }
+        return switch (color) {
+            case BLACK -> 0;
+            case DARK_BLUE -> 170;
+            case DARK_GREEN -> 43520;
+            case DARK_AQUA -> 43690;
+            case DARK_RED -> 11141120;
+            case DARK_PURPLE -> 11141290;
+            case GOLD -> 16755200;
+            case GRAY -> 11184810;
+            case DARK_GRAY -> 5592405;
+            case BLUE -> 5592575;
+            case GREEN -> 5635925;
+            case AQUA -> 5636095;
+            case RED -> 16733525;
+            case LIGHT_PURPLE -> 16733695;
+            case YELLOW -> 16777045;
+            case WHITE -> 16777215;
+            default -> throw new IllegalArgumentException((color.isColor() ? "Unhandled color " + color.name() : "Invalid formatting, " + color.name() + " is not a color."));
+        };
     }
     private static double colorDistance(@NotNull Color one, @NotNull Color two) {
         return Math.pow((one.getRed() - two.getRed()) * 0.30, 2)
@@ -383,41 +366,25 @@ public final class ColorUtils {
         String name = color.toString();
         if (name.startsWith("#"))
             return ColorUtils.getNearestFormatting(name);
-        switch (name) {
-            case "black":
-                return Formatting.BLACK;
-            case "dark_blue":
-                return Formatting.DARK_BLUE;
-            case "dark_green":
-                return Formatting.DARK_GREEN;
-            case "dark_aqua":
-                return Formatting.DARK_AQUA;
-            case "dark_red":
-                return Formatting.DARK_RED;
-            case "dark_purple":
-                return Formatting.DARK_PURPLE;
-            case "gold":
-                return Formatting.GOLD;
-            case "gray":
-                return Formatting.GRAY;
-            case "dark_gray":
-                return Formatting.DARK_GRAY;
-            case "blue":
-                return Formatting.BLUE;
-            case "green":
-                return Formatting.GREEN;
-            case "aqua":
-                return Formatting.AQUA;
-            case "red":
-                return Formatting.RED;
-            case "light_purple":
-                return Formatting.LIGHT_PURPLE;
-            case "yellow":
-                return Formatting.YELLOW;
-            case "white":
-                return Formatting.WHITE;
-            default: return Formatting.RESET;
-        }
+        return switch (name) {
+            case "black" -> Formatting.BLACK;
+            case "dark_blue" -> Formatting.DARK_BLUE;
+            case "dark_green" -> Formatting.DARK_GREEN;
+            case "dark_aqua" -> Formatting.DARK_AQUA;
+            case "dark_red" -> Formatting.DARK_RED;
+            case "dark_purple" -> Formatting.DARK_PURPLE;
+            case "gold" -> Formatting.GOLD;
+            case "gray" -> Formatting.GRAY;
+            case "dark_gray" -> Formatting.DARK_GRAY;
+            case "blue" -> Formatting.BLUE;
+            case "green" -> Formatting.GREEN;
+            case "aqua" -> Formatting.AQUA;
+            case "red" -> Formatting.RED;
+            case "light_purple" -> Formatting.LIGHT_PURPLE;
+            case "yellow" -> Formatting.YELLOW;
+            case "white" -> Formatting.WHITE;
+            default -> Formatting.RESET;
+        };
     }
     
     public static @NotNull Collection<Formatting> formattingColors() {
@@ -567,6 +534,13 @@ public final class ColorUtils {
     public static @Nullable TextColor getRawTextColor(@NotNull String value) {
         if (!value.startsWith("#"))
             return ColorUtils.getNearestTextColor(ColorUtils.COLORS.get(value));
+        int len = value.length();
+        if (len == 4) {
+            char r = value.charAt(1);
+            char g = value.charAt(2);
+            char b = value.charAt(3);
+            value = "#" + r + r + g + g + b + b;
+        }
         return TextColor.parse(value);
     }
     public static @Nullable Color getRawColor(@NotNull String value) {

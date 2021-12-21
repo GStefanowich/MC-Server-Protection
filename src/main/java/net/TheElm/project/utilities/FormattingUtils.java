@@ -25,10 +25,16 @@
 
 package net.TheElm.project.utilities;
 
-import net.minecraft.text.LiteralText;
+import com.mojang.datafixers.util.Either;
+import net.TheElm.project.interfaces.chat.TextModifier;
+import net.TheElm.project.utilities.text.TextUtils;
+import net.TheElm.project.utilities.text.VariableText;
+import net.TheElm.project.utilities.text.StyleApplicator;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
+import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +46,7 @@ import java.util.regex.Pattern;
 
 public final class FormattingUtils {
     
-    private static final @NotNull Pattern REGEX = Pattern.compile("(&[a-fk-or0-9])");
+    private static final @NotNull Pattern REGEX = Pattern.compile("([&§]([a-fk-or0-9]|#[a-fA-F0-9]{6}|#[a-fA-F0-9]{3}))");
     
     private FormattingUtils() {}
     
@@ -48,25 +54,26 @@ public final class FormattingUtils {
         if ((raw == null) || raw.isEmpty())
             return null;
         
+        StyleApplicator applicator = new StyleApplicator();
         MutableText text = null;
-        Formatting[] formattings = null;
         
         for (String segment : stringToColorSegments(raw)) {
-            if ( segment.matches(REGEX.pattern()+'+') ) {
-                formattings = codeGroupToFormat(segment);
+            //System.out.println("Segment: '" + segment + "'");
+            if ( segment.matches(FormattingUtils.REGEX.pattern() + '+') ) {
+                applicator = FormattingUtils.codeGroupApplicator(applicator, segment);
                 continue;
             }
             
-            MutableText inside = new LiteralText(segment);
-            if (formattings != null) {
-                inside.formatted(formattings);
-                formattings = null;
-            }
+            MutableText inside = new VariableText(segment);
+            if (!applicator.isEmpty())
+                inside.styled(applicator);
             
+            // Create the main text if it is null
             if (text == null)
-                text = inside;
-            else
-                text.append(inside);
+                text = TextUtils.literal();
+            
+            // Append the next section to the main text
+            text.append(inside);
         }
         
         return text;
@@ -95,42 +102,102 @@ public final class FormattingUtils {
         return segments.toArray(new String[0]);
     }
     
-    private static @NotNull Formatting[] codeGroupToFormat(String codes) {
-        List<Formatting> formatting = new ArrayList<>();
-        Matcher matches = REGEX.matcher(codes);
+    private static @NotNull StyleApplicator codeGroupApplicator(@NotNull StyleApplicator applicator, @NotNull String codes) {
+        Matcher matches = FormattingUtils.REGEX.matcher(codes);
         while (matches.find()) {
-            formatting.add(codeToFormat(codes.substring(matches.start(), matches.end()).toLowerCase()));
+            @Nullable Either<Formatting, TextColor> either = FormattingUtils.codeForApplicator(codes.substring(matches.start(), matches.end()).toLowerCase());
+            if (either != null) {
+                // Apply either the formatting or the text color to the StyleApplicator
+                either.ifLeft(applicator::withStyle)
+                    .ifRight(applicator::withStyle);
+            }
         }
-        return formatting.toArray(new Formatting[0]);
+        return applicator;
     }
-    private static @Nullable Formatting codeToFormat(@NotNull String code) {
-        if (code.length() != 2)
+    private static @Nullable Either<Formatting, TextColor> codeForApplicator(@NotNull String code) {
+        int len = code.length();
+        if (!(len == 2 || len == 5 || len == 8))
             return null;
         return switch (code) {
-            case "&0" -> Formatting.BLACK;
-            case "&1" -> Formatting.DARK_BLUE;
-            case "&2" -> Formatting.DARK_GREEN;
-            case "&3" -> Formatting.DARK_AQUA;
-            case "&4" -> Formatting.DARK_RED;
-            case "&5" -> Formatting.DARK_PURPLE;
-            case "&6" -> Formatting.GOLD;
-            case "&7" -> Formatting.GRAY;
-            case "&8" -> Formatting.DARK_GRAY;
-            case "&9" -> Formatting.BLUE;
-            case "&a" -> Formatting.GREEN;
-            case "&b" -> Formatting.AQUA;
-            case "&c" -> Formatting.RED;
-            case "&d" -> Formatting.LIGHT_PURPLE;
-            case "&e" -> Formatting.YELLOW;
-            case "&f" -> Formatting.WHITE;
-            case "&k" -> Formatting.OBFUSCATED;
-            case "&l" -> Formatting.BOLD;
-            case "&m" -> Formatting.STRIKETHROUGH;
-            case "&n" -> Formatting.UNDERLINE;
-            case "&o" -> Formatting.ITALIC;
-            case "&r" -> Formatting.RESET;
+            case "&0", "§0",
+                 "&1", "§1",
+                 "&2", "§2",
+                 "&3", "§3",
+                 "&4", "§4",
+                 "&5", "§5",
+                 "&6", "§6",
+                 "&7", "§7",
+                 "&8", "§8",
+                 "&9", "§9",
+                 "&a", "§a",
+                 "&b", "§b",
+                 "&c", "§c",
+                 "&d", "§d",
+                 "&e", "§e",
+                 "&f", "§f" -> Either.right(FormattingUtils.codeToTextColor(code));
+            case "&k", "§k",
+                 "&l", "§l",
+                 "&m", "§m",
+                 "&n", "§n",
+                 "&o", "§o",
+                 "&r", "§r" -> Either.left(FormattingUtils.codeToFormat(code));
+            default -> Either.right(FormattingUtils.hexToFormat(code));
+        };
+    }
+    private static @Nullable TextColor codeToTextColor(@NotNull String code) {
+        Formatting formatting = switch(code) {
+            case "&0", "§0" -> Formatting.BLACK;
+            case "&1", "§1" -> Formatting.DARK_BLUE;
+            case "&2", "§2" -> Formatting.DARK_GREEN;
+            case "&3", "§3" -> Formatting.DARK_AQUA;
+            case "&4", "§4" -> Formatting.DARK_RED;
+            case "&5", "§5" -> Formatting.DARK_PURPLE;
+            case "&6", "§6" -> Formatting.GOLD;
+            case "&7", "§7" -> Formatting.GRAY;
+            case "&8", "§8" -> Formatting.DARK_GRAY;
+            case "&9", "§9" -> Formatting.BLUE;
+            case "&a", "§a" -> Formatting.GREEN;
+            case "&b", "§b" -> Formatting.AQUA;
+            case "&c", "§c" -> Formatting.RED;
+            case "&d", "§d" -> Formatting.LIGHT_PURPLE;
+            case "&e", "§e" -> Formatting.YELLOW;
+            case "&f", "§f" -> Formatting.WHITE;
             default -> null;
         };
+        return formatting == null ? null : ColorUtils.getNearestTextColor(formatting);
+    }
+    private static @Nullable Formatting codeToFormat(@NotNull String code) {
+        return switch(code) {
+            case "&k", "§k" -> Formatting.OBFUSCATED;
+            case "&l", "§l" -> Formatting.BOLD;
+            case "&m", "§m" -> Formatting.STRIKETHROUGH;
+            case "&n", "§n" -> Formatting.UNDERLINE;
+            case "&o", "§o" -> Formatting.ITALIC;
+            case "&r", "§r" -> Formatting.RESET;
+            default -> null;
+        };
+    }
+    private static @Nullable TextColor hexToFormat(@NotNull String hex) {
+        int len = hex.length();
+        if (len == 5 || len == 8)
+            return ColorUtils.getRawTextColor(hex.substring(1));
+        return null;
+    }
+    
+    public static @Contract("!null, _ -> !null") Text visitVariables(@NotNull String msg, @NotNull TextModifier modifier) {
+        return FormattingUtils.visitVariables(FormattingUtils.stringToText(msg), modifier);
+    }
+    public static @Contract("!null, _ -> !null") Text visitVariables(@Nullable Text main, @NotNull TextModifier modifier) {
+        // If text is null, don't do any parsing
+        if (main == null)
+            return null;
+        
+        // Iterate the siblings looking for replaceable text
+        for (Text text : main.getSiblings())
+            if (text instanceof VariableText variableText)
+                variableText.visit(modifier);
+        
+        return main;
     }
     
     public static @NotNull String format(@NotNull Number number) {

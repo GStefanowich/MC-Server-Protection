@@ -444,7 +444,6 @@ public final class EntityUtils {
     }
     public static <T extends Entity> boolean preventSpawnered(@NotNull EntityType<T> type) {
         return type == EntityType.WANDERING_TRADER
-            || type == EntityType.VILLAGER
             || type == EntityType.IRON_GOLEM
             || EntityUtils.isBossEntity(type);
     }

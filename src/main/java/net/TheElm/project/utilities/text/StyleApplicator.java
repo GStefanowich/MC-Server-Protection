@@ -28,13 +28,14 @@ package net.TheElm.project.utilities.text;
 import net.TheElm.project.utilities.ColorUtils;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
-import net.minecraft.text.LiteralText;
 import net.minecraft.text.Style;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.UnaryOperator;
 
 /**
@@ -46,6 +47,7 @@ public final class StyleApplicator implements UnaryOperator<Style> {
     private @Nullable TextColor color = null;
     private @Nullable HoverEvent hover = null;
     private @Nullable ClickEvent click = null;
+    private final @NotNull List<Formatting> formattings = new ArrayList<>();
     
     public StyleApplicator() {}
     public StyleApplicator(@Nullable TextColor color) {
@@ -68,9 +70,14 @@ public final class StyleApplicator implements UnaryOperator<Style> {
         this.color = color;
         return this;
     }
-    public StyleApplicator withStyle(@Nullable Formatting color) {
-        if (color != null && color.isColor())
-            this.color = TextColor.fromFormatting(color);
+    public StyleApplicator withStyle(@Nullable Formatting formatting) {
+        if (formatting != null) {
+            if (formatting == Formatting.RESET)
+                this.clear();
+            else if (formatting.isColor())
+                this.color = TextColor.fromFormatting(formatting);
+            else this.formattings.add(formatting);
+        }
         return this;
     }
     public StyleApplicator withStyle(@Nullable String color) {
@@ -88,6 +95,19 @@ public final class StyleApplicator implements UnaryOperator<Style> {
         return this;
     }
     
+    public boolean isEmpty() {
+        return this.color == null
+            && this.hover == null
+            && this.click == null
+            && this.formattings.isEmpty();
+    }
+    public void clear() {
+        this.color = null;
+        this.hover = null;
+        this.click = null;
+        this.formattings.clear();
+    }
+    
     @Override
     public @NotNull Style apply(@NotNull Style style) {
         if (this.color != null)
@@ -96,6 +116,6 @@ public final class StyleApplicator implements UnaryOperator<Style> {
             style = style.withHoverEvent(this.hover);
         if (this.click != null)
             style = style.withClickEvent(this.click);
-        return style;
+        return style.withFormatting(this.formattings.toArray(new Formatting[0]));
     }
 }

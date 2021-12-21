@@ -84,10 +84,10 @@ public final class TagUserCommand {
         ChatRooms room = ((PlayerChat)from).getChatRoom();
         
         // Create a chat message
-        Text chatText = MessageUtils.formatPlayerMessage(from, room, text)
+        Text chatText = MessageUtils.formatPlayerMessage(from, room, new LiteralText(text)
             .append(new LiteralText(" @")
-                .formatted(Formatting.GREEN, Formatting.ITALIC)
-                .append(to.getDisplayName().getString()));
+            .formatted(Formatting.GREEN, Formatting.ITALIC)
+            .append(to.getDisplayName().getString())));
         
         // Send the new chat message to the currently selected chat room
         MessageUtils.sendTo(room, from, Collections.singleton(to), chatText);

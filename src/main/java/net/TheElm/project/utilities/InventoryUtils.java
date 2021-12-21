@@ -365,31 +365,37 @@ public final class InventoryUtils {
     /*
      * Advanced enchanted books prevent combining
      */
-    public static boolean areBooksAtMaxLevel(@NotNull Enchantment enchantment, @NotNull ItemStack... stacks) {
-        int level = 0;
-        
+    public static boolean areItemsAboveMaxLevel(@NotNull Enchantment enchantment, @NotNull ItemStack... stacks) {
         // Loop through all of the items
         for (ItemStack stack : stacks) {
-            // If an item listed is not a book
-            if (!Items.ENCHANTED_BOOK.equals(stack.getItem()))
-                return false;
-            
             // Check the book enchantments
-            Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(stack);
-            level += enchantments.getOrDefault(enchantment, 0);
+            int level = InventoryUtils.getBookOrItemEnchantLevel(enchantment, stack);
+            if (level > enchantment.getMaxLevel())
+                return true;
         }
         
-        return level > enchantment.getMaxLevel();
+        return false;
     }
-    public static int getHighestLevel(@NotNull Enchantment enchantment, @NotNull ItemStack... stacks) {
+    public static int getMaximumCombinedLevel(@NotNull Enchantment enchantment, @NotNull ItemStack... stacks) {
+        List<@NotNull ItemStack> list = Arrays.asList(stacks);
+        if (list.isEmpty())
+            return enchantment.getMaxLevel();
+        if (list.size() == 1)
+            return InventoryUtils.getBookOrItemEnchantLevel(enchantment, list.get(0));
+        
         int highest = enchantment.getMaxLevel();
         for (ItemStack stack : stacks) {
-            Map<Enchantment, Integer> enchantments = EnchantmentHelper.get(stack);
-            int level = enchantments.getOrDefault(enchantment, 0);
+            int level = InventoryUtils.getBookOrItemEnchantLevel(enchantment, stack);
             if (level > highest)
                 highest = level;
         }
         return highest;
+    }
+    public static int getBookOrItemEnchantLevel(@NotNull Enchantment enchantment, @NotNull ItemStack stack) {
+        if (stack.isEmpty())
+            return 0;
+        Map<Enchantment, Integer> enchants = EnchantmentHelper.get(stack);
+        return enchants.getOrDefault(enchantment, 0);
     }
     
     public static @NotNull ItemRarity getItemRarity(@NotNull ItemStack stack) {

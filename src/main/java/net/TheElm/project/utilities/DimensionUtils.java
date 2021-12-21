@@ -26,6 +26,7 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.utilities.text.StyleApplicator;
+import net.TheElm.project.utilities.text.TextUtils;
 import net.minecraft.network.Packet;
 import net.minecraft.network.packet.s2c.play.WorldBorderCenterChangedS2CPacket;
 import net.minecraft.network.packet.s2c.play.WorldBorderInterpolateSizeS2CPacket;
@@ -105,22 +106,28 @@ public final class DimensionUtils {
         return world == null ? "" : world.getValue().toString();
     }
     public static @NotNull MutableText longDimensionName(@Nullable RegistryKey<World> world) {
+        return DimensionUtils.longDimensionName(world, CasingUtils.Casing.DEFAULT);
+    }
+    public static @NotNull MutableText longDimensionName(@Nullable RegistryKey<World> world, @NotNull CasingUtils.Casing casing) {
         if (World.OVERWORLD.equals(world))
-            return new LiteralText("Surface");
+            return TextUtils.literal("Surface", casing);
         if (World.NETHER.equals(world))
-            return new LiteralText("Nether");
+            return TextUtils.literal("Nether", casing);
         if (World.END.equals(world))
-            return new LiteralText("The End");
-        return new LiteralText("Server");
+            return TextUtils.literal("The End", casing);
+        return TextUtils.literal("Server", casing);
     }
     public static @NotNull MutableText shortDimensionName(@Nullable RegistryKey<World> world) {
+        return DimensionUtils.shortDimensionName(world, CasingUtils.Casing.DEFAULT);
+    }
+    public static @NotNull MutableText shortDimensionName(@Nullable RegistryKey<World> world, @NotNull CasingUtils.Casing casing) {
         if (World.OVERWORLD.equals(world))
-            return new LiteralText("S");
+            return TextUtils.literal("S", casing);
         if (World.NETHER.equals(world))
-            return new LiteralText("N");
+            return TextUtils.literal("N", casing);
         if (World.END.equals(world))
-            return new LiteralText("E");
-        return new LiteralText("~");
+            return TextUtils.literal("E", casing);
+        return TextUtils.literal("~");
     }
     public static @NotNull StyleApplicator dimensionColor(@Nullable RegistryKey<World> world) {
         if (World.OVERWORLD.equals(world))

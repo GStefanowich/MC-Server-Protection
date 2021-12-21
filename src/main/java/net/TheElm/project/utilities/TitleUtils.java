@@ -26,6 +26,7 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.utilities.text.TextUtils;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.packet.s2c.play.ClearTitleS2CPacket;
 import net.minecraft.network.packet.s2c.play.SubtitleS2CPacket;
@@ -78,7 +79,7 @@ public final class TitleUtils {
     }
     
     private static Text combineTextChunks(Formatting formatting, Text... text) {
-        MutableText literalText = new LiteralText("")
+        MutableText literalText = TextUtils.literal()
             .formatted(formatting);
         for ( Text t : text ) {
             literalText.append( t );

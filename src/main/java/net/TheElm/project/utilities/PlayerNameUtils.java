@@ -69,15 +69,7 @@ public final class PlayerNameUtils {
     
     private PlayerNameUtils() {}
     
-    public static @NotNull MutableText getServerChatDisplay(@NotNull ChatRooms chatRoom) {
-        return new LiteralText("[").formatted(chatRoom.getFormatting())
-            .append(PlayerNameUtils.formattedWorld((World) null))
-            .append("] ")
-            .append(new LiteralText("Server").formatted(Formatting.GRAY));
-    }
-    public static @NotNull MutableText getPlayerChatDisplay(@NotNull ServerPlayerEntity player, ChatRooms chatRoom) {
-        return PlayerNameUtils.getPlayerChatDisplay(player, null, chatRoom);
-    }
+    @Deprecated(forRemoval = true)
     public static @NotNull MutableText getPlayerChatDisplay(@NotNull ServerPlayerEntity player, @Nullable String prepend, ChatRooms chatRoom, @NotNull Formatting... playerColors) {
         ClaimantPlayer playerPermissions = ((PlayerData) player).getClaim();
         MutableText playerDisplay = PlayerNameUtils.getPlayerDisplayName(player);
@@ -85,7 +77,8 @@ public final class PlayerNameUtils {
             playerDisplay.formatted(playerColors);
         
         // Add the players world
-        MutableText format = new LiteralText("[").formatted(chatRoom.getFormatting());
+        MutableText format = new LiteralText("[").formatted(chatRoom.
+            getFormatting());
         if (!chatRoom.equals(ChatRooms.TOWN)) format.append(PlayerNameUtils.formattedWorld(player.world));
         else format.append(PlayerNameUtils.formattedChat(chatRoom));
         
@@ -115,7 +108,7 @@ public final class PlayerNameUtils {
         // Append the player name and return
         return format.append(playerDisplay);
     }
-    private static @NotNull MutableText getPlayerDisplayName(@NotNull ServerPlayerEntity player) {
+    public static @NotNull MutableText getPlayerDisplayName(@NotNull ServerPlayerEntity player) {
         if (((Nicknamable)player).getPlayerNickname() == null)
             return PlayerNameUtils.applyPlayerNameStyle(((MutableText)player.getName()).formatted(Formatting.GOLD), player);
         

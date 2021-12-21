@@ -42,9 +42,9 @@ import net.TheElm.project.utilities.ServerVariables;
 import net.TheElm.project.utilities.text.TextUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerMetadata;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import org.apache.commons.lang3.Validate;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -124,9 +124,10 @@ public abstract class MOTD {
         int clamp = Integer.min(this.motds.size() - 1, i);
         
         // Get the formatted MOTD
-        String raw = this.descriptionReplaceVariables(this.motds.get(clamp));
+        //String raw = this.descriptionReplaceVariables(this.motds.get(clamp));
+        String raw = this.motds.get(clamp);
         if (raw != null) {
-            Text motd = FormattingUtils.stringToText(raw);
+            Text motd = FormattingUtils.visitVariables(raw, this::descriptionReplaceVariables);
             if (motd != null)
                 callback.setReturnValue(motd);
         }
@@ -176,7 +177,7 @@ public abstract class MOTD {
         Collections.shuffle(this.motds);
     }
     
-    private @Contract("null -> null") String descriptionReplaceVariables(@Nullable String description) {
+    private String descriptionReplaceVariables(@NotNull MutableText text, @Nullable String description) {
         if (description != null) {
             MinecraftServer server = ServerCore.get();
             
