@@ -35,9 +35,6 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.Nicknamable;
-import net.TheElm.project.interfaces.PlayerData;
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.TheElm.project.utilities.text.StyleApplicator;
@@ -69,45 +66,6 @@ public final class PlayerNameUtils {
     
     private PlayerNameUtils() {}
     
-    @Deprecated(forRemoval = true)
-    public static @NotNull MutableText getPlayerChatDisplay(@NotNull ServerPlayerEntity player, @Nullable String prepend, ChatRooms chatRoom, @NotNull Formatting... playerColors) {
-        ClaimantPlayer playerPermissions = ((PlayerData) player).getClaim();
-        MutableText playerDisplay = PlayerNameUtils.getPlayerDisplayName(player);
-        if ( playerColors.length > 0 )
-            playerDisplay.formatted(playerColors);
-        
-        // Add the players world
-        MutableText format = new LiteralText("[").formatted(chatRoom.
-            getFormatting());
-        if (!chatRoom.equals(ChatRooms.TOWN)) format.append(PlayerNameUtils.formattedWorld(player.world));
-        else format.append(PlayerNameUtils.formattedChat(chatRoom));
-        
-        ClaimantTown town;
-        // If the player is in a town, prepend the town name
-        if (SewConfig.get(SewConfig.CHAT_SHOW_TOWNS) && (playerPermissions != null) && ((town = playerPermissions.getTown() ) != null)) {
-            // Add the players town
-            format.append( "|" )
-                .append(town.getName().styled(style -> style.withColor(Formatting.DARK_AQUA)
-                    .withHoverEvent(town.getHoverText())))
-                .append( "] " );
-            
-            if ( prepend != null )
-                format.append(prepend);
-            
-            // Add the players title
-            if (player.getUuid().equals(town.getOwner()))
-                format.append( CasingUtils.sentence( town.getOwnerTitle() ) + " " );
-            
-        } else {
-            format.append("] ");
-            
-            if ( prepend != null )
-                format.append(prepend);
-        }
-        
-        // Append the player name and return
-        return format.append(playerDisplay);
-    }
     public static @NotNull MutableText getPlayerDisplayName(@NotNull ServerPlayerEntity player) {
         if (((Nicknamable)player).getPlayerNickname() == null)
             return PlayerNameUtils.applyPlayerNameStyle(((MutableText)player.getName()).formatted(Formatting.GOLD), player);

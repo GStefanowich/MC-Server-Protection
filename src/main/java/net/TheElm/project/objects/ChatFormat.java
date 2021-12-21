@@ -28,6 +28,7 @@ package net.TheElm.project.objects;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonSerializationContext;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.chat.ChatFunction;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChatVariables;
@@ -56,13 +57,11 @@ public final class ChatFormat {
         CoreMod.logDebug(raw);
     }
     
-    public @NotNull Text format(@NotNull final ServerCommandSource source, @NotNull final Text message) {
-        try {
-            return FormattingUtils.visitVariables(TextUtils.deepCopy(this.formatted), (text, segment) -> ChatFormat.replaceVariables(text, segment, source, message));
-        } catch (Error e) {
-            CoreMod.logError(e);
-        }
-        return TextUtils.literal();
+    public @NotNull Text format(@NotNull final ServerCommandSource source, @NotNull final ChatRooms chatRoom, @NotNull final Text message) {
+        return FormattingUtils.visitVariables(
+            TextUtils.deepCopy(this.formatted),
+            (text, segment) -> ChatFormat.replaceVariables(text, segment, source, chatRoom, message)
+        );
     }
     
     @Override
@@ -79,7 +78,13 @@ public final class ChatFormat {
     public static JsonElement serializer(@NotNull ChatFormat src, Type type, @NotNull JsonSerializationContext context) {
         return context.serialize(src.toString());
     }
-    private static @Contract("null, _, _, _ -> null") String replaceVariables(@NotNull final MutableText text, @Nullable final String segment, @NotNull final ServerCommandSource source, @NotNull final Text message) {
+    private static @Contract("null, _, _, _ -> null") String replaceVariables(
+        @NotNull final MutableText text,
+        @Nullable final String segment,
+        @NotNull final ServerCommandSource source,
+        @NotNull final ChatRooms chatRoom,
+        @NotNull final Text message
+    ) {
         String out = segment;
         if (out != null) {
             // If description contains
@@ -108,7 +113,7 @@ public final class ChatFormat {
                     if (end == 0) out = pre; else text.append(pre);
                     
                     // Add
-                    text.append(function.parseVar(source, message, casing));
+                    text.append(function.parseVar(source, chatRoom, message, casing));
                     
                     // Suffixed text
                     end = matcher.end();

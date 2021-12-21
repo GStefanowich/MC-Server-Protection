@@ -25,6 +25,7 @@
 
 package net.TheElm.project.interfaces.chat;
 
+import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.utilities.CasingUtils;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.command.ServerCommandSource;
@@ -36,11 +37,11 @@ import org.jetbrains.annotations.NotNull;
  * By greg in SewingMachineMod
  */
 @FunctionalInterface
-public interface EntityChatMessageFunction extends ChatFunction {
-    Text parseVar(@NotNull ServerCommandSource source, @NotNull LivingEntity entity, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing);
+public interface ChatMessageFunction extends ChatFunction {
+    Text parseVar(@NotNull ChatRooms room, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing);
     @Override
-    default Text parseVar(@NotNull ServerCommandSource source, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing) {
-        return this.parseVar(source, (LivingEntity) source.getEntity(), chatMessage, casing);
+    default Text parseVar(@NotNull ServerCommandSource source, @NotNull ChatRooms room, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing) {
+        return this.parseVar(room, chatMessage, casing);
     }
     @Override
     default boolean canBeParsed(ServerCommandSource source) {

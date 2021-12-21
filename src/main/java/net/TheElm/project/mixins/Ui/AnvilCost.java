@@ -78,8 +78,8 @@ public abstract class AnvilCost extends ForgingScreenHandler {
     public int getMaxLevel(Enchantment enchantment) {
         ItemStack left = this.input.getStack(0);
         ItemStack right = this.input.getStack(1);
-        if (Assert.ifAny(ItemStack::isEmpty, left, right) || InventoryUtils.areBooksAtMaxLevel(enchantment, left, right))
-            return InventoryUtils.getHighestLevel(enchantment, left, right);
-        return 10;
+        if (Assert.ifAny(ItemStack::isEmpty, left, right) || InventoryUtils.areItemsAboveMaxLevel(enchantment, left, right))
+            return InventoryUtils.getMaximumCombinedLevel(enchantment, left, right);
+        return enchantment.getMaxLevel();
     }
 }

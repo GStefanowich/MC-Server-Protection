@@ -134,7 +134,7 @@ public final class MiscCommands {
     public static int playerSendsMessageAndData(@NotNull ServerPlayerEntity player, @NotNull Text main) {
         Text text;
         if (SewConfig.get(SewConfig.CHAT_MODIFY)) {
-            text = MessageUtils.formatPlayerMessage(player, ((PlayerChat)player).getChatRoom(), main);
+            text = MessageUtils.formatPlayerMessage(player, main);
         } else {
             text = new TranslatableText("chat.type.text", player.getDisplayName(), main);
         }

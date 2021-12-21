@@ -25,14 +25,12 @@
 
 package net.TheElm.project.utilities;
 
-import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.MoneyHolder;
 import net.TheElm.project.interfaces.MotdFunction;
-import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.chat.ChatFunction;
 import net.TheElm.project.interfaces.chat.EntityChatFunction;
-import net.TheElm.project.interfaces.chat.EntityChatMessageFunction;
+import net.TheElm.project.interfaces.chat.ChatMessageFunction;
 import net.TheElm.project.interfaces.chat.ServerChatFunction;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
@@ -73,7 +71,7 @@ public class ChatVariables {
         variables.put("uuid", (EntityChatFunction)(source, entity, casing) -> TextUtils.literal(entity.getUuidAsString(), casing));
         
         // Get the nickname (Or regular name)
-        variables.put("nick", (source, chatMessage, casing) -> {
+        variables.put("nick", (source, chatMessage, room, casing) -> {
             if (source.getEntity() instanceof ServerPlayerEntity player)
                 return PlayerNameUtils.getPlayerDisplayName(player);
             return source.getDisplayName();
@@ -94,12 +92,7 @@ public class ChatVariables {
         variables.put("balance", (EntityChatFunction)(source, entity, casing) -> TextUtils.literal(entity instanceof ServerPlayerEntity player ? ((MoneyHolder) player).getPlayerWallet() : 0));
         
         // Chat room
-        variables.put("chat", (EntityChatFunction)(source, entity, casing) -> {
-            ChatRooms room = ChatRooms.GLOBAL;
-            if (entity instanceof ServerPlayerEntity player)
-                room = ((PlayerChat) player).getChatRoom();
-            return TextUtils.literal(room.name(), casing);
-        });
+        variables.put("chat", (ChatMessageFunction)(room, message, casing) -> TextUtils.literal(room.name(), casing));
         
         // Entity X, Y, Z position
         variables.put("x", (EntityChatFunction)(source, entity, casing) -> TextUtils.literal(entity.getBlockX()));
@@ -107,7 +100,7 @@ public class ChatVariables {
         variables.put("z", (EntityChatFunction)(source, entity, casing) -> TextUtils.literal(entity.getBlockZ()));
         
         // Get the chat message
-        variables.put("message", (source, chatMessage, casing) -> chatMessage);
+        variables.put("message", (ChatMessageFunction)(room, message, casing) -> message);
         
         // Get the entity biome
         variables.put("biome", (EntityChatFunction)(source, entity, casing) -> {

@@ -28,6 +28,7 @@ package net.TheElm.project.utilities.text;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ChatRooms;
+import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.objects.ChatFormat;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -369,6 +370,12 @@ public final class MessageUtils {
     }
     
     // Format a message to chat from a player
+    public static @NotNull Text formatPlayerMessage(ServerPlayerEntity player, String raw) {
+        return MessageUtils.formatPlayerMessage(player, new LiteralText(raw));
+    }
+    public static @NotNull Text formatPlayerMessage(ServerPlayerEntity player, Text text) {
+        return MessageUtils.formatPlayerMessage(player, ((PlayerChat)player).getChatRoom(), text);
+    }
     public static @NotNull Text formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, String raw) {
         return MessageUtils.formatPlayerMessage(player, chatRoom, new LiteralText(raw));
     }
@@ -378,7 +385,7 @@ public final class MessageUtils {
     public static @NotNull Text formatPlayerMessage(@NotNull ServerCommandSource source, ChatRooms chatRoom, @NotNull Text text) {
         try {
             ChatFormat format = chatRoom.getFormat();
-            return format.format(source, text);
+            return format.format(source, chatRoom, text);
         } catch (StackOverflowError e) {
             CoreMod.logError(e);
         }

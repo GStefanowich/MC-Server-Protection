@@ -25,6 +25,7 @@
 
 package net.TheElm.project.interfaces.chat;
 
+import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.utilities.CasingUtils;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.command.ServerCommandSource;
@@ -39,7 +40,7 @@ import org.jetbrains.annotations.NotNull;
 public interface EntityChatFunction extends ChatFunction {
     Text parseVar(@NotNull ServerCommandSource source, @NotNull LivingEntity entity, @NotNull CasingUtils.Casing casing);
     @Override
-    default Text parseVar(@NotNull ServerCommandSource source, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing) {
+    default Text parseVar(@NotNull ServerCommandSource source, @NotNull ChatRooms chatRoom, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing) {
         return this.parseVar(source, (LivingEntity) source.getEntity(), casing);
     }
     @Override

@@ -25,6 +25,7 @@
 
 package net.TheElm.project.interfaces.chat;
 
+import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.utilities.CasingUtils;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
@@ -36,7 +37,7 @@ import org.jetbrains.annotations.NotNull;
  */
 @FunctionalInterface
 public interface ChatFunction {
-    Text parseVar(@NotNull ServerCommandSource source, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing);
+    Text parseVar(@NotNull ServerCommandSource source, @NotNull ChatRooms room, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing);
     default boolean canBeParsed(ServerCommandSource source) {
         return true;
     }
