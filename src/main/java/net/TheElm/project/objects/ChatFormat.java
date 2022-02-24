@@ -25,8 +25,8 @@
 
 package net.TheElm.project.objects;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonSerializationContext;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.chat.ChatFunction;
@@ -41,7 +41,6 @@ import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.lang.reflect.Type;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -75,10 +74,10 @@ public final class ChatFormat {
     public static @NotNull ChatFormat parse(@NotNull JsonElement config) {
         return ChatFormat.parse(config.getAsString());
     }
-    public static JsonElement serializer(@NotNull ChatFormat src, Type type, @NotNull JsonSerializationContext context) {
-        return context.serialize(src.toString());
+    public static JsonElement serializer(@NotNull ChatFormat src, @NotNull Gson gson) {
+        return gson.toJsonTree(src.toString());
     }
-    private static @Contract("null, _, _, _ -> null") String replaceVariables(
+    private static @Contract("_, null, _, _, _ -> null") String replaceVariables(
         @NotNull final MutableText text,
         @Nullable final String segment,
         @NotNull final ServerCommandSource source,

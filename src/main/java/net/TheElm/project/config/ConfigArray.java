@@ -25,36 +25,67 @@
 
 package net.TheElm.project.config;
 
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
+import net.TheElm.project.interfaces.json.ConfigReader;
+import net.TheElm.project.interfaces.json.ConfigWriter;
+import net.minecraft.util.Identifier;
+import net.minecraft.util.registry.DefaultedRegistry;
+import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryKey;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class ConfigArray<T extends Object> extends ConfigBase<T> {
     
-    private final Function<JsonElement, T> setter;
+    private final ConfigReader<T> setter;
     private final List<T> value;
+    private @Nullable ConfigWriter<T> serializer;
     
-    public ConfigArray(@NotNull String location, Function<JsonElement, T> setter) {
+    public ConfigArray(@NotNull String location, ConfigReader<T> setter) {
         this(location, new ArrayList<>(), setter);
     }
-    public ConfigArray(@NotNull String location, List<T> defaultValue, Function<JsonElement, T> setter) {
+    public ConfigArray(@NotNull String location, @NotNull List<T> defaultValue, ConfigReader<T> setter) {
         super(location);
         
         this.value = defaultValue;
         this.setter = setter;
     }
+    public ConfigArray(@NotNull String location, @NotNull List<T> defaultValue, @NotNull ConfigReader<T> setter, @Nullable ConfigWriter<T> serializer) {
+        super(location);
+        
+        this.value = defaultValue;
+        this.setter = setter;
+        this.serializer = serializer;
+    }
+    
+    public ConfigArray<T> serializer(ConfigWriter<T> serializer) {
+        this.serializer = serializer;
+        return this;
+    }
+    
+    static <T> JsonElement convertToJSON(@NotNull List<T> list, @Nullable ConfigWriter<T> serializer) {
+        Gson gson = new GsonBuilder()
+            .disableHtmlEscaping()
+            .create();
+        JsonArray array = new JsonArray();
+        for (T el : list) {
+            array.add(serializer == null ? gson.toJsonTree(el) :  serializer.serialize(el, gson));
+        }
+        
+        return array;
+    }
     
     @Override
     JsonElement getElement() {
-        return new GsonBuilder()
-            .disableHtmlEscaping().create().toJsonTree(this.value);
+        return ConfigArray.convertToJSON(this.value, this.serializer);
     }
     List<T> get() {
         return this.value;
@@ -77,9 +108,9 @@ public final class ConfigArray<T extends Object> extends ConfigBase<T> {
         
         // Add all values
         if (!(value instanceof JsonArray))
-            this.value.add(this.setter.apply(value));
+            this.value.add(this.setter.deserialize(value));
         else for (JsonElement element : value.getAsJsonArray())
-            this.value.add(this.setter.apply(element));
+            this.value.add(this.setter.deserialize(element));
     }
     
     public static @NotNull ConfigArray<Integer> jInt(@NotNull String location) {
@@ -93,5 +124,24 @@ public final class ConfigArray<T extends Object> extends ConfigBase<T> {
     }
     public static @NotNull ConfigArray<String> jString(@NotNull String location) {
         return new ConfigArray<>(location, JsonElement::getAsString);
+    }
+    public static @NotNull <T> ConfigArray<RegistryKey<T>> registry(String location, RegistryKey<? extends Registry<T>> registry, List<RegistryKey<T>> def) {
+        return new ConfigArray<>(location, def, (element) -> {
+            // Convert from String to RegistryKey
+            return RegistryKey.of(registry, new Identifier(element.getAsString()));
+        }, (type, gson) -> {
+            // Convert from RegistryKey to String
+            return gson.toJsonTree(type.getValue().toString());
+        });
+    }
+    public static @NotNull <T> ConfigArray<T> fromRegistry(String location, DefaultedRegistry<T> registry, List<T> defaults) {
+        List<T> cast = defaults.stream().map((type) -> registry.get(registry.getId(type))).collect(Collectors.toList());
+        return new ConfigArray<>(location, cast, (element) -> {
+            // Convert from String to RegistryKey
+            return registry.get(new Identifier(element.getAsString()));
+        }, (type, gson) -> {
+            // Convert from RegistryKey to String
+            return gson.toJsonTree(registry.getId(type).toString());
+        });
     }
 }

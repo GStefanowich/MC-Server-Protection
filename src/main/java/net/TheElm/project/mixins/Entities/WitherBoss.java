@@ -70,13 +70,13 @@ public abstract class WitherBoss extends HostileEntity implements RangedAttackMo
     }
     
     @Inject(at = @At("TAIL"), method = "writeCustomDataToNbt")
-    public void onSavingData(NbtCompound tag, CallbackInfo callback) {
+    public void onSavingData(@NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
         // Save the players money
         if (this.getEntityOwner() != null)
             tag.putUuid("WitherCreator", this.getEntityOwner());
     }
     @Inject(at = @At("TAIL"), method = "readCustomDataFromNbt")
-    public void onReadingData(NbtCompound tag, CallbackInfo callback) {
+    public void onReadingData(@NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
         // Read the players money
         if (NbtUtils.hasUUID(tag, "WitherCreator"))
             this.setEntityOwner(NbtUtils.getUUID(tag, "WitherCreator"));

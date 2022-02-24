@@ -28,14 +28,19 @@ package net.TheElm.project.config;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.addons.SewBluemapConfig;
 import net.TheElm.project.objects.ChatFormat;
 import net.TheElm.project.protections.logging.EventLogger.LoggingIntervals;
 import net.TheElm.project.utilities.DevUtils;
+import net.TheElm.project.utilities.EntityUtils;
 import net.TheElm.project.utilities.FormattingUtils;
+import net.TheElm.project.utilities.IntUtils;
+import net.minecraft.entity.EntityType;
 import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
@@ -51,14 +56,18 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class SewConfig extends SewConfigContainer {
     private static final SewConfig INSTANCE = new SewConfig();
@@ -76,7 +85,7 @@ public final class SewConfig extends SewConfigContainer {
     public static final ConfigOption<String> CONFIG_VERSION = SewConfig.addConfig(ConfigOption.json(SewConfig.VERSION_KEY, CoreMod.getModVersion()));
     
     // Database
-    public static final ConfigOption<Boolean> DB_LITE = /*SewConfig.addConfig(*/ConfigOption.json("database.sqlite", true)/*)*/;
+    public static final ConfigOption<Boolean> DB_LITE = /*SewConfig.addConfig(*/ConfigOption.json("database.sqlite", false)/*)*/;
     
     /*
      * Database handling
@@ -234,7 +243,7 @@ public final class SewConfig extends SewConfigContainer {
      * Worlds
      */
     
-    public static final ConfigOption<RegistryKey<World>> DEFAULT_WORLD = SewConfig.addConfig(ConfigOption.registry("server.worlds.spawn_world", World.OVERWORLD, Registry.WORLD_KEY));
+    public static final ConfigOption<RegistryKey<World>> DEFAULT_WORLD = SewConfig.addConfig(ConfigOption.registry("server.worlds.spawn_world", Registry.WORLD_KEY, World.OVERWORLD));
     public static final ConfigOption<Boolean> WORLD_DIMENSION_FOLDERS = SewConfig.addConfig(ConfigOption.json("server.worlds.use_dimension_folder", false));
     
     public static final Supplier<Boolean> WORLD_SEPARATE_PROPERTIES = () -> SewConfig.get(SewConfig.WORLD_SPECIFIC_TIME)
@@ -254,7 +263,7 @@ public final class SewConfig extends SewConfigContainer {
      * Warping
      */
     
-    public static final ConfigOption<RegistryKey<World>> WARP_DIMENSION = SewConfig.addConfig(ConfigOption.registry("warp.world", World.OVERWORLD, Registry.WORLD_KEY));
+    public static final ConfigOption<RegistryKey<World>> WARP_DIMENSION = SewConfig.addConfig(ConfigOption.registry("warp.world", Registry.WORLD_KEY, World.OVERWORLD));
     public static final ConfigOption<Integer> WARP_MAX_DISTANCE = SewConfig.addConfig(ConfigOption.json("warp.max_distance", 1000000));
     public static final ConfigOption<Integer> WARP_WAYSTONE_COST = SewConfig.addConfig(ConfigOption.json("warp.waystone.cost", 2000));
     public static final ConfigOption<Integer> WARP_WAYSTONES_ALLOWED = SewConfig.addConfig(ConfigOption.json("warp.waystone.maximum", 3));
@@ -295,6 +304,8 @@ public final class SewConfig extends SewConfigContainer {
      * Miscellaneous
      */
     
+    public static final ConfigOption<Map<Item, Integer>> ITEM_DESPAWN_TIMES = SewConfig.addConfig(new ConfigOption<>("server.items.despawn", new HashMap<>(), SewConfig::getItemDespawnMap));
+    
     public static final ConfigOption<Boolean> OVERWORLD_PORTAL_LOC = SewConfig.addConfig(ConfigOption.json("fun.world.portal_fix.overworld", false));
     public static final ConfigOption<Boolean> NETHER_PORTAL_LOC = SewConfig.addConfig(ConfigOption.json("fun.world.portal_fix.nether", true));
     
@@ -320,7 +331,7 @@ public final class SewConfig extends SewConfigContainer {
     public static final ConfigOption<Boolean> WANDERING_TRADER_CAMPFIRES = SewConfig.addConfig(ConfigOption.json("fun.mobs.wandering_trader.toggle_campfires", false));
     public static final ConfigOption<Boolean> WANDERING_TRADER_HITCH = SewConfig.addConfig(ConfigOption.json("fun.mobs.wandering_trader.hitch_llamas", false));
     public static final ConfigOption<Boolean> WANDERING_TRADER_FORCE_SPAWN = SewConfig.addConfig(ConfigOption.json("fun.mobs.wandering_trader.force_spawn.enable", false));
-    public static final ConfigOption<RegistryKey<World>> WANDERING_TRADER_FORCE_SPAWN_WORLD = SewConfig.addConfig(ConfigOption.registry("fun.mobs.wandering_trader.force_spawn.world", World.OVERWORLD, Registry.WORLD_KEY));
+    public static final ConfigOption<RegistryKey<World>> WANDERING_TRADER_FORCE_SPAWN_WORLD = SewConfig.addConfig(ConfigOption.registry("fun.mobs.wandering_trader.force_spawn.world", Registry.WORLD_KEY, World.OVERWORLD));
     public static final ConfigOption<BlockPos> WANDERING_TRADER_FORCE_SPAWN_POS = SewConfig.addConfig(ConfigOption.blockPos("fun.mobs.wandering_trader.force_spawn.pos", BlockPos.ZERO));
     
     public static final ConfigOption<Integer> WOLF_DAMAGE_RESIST = SewConfig.addConfig(ConfigOption.json("fun.mobs.wolf.buffs.resistance_multiplier", 3));
@@ -340,6 +351,7 @@ public final class SewConfig extends SewConfigContainer {
     public static final ConfigOption<Boolean> SILK_TOUCH_SPAWNERS = SewConfig.addConfig(ConfigOption.json("fun.spawners.silk_touch", false));
     public static final ConfigOption<Integer> SPAWNER_PICKUP_DAMAGE = SewConfig.addConfig(ConfigOption.json("fun.spawners.silk_touch_damage", 390));
     public static final ConfigOption<Boolean> SPAWNER_ABSORB_MOBS = SewConfig.addConfig(ConfigOption.json("fun.spawners.absorb_mob_souls", true));
+    public static final ConfigArray<EntityType<?>> SPAWNER_ABSORB_BLACKLIST = SewConfig.addConfig(ConfigArray.fromRegistry("fun.spawners.mob_blacklist", Registry.ENTITY_TYPE, Arrays.asList(EntityType.IRON_GOLEM, EntityType.VILLAGER, EntityType.WANDERING_TRADER, EntityType.WITHER, EntityType.ELDER_GUARDIAN, EntityType.ENDER_DRAGON)));
     
     static {
         File config = null;
@@ -533,21 +545,58 @@ public final class SewConfig extends SewConfigContainer {
     /*
      * Special handlers
      */
-    private static Map<Item, Integer> getItemMap(JsonElement element) {
+    private static Map<Item, Integer> getItemMap(JsonElement root) {
         Map<Item, Integer> out = new HashMap<>();
         
         // Parse each object in the array
-        JsonObject list = element.getAsJsonObject();
+        JsonObject list = root.getAsJsonObject();
         for ( Map.Entry<String, JsonElement> row : list.entrySet() ) {
             String token = row.getKey();
-            int count = row.getValue().getAsInt();
+            Optional<Item> optional = Registry.ITEM.getOrEmpty(new Identifier(token));
             
-            if (count > 0) {
-                out.put(
-                    Registry.ITEM.get(new Identifier(token)),
-                    count
-                );
-            }
+            int count = row.getValue().getAsInt();
+            optional.ifPresentOrElse(
+                item -> out.put(item, count),
+                () -> CoreMod.logError("Unable to find starting item \"" + token + "\" in the item registry.")
+            );
+        }
+        
+        return out;
+    }
+    
+    private static Map<Item, Integer> getItemDespawnMap(JsonElement root) {
+        Map<Item, Integer> out = new HashMap<>();
+        Pattern pattern = Pattern.compile("^([0-9]+)([smhd])$");
+        
+        // Parse each object in the array
+        JsonObject list = root.getAsJsonObject();
+        for ( Map.Entry<String, JsonElement> row : list.entrySet() ) {
+            String token = row.getKey();
+            Optional<Item> optional = Registry.ITEM.getOrEmpty(new Identifier(token));
+            
+            JsonElement element = row.getValue();
+            
+            optional.ifPresentOrElse(item -> {
+                Integer ticks = EntityUtils.DEFAULT_DESPAWN_TICKS;
+                if (element instanceof JsonNull)
+                    ticks = null;
+                else if (element instanceof JsonPrimitive primitive) {
+                    if (primitive.isNumber())
+                        ticks = primitive.getAsInt();
+                    else if (primitive.isString()) {
+                        String string = primitive.getAsString();
+                        Matcher matcher = pattern.matcher(string);
+                        if (!matcher.matches())
+                            ticks = primitive.getAsInt();
+                        else {
+                            int duration = Integer.parseInt(matcher.group(1));
+                            ticks = IntUtils.convertToTicks(duration, IntUtils.getTimeUnit(matcher.group(2)));
+                        }
+                    }
+                }
+                
+                out.put(item, ticks);
+            }, () -> CoreMod.logError(""));
         }
         
         return out;

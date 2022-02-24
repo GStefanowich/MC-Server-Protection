@@ -4,6 +4,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 public final class IntUtils {
     private IntUtils() {}
@@ -39,5 +40,19 @@ public final class IntUtils {
             case 10 -> "ten";
             default -> String.valueOf(count);
         };
+    }
+    
+    public static TimeUnit getTimeUnit(@NotNull String symbol) {
+        return switch (symbol) {
+            case "s" -> TimeUnit.SECONDS;
+            case "m" -> TimeUnit.MINUTES;
+            case "h" -> TimeUnit.HOURS;
+            case "d" -> TimeUnit.DAYS;
+            default -> null;
+        };
+    }
+    
+    public static int convertToTicks(int length, TimeUnit unit) {
+        return Math.toIntExact(TimeUnit.SECONDS.convert(length, unit) * 20);
     }
 }

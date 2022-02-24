@@ -39,7 +39,7 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
-import net.minecraft.entity.mob.HostileEntity;
+import net.minecraft.entity.mob.Monster;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -63,7 +63,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
 public abstract class Death extends Entity {
@@ -104,11 +103,11 @@ public abstract class Death extends Entity {
             return;
         
         // Check if mob type is allowed to be spawned
-        EntityType<?> type = this.getType();
-        if (!EntityUtils.canBeSpawnered(type))
+        if (!EntityUtils.canBeSpawnered(this))
             return;
         
         // Get the identifier of the mob we killed
+        EntityType<?> type = this.getType();
         NbtString mobId = NbtString.of(EntityType.getId(type).toString());
         
         // Get current entity IDs
@@ -240,7 +239,7 @@ public abstract class Death extends Entity {
             }
             
             // If the player can fall from any worlds void back to spawn
-            if (SewConfig.get(SewConfig.VOID_FALL_TO_SPAWN) && !(self instanceof HostileEntity)) { // Teleport to the spawn world
+            if (SewConfig.get(SewConfig.VOID_FALL_TO_SPAWN) && !(self instanceof Monster)) { // Teleport to the spawn world
                 WarpUtils.teleportEntity(ServerCore.defaultWorldKey(), this);
                 return false;
             }

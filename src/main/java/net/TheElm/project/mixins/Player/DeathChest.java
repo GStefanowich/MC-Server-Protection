@@ -94,7 +94,10 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
             // Drop the backpack if we're not using death chests (And keep inventory is off)
             if (!keepInventory) {
                 DeathChestUtils.createDeathSnapshotFor((PlayerEntity)(LivingEntity) this);
-                this.backpack.dropAll(true);
+                
+                // Drop the contents of the backpack (Only if the player HAS one)
+                if (this.backpack != null)
+                    this.backpack.dropAll(true);
             }
             return;
         }
@@ -106,8 +109,9 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
             
             // Check if player is in combat
             if (SewConfig.get(SewConfig.PVP_DISABLE_DEATH_CHEST) && (this.hitByOtherPlayerAt != null)) {
-                // Drop the backpack as well as the inventory
-                this.backpack.dropAll(true);
+                // Drop the backpack as well as the inventory (Only if the player HAS one)
+                if (this.backpack != null)
+                    this.backpack.dropAll(true);
                 
                 // Tell the player that they didn't get a death chest
                 this.sendSystemMessage(
@@ -121,7 +125,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
             }
             
             // If the inventory is NOT empty, and we found a valid position for the death chest
-            if ((!(InventoryUtils.isInvEmpty(this.inventory) && InventoryUtils.isInvEmpty(this.backpack))) && ((chestPos = DeathChestUtils.getChestPosition( this.getEntityWorld(), this.getBlockPos() )) != null)) {
+            if ((!(InventoryUtils.isInvEmpty(this.inventory) && InventoryUtils.isInvEmpty(this.backpack))) && ((chestPos = DeathChestUtils.getChestPosition(this.getEntityWorld(), this.getBlockPos() )) != null)) {
                 // Vanish cursed items
                 this.vanishCursedItems();
                 

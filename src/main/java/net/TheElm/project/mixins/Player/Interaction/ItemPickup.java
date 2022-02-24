@@ -27,11 +27,13 @@ package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.utilities.ChunkUtils;
+import net.TheElm.project.utilities.EntityUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.sound.SoundCategory;
@@ -41,10 +43,13 @@ import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Constant;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Mixin(ItemEntity.class)
@@ -54,8 +59,16 @@ public abstract class ItemPickup extends Entity {
     @Shadow private UUID thrower;
     @Shadow private UUID owner;
     
+    private Integer overriddenSewingDespawnTime = null;
+    
     public ItemPickup(EntityType<?> entityType_1, World world_1) {
         super(entityType_1, world_1);
+    }
+    
+    @Inject(at = @At("HEAD"), method = "setStack")
+    private void OnConstruct(ItemStack stack, CallbackInfo callback) {
+        Map<Item, Integer> items = SewConfig.get(SewConfig.ITEM_DESPAWN_TIMES);
+        this.overriddenSewingDespawnTime = items.get(stack.getItem());
     }
     
     @Inject(at = @At("HEAD"), method = "onPlayerCollision", cancellable = true)
@@ -85,4 +98,10 @@ public abstract class ItemPickup extends Entity {
         }
     }
     
+    @ModifyConstant(method = "tick", constant = @Constant(intValue = 6000))
+    private int anvilMaxLevelOverride(int oldValue) {
+        if (this.overriddenSewingDespawnTime != null)
+            return this.overriddenSewingDespawnTime;
+        return oldValue;
+    }
 }

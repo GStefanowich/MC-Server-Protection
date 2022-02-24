@@ -17,6 +17,7 @@
     "Commands.Stop",
     "Commands.Time",
     "Commands.Whisper",
+    "Commands.WorldBorder",
     
     "Blocks.BeeNest",
     "Blocks.FireSpread",

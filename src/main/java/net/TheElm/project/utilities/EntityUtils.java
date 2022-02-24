@@ -27,9 +27,11 @@ package net.TheElm.project.utilities;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.ShopSignData;
+import net.TheElm.project.interfaces.SpawnerMob;
 import net.TheElm.project.mixins.Server.ServerWorldAccessor;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.text.MessageUtils;
@@ -140,6 +142,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
@@ -148,6 +151,7 @@ import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 public final class EntityUtils {
+    public static final int DEFAULT_DESPAWN_TICKS = 6000;
     
     private EntityUtils() {}
     
@@ -439,19 +443,29 @@ public final class EntityUtils {
     /*
      * Mob spawners
      */
+    public static boolean canBeSpawnered(@NotNull Entity entity) {
+        if (entity instanceof SpawnerMob spawnerMob && spawnerMob.checkIfFromSpawner())
+            return false;
+        return EntityUtils.canBeSpawnered(entity.getType());
+    }
     public static <T extends Entity> boolean canBeSpawnered(@NotNull EntityType<T> type) {
         return type.isSummonable() && !EntityUtils.preventSpawnered(type);
     }
     public static <T extends Entity> boolean preventSpawnered(@NotNull EntityType<T> type) {
-        return type == EntityType.WANDERING_TRADER
-            || type == EntityType.IRON_GOLEM
-            || EntityUtils.isBossEntity(type);
+        if (EntityUtils.cannotBeSpawnered(type))
+            return true;
+        List<EntityType<?>> blacklist = SewConfig.get(SewConfig.SPAWNER_ABSORB_BLACKLIST);
+        for (EntityType<?> blacklisted : blacklist) {
+            if (Objects.equals(blacklisted, type))
+                return true;
+        }
+        
+        return false;
     }
-    public static <T extends Entity> boolean isBossEntity(@NotNull EntityType<T> type) {
+    public static <T extends Entity> boolean cannotBeSpawnered(@NotNull EntityType<T> type) {
         return type == EntityType.ELDER_GUARDIAN
-            || type == EntityType.WITHER
             || type == EntityType.WITHER_SKULL
-            || type == EntityType.ENDER_DRAGON;
+            || type == EntityType.DRAGON_FIREBALL;
     }
     
     /*

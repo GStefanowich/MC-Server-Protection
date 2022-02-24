@@ -25,12 +25,14 @@
 
 package net.TheElm.project.config;
 
+import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonPrimitive;
-import com.google.gson.JsonSerializer;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.interfaces.json.ConfigReader;
+import net.TheElm.project.interfaces.json.ConfigWriter;
 import net.TheElm.project.objects.ChatFormat;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
@@ -40,21 +42,19 @@ import net.minecraft.util.registry.RegistryKey;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Function;
-
-public class ConfigOption<T extends Object> extends ConfigBase<T> {
+public final class ConfigOption<T extends Object> extends ConfigBase<T> {
     
-    private final @NotNull Function<JsonElement, T> setter;
+    private final @NotNull ConfigReader<T> setter;
     private @Nullable T value;
-    private @Nullable JsonSerializer<T> serializer;
+    private @Nullable ConfigWriter<T> serializer;
     
-    public ConfigOption(@NotNull String location, @NotNull Function<JsonElement, T> setter) {
+    public ConfigOption(@NotNull String location, @NotNull ConfigReader<T> setter) {
         this(location, null, setter);
     }
-    public ConfigOption(@NotNull String location, @Nullable T defaultValue, @NotNull Function<JsonElement, T> setter) {
+    public ConfigOption(@NotNull String location, @Nullable T defaultValue, @NotNull ConfigReader<T> setter) {
         this(location, defaultValue, setter, null);
     }
-    public ConfigOption(@NotNull String location, @Nullable T defaultValue, @NotNull Function<JsonElement, T> setter, @Nullable JsonSerializer<T> serializer) {
+    public ConfigOption(@NotNull String location, @Nullable T defaultValue, @NotNull ConfigReader<T> setter, @Nullable ConfigWriter<T> serializer) {
         super(location);
         
         this.value = defaultValue;
@@ -63,22 +63,22 @@ public class ConfigOption<T extends Object> extends ConfigBase<T> {
     }
     
     @Override
-    final void set( JsonElement value ) {
-        this.value = ( value == null ? null : this.setter.apply(value) );
+    void set( JsonElement value ) {
+        this.value = ( value == null ? null : this.setter.deserialize(value) );
     }
-    final void set( T value ) {
+    void set( T value ) {
         this.value = value;
     }
-    final T get() {
+    T get() {
         return this.value;
     }
     
     @Override
-    final JsonElement getElement() {
+    JsonElement getElement() {
         return ConfigOption.convertToJSON(this.value, this.serializer);
     }
     
-    public final ConfigOption<T> serializer(JsonSerializer<T> serializer) {
+    public ConfigOption<T> serializer(ConfigWriter<T> serializer) {
         this.serializer = serializer;
         return this;
     }
@@ -86,11 +86,9 @@ public class ConfigOption<T extends Object> extends ConfigBase<T> {
     public static JsonElement convertToJSON( @Nullable Object src ) {
         return ConfigOption.convertToJSON( src, null );
     }
-    public static <T> JsonElement convertToJSON(@Nullable T src, @Nullable JsonSerializer<T> serializer ) {
-        GsonBuilder builder = new GsonBuilder();
-        if (src != null && serializer != null)
-            builder.registerTypeAdapter(src.getClass(), serializer);
-        return builder.create().toJsonTree( src );
+    static <T> JsonElement convertToJSON(@Nullable T src, @Nullable ConfigWriter<T> serializer) {
+        Gson gson = new GsonBuilder().create();
+        return serializer == null ? gson.toJsonTree(src) :  serializer.serialize(src, gson);
     }
     
     public static @NotNull ConfigOption<ChatFormat> chat(@NotNull String location, @NotNull String defaultFormat) {
@@ -157,7 +155,7 @@ public class ConfigOption<T extends Object> extends ConfigBase<T> {
                 CoreMod.logError(new Exception("Failed to parse BlockPos in config, using fallback value", ex));
             }
             return BlockPos.ORIGIN;
-        }, (s, type, json) -> {
+        }, (s, json) -> {
             // Create an array
             JsonArray array = new JsonArray();
             
@@ -169,19 +167,19 @@ public class ConfigOption<T extends Object> extends ConfigBase<T> {
             return array;
         });
     }
-    public static @NotNull <T extends Object & Comparable<? super T>> ConfigOption<T> comparable(@NotNull String location, @Nullable T def, final @NotNull T minimum, final @NotNull T maximum, final @NotNull Function<JsonElement, T> setter ) {
+    public static @NotNull <T extends Object & Comparable<? super T>> ConfigOption<T> comparable(@NotNull String location, @Nullable T def, final @NotNull T minimum, final @NotNull T maximum, final @NotNull ConfigReader<T> setter ) {
         return new ConfigOption<>(location, def, (raw) -> {
-            T setTo = setter.apply(raw);
+            T setTo = setter.deserialize(raw);
             return (setTo.compareTo(minimum) < 0 || maximum.compareTo(setTo) < 0) ? def : setTo;
         });
     }
-    public static @NotNull <T> ConfigOption<RegistryKey<T>> registry(String location, RegistryKey<T> def, RegistryKey<? extends Registry<T>> registry) {
+    public static @NotNull <T> ConfigOption<RegistryKey<T>> registry(String location, RegistryKey<? extends Registry<T>> registry, RegistryKey<T> def) {
         return new ConfigOption<>(location, def, (element) -> {
             // Convert from String to RegistryKey
             return RegistryKey.of(registry, new Identifier(element.getAsString()));
-        }, (world, type, json) -> {
+        }, (type, json) -> {
             // Convert from RegistryKey to String
-            return json.serialize(world.getValue().toString());
+            return json.toJsonTree(type.getValue().toString());
         });
     }
 }

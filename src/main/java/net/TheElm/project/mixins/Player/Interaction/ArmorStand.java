@@ -103,8 +103,8 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
         boolean hidePlate = this.shouldHideBasePlate();
         
         if (showArms || hidePlate) {
-            NbtCompound name = itemStack.getSubNbt("display");
-            NbtCompound enti = itemStack.getSubNbt("EntityTag");
+            NbtCompound name = itemStack.getOrCreateSubNbt("display");
+            NbtCompound enti = itemStack.getOrCreateSubNbt("EntityTag");
             enti.putBoolean("ShowArms", showArms);
             enti.putBoolean("NoBasePlate", hidePlate);
             
