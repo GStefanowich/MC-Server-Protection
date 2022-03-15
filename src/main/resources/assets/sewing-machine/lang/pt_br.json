@@ -1,0 +1,118 @@
+{
+  "chat.change.town": "Você trocou para o chat Vila.",
+  "chat.change.global": "Você trocou para o chat Global.",
+  "chat.change.local": "Você trocou para o chat Local.",
+  
+  "chat.muted": "Você está mutado e não pode mandar mensagens em %s.",
+  "chat.mute.player": "Você não verá mais mensagens de %s.",
+  "chat.unmute.player": "Você verá mensagens de %s.",
+  "chat.mute.global": "%s agora está mutado para todos.",
+  "chat.unmute.global": "%s não está mais mutado para todos.",
+  
+  "chat.room.local": "local",
+  "chat.room.global": "global",
+  "chat.room.town": "vila",
+  
+  "claim.chunk.pvp": "PvP",
+  "claim.chunk.self": "Seu %s",
+  "claim.chunk.entering.generic": "Entrando em %s",
+  "claim.chunk.entering.owned": "Entrando no chunk de %s, com nome %s",
+  "claim.chunk.entering.town": "Entrando em %s (%s)",
+  "claim.chunk.entering.town.owned": "Entrando em %s - %s (%s)",
+  "claim.chunk.error.max": "Você não pode reinvindicar mais chunks.",
+  "claim.chunk.error.claimed": "Este chunk já foi reinvindicado.",
+  "claim.chunk.error.not_players": "Este chunk não pertence a você.",
+  "claim.chunk.error.not_claimed": "Este chunk não foi reinvindicado.",
+  "claim.chunk.error.radius_owned": "Este chunk naquela área pertence a %s.",
+  "claim.chunk.claimed": "Você reinvindicou %d chunks.",
+  "claim.chunk.unclaimed": "Você abandonou %d chunks.",
+  
+  "claim.block.locked": "Este %s pertence a %s",
+  
+  "claim.wilderness.general": "Ambiente Silvestre",
+  "claim.wilderness.end": "Vazio",
+  "claim.wilderness.nether": "Descampado Infértil",
+  
+  "player.none_found": "Nenhum jogador encontrado.",
+  "player.not_found": "Não foi possível achar esse jogador (Talvez o mesmo nunca tenha entrado?).",
+  "player.abilities.flying_self.enabled": "Modo voar ativado.",
+  "player.abilities.flying_self.disabled": "Modo voar desativado.",
+  "player.abilities.flying_other.enabled": "Modo voar ativado para %s.",
+  "player.abilities.flying_other.disabled": "Modo voar desativado para %s.",
+  
+  "player.abilities.godmode_self.enabled": "Modo Deus ativado.",
+  "player.abilities.godmode_self.disabled": "Modo Deus desativado.",
+  "player.abilities.godmode_other.enabled": "Modo Deus ativado para %s.",
+  "player.abilities.godmode_other.disabled": "Modo Deus desativado para %s.",
+  
+  "player.abilities.healed_self": "Você foi curado.",
+  "player.abilities.healed_other": "%s foi curado.",
+  "player.abilities.healed_dead": "%s está morto.",
+  
+  "player.abilities.fed_self": "Você foi alimentado.",
+  "player.abilities.fed_other": "%s foi alimentado.",
+  "player.abilities.fed_dead": "%s está morto.",
+  
+  "player.equipment.empty_hand": "Você não tem nada nessa mão.",
+  "player.equipment.empty_slot": "Você não tem nenhuma armadura nesse slot.",
+  
+  "player.nick.too_long": "O nickname não pode ter mais que %d caracteres.",
+  "player.nick.updated": "Nickname atualizado para %s.",
+  "player.nick.reset": "Seu nickname foi resetado.",
+  
+  "player.money": "Sua carteira: $%d",
+  "player.money.poor": "Você não tem dinheiro.",
+  "player.death_chest.location": "Um novo baú de morte foi spawnado em %s.",
+  "player.no_backpack": "Você não tem uma mochila.",
+  
+  "player.target.different_world": "O alvo está em um mundo diferente.",
+  
+  "friends.rank.self": "Você não pode mudar seu próprio cargo.",
+  "friends.not_friends": "Você não é amigo deste jogador.",
+  
+  "town.found": "%s fundou a vila \"%s\".",
+  "town.disband": "%s dissolveu a vila \"%s\".",
+  "town.found.poor": "Você precisa de %s para criar uma vila.",
+  "town.invite.receive": "Você foi chamado para se juntar a \"%s\" por %s",
+  "town.invite.join": "Você se juntou a %s.",
+  "town.invite.sent": "Convite enviado para %s em nome de sua vila.",
+  "town.invite.rank": "Seu cargo não é alto o suficiente para convidar jogadores.",
+  "town.invite.fail": "Não foi possível convidar esse jogador.",
+  "town.invite.missing": "Você não foi convidado para esta vila.",
+  
+  "warp.random.search": "Aguarde um instante enquanto achamos um local perfeito para você.",
+  "warp.random.build": "Construindo sua nova casa!",
+  "warp.random.teleported": "Você agora está a %d blocos de distância do Spawn. Por favor não perder esse ponto de teleporte, pois ele ajudará em seu retorno.",
+  "warp.random.teleported_world": "Você agora está num mundo diferente do Spawn. Por favor não perder esse ponto de teleporte, pois ele ajudará em seu retorno.",
+  
+  "warp.notice.name.invalid": "Nomes de Marcos só podem ter letras minúsculas, maiúsculas, espaços e números.",
+  "warp.notice.name.too_long": "Nomes de Marcos não podem ter mais de %d caracteres.",
+  "warp.notice.too_many": "Você não pode ter mais de %d Marco(s).",
+  "warp.notice.player.outside_spawn": "Teleporte só é permitido dentro do Spawn.",
+  "warp.notice.target.outside_spawn": "Esse jogador não está no Spawn.",
+  "warp.notice.no_request": "Esse jogador não está tentando teleportar para você. O pedido pode ter expirado, ou já ter sido aceito por você.",
+  "warp.notice.no_warp": "Esse ponto de teleporte não existe.",
+  "warp.notice.offline": "Esse jogador não pode receber seu pedido de teleporte enquanto está offline.",
+  "warp.notice.player": "%s se teleportou para seu ponto de teleporte.",
+  
+  "shop.error.database": "Um erro ocorreu.",
+  "shop.error.chest_open": "Não é possível fazer isso com o baú aberto.",
+  "shop.error.self_sell": "Você não pode vender para si mesmo.",
+  "shop.error.self_buy": "Você não pode comprar de si mesmo.",
+  "shop.error.stock_player": "Você não tem %s.",
+  "shop.error.stock_chest": "O baú está sem %s.",
+  "shop.error.money_player": "Você não tem dinheiro.",
+  "shop.error.money_chest": "O dono da loja não tem dinheiro.",
+  
+  "backpack.no_downsize": "Você não pode comprar uma mochila menor que a que você tem.",
+  "backpack.need_previous": "Você deve comprar a versão anterior da mochila antes de comprar esta.",
+  
+  "bee_hive.0": "Você presta atenção na colmeia, mas não ouve nada.",
+  "bee_hive.1": "Você presta atenção na colmeia, e ouve o fraco zumbido das abelhas.",
+  "bee_hive.2": "Você presta atenção na colmeia, e ouve o zumbido das abelhas.",
+  "bee_hive.3": "Você presta atenção na colmeia, e ouve o forte zumbido das abelhas.",
+  
+  "spawn.set.missing_bed": "A posição do Spawn deve ser numa cama.",
+  
+  "ruler.no_block": "Uma posição de um bloco não foi encontrada."
+}
