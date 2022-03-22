@@ -42,8 +42,8 @@ import net.minecraft.server.command.CommandOutput;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
-import net.minecraft.util.registry.SimpleRegistry;
 import net.minecraft.util.thread.ReentrantThreadExecutor;
 import net.minecraft.world.SaveProperties;
 import net.minecraft.world.World;
@@ -115,9 +115,9 @@ public abstract class Save extends ReentrantThreadExecutor<ServerTask> implement
         return world;
     }
     
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/util/registry/SimpleRegistry.getEntries()Ljava/util/Set;"), method = "createWorlds")
-    private Set<Map.Entry<RegistryKey<DimensionOptions>, DimensionOptions>> onSettingUpWorlds(SimpleRegistry<DimensionOptions> registry, WorldGenerationProgressListener worldGenListener) {
-        Set<Map.Entry<RegistryKey<DimensionOptions>, DimensionOptions>> worlds = registry.getEntries();
+    @Redirect(at = @At(value = "INVOKE", target = "Lnet/minecraft/util/registry/Registry;getEntrySet()Ljava/util/Set;"), method = "createWorlds")
+    private Set<Map.Entry<RegistryKey<DimensionOptions>, DimensionOptions>> onSettingUpWorlds(Registry<DimensionOptions> registry, WorldGenerationProgressListener worldGenListener) {
+        Set<Map.Entry<RegistryKey<DimensionOptions>, DimensionOptions>> worlds = registry.getEntrySet();
         if (SewConfig.get(SewConfig.WORLD_SEPARATE_PROPERTIES)) {
             Iterator<Map.Entry<RegistryKey<DimensionOptions>, DimensionOptions>> iterator = worlds.iterator();
             GeneratorOptions genOptions = this.saveProperties.getGeneratorOptions();
@@ -130,7 +130,7 @@ public abstract class Save extends ReentrantThreadExecutor<ServerTask> implement
                     
                     // Get dimension options
                     DimensionOptions options = entry.getValue();
-                    DimensionType dimensionType = options.getDimensionType();
+                    RegistryEntry<DimensionType> dimensionType = options.getDimensionTypeSupplier();
                     ChunkGenerator chunkGenerator = options.getChunkGenerator();
                     
                     // Create a dynamic world properties file

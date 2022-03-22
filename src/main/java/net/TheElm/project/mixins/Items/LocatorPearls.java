@@ -32,15 +32,18 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.tag.TagKey;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.registry.Registry;
+import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.world.World;
 import net.minecraft.world.biome.Biome;
 import net.minecraft.world.gen.chunk.ChunkGenerator;
+import net.minecraft.world.gen.feature.ConfiguredStructureFeature;
 import net.minecraft.world.gen.feature.StructureFeature;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
@@ -48,6 +51,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.Locale;
+import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * Created on Jun 06 2021 at 11:25 PM.
@@ -60,8 +65,8 @@ public abstract class LocatorPearls extends Item {
         super(settings);
     }
     
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/world/gen/chunk/ChunkGenerator.locateStructure(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/world/gen/feature/StructureFeature;Lnet/minecraft/util/math/BlockPos;IZ)Lnet/minecraft/util/math/BlockPos;"), method = "use")
-    public BlockPos trySwapStructure(@NotNull ChunkGenerator generator, @NotNull ServerWorld world, @NotNull StructureFeature<?> feature, @NotNull BlockPos center, int radius, boolean skipExistingChunks, World useWorld, @NotNull PlayerEntity user, @NotNull Hand hand) {
+    @Redirect(at = @At(value = "INVOKE", target = "Lnet/minecraft/server/world/ServerWorld;locateStructure(Lnet/minecraft/tag/TagKey;Lnet/minecraft/util/math/BlockPos;IZ)Lnet/minecraft/util/math/BlockPos;"), method = "use")
+    public BlockPos trySwapStructure(ServerWorld instance, TagKey<ConfiguredStructureFeature<?, ?>> structureTag, BlockPos pos, int radius, boolean skipExistingChunks, World world, PlayerEntity user, Hand hand) {
         // The blockpos location that was found
         BlockPos location = null;
         
@@ -69,7 +74,7 @@ public abstract class LocatorPearls extends Item {
         NbtCompound throwDat = inHand.getSubNbt("throw");
         
         if (throwDat == null)
-            location = generator.locateStructure(world, feature, center, radius, skipExistingChunks);
+            location = instance.locateStructure(structureTag, pos, radius, skipExistingChunks);
         else {
             int uses = 0;
             if (throwDat.contains("uses", NbtElement.NUMBER_TYPE))
@@ -88,13 +93,12 @@ public abstract class LocatorPearls extends Item {
             // Try to locate the biome given in the NBT
             if (throwDat.contains("biome", NbtElement.STRING_TYPE)) {
                 Identifier biomeId = new Identifier(throwDat.getString("biome"));
-                Biome biome = world.getRegistryManager().get(Registry.BIOME_KEY).get(biomeId);
+                var biome = world.getRegistryManager().get(Registry.BIOME_KEY).get(biomeId);
                 if (biome != null)
-                    location = world.locateBiome(biome, center, (radius * 10) * (6 + strength * 2), 8);
+                    location = Objects.requireNonNull(instance.locateBiome(biomeRegistryEntry ->
+                            biomeRegistryEntry.value() == biome, pos, (radius * 10) * (6 + strength * 2), 8)).getFirst();
             } else if (throwDat.contains("structure", NbtElement.STRING_TYPE)) {
-                StructureFeature<?> structure = StructureFeature.STRUCTURES.get(throwDat.getString("structure").toLowerCase(Locale.ROOT));
-                if (structure != null)
-                    location = generator.locateStructure(world, structure, center, (radius * 10) * (6 + strength * 2), skipExistingChunks);
+                location = instance.locateStructure(structureTag, pos, (radius * 10) * (6 + strength * 2), skipExistingChunks);
             }
             
             // Update the remaining uses
