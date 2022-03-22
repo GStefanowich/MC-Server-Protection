@@ -31,18 +31,17 @@ import com.mojang.datafixers.DataFixer;
 import net.TheElm.project.config.SewConfig;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.resource.ResourcePackManager;
-import net.minecraft.resource.ServerResourceManager;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.SaveLoader;
 import net.minecraft.server.WorldGenerationProgressListenerFactory;
 import net.minecraft.server.dedicated.DedicatedServer;
 import net.minecraft.server.dedicated.MinecraftDedicatedServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.UserCache;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.DynamicRegistryManager;
-import net.minecraft.world.SaveProperties;
 import net.minecraft.world.level.storage.LevelStorage;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -55,11 +54,12 @@ import java.net.Proxy;
  */
 @Mixin(MinecraftDedicatedServer.class)
 public abstract class VanillaProtection extends MinecraftServer implements DedicatedServer {
-    
-    public VanillaProtection(Thread thread, DynamicRegistryManager.Impl impl, LevelStorage.Session session, SaveProperties saveProperties, ResourcePackManager resourcePackManager, Proxy proxy, DataFixer dataFixer, ServerResourceManager serverResourceManager, MinecraftSessionService minecraftSessionService, GameProfileRepository gameProfileRepository, UserCache userCache, WorldGenerationProgressListenerFactory worldGenerationProgressListenerFactory) {
-        super(thread, impl, session, saveProperties, resourcePackManager, proxy, dataFixer, serverResourceManager, minecraftSessionService, gameProfileRepository, userCache, worldGenerationProgressListenerFactory);
+
+
+    public VanillaProtection(Thread serverThread, LevelStorage.Session session, ResourcePackManager dataPackManager, SaveLoader saveLoader, Proxy proxy, DataFixer dataFixer, @Nullable MinecraftSessionService sessionService, @Nullable GameProfileRepository gameProfileRepo, @Nullable UserCache userCache, WorldGenerationProgressListenerFactory worldGenerationProgressListenerFactory) {
+        super(serverThread, session, dataPackManager, saveLoader, proxy, dataFixer, sessionService, gameProfileRepo, userCache, worldGenerationProgressListenerFactory);
     }
-    
+
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/dedicated/MinecraftDedicatedServer.getSpawnProtectionRadius()I"), method = "isSpawnProtected")
     public int getVanillaSpawnProtection(@NotNull MinecraftDedicatedServer server, ServerWorld world, BlockPos pos, PlayerEntity player) {
         if (SewConfig.get(SewConfig.DISABLE_VANILLA_PROTECTION))

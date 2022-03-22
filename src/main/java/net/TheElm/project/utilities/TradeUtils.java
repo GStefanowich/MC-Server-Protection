@@ -208,7 +208,7 @@ public class TradeUtils {
         
         @Override
         protected @NotNull ItemStack createPearl() {
-            String structureName = this.structure.getName();
+            String structureName = this.structure.getClass().getName();
             
             ItemStack pearl = super.createPearl(new LiteralText(this.description(structureName)));
             NbtCompound throwDat = pearl.getOrCreateSubNbt("throw");

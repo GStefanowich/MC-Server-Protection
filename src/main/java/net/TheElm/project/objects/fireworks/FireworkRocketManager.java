@@ -26,7 +26,7 @@
 package net.TheElm.project.objects.fireworks;
 
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.world.gen.Spawner;
+import net.minecraft.world.spawner.Spawner;
 
 /**
  * Created on Aug 25 2021 at 2:26 AM.

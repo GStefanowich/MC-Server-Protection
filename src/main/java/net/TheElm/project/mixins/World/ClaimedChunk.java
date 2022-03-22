@@ -69,7 +69,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
     protected HeightLimitView heightLimitView;
     
     @Shadow
-    public native void setShouldSave(boolean shouldSave);
+    public native void setNeedsSaving(boolean shouldSave);
     
     @Override
     public ClaimantTown updateTownOwner(@Nullable UUID owner, boolean fresh) {
@@ -81,7 +81,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         this.chunkTown = (town == null ? null : new WeakReference<>(town));
         
         if ( fresh )
-            this.setShouldSave(true);
+            this.setNeedsSaving(true);
         
         return this.getTown();
     }
@@ -93,7 +93,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         this.chunkPlayer = ( owner == null ? null : ClaimantPlayer.get( owner ));
         
         if (fresh)
-            this.setShouldSave(true);
+            this.setNeedsSaving(true);
         
         // If there is no player owner, there is no town
         if (owner == null) {
@@ -111,7 +111,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
                 continue;
             slice.reset();
         }
-        this.setShouldSave(true);
+        this.setNeedsSaving(true);
     }
     @Override
     public void updateSliceOwner(UUID owner, int slicePos, int yFrom, int yTo, boolean fresh) {
@@ -131,7 +131,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         
         // Make sure the chunk gets saved
         if ( fresh )
-            this.setShouldSave(true);
+            this.setNeedsSaving(true);
     }
     public UUID[] getSliceOwner(int slicePos, int yFrom, int yTo) {
         ClaimSlice slice;

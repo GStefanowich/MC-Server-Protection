@@ -29,6 +29,7 @@ import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.tag.Tag;
+import net.minecraft.tag.TagKey;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
@@ -187,7 +188,7 @@ public final class BlockRange implements Iterable<BlockPos> {
     public @NotNull Collection<BlockPos> getBlocks(@NotNull WorldView world, @NotNull Block block) {
         return this.getBlocks(world, (state) -> state.getBlock().equals(block));
     }
-    public @NotNull Collection<BlockPos> getBlocks(@NotNull WorldView world, @NotNull Tag.Identified<Block> tag) {
+    public @NotNull Collection<BlockPos> getBlocks(@NotNull WorldView world, @NotNull TagKey<Block> tag) {
         return this.getBlocks(world, (state) -> state.isIn(tag));
     }
     public @NotNull Collection<BlockPos> getBlocks(@NotNull WorldView world, @NotNull Predicate<BlockState> predicate) {

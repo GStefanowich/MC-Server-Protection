@@ -43,6 +43,7 @@ import net.minecraft.text.LiteralText;
 import net.minecraft.util.ProgressListener;
 import net.minecraft.util.profiler.Profiler;
 import net.minecraft.util.registry.DynamicRegistryManager;
+import net.minecraft.util.registry.RegistryEntry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.MutableWorldProperties;
 import net.minecraft.world.ServerWorldAccess;
@@ -73,11 +74,12 @@ import java.util.function.Supplier;
 public abstract class WorldSleep extends World implements LogicalWorld, ServerWorldAccess {
     private final @NotNull Queue<DetachedTickable> detachedTickableQueue = new ArrayDeque<>();
     private final @NotNull List<DetachedTickable> detachedEvents = new LinkedList<>();
-    
-    protected WorldSleep(MutableWorldProperties properties, RegistryKey<World> registryRef, final DimensionType dimensionType, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long seed) {
-        super(properties, registryRef, dimensionType, profiler, isClient, debugWorld, seed);
+
+    protected WorldSleep(MutableWorldProperties properties, RegistryKey<World> registryRef, RegistryEntry<DimensionType> registryEntry, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long seed) {
+        super(properties, registryRef, registryEntry, profiler, isClient, debugWorld, seed);
     }
-    
+
+
     @Shadow public native DynamicRegistryManager getRegistryManager();
     
     @Inject(at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "net/minecraft/server/world/ServerWorld.setTimeOfDay(J)V"), method = "tick")
