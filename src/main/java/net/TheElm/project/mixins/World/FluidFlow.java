@@ -52,8 +52,8 @@ public abstract class FluidFlow extends Fluid {
     @Shadow
     protected abstract boolean isInfinite();
     
-    @Inject(at = @At("HEAD"), method = {"canFlowThrough", "canFlow"}, cancellable = true)
-    protected void gettingFluidDirections(BlockView view, Fluid fluid, BlockPos sourcePos, BlockState sourceState, Direction flowDirection, BlockPos flowPos, BlockState flowState, FluidState fluidState, CallbackInfoReturnable<Boolean> callback) {
+    @Inject(at = @At("HEAD"), method = "canFlowThrough", cancellable = true)
+    protected void gettingFluidDirections(BlockView view, Fluid fluid, BlockPos flowPos, BlockState state, Direction face, BlockPos sourcePos, BlockState fromState, FluidState fluidState, CallbackInfoReturnable<Boolean> cir) {
         // If world is Server World
         if (view instanceof World world) {
             // Get chunks
@@ -66,7 +66,25 @@ public abstract class FluidFlow extends Fluid {
             
             // Check that first chunk owner can modify the next chunk
             if (!((IClaimedChunk) nextChunk).canPlayerDo(flowPos, ((IClaimedChunk) startingChunk).getOwner(), ClaimPermissions.BLOCKS))
-                callback.setReturnValue(false);
+                cir.setReturnValue(false);
+        }
+    }
+
+    @Inject(at = @At("HEAD"), method = "canFlow", cancellable = true)
+    protected void gettingFluidDirections(BlockView view, BlockPos sourcePos, BlockState fluidBlockState, Direction flowDirection, BlockPos flowPos, BlockState flowToBlockState, FluidState fluidState, Fluid fluid, CallbackInfoReturnable<Boolean> cir) {
+        // If world is Server World
+        if (view instanceof World world) {
+            // Get chunks
+            Chunk startingChunk = world.getChunk(sourcePos);
+            Chunk nextChunk = world.getChunk(flowPos);
+
+            // If chunk is the same chunk, Allow
+            if (startingChunk == nextChunk)
+                return;
+
+            // Check that first chunk owner can modify the next chunk
+            if (!((IClaimedChunk) nextChunk).canPlayerDo(flowPos, ((IClaimedChunk) startingChunk).getOwner(), ClaimPermissions.BLOCKS))
+                cir.setReturnValue(false);
         }
     }
     
