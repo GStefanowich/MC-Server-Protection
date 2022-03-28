@@ -28,8 +28,6 @@ package net.TheElm.project;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import net.TheElm.project.blocks.entities.LecternGuideBlockEntity;
-import net.TheElm.project.blocks.entities.LecternWarpsBlockEntity;
 import net.TheElm.project.commands.AdminCommands;
 import net.TheElm.project.commands.BackpackCommand;
 import net.TheElm.project.commands.ChatroomCommands;
@@ -71,10 +69,7 @@ import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.MapUtils;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v1.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.minecraft.SharedConstants;
-import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
@@ -85,7 +80,6 @@ import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
@@ -100,10 +94,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public final class ServerCore extends CoreMod implements DedicatedServerModInitializer {
-    public static BlockEntityType<LecternGuideBlockEntity> GUIDE_BLOCK_ENTITY;
-    public static BlockEntityType<LecternWarpsBlockEntity> WARPS_BLOCK_ENTITY;
-    
+public final class ServerCore extends CoreMod implements DedicatedServerModInitializer {    
     /*
      * Mod initializer
      */
@@ -113,10 +104,6 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         
         if ( DevUtils.isDebugging() )
             SharedConstants.isDevelopment = true;
-        
-        // Register our server-side block entity
-        ServerCore.GUIDE_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("guide_lectern"), FabricBlockEntityTypeBuilder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
-        ServerCore.WARPS_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("warps_lectern"), FabricBlockEntityTypeBuilder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
         
         // Register the server commands
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
