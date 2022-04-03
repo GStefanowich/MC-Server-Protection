@@ -30,6 +30,8 @@ import net.TheElm.project.MySQL.MySQLConnection;
 import net.TheElm.project.MySQL.MySQLHost;
 import net.TheElm.project.MySQL.MySQLStatement;
 import net.TheElm.project.MySQL.MySQLite;
+import net.TheElm.project.blocks.entities.LecternGuideBlockEntity;
+import net.TheElm.project.blocks.entities.LecternWarpsBlockEntity;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -37,9 +39,12 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.DevUtils;
 import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.loader.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -49,6 +54,8 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.minecraft.util.Util;
+import net.minecraft.util.registry.Registry;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -79,7 +86,10 @@ public abstract class CoreMod {
     private static final Map<UUID, WeakReference<ClaimantPlayer>> PLAYER_CLAIM_CACHE = Collections.synchronizedMap(new HashMap<>()); // Reference from player UUID
     private static final Map<UUID, WeakReference<ClaimantTown>> TOWN_CLAIM_CACHE = Collections.synchronizedMap(new HashMap<>()); // Reference from owner UUID
     
-    public static final @NotNull UUID SPAWN_ID = Util.NIL_UUID;
+    public static final @NotNull UUID SPAWN_ID = Util.NIL_UUID;    
+    
+    public static BlockEntityType<LecternGuideBlockEntity> GUIDE_BLOCK_ENTITY;
+    public static BlockEntityType<LecternWarpsBlockEntity> WARPS_BLOCK_ENTITY;
     
     // MySQL Host
     private static MySQLHost MySQL = null;
@@ -156,6 +166,11 @@ public abstract class CoreMod {
     
     public void initialize() {
         CoreMod.logInfo("Sewing Machine utilities mod is starting.");
+        
+        // Register our server-side block entity
+        CoreMod.GUIDE_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("guide_lectern"), FabricBlockEntityTypeBuilder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
+        CoreMod.WARPS_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("warps_lectern"), FabricBlockEntityTypeBuilder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
+                
     }
     
     /*
