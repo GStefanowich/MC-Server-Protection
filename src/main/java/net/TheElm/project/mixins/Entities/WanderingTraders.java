@@ -304,7 +304,7 @@ public abstract class WanderingTraders extends MerchantEntity {
             /* Structure Locators */
             TradeUtils.createSellLocator(1, StructureFeature.BASTION_REMNANT, 100),
             TradeUtils.createSellLocator(1, StructureFeature.DESERT_PYRAMID, 100),
-            TradeUtils.createSellLocator(1, StructureFeature.END_CITY, 100),
+            TradeUtils.createSellLocator(1, StructureFeature.ENDCITY, 100),
             TradeUtils.createSellLocator(1, StructureFeature.VILLAGE, 100),
             TradeUtils.createSellLocator(1, StructureFeature.FORTRESS, 100),
             TradeUtils.createSellLocator(1, StructureFeature.MANSION, 100),

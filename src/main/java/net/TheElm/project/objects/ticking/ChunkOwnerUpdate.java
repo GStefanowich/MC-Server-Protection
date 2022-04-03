@@ -215,7 +215,7 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
                         claimantTown.addToCount(worldChunk);
                 }
                 
-                worldChunk.setShouldSave(true);
+                worldChunk.setNeedsSaving(true);
                 return ActionResult.SUCCESS;
             }
             @Override
@@ -252,7 +252,7 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
                 // Set the chunks owner
                 chunk.updatePlayerOwner(null);
                 
-                worldChunk.setShouldSave(true);
+                worldChunk.setNeedsSaving(true);
                 return ActionResult.SUCCESS;
             }
             @Override

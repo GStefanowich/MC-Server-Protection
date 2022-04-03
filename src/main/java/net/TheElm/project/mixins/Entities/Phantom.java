@@ -28,7 +28,7 @@ package net.TheElm.project.mixins.Entities;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.world.gen.PhantomSpawner;
+import net.minecraft.world.spawner.PhantomSpawner;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;

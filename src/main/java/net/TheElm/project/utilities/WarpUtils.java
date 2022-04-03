@@ -248,7 +248,7 @@ public final class WarpUtils {
         return this.build(runnable, true);
     }
     public boolean build(@NotNull final Runnable runnable, final boolean dropBlocks) {
-        Biome biome = this.world.getBiome(this.createWarpAt);
+        Biome biome = this.world.getBiome(this.createWarpAt).value();
         RegistryKey<Biome> biomeKey = RegistryUtils.getFromRegistry(this.world.getServer(), Registry.BIOME_KEY, biome);
         
         // Create the structure

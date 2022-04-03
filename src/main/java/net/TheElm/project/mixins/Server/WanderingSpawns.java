@@ -45,7 +45,7 @@ import net.minecraft.world.BlockView;
 import net.minecraft.world.WanderingTraderManager;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
-import net.minecraft.world.gen.Spawner;
+import net.minecraft.world.spawner.Spawner;
 import net.minecraft.world.level.ServerWorldProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

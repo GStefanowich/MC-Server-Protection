@@ -41,7 +41,7 @@ public class RegistryUtils {
     
     public static <T> RegistryKey<T> getFromRegistry(@NotNull MinecraftServer server, RegistryKey<Registry<T>> registry, T type) {
         return server.getRegistryManager().get(registry)
-            .getEntries()
+            .getEntrySet()
             .stream()
             .filter(entry -> entry.getValue().equals(type))
             .map(Map.Entry::getKey)

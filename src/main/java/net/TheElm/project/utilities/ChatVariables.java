@@ -105,8 +105,7 @@ public class ChatVariables {
         // Get the entity biome
         variables.put("biome", (EntityChatFunction)(source, entity, casing) -> {
             World world = entity.getWorld();
-            RegistryKey<Biome> registryKey = world.getBiomeKey(entity.getBlockPos())
-                .orElse(BiomeKeys.PLAINS);
+            RegistryKey<Biome> registryKey = world.getBiome(entity.getBlockPos()).getKey().isPresent()? world.getBiome(entity.getBlockPos()).getKey().get() : BiomeKeys.PLAINS;
             Identifier identifier = registryKey.getValue();
             return new TranslatableText("biome." + identifier.getNamespace() + "." + identifier.getPath());
         });

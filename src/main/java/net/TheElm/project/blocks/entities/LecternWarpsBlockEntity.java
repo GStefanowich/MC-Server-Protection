@@ -213,7 +213,7 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
                     .addString(DimensionUtils.longDimensionName(warp.world), Formatting.RED);
                 
                 // Biome
-                Biome biome = world.getBiome(blockPos);
+                Biome biome = world.getBiome(blockPos).value();
                 Identifier biomeId = world.getRegistryManager().get(Registry.BIOME_KEY).getId(biome);
                 if (biomeId != null) {
                     page.addLine()

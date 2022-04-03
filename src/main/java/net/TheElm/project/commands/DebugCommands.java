@@ -49,7 +49,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.WanderingTraderManager;
-import net.minecraft.world.gen.Spawner;
+import net.minecraft.world.spawner.Spawner;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
