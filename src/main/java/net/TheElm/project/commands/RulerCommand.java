@@ -29,6 +29,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.interfaces.PlayerData;
@@ -122,7 +123,7 @@ public final class RulerCommand {
             if (region.hasDistinctVolume())
                 distance.append("\n").append(region.formattedVolume()).append(" block volume");
             
-            player.sendSystemMessage(distance, ServerCore.SPAWN_ID);
+            player.sendSystemMessage(distance, CoreMod.SPAWN_ID);
         }
         
         return Command.SINGLE_SUCCESS;

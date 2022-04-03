@@ -652,7 +652,7 @@ public final class ClaimCommand {
     }
     
     private static int claimSpawnRegionAt(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return ClaimCommand.claimRegionAt(context, ServerCore.SPAWN_ID);
+        return ClaimCommand.claimRegionAt(context, CoreMod.SPAWN_ID);
     }
     private static int claimRegionFor(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get information about the target
@@ -925,7 +925,7 @@ public final class ClaimCommand {
                 .append(amount)
                 .append(" villagers have been added to your town."),
                 MessageType.SYSTEM,
-                ServerCore.SPAWN_ID
+                CoreMod.SPAWN_ID
             );
         }
         
@@ -968,7 +968,7 @@ public final class ClaimCommand {
             .append(new LiteralText(CasingUtils.sentence(rank.name())).formatted(Formatting.AQUA))
             .append(new LiteralText(".").formatted(Formatting.WHITE)),
             MessageType.SYSTEM,
-            ServerCore.SPAWN_ID
+            CoreMod.SPAWN_ID
         );
         
         // Return command success
@@ -994,7 +994,7 @@ public final class ClaimCommand {
                 .append(new LiteralText(CasingUtils.sentence(rank.name())).formatted(Formatting.AQUA))
                 .append(new LiteralText(".").formatted(Formatting.WHITE)),
                 MessageType.SYSTEM,
-                ServerCore.SPAWN_ID
+                CoreMod.SPAWN_ID
             );
         }
         
@@ -1024,7 +1024,7 @@ public final class ClaimCommand {
             .append(new LiteralText( enabled ? "Enabled" : "Disabled" ).formatted(setting.getAttributeColor( enabled )))
             .append(new LiteralText(" in your claimed area.").formatted(Formatting.WHITE)),
             MessageType.SYSTEM,
-            ServerCore.SPAWN_ID
+            CoreMod.SPAWN_ID
         );
         
         return Command.SINGLE_SUCCESS;
@@ -1060,7 +1060,7 @@ public final class ClaimCommand {
             .append( new LiteralText( CasingUtils.sentence(rank.name()) ).formatted(Formatting.AQUA) )
             .append( new LiteralText("." ).formatted(Formatting.WHITE) ),
             MessageType.SYSTEM,
-            ServerCore.SPAWN_ID
+            CoreMod.SPAWN_ID
         );
         
         // Play a sound to the player
@@ -1111,7 +1111,7 @@ public final class ClaimCommand {
                 .append( new LiteralText(friend.getName()).formatted(Formatting.DARK_PURPLE) )
                 .append( new LiteralText(" removed.")),
                 MessageType.SYSTEM,
-                ServerCore.SPAWN_ID
+                CoreMod.SPAWN_ID
             );
             
             // Play sound to player

@@ -25,14 +25,13 @@
 
 package net.TheElm.project.objects.ticking;
 
-import net.TheElm.project.ServerCore;
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.LogicalWorld;
 import net.TheElm.project.objects.DetachedTickable;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.network.MessageType;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
@@ -74,7 +73,7 @@ public class WaystoneSearch implements Predicate<DetachedTickable> {
             this.player.sendMessage(TranslatableServerSide.text(
                 this.player,
                 "warp.random.search"
-            ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
+            ), MessageType.SYSTEM, CoreMod.SPAWN_ID);
             
             int count = 0;
             while (WarpUtils.hasWarp(this.player, warpName))
@@ -116,7 +115,7 @@ public class WaystoneSearch implements Predicate<DetachedTickable> {
             this.player.sendMessage(TranslatableServerSide.text(
                 this.player,
                 "warp.random.build"
-            ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
+            ), MessageType.SYSTEM, CoreMod.SPAWN_ID);
         }
         return building;
     }

@@ -93,7 +93,7 @@ public abstract class LocatorPearls extends Item {
             // Try to locate the biome given in the NBT
             if (throwDat.contains("biome", NbtElement.STRING_TYPE)) {
                 Identifier biomeId = new Identifier(throwDat.getString("biome"));
-                var biome = world.getRegistryManager().get(Registry.BIOME_KEY).get(biomeId);
+                Biome biome = world.getRegistryManager().get(Registry.BIOME_KEY).get(biomeId);
                 if (biome != null)
                     location = Objects.requireNonNull(instance.locateBiome(biomeRegistryEntry ->
                             biomeRegistryEntry.value() == biome, pos, (radius * 10) * (6 + strength * 2), 8)).getFirst();

@@ -27,7 +27,6 @@ package net.TheElm.project.utilities;
 
 import com.google.common.collect.Maps;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.exceptions.ShopBuilderException;
 import net.TheElm.project.interfaces.ShopSignData;
@@ -223,7 +222,7 @@ public final class ShopSignBuilder implements ShopSignData {
             creator.sendMessage(
                 e.getErrorMessage(),
                 MessageType.SYSTEM,
-                ServerCore.SPAWN_ID
+                CoreMod.SPAWN_ID
             );
         }
         this.breakSign();

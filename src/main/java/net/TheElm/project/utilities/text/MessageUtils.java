@@ -118,7 +118,7 @@ public final class MessageUtils {
     public static boolean sendAsWhisper(@Nullable ServerPlayerEntity sender, @NotNull ServerPlayerEntity target, @NotNull Text text) {
         // Log the the server
         ServerCore.get()
-            .sendSystemMessage(text, ServerCore.SPAWN_ID);
+            .sendSystemMessage(text, CoreMod.SPAWN_ID);
         
         // Send the message to the player (SENDER)
         if ((sender != null) && (!sender.getUuid().equals( target.getUuid() ))) {
@@ -149,7 +149,7 @@ public final class MessageUtils {
     public static boolean sendToLocal(@NotNull final World world, @NotNull final Vec3i pos, @NotNull Collection<ServerPlayerEntity> tags, @NotNull Text text) {
         // Log to the server
         ((ServerWorld) world).getServer()
-            .sendSystemMessage(text, ServerCore.SPAWN_ID);
+            .sendSystemMessage(text, CoreMod.SPAWN_ID);
         
         // Get the players in the area
         BlockPos outerA = new BlockPos(pos.getX() + 800, 0, pos.getZ() + 800);
@@ -180,7 +180,7 @@ public final class MessageUtils {
         final MinecraftServer server = ServerCore.get();
         
         // Log to the server
-        server.sendSystemMessage(text, ServerCore.SPAWN_ID);
+        server.sendSystemMessage(text, CoreMod.SPAWN_ID);
         
         // Send to the players
         MessageUtils.sendChat(
@@ -193,7 +193,7 @@ public final class MessageUtils {
         final MinecraftServer server = ServerCore.get();
         
         // Log to the server
-        server.sendSystemMessage(text, ServerCore.SPAWN_ID);
+        server.sendSystemMessage(text, CoreMod.SPAWN_ID);
         
         // Send to the players
         MessageUtils.sendChat(
@@ -218,7 +218,7 @@ public final class MessageUtils {
         final MinecraftServer server = ServerCore.get();
         
         // Log to the server
-        server.sendSystemMessage(text, ServerCore.SPAWN_ID);
+        server.sendSystemMessage(text, CoreMod.SPAWN_ID);
         
         // Send to the players
         MessageUtils.sendChat(
@@ -257,7 +257,7 @@ public final class MessageUtils {
             PlayerManager playerManager = server.getPlayerManager();
             for (ServerPlayerEntity op : playerManager.getPlayerList())
                 if (playerManager.isOperator(op.getGameProfile()))
-                    op.sendSystemMessage(send, ServerCore.SPAWN_ID);
+                    op.sendSystemMessage(send, CoreMod.SPAWN_ID);
         }
         
         if (gameRules.getBoolean(GameRules.LOG_ADMIN_COMMANDS))

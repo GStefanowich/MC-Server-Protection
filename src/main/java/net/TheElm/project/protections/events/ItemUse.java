@@ -197,7 +197,7 @@ public final class ItemUse {
     private static boolean syncedBlockStateChange(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state) {
         boolean rotated = world.setBlockState(pos, state, ItemUse.BLOCK_UPDATE_ROTATION_FLAG, ItemUse.BLOCK_UPDATE_MAX_DEPTH);
         if (rotated)
-            ServerCore.markDirty(world, pos);
+            BlockUtils.markDirty(world, pos);
         return rotated;
     }
     

@@ -322,7 +322,7 @@ public abstract class DragonFight {
             blockEntity.readNbt(chestTag);
         }
         
-        ChunkUtils.claimSlices(world, ServerCore.SPAWN_ID, BlockRange.of(pos));
+        ChunkUtils.claimSlices(world, CoreMod.SPAWN_ID, BlockRange.of(pos));
     }
     private static boolean isLootRewardContainer(@NotNull ServerWorld world, @NotNull BlockPos pos) {
         BlockEntity blockEntity = world.getBlockEntity(pos);

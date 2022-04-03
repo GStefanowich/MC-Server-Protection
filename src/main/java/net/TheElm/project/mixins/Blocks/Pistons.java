@@ -67,7 +67,7 @@ public class Pistons {
         if (!BlockUtils.canBlockModifyBlock(world, movePos, pistonPos, ClaimPermissions.BLOCKS )) {
             // Send the ghost block update
             if (!pushing)
-                ServerCore.markDirty(world, movePos);
+                BlockUtils.markDirty(world, movePos);
             // Cancel the block movement
             callback.setReturnValue(false);
         }

@@ -28,7 +28,6 @@ package net.TheElm.project.enums;
 import com.google.gson.JsonSyntaxException;
 import com.mojang.datafixers.util.Either;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
@@ -459,7 +458,7 @@ public enum ShopSigns {
             long playerHas = MoneyUtils.getPlayerMoney( player );
             player.sendMessage(TranslatableServerSide.text( player, "player.money",
                 playerHas
-            ), MessageType.SYSTEM, ServerCore.SPAWN_ID);
+            ), MessageType.SYSTEM, CoreMod.SPAWN_ID);
             
             return Either.right( true );
         }
@@ -589,7 +588,7 @@ public enum ShopSigns {
                     player.sendMessage(
                         new LiteralText("Can't build that here").formatted(Formatting.RED),
                         MessageType.SYSTEM,
-                        ServerCore.SPAWN_ID
+                        CoreMod.SPAWN_ID
                     );
                     
                     // Refund the player
@@ -773,7 +772,7 @@ public enum ShopSigns {
                 .append(" / ")
                 .append(new LiteralText(FormattingUtils.format(claim.getMaxChunkLimit())).formatted(Formatting.AQUA)),
                 MessageType.SYSTEM,
-                ServerCore.SPAWN_ID
+                CoreMod.SPAWN_ID
             );
             
             return Either.right( true );
@@ -905,7 +904,7 @@ public enum ShopSigns {
                 player.sendMessage(new LiteralText("Backpack size is now ").formatted(Formatting.YELLOW)
                     .append(new LiteralText(FormattingUtils.format( sign.getShopItemCount() )).formatted(Formatting.AQUA)),
                     MessageType.SYSTEM,
-                    ServerCore.SPAWN_ID
+                    CoreMod.SPAWN_ID
                 );
                 
                 // Log the transaction

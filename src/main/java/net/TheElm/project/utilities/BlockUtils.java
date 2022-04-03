@@ -165,17 +165,36 @@ public final class BlockUtils {
         return ((IClaimedChunk) protectedChunk).canPlayerDo(protectedPos, ((IClaimedChunk) sourceChunk).getOwner(sourcePos), permission);
     }
     
+    /**
+     * Test if the block is a thin/not-full (mostly air) block
+     * @param state The BlockState to test
+     * @return If the Block is a thin block
+     */
     public static boolean isBlockCarpet(@NotNull BlockState state) {
         Block block = state.getBlock();
         return block instanceof CarpetBlock
             || block == Blocks.MOSS_CARPET
             || block == Blocks.SNOW;
     }
-    
+
+    /**
+     * Check if the BlockState is mostly air (or hollow)
+     * @param state The BlockState to test
+     * @return If the Block consists mostly of air
+     */
     public static boolean isHollowBlock(@NotNull BlockState state) {
         return BlockUtils.isBlockCarpet(state) || state.isAir();
     }
-    
+
+    /**
+     * Attempt to get the LecternBlock that an entity is looking at
+     * @param world The world the Entity is in
+     * @param entity The entity that is looking in a direction
+     * @param klass
+     * @param supplier
+     * @param <T>
+     * @return
+     */
     public static @NotNull <T extends BlockEntity> Either<T, String> getLecternBlockEntity(@NotNull World world, @NotNull Entity entity, Class<T> klass, BiFunction<BlockPos, BlockState, T> supplier) {
         // Get the targeted block
         BlockHitResult hitResult = BlockUtils.getLookingBlock(world, entity);
@@ -221,4 +240,23 @@ public final class BlockUtils {
         return angle + Math.ceil( -angle / 360 ) * 360;
     }
     
+    /**
+     * Mark a Block in a ServerWorld (Does nothing if run on the Client) as Dirty
+     * @param world The World the block is in
+     * @param pos The position of the block
+     */
+    public static void markDirty(@NotNull World world, @NotNull BlockPos pos) {
+        if (world instanceof ServerWorld serverWorld)
+            BlockUtils.markDirty(serverWorld, pos);
+    }
+    
+    /**
+     * Mark a Block in a ServerWorld as Dirty
+     * @param world The World the block is in
+     * @param pos The position of the block
+     */
+    public static void markDirty(@NotNull ServerWorld world, @NotNull BlockPos pos) {
+        world.getChunkManager()
+            .markForUpdate(pos);
+    }
 }

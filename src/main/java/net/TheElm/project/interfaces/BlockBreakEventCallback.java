@@ -37,7 +37,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface BlockBreakEventCallback {
-    Event<BlockBreakEventCallback> EVENT = EventFactory.createArrayBacked( BlockBreakEventCallback.class, (listeners) -> (player, world, hand, blockPos, direction) -> {
+    Event<BlockBreakEventCallback> EVENT = EventFactory.createArrayBacked(BlockBreakEventCallback.class, (listeners) -> (player, world, hand, blockPos, direction) -> {
         for (BlockBreakEventCallback event : listeners) {
             ActionResult result = event.activate(player, world, hand, blockPos, direction);
             if (result != ActionResult.PASS)

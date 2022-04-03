@@ -25,7 +25,7 @@
 
 package net.TheElm.project.mixins.Entities;
 
-import net.TheElm.project.ServerCore;
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.VillagerTownie;
@@ -170,7 +170,7 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
                         new LiteralText("A new villager, ").append(bName).append(", has been welcomed into your town.")
                         : new LiteralText("A new villager has been welcomed into your town.")
                     )
-                ).formatted(Formatting.GRAY, Formatting.ITALIC), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
+                ).formatted(Formatting.GRAY, Formatting.ITALIC), MessageType.GAME_INFO, CoreMod.SPAWN_ID);
             }
         }
     }

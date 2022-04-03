@@ -107,7 +107,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         
         // Register the server commands
         CommandRegistrationCallback.EVENT.register((dispatcher, dedicated) -> {
-            CoreMod.logInfo( "Registering our commands." );
+            CoreMod.logInfo("Registering our commands.");
             AdminCommands.register(dispatcher);
             BackpackCommand.register(dispatcher);
             ChatroomCommands.register(dispatcher);
@@ -266,19 +266,10 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         return world.orElseThrow(NullPointerException::new);
     }
     
-    public static void markDirty(@NotNull ServerWorld world, @NotNull BlockPos pos) {
-        world.getChunkManager().markForUpdate(pos);
-    }
-    public static void markDirty(@NotNull World world, @NotNull BlockPos pos) {
-        if (world instanceof ServerWorld serverWorld)
-            ServerCore.markDirty(serverWorld, pos);
-    }
-    
     public static boolean isIntegratedServer() {
         return ServerCore.get() instanceof IntegratedServer;
     }
     public static boolean isDedicatedServer() {
         return ServerCore.get() instanceof MinecraftDedicatedServer;
     }
-    
 }

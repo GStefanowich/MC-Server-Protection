@@ -27,7 +27,6 @@ package net.TheElm.project.objects.ticking;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.ServerCore;
 import net.TheElm.project.commands.ClaimCommand;
 import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.interfaces.IClaimedChunk;
@@ -127,14 +126,14 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
             this.source.sendMessage(
                 TranslatableServerSide.text(this.source, e.getKey()).formatted(Formatting.RED),
                 MessageType.SYSTEM,
-                ServerCore.SPAWN_ID
+                CoreMod.SPAWN_ID
             );
             return true;
         } catch (CommandSyntaxException e) {
             this.source.sendMessage(
                 new LiteralText(e.getMessage()).formatted(Formatting.RED),
                 MessageType.SYSTEM,
-                ServerCore.SPAWN_ID
+                CoreMod.SPAWN_ID
             );
             return true;
         }

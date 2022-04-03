@@ -1,6 +1,6 @@
 package net.TheElm.project.mixins.Blocks;
 
-import net.TheElm.project.ServerCore;
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.interfaces.BossLootableContainer;
 import net.TheElm.project.objects.LootInventory;
 import net.TheElm.project.utilities.BossLootRewards;
@@ -41,11 +41,11 @@ public abstract class LootChest extends BlockWithEntity {
                 if (identifier != null) {
                     BossLootRewards rewards = BossLootRewards.get(identifier);
                     if (rewards == null)
-                        serverPlayer.sendMessage(new LiteralText("Couldn't find any loot for that boss.").formatted(Formatting.RED), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
+                        serverPlayer.sendMessage(new LiteralText("Couldn't find any loot for that boss.").formatted(Formatting.RED), MessageType.GAME_INFO, CoreMod.SPAWN_ID);
                     else {
                         LootInventory inventory = rewards.getPlayerLoot(player.getUuid());
                         if (inventory.isEmpty())
-                            serverPlayer.sendMessage(new LiteralText("You don't have any loot from the ").formatted(Formatting.RED).append(rewards.getEntityName()).append("."), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
+                            serverPlayer.sendMessage(new LiteralText("You don't have any loot from the ").formatted(Formatting.RED).append(rewards.getEntityName()).append("."), MessageType.GAME_INFO, CoreMod.SPAWN_ID);
                         else {
                             player.openHandledScreen(new SimpleNamedScreenHandlerFactory((i, playerInventory, playerEntity) ->
                                 inventory.createContainer(i, playerInventory),

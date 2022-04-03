@@ -212,7 +212,7 @@ public final class ModCommands {
         
         // Re-Render the sign after updating the owner
         shop.renderSign();
-        ServerCore.markDirty(world, signPos);
+        BlockUtils.markDirty(world, signPos);
         
         source.sendFeedback(new LiteralText("Updated shop owner.").formatted(Formatting.GREEN), false);
         return Command.SINGLE_SUCCESS;
@@ -286,7 +286,7 @@ public final class ModCommands {
         
         // Re-Render the sign after updating the owner
         shop.renderSign();
-        ServerCore.markDirty(world, signPos);
+        BlockUtils.markDirty(world, signPos);
         
         source.sendFeedback(new LiteralText("Updated shop item to ")
             .formatted(Formatting.GREEN)

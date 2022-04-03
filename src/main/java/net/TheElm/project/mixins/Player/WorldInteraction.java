@@ -28,7 +28,6 @@ package net.TheElm.project.mixins.Player;
 import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
 import net.TheElm.project.CoreMod;
-import net.TheElm.project.ServerCore;
 import net.TheElm.project.commands.PlayerSpawnCommand;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ChatRooms;
@@ -373,7 +372,7 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
                         .styled((style) -> style.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/" + PlayerSpawnCommand.COMMAND_NAME.toLowerCase() + " " + blockPos.getX() + " " + blockPos.getY() + " " + blockPos.getZ() )))
                     ).append( "." ),
                     MessageType.SYSTEM,
-                    ServerCore.SPAWN_ID
+                    CoreMod.SPAWN_ID
                 );
                 
                 callback.cancel();

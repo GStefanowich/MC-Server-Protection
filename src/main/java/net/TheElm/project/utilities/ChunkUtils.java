@@ -61,7 +61,7 @@ import java.util.TreeMap;
 import java.util.UUID;
 
 public final class ChunkUtils {
-
+    
     /**
      * Check the database if a user can perform an action within the specified chunk
      */

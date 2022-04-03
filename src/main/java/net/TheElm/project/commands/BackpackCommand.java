@@ -29,6 +29,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
@@ -89,7 +90,7 @@ public final class BackpackCommand {
         player.sendMessage(new LiteralText( added ?
             "Backpack will now automatically pick up "
             : "Backpack will no longer pick up "
-        ).formatted(Formatting.YELLOW).append(new TranslatableText(item.getTranslationKey()).formatted(Formatting.AQUA)).append("."), MessageType.GAME_INFO, ServerCore.SPAWN_ID);
+        ).formatted(Formatting.YELLOW).append(new TranslatableText(item.getTranslationKey()).formatted(Formatting.AQUA)).append("."), MessageType.GAME_INFO, CoreMod.SPAWN_ID);
         
         return Command.SINGLE_SUCCESS;
     }
