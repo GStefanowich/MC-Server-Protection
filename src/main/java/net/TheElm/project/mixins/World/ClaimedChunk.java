@@ -46,6 +46,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.HeightLimitView;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
@@ -202,6 +203,9 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         // TODO: Alternative way of getting the World from the Chunk?
         if (chunk instanceof WorldChunk worldChunk) {
             MinecraftServer server = worldChunk.getWorld().getServer();
+            return ((ClaimsAccessor)server).getClaimManager();
+        } else if (this.heightLimitView instanceof World world) {
+            MinecraftServer server = world.getServer();
             return ((ClaimsAccessor)server).getClaimManager();
         }
         

@@ -19,12 +19,12 @@ public class SaveFolder {
     /**
      * Use the same "Dimensions" folder for saving ALL worlds, not just extra worlds
      * @param worldRef World registry key
-     * @param root Root file directory
+     * @param directory Root file directory
      */
     @Inject(at = @At("HEAD"), method = "getSaveDirectory", cancellable = true)
-    private static void getSaveDirectory(RegistryKey<Path> worldRef, Path root, CallbackInfoReturnable<Path> callback) {
+    private static void getSaveDirectory(RegistryKey<Path> worldRef, Path directory, CallbackInfoReturnable<Path> callback) {
         if (SewConfig.get(SewConfig.WORLD_DIMENSION_FOLDERS))
-            callback.setReturnValue(Paths.get(root.toString(), "dimensions/" + worldRef.getValue().getNamespace() + "/" + worldRef.getValue().getPath()));
+            callback.setReturnValue(directory.resolve("dimensions").resolve(worldRef.getValue().getNamespace()).resolve(worldRef.getValue().getPath()));
     }
     
 }
