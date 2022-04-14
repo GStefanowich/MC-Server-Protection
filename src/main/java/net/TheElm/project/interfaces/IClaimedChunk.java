@@ -29,6 +29,7 @@ import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.TranslationKeyException;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.ChunkUtils;
@@ -60,6 +61,8 @@ public interface IClaimedChunk {
     boolean canPlayerClaim(@NotNull ClaimantPlayer player, boolean stopIfClaimed) throws TranslationKeyException;
     
     @Nullable
+    ClaimCache getClaimCache();
+    @Nullable
     UUID getOwner();
     @Nullable
     UUID getOwner(BlockPos pos);
@@ -76,10 +79,10 @@ public interface IClaimedChunk {
         if ( owner == null )
             return new LiteralText(SewConfig.get(SewConfig.NAME_WILDERNESS))
                 .formatted(Formatting.GREEN);
-    
+        
         // Get the owner of the chunk
-        ClaimantPlayer chunkPlayer = ClaimantPlayer.get(owner);
-    
+        ClaimantPlayer chunkPlayer = this.getClaimCache().getPlayerClaim(owner);
+        
         // Get the owners name (Colored using the relation to the zonePlayer)
         return chunkPlayer.getName(zonePlayer);
     }
@@ -96,7 +99,7 @@ public interface IClaimedChunk {
                 .formatted(Formatting.GREEN);
         
         // Get the owner of the chunk
-        ClaimantPlayer chunkPlayer = ClaimantPlayer.get(owner);
+        ClaimantPlayer chunkPlayer = this.getClaimCache().getPlayerClaim(owner);
         
         // Get the owners name (Colored using the relation to the zonePlayer)
         return chunkPlayer.getName(zonePlayer);

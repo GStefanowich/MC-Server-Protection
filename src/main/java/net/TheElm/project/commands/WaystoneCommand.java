@@ -286,19 +286,21 @@ public class WaystoneCommand {
     }
     
     private static @NotNull CompletableFuture<Suggestions> getPlayerEntityLocations(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
-        Entity entity = context.getSource().getEntity();
+        ServerCommandSource source = context.getSource();
+        Entity entity = source.getEntity();
         UUID untrusted = entity instanceof ServerPlayerEntity ? entity.getUuid() : null;
         
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-        return WarpUtils.buildSuggestions(untrusted, player, builder);
+        return WarpUtils.buildSuggestions(source.getServer(), untrusted, player, builder);
     }
     private static @NotNull CompletableFuture<Suggestions> getPlayersToLocations(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
-        Entity entity = context.getSource().getEntity();
+        ServerCommandSource source = context.getSource();
+        Entity entity = source.getEntity();
         UUID untrusted = entity instanceof ServerPlayerEntity ? entity.getUuid() : null;
         
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "to");
         GameProfile target = profiles.stream().findAny()
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
-        return WarpUtils.buildSuggestions(untrusted, target.getId(), builder);
+        return WarpUtils.buildSuggestions(source.getServer(), untrusted, target.getId(), builder);
     }
 }

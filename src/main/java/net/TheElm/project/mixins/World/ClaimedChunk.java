@@ -31,20 +31,23 @@ import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.interfaces.Claim;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.ChunkUtils.ClaimSlice;
-import net.TheElm.project.utilities.ChunkUtils.InnerClaim;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.HeightLimitView;
 import net.minecraft.world.chunk.Chunk;
+import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -75,7 +78,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
     public ClaimantTown updateTownOwner(@Nullable UUID owner, boolean fresh) {
         ClaimantTown town = null;
         if (owner != null)
-            town = ClaimantTown.get(owner);
+            town = this.getClaimCache().getTownClaim(owner);
         
         // Make sure we have the towns permissions cached
         this.chunkTown = (town == null ? null : new WeakReference<>(town));
@@ -90,7 +93,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
     }
     @Override
     public ClaimantPlayer updatePlayerOwner(@Nullable UUID owner, boolean fresh) {
-        this.chunkPlayer = ( owner == null ? null : ClaimantPlayer.get( owner ));
+        this.chunkPlayer = ( owner == null ? null : this.getClaimCache().getPlayerClaim(owner));
         
         if (fresh)
             this.setNeedsSaving(true);
@@ -121,7 +124,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         
         ClaimSlice slice;
         if ((slice = this.claimSlices[slicePos]) == null)
-            slice = (this.claimSlices[slicePos] = new ClaimSlice(this.heightLimitView, slicePos));
+            slice = (this.claimSlices[slicePos] = new ClaimSlice(this.getClaimCache(), this.heightLimitView, slicePos));
         
         // Get upper and lower positioning
         int yMax = Math.max(yFrom, yTo);
@@ -145,7 +148,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         // Get all owners
         Set<UUID> owners = new HashSet<>();
         for (int y = yMin; y <= yMax; y++) {
-            InnerClaim claim = slice.get(y);
+            ClaimSlice.InnerClaim claim = slice.get(y);
             if (claim != null)
                 owners.add(claim.getOwner());
         }
@@ -169,7 +172,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         ClaimSlice slice;
         if ((slice = this.claimSlices[slicePos]) != null) {
             // Get inside claim
-            InnerClaim inner = slice.get(blockPos.getY());
+            ClaimSlice.InnerClaim inner = slice.get(blockPos.getY());
             
             // If claim inner is not nobody
             if (inner != null && inner.getOwner() != null && inner.isWithin(blockPos.getY()))
@@ -192,6 +195,18 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         return true;
     }
     
+    @Override
+    public @Nullable ClaimCache getClaimCache() {
+        Chunk chunk = (Chunk)(Object)this;
+        
+        // TODO: Alternative way of getting the World from the Chunk?
+        if (chunk instanceof WorldChunk worldChunk) {
+            MinecraftServer server = worldChunk.getWorld().getServer();
+            return ((ClaimsAccessor)server).getClaimManager();
+        }
+        
+        return null;
+    }
     public @Nullable UUID getOwner() {
         if (this.chunkPlayer == null)
             return null;
@@ -203,7 +218,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
             ClaimSlice slice = claimSlices[slicePos];
             
             // Get the players Y position
-            InnerClaim claim = slice.get(pos);
+            ClaimSlice.InnerClaim claim = slice.get(pos);
             
             // Check that the player is within the Y
             if (claim != null && claim.isWithin(pos))
@@ -277,9 +292,9 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
             NbtList claimsTag = new NbtList();
             
             // For all slice claims
-            Iterator<InnerClaim> claims = slice.getClaims();
+            Iterator<ClaimSlice.InnerClaim> claims = slice.getClaims();
             while ( claims.hasNext() ) {
-                InnerClaim claim = claims.next();
+                ClaimSlice.InnerClaim claim = claims.next();
                 
                 // If bottom of world, or no owner
                 if ((claim.lower() == -1) || (claim.getOwner() == null))

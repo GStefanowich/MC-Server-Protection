@@ -59,6 +59,7 @@ import net.TheElm.project.commands.WhereCommand;
 import net.TheElm.project.commands.WorldCommand;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.protections.events.BlockBreak;
 import net.TheElm.project.protections.events.BlockInteraction;
 import net.TheElm.project.protections.events.EntityAttack;
@@ -94,7 +95,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public final class ServerCore extends CoreMod implements DedicatedServerModInitializer {    
+public final class ServerCore extends CoreMod implements DedicatedServerModInitializer {
     /*
      * Mod initializer
      */

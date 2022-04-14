@@ -104,6 +104,7 @@
     "World.Nether",
     
     "Server.Books",
+    "Server.ClaimHandler",
     "Server.DeathMessages",
     "Server.Explosions",
     "Server.VanillaProtection",

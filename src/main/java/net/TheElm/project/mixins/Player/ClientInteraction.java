@@ -29,6 +29,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.interfaces.PlayerData;
@@ -124,7 +125,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
         CoreMod.PLAYER_LOCATIONS.put(player, null);
         
         // Initialize user claims from database
-        this.playerClaimData = ( SewConfig.get(SewConfig.DO_CLAIMS) ? ClaimantPlayer.get(player) : null );
+        this.playerClaimData = ( SewConfig.get(SewConfig.DO_CLAIMS) ? ((ClaimsAccessor)this.server).getClaimManager().getPlayerClaim(player) : null );
         
         // Check if server has been joined before
         if (((PlayerData) player).getFirstJoinAt() == null) {
@@ -286,7 +287,8 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
             MutableText popupText = new LiteralText("Entering ")
                 .formatted(Formatting.WHITE);
             
-            ClaimantPlayer owner = ClaimantPlayer.get( locationOwner );
+            ClaimantPlayer owner = ((ClaimsAccessor)this.server).getClaimManager()
+                .getPlayerClaim(locationOwner);
             
             try {
                 // If player is in spawn protection

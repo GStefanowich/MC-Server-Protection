@@ -33,12 +33,14 @@ import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.exceptions.ShopBuilderException;
 import net.TheElm.project.interfaces.BackpackCarrier;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.LogicalWorld;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.ShopSignData;
 import net.TheElm.project.objects.PlayerBackpack;
 import net.TheElm.project.objects.ShopStats;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.objects.ticking.WaystoneSearch;
 import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -124,7 +126,7 @@ public enum ShopSigns {
             return super.renderSign(shop);
         }
         @Override
-        public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
+        public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
             LootableContainerBlockEntity chest = null;
             Inventory chestInventory = null;
             
@@ -176,7 +178,8 @@ public enum ShopSigns {
                     MoneyUtils.givePlayerMoney(player, sign.getShopItemPrice());
                     
                     // Get shop owner
-                    ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
+                    ClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
+                    ClaimantPlayer permissions = claimCache.getPlayerClaim(sign.getShopOwner());
                     
                     // Tell the player
                     TitleUtils.showPlayerAlert(
@@ -255,7 +258,7 @@ public enum ShopSigns {
             return super.renderSign(shop);
         }
         @Override
-        public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
+        public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
             LootableContainerBlockEntity chest = null;
             Inventory chestInventory = null;
             
@@ -313,7 +316,8 @@ public enum ShopSigns {
                     }
                     
                     // Get the shop owner
-                    ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
+                    ClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
+                    ClaimantPlayer permissions = claimCache.getPlayerClaim(sign.getShopOwner());
                     
                     // Tell the player
                     TitleUtils.showPlayerAlert(
@@ -382,7 +386,7 @@ public enum ShopSigns {
             return super.renderSign(shop);
         }
         @Override
-        public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
+        public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
             LootableContainerBlockEntity chest = null;
             Inventory chestInventory = null;
             
@@ -417,7 +421,8 @@ public enum ShopSigns {
                 if (!InventoryUtils.chestToPlayer(player, signPos, chestInventory, player.getInventory(), sign::itemMatchPredicate, sign.getShopItemCount(), true ))
                     return Either.left(new LiteralText("Chest is out of " + sign.getShopItemDisplay() + "."));
                 
-                ClaimantPlayer permissions = ClaimantPlayer.get(sign.getShopOwner());
+                ClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
+                ClaimantPlayer permissions = claimCache.getPlayerClaim(sign.getShopOwner());
                 
                 // Log the event
                 CoreMod.logInfo(player.getName().getString() + " got " + FormattingUtils.format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay() + " from " + permissions.getName().getString());
@@ -450,7 +455,7 @@ public enum ShopSigns {
             return super.renderSign(shop);
         }
         @Override
-        public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
+        public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
             // If shops disabled
             if ( !SewConfig.get(SewConfig.DO_MONEY) )
                 return Either.right( true );
@@ -493,7 +498,7 @@ public enum ShopSigns {
             return super.renderSign(shop);
         }
         @Override
-        public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
+        public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
             WarpUtils.Warp warp = WarpUtils.getWarp(player.getUuid(), null);
             if ( warp == null ) {
                 // Create new warp
@@ -567,7 +572,7 @@ public enum ShopSigns {
             return super.renderSign(shop);
         }
         @Override
-        public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
+        public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
             try {
                 ServerWorld world = player.getWorld();
                 if (DimensionUtils.isOutOfBuildLimitVertically(world, signPos) || DimensionUtils.isWithinProtectedZone(world, signPos) || !ChunkUtils.canPlayerBreakInChunk(player, signPos))
@@ -688,7 +693,7 @@ public enum ShopSigns {
             return super.renderSign(shop);
         }
         @Override
-        public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
+        public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
             // If shops disabled
             if (!(SewConfig.get(SewConfig.DO_MONEY) && SewConfig.get(SewConfig.DO_CLAIMS)))
                 return Either.right( true );
@@ -738,7 +743,7 @@ public enum ShopSigns {
             return super.renderSign(shop);
         }
         @Override
-        public Either<Text, Boolean> onInteract(@NotNull ServerPlayerEntity player, @NotNull BlockPos signPos, ShopSignData sign) {
+        public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull ServerPlayerEntity player, @NotNull BlockPos signPos, ShopSignData sign) {
             // These should NOT be null
             if ((sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null))
                 return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
@@ -809,7 +814,7 @@ public enum ShopSigns {
             return super.renderSign(shop);
         }
         @Override
-        public Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
+        public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
             // Get the guides title
             String bookRawTitle = sign.getSignLine(1).getString();
             
@@ -865,7 +870,7 @@ public enum ShopSigns {
             return super.renderSign(shop);
         }
         @Override
-        public Either<Text, Boolean> onInteract(@NotNull ServerPlayerEntity player, @NotNull BlockPos signPos, ShopSignData sign) {
+        public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull ServerPlayerEntity player, @NotNull BlockPos signPos, ShopSignData sign) {
             // These should NOT be null
             if ((sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null))
                 return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
@@ -999,7 +1004,7 @@ public enum ShopSigns {
         return returnVal;
     }
     
-    public abstract Either<Text, Boolean> onInteract(@NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign);
+    public abstract Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign);
     public abstract boolean formatSign(@NotNull final ShopSignBuilder signBuilder, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException;
     public boolean renderSign(@NotNull final ShopSignData shop) {
         shop.removeEditor();

@@ -700,16 +700,16 @@ public final class WarpUtils {
         return new BlockPos(properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ());
     }
     
-    public static CompletableFuture<Suggestions> buildSuggestions(@Nullable UUID untrusted, @NotNull ServerPlayerEntity warpOwner, @NotNull SuggestionsBuilder builder) {
-        return WarpUtils.buildSuggestions(warpOwner.getUuid(), untrusted, WarpUtils.getWarps(warpOwner), builder);
+    public static CompletableFuture<Suggestions> buildSuggestions(@NotNull MinecraftServer server, @Nullable UUID untrusted, @NotNull ServerPlayerEntity warpOwner, @NotNull SuggestionsBuilder builder) {
+        return WarpUtils.buildSuggestions(server, warpOwner.getUuid(), untrusted, WarpUtils.getWarps(warpOwner), builder);
     }
-    public static CompletableFuture<Suggestions> buildSuggestions(@Nullable UUID untrusted, @NotNull UUID warpOwner, @NotNull SuggestionsBuilder builder) {
-        return WarpUtils.buildSuggestions(warpOwner, untrusted, WarpUtils.getWarps(warpOwner), builder);
+    public static CompletableFuture<Suggestions> buildSuggestions(@NotNull MinecraftServer server, @Nullable UUID untrusted, @NotNull UUID warpOwner, @NotNull SuggestionsBuilder builder) {
+        return WarpUtils.buildSuggestions(server, warpOwner, untrusted, WarpUtils.getWarps(warpOwner), builder);
     }
-    private static CompletableFuture<Suggestions> buildSuggestions(@NotNull UUID warpOwner, @Nullable UUID untrusted, @NotNull Map<String, Warp> warps, @NotNull SuggestionsBuilder builder) {
+    private static CompletableFuture<Suggestions> buildSuggestions(@NotNull MinecraftServer server, @NotNull UUID warpOwner, @Nullable UUID untrusted, @NotNull Map<String, Warp> warps, @NotNull SuggestionsBuilder builder) {
         String remainder = builder.getRemaining().toLowerCase(Locale.ROOT);
         
-        boolean canViewCoordinates = untrusted != null && (warpOwner.equals(untrusted) || ChunkUtils.canPlayerWarpTo(untrusted, warpOwner));
+        boolean canViewCoordinates = untrusted != null && (warpOwner.equals(untrusted) || ChunkUtils.canPlayerWarpTo(server, untrusted, warpOwner));
         for (Map.Entry<String, Warp> iterator : warps.entrySet()) {
             String name = iterator.getKey();
             if (name.contains(" "))

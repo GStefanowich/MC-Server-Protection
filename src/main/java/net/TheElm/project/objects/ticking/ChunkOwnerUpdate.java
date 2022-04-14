@@ -29,6 +29,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.commands.ClaimCommand;
 import net.TheElm.project.exceptions.TranslationKeyException;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.objects.DetachedTickable;
 import net.TheElm.project.protections.claiming.Claimant;
@@ -37,6 +38,7 @@ import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.network.MessageType;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
@@ -163,11 +165,11 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
             TranslatableServerSide.send(this.source, this.mode.getSuccessTranslation(), changed);
     }
     
-    public static @NotNull ChunkOwnerUpdate forPlayer(@NotNull ServerPlayerEntity source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
-        return new ChunkOwnerUpdate(source, ClaimantPlayer.get(uuid), mode, positions);
+    public static @NotNull ChunkOwnerUpdate forPlayer(@NotNull ClaimCache claimCache, @NotNull ServerPlayerEntity source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
+        return new ChunkOwnerUpdate(source, claimCache.getPlayerClaim(uuid), mode, positions);
     }
-    public static @NotNull ChunkOwnerUpdate forTown(@NotNull ServerPlayerEntity source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
-        return new ChunkOwnerUpdate(source, ClaimantTown.get(uuid), mode, positions);
+    public static @NotNull ChunkOwnerUpdate forTown(@NotNull ClaimCache claimCache, @NotNull ServerPlayerEntity source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
+        return new ChunkOwnerUpdate(source, claimCache.getTownClaim(uuid), mode, positions);
     }
     
     public enum Mode {

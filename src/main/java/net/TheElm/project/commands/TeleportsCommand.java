@@ -266,11 +266,13 @@ public final class TeleportsCommand {
     
     private static @NotNull CompletableFuture<Suggestions> playerHomeNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        return WarpUtils.buildSuggestions(source.getPlayer().getUuid(), source.getPlayer(), builder);
+        return WarpUtils.buildSuggestions(source.getServer(), source.getPlayer().getUuid(), source.getPlayer(), builder);
     }
     private static @NotNull CompletableFuture<Suggestions> playerHomeNamesOfPlayer(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        
         // Get the uuid of the executor
-        Entity entity = context.getSource().getEntity();
+        Entity entity = source.getEntity();
         UUID untrusted = entity instanceof ServerPlayerEntity ? entity.getUuid() : null;
         
         // Get the matching player being looked up
@@ -279,7 +281,7 @@ public final class TeleportsCommand {
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Build the suggestions
-        return WarpUtils.buildSuggestions(untrusted, target.getId(), builder);
+        return WarpUtils.buildSuggestions(source.getServer(), untrusted, target.getId(), builder);
     }
     
     private static int tpaCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -321,7 +323,7 @@ public final class TeleportsCommand {
         ServerPlayerEntity targetPlayer = manager.getPlayer(target.getId());
         
         // Accept the teleport automatically
-        if ( ChunkUtils.canPlayerWarpTo(porter, target.getId()) ) {
+        if ( ChunkUtils.canPlayerWarpTo(server, porter, target.getId()) ) {
             WarpUtils.teleportPlayerAndAttached(warp, porter);
             
             TeleportsCommand.feedback(porter, target, warp);

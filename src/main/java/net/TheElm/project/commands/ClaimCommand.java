@@ -48,6 +48,7 @@ import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.enums.OpLevels;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.LogicalWorld;
@@ -56,6 +57,7 @@ import net.TheElm.project.interfaces.PlayerMovement;
 import net.TheElm.project.interfaces.VillagerTownie;
 import net.TheElm.project.interfaces.WhitelistedPlayer;
 import net.TheElm.project.objects.ticking.ChunkOwnerUpdate;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -558,7 +560,10 @@ public final class ClaimCommand {
         return ClaimCommand.claimChunkAt(source, world, chunkFor, verify, Arrays.asList(positions));
     }
     public static int claimChunkAt(@NotNull ServerPlayerEntity source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull Collection<? extends BlockPos> positions) {
+        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+            .getClaimManager();
         ((LogicalWorld)world).addTickableEvent(ChunkOwnerUpdate.forPlayer(
+            claimCache,
             source,
             chunkFor,
             ChunkOwnerUpdate.Mode.CLAIM,
@@ -642,7 +647,10 @@ public final class ClaimCommand {
         return ClaimCommand.unclaimChunkAt(source, world, chunkFor, verify, Arrays.asList(positions));
     }
     public static int unclaimChunkAt(@NotNull ServerPlayerEntity source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull Collection<? extends BlockPos> positions) {
+        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+            .getClaimManager();
         ((LogicalWorld)world).addTickableEvent(ChunkOwnerUpdate.forPlayer(
+            claimCache,
             source,
             chunkFor,
             ChunkOwnerUpdate.Mode.UNCLAIM,
@@ -739,6 +747,7 @@ public final class ClaimCommand {
         // Get player information
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
+        ClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
         ServerPlayerEntity founder = source.getPlayer();
         
         // Charge the player money
@@ -751,7 +760,7 @@ public final class ClaimCommand {
         try {
             // Get town information
             MutableText townName = new LiteralText(StringArgumentType.getString(context, "name"));
-            ClaimantTown town = ClaimantTown.makeTown(founder, townName);
+            ClaimantTown town = claimCache.makeTownClaim(founder, townName);
             
             // Tell all players of the founding
             MessageUtils.sendToAll("town.found",
@@ -885,15 +894,20 @@ public final class ClaimCommand {
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context,"target");
         GameProfile player = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
+        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+            .getClaimManager();
+        
         // Get the town
         String townName = StringArgumentType.getString(context, "town");
-        ClaimantTown town = CoreMod.getFromCache(ClaimantTown.class, townName);
+        ClaimantTown town = claimCache.getFromCache(ClaimantTown.class, townName);
+        
         if (town == null)
             throw TOWN_INVITE_MISSING.create(source.getPlayer());
         
         // Update the rank of the player for the town
-        town.updateFriend( player.getId(), ClaimRanks.ALLY );
-        ClaimantPlayer.get( player ).setTown( town );
+        town.updateFriend(player.getId(), ClaimRanks.ALLY);
+        claimCache.getPlayerClaim(player)
+            .setTown(town);
         
         return Command.SINGLE_SUCCESS;
     }
@@ -902,7 +916,9 @@ public final class ClaimCommand {
         
         Collection<? extends Entity> entities = EntityArgumentType.getEntities(context, "entities");
         String townName = StringArgumentType.getString(context, "town");
-        ClaimantTown town = CoreMod.getFromCache(ClaimantTown.class, townName);
+        ClaimantTown town = ((ClaimsAccessor)source.getServer()).getClaimManager()
+            .getFromCache(ClaimantTown.class, townName);
+        
         if (town == null)
             throw TOWN_NOT_EXISTS.create();
         
@@ -942,7 +958,7 @@ public final class ClaimCommand {
             set.add(town.getName().getString());
         
         // Return the output
-        return CommandSource.suggestMatching( set.stream(), suggestionsBuilder );
+        return CommandSource.suggestMatching(set.stream(), suggestionsBuilder);
     }
     
     /*
@@ -951,25 +967,14 @@ public final class ClaimCommand {
     
     private static int updateSetting(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get enums
-        ClaimPermissions permissions = EnumArgumentType.getEnum(ClaimPermissions.class, StringArgumentType.getString(context, "permission"));
+        ClaimPermissions permission = EnumArgumentType.getEnum(ClaimPermissions.class, StringArgumentType.getString(context, "permission"));
         ClaimRanks rank = EnumArgumentType.getEnum(ClaimRanks.class, StringArgumentType.getString(context, "rank"));
         
         // Get the player
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         // Update the runtime
-        ((PlayerData) player).getClaim()
-            .updatePermission( permissions, rank );
-        
-        // Notify the player
-        player.sendMessage(new LiteralText("Interacting with ").formatted(Formatting.WHITE)
-            .append(new LiteralText(CasingUtils.sentence(permissions.name())).formatted(Formatting.AQUA))
-            .append(new LiteralText(" is now limited to ").formatted(Formatting.WHITE))
-            .append(new LiteralText(CasingUtils.sentence(rank.name())).formatted(Formatting.AQUA))
-            .append(new LiteralText(".").formatted(Formatting.WHITE)),
-            MessageType.SYSTEM,
-            CoreMod.SPAWN_ID
-        );
+        ClaimCommand.updateSetting(player, permission, rank);
         
         // Return command success
         return Command.SINGLE_SUCCESS;
@@ -981,25 +986,26 @@ public final class ClaimCommand {
         // Get the player
         ServerPlayerEntity player = context.getSource().getPlayer();
         
-        for ( ClaimPermissions permissions : ClaimPermissions.values() ) {
-            
-            // Update the runtime
-            ((PlayerData) player).getClaim()
-                .updatePermission(permissions, rank);
-            
-            // Notify the player
-            player.sendMessage(new LiteralText("Interacting with ").formatted(Formatting.WHITE)
-                .append(new LiteralText(CasingUtils.sentence(permissions.name())).formatted(Formatting.AQUA))
-                .append(new LiteralText(" is now limited to ").formatted(Formatting.WHITE))
-                .append(new LiteralText(CasingUtils.sentence(rank.name())).formatted(Formatting.AQUA))
-                .append(new LiteralText(".").formatted(Formatting.WHITE)),
-                MessageType.SYSTEM,
-                CoreMod.SPAWN_ID
-            );
-        }
+        for ( ClaimPermissions permission : ClaimPermissions.values() )
+            ClaimCommand.updateSetting(player, permission, rank);
         
         // Return command success
         return Command.SINGLE_SUCCESS;
+    }
+    private static void updateSetting(@NotNull ServerPlayerEntity player, ClaimPermissions permission, ClaimRanks rank) throws CommandSyntaxException {
+        // Update the runtime
+        ((PlayerData) player).getClaim()
+            .updatePermission(permission, rank);
+        
+        // Notify the player
+        player.sendMessage(new LiteralText("Interacting with ").formatted(Formatting.WHITE)
+                .append(new LiteralText(CasingUtils.sentence(permission.name())).formatted(Formatting.AQUA))
+                .append(new LiteralText(" is now limited to ").formatted(Formatting.WHITE))
+                .append(new LiteralText(CasingUtils.sentence(rank.name())).formatted(Formatting.AQUA))
+                .append(new LiteralText(".").formatted(Formatting.WHITE)),
+            MessageType.SYSTEM,
+            CoreMod.SPAWN_ID
+        );
     }
     private static int updateBoolean(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get enums
@@ -1047,18 +1053,18 @@ public final class ClaimCommand {
         
         // Player tries changing their own rank
         if ( player.getUuid().equals( friend.getId() ) )
-            throw SELF_RANK_CHANGE.create( player );
+            throw SELF_RANK_CHANGE.create(player);
         
         // Update our runtime
         ((PlayerData) player).getClaim()
-            .updateFriend( friend.getId(), rank );
+            .updateFriend(friend.getId(), rank);
         
         // Attempting to update the friend
         player.sendMessage(new LiteralText("Player ").formatted(Formatting.WHITE)
-            .append( new LiteralText( friend.getName() ).formatted(Formatting.DARK_PURPLE) )
-            .append( new LiteralText(" is now an ") )
-            .append( new LiteralText( CasingUtils.sentence(rank.name()) ).formatted(Formatting.AQUA) )
-            .append( new LiteralText("." ).formatted(Formatting.WHITE) ),
+            .append(new LiteralText(friend.getName()).formatted(Formatting.DARK_PURPLE))
+            .append(new LiteralText(" is now an "))
+            .append(new LiteralText(CasingUtils.sentence(rank.name())).formatted(Formatting.AQUA))
+            .append(new LiteralText(".").formatted(Formatting.WHITE)),
             MessageType.SYSTEM,
             CoreMod.SPAWN_ID
         );
@@ -1091,7 +1097,7 @@ public final class ClaimCommand {
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Player tries changing their own rank
-        if ( player.getUuid().equals( friend.getId() ) )
+        if (player.getUuid().equals(friend.getId()))
             throw SELF_RANK_CHANGE.create( player );
         
         try ( MySQLStatement stmt = CoreMod.getSQL().prepare("DELETE FROM `chunk_Friends` WHERE `chunkOwner` = ? AND `chunkFriend` = ?;") ) {
@@ -1143,9 +1149,11 @@ public final class ClaimCommand {
     }
     private static int findFriend(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
+        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+            .getClaimManager();
         ServerPlayerEntity player = source.getPlayer();
         ServerPlayerEntity friend = EntityArgumentType.getPlayer(context, "friend");
-        ClaimantPlayer friendData = ClaimantPlayer.get(friend);
+        ClaimantPlayer friendData = claimCache.getPlayerClaim(friend);
         if (!friendData.isFriend(player.getUuid()))
             throw ClaimCommand.PLAYER_NOT_FRIENDS.create(player);
         if (player.world != friend.world || friend.isInvisible())
@@ -1228,6 +1236,7 @@ public final class ClaimCommand {
     private static int invitedList(@NotNull ServerCommandSource source, @NotNull GameProfile player) throws CommandSyntaxException {
         // Get information about the server
         MinecraftServer server = source.getServer();
+        ClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
         UserCache cache = server.getUserCache();
         Whitelist whitelist = server.getPlayerManager().getWhitelist();
         
@@ -1235,7 +1244,7 @@ public final class ClaimCommand {
         GameProfile invitedBy = null;
         List<WhitelistEntry> invited = new ArrayList<>();
         
-        ClaimantPlayer claim = ClaimantPlayer.get(player.getId());
+        ClaimantPlayer claim = claimCache.getPlayerClaim(player.getId());
         
         // Loop the whitelist
         for (WhitelistEntry entry : whitelist.values()) {

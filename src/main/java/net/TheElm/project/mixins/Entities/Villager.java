@@ -27,6 +27,7 @@ package net.TheElm.project.mixins.Entities;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.VillagerTownie;
 import net.TheElm.project.protections.claiming.ClaimantTown;
@@ -113,7 +114,8 @@ public abstract class Villager extends MerchantEntity implements InteractionObse
     protected ClaimantTown getTown() {
         ClaimantTown town = null;
         if (this.town != null) {
-            town = ClaimantTown.get(this.town);
+            town = ((ClaimsAccessor)this.getServer()).getClaimManager()
+                .getTownClaim(this.town);
             
             // Reset the town
             if (town == null)

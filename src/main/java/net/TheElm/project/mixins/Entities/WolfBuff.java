@@ -54,8 +54,6 @@ public abstract class WolfBuff extends TameableEntity implements Angerable {
         if (this.isTamed() && source != null) {
             if (source.getAttacker() instanceof PlayerEntity && !SewConfig.get(SewConfig.WOLF_DAMAGE_BOOST_PLAYERS))
                 return;
-    
-            
             
             if (this.isInvulnerableTo(source))
                 callback.setReturnValue(false);

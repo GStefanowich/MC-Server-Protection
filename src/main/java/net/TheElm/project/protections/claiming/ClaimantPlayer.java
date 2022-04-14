@@ -25,14 +25,14 @@
 
 package net.TheElm.project.protections.claiming;
 
-import com.mojang.authlib.GameProfile;
-import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.objects.ClaimTag;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
@@ -58,38 +58,38 @@ public final class ClaimantPlayer extends Claimant {
     private final Set<ClaimantTown> townInvites = Collections.synchronizedSet(new HashSet<>());
     private ClaimantTown town;
     
-    private ClaimantPlayer(@NotNull UUID playerUUID) {
-        super(ClaimantType.PLAYER, playerUUID);
+    public ClaimantPlayer(@NotNull ClaimCache cache, @NotNull UUID playerUUID) {
+        super(cache, ClaimantType.PLAYER, playerUUID);
     }
     
-    public final ClaimRanks getPermissionRankRequirement(@Nullable ClaimPermissions permission) {
+    public ClaimRanks getPermissionRankRequirement(@Nullable ClaimPermissions permission) {
         if (permission == null)
             return ClaimRanks.ENEMY;
-        if (this.RANK_PERMISSIONS.containsKey(permission))
-            return this.RANK_PERMISSIONS.get(permission);
+        if (this.rankPermissions.containsKey(permission))
+            return this.rankPermissions.get(permission);
         return permission.getDefault();
     }
     
     /* Players Town Reference */
-    public final @Nullable ClaimantTown getTown() {
+    public @Nullable ClaimantTown getTown() {
         return this.town;
     }
     
-    public final @Nullable UUID getTownId() {
+    public @Nullable UUID getTownId() {
         ClaimantTown town;
         if ((town = this.getTown()) == null)
             return null;
         return town.getId();
     }
-    public final void setTown(@Nullable ClaimantTown town) {
+    public void setTown(@Nullable ClaimantTown town) {
         this.town = town;
         this.markDirty();
     }
-    public final boolean inviteTown(@NotNull ClaimantTown town) {
+    public boolean inviteTown(@NotNull ClaimantTown town) {
         if (this.town != null) return false;
         return this.townInvites.add(town);
     }
-    public final @Nullable ClaimantTown getTownInvite(@NotNull String townName) {
+    public @Nullable ClaimantTown getTownInvite(@NotNull String townName) {
         ClaimantTown out = null;
         for (ClaimantTown town : this.townInvites) {
             if (townName.equals(town.getName().getString())) {
@@ -100,13 +100,13 @@ public final class ClaimantPlayer extends Claimant {
         if (out != null) this.townInvites.clear();
         return out;
     }
-    public final Set<ClaimantTown> getTownInvites() {
+    public Set<ClaimantTown> getTownInvites() {
         return this.townInvites;
     }
     
     /* Player Friend Options */
     @Override
-    public final ClaimRanks getFriendRank(@Nullable UUID player) {
+    public ClaimRanks getFriendRank(@Nullable UUID player) {
         if ( this.getId().equals( player ) )
             return ClaimRanks.OWNER;
         return super.getFriendRank( player );
@@ -114,46 +114,46 @@ public final class ClaimantPlayer extends Claimant {
     
     /* Nickname Override */
     @Override
-    public final @NotNull MutableText getName() {
+    public @NotNull MutableText getName() {
         if (this.name == null)
             return FormattingUtils.deepCopy(this.name = this.updateName());
         return FormattingUtils.deepCopy(this.name);
     }
-    public final @NotNull MutableText updateName() {
+    public @NotNull MutableText updateName() {
         return PlayerNameUtils.fetchPlayerNick(this.getId());
     }
     
     /* Send Messages */
     @Override
-    public final void send(@NotNull final MinecraftServer server, @NotNull final Text text, @NotNull final MessageType type, @Nullable final UUID from) {
+    public void send(@NotNull final MinecraftServer server, @NotNull final Text text, @NotNull final MessageType type, @Nullable final UUID from) {
         UUID playerId = this.getId();
         ServerPlayerEntity player = ServerCore.getPlayer(server, playerId);
         if (player != null) player.sendMessage(text, type, from);
     }
     
     /* Claimed chunk options */
-    public final boolean getProtectedChunkSetting(ClaimSettings setting) {
-        if ( this.CHUNK_CLAIM_OPTIONS.containsKey( setting ) )
-            return this.CHUNK_CLAIM_OPTIONS.get( setting );
+    public boolean getProtectedChunkSetting(ClaimSettings setting) {
+        if ( this.chunkClaimOptions.containsKey( setting ) )
+            return this.chunkClaimOptions.get( setting );
         return setting.getDefault( this.getId() );
     }
-    public final int getMaxChunkLimit() {
+    public int getMaxChunkLimit() {
         return this.additionalClaims + SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT);
     }
-    public final int increaseMaxChunkLimit(int by) {
+    public int increaseMaxChunkLimit(int by) {
         this.markDirty();
         return (this.additionalClaims += by) + SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT);
     }
-    public final boolean canClaim(Chunk chunk) {
+    public boolean canClaim(Chunk chunk) {
         // If chunk is already claimed, allow
-        if (this.CLAIMED_CHUNKS.contains(ClaimTag.of(chunk)))
+        if (this.claimedChunks.contains(ClaimTag.of(chunk)))
             return true;
         return (SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT) != 0) && (((this.getCount() + 1) <= this.getMaxChunkLimit()) || (SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT) <= 0));
     }
     
     /* Nbt saving */
     @Override
-    public final void writeCustomDataToTag(@NotNull NbtCompound tag) {
+    public void writeCustomDataToTag(@NotNull NbtCompound tag) {
         // Write the town ID
         if (this.town != null)
             tag.putUuid("town", this.town.getId());
@@ -164,11 +164,11 @@ public final class ClaimantPlayer extends Claimant {
         super.writeCustomDataToTag( tag );
     }
     @Override
-    public final void readCustomDataFromTag(@NotNull NbtCompound tag) {
+    public void readCustomDataFromTag(@NotNull NbtCompound tag) {
         // Get the players town
         ClaimantTown town = null;
         if ( NbtUtils.hasUUID(tag, "town") ) {
-            town = ClaimantTown.get(NbtUtils.getUUID(tag, "town"));
+            town = this.claimCache.getTownClaim(NbtUtils.getUUID(tag, "town"));
             
             // Ensure that the town has the player in the ranks
             if ((town != null) && town.getFriendRank(this.getId()) == null)
@@ -182,23 +182,4 @@ public final class ClaimantPlayer extends Claimant {
         // Read from SUPER
         super.readCustomDataFromTag(tag);
     }
-    
-    /* Get the PlayerPermissions object from the cache */
-    public static @NotNull ClaimantPlayer get(@NotNull UUID playerUUID) {
-        ClaimantPlayer player;
-        
-        // If contained in the cache
-        if ((player = CoreMod.getFromCache(ClaimantPlayer.class, playerUUID)) != null)
-            return player;
-        
-        // Create new object
-        return new ClaimantPlayer(playerUUID);
-    }
-    public static @NotNull ClaimantPlayer get(@NotNull GameProfile profile) {
-        return ClaimantPlayer.get(profile.getId());
-    }
-    public static @NotNull ClaimantPlayer get(@NotNull ServerPlayerEntity player) {
-        return ClaimantPlayer.get(player.getUuid());
-    }
-    
 }

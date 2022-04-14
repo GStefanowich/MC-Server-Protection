@@ -86,7 +86,7 @@ public final class BlockInteraction {
         final BlockState blockState = world.getBlockState(blockPos);
         final Block block = blockState.getBlock();
         final BlockEntity blockEntity = world.getBlockEntity(blockPos);
-
+        
         final Lazy<WorldChunk> claimedChunkInfo = new Lazy<>(() -> player.getEntityWorld().getWorldChunk(blockPos));
         
         // Check if the block interacted with is a sign (For shop signs)
@@ -95,7 +95,7 @@ public final class BlockInteraction {
             
             // Interact with the sign
             if ((shopSign.getShopOwner() != null) && ((shopSignType = shopSign.getShopType()) != null)) {
-                shopSignType.onInteract(player, blockPos, shopSign)
+                shopSignType.onInteract(world.getServer(), player, blockPos, shopSign)
                     // Literal Text (Error)
                     .ifLeft((text) -> {
                         shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.NEUTRAL);
@@ -135,7 +135,7 @@ public final class BlockInteraction {
                     DoorHinge doorHinge = blockState.get(DoorBlock.HINGE);
                     
                     BlockPos otherDoorPos = blockPos.offset(doorHinge == DoorHinge.LEFT ? doorDirection.rotateYClockwise() : doorDirection.rotateYCounterclockwise())
-                        .offset( Direction.UP, doorHalf == DoubleBlockHalf.UPPER ? 0 : 1 );
+                        .offset(Direction.UP, doorHalf == DoubleBlockHalf.UPPER ? 0 : 1);
                     BlockState otherDoorState = world.getBlockState(otherDoorPos);
                     
                     // Other block is DOOR, Material matches, is same door half, and opposite hinge
@@ -143,7 +143,7 @@ public final class BlockInteraction {
                         boolean doorIsOpen = blockState.get(DoorBlock.OPEN);
                         boolean otherIsOpen = otherDoorState.get(DoorBlock.OPEN);
                         
-                        if ( doorIsOpen == otherIsOpen ) {
+                        if (doorIsOpen == otherIsOpen) {
                             // Toggle the doors
                             world.setBlockState(otherDoorPos, otherDoorState.with(DoorBlock.OPEN, !doorIsOpen), 10);
                             world.syncWorldEvent(player, otherIsOpen ? 1006 : 1012, otherDoorPos, 0);

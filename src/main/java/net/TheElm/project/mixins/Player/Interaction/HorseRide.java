@@ -26,6 +26,7 @@
 package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.utilities.ChunkUtils;
@@ -73,7 +74,8 @@ public abstract class HorseRide extends HorseBaseEntity {
         
         if ( this.getOwnerUuid() != null ) {
             // Get the name of the HORSES OWNER
-            owner = ClaimantPlayer.get( this.getOwnerUuid() )
+            owner = ((ClaimsAccessor)this.getServer()).getClaimManager()
+                .getPlayerClaim(this.getOwnerUuid())
                 .getName();
         } else {
             // Get the name of the CHUNK OWNER

@@ -26,6 +26,7 @@
 package net.TheElm.project.mixins.Player.Interaction;
 
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.SpawnerMob;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -123,7 +124,8 @@ public abstract class TamedLead extends LivingEntity implements SpawnerMob {
             Text owner;
             if ( this.getOwnerUuid() != null ) {
                 // Get the name of the HORSES OWNER
-                owner = ClaimantPlayer.get(this.getOwnerUuid())
+                owner = ((ClaimsAccessor)this.getServer()).getClaimManager()
+                    .getPlayerClaim(this.getOwnerUuid())
                     .getName();
             } else {
                 // Get the name of the CHUNK OWNER

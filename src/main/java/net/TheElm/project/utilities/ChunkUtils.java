@@ -31,11 +31,14 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.Claim;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.protections.BlockRange;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
@@ -208,10 +211,10 @@ public final class ChunkUtils {
      * @param target The destination to teleport to
      * @return If the player is a high enough rank to teleport to the target
      */
-    public static boolean canPlayerWarpTo(@NotNull PlayerEntity player, @NotNull UUID target) {
+    public static boolean canPlayerWarpTo(@NotNull MinecraftServer server, @NotNull PlayerEntity player, @NotNull UUID target) {
         if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (SewConfig.get(SewConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator())))
             return SewConfig.get(SewConfig.COMMAND_WARP_TPA);
-        return ChunkUtils.canPlayerWarpTo(player.getUuid(), target);
+        return ChunkUtils.canPlayerWarpTo(server, player.getUuid(), target);
     }
     
     /**
@@ -219,14 +222,15 @@ public final class ChunkUtils {
      * @param target The destination to teleport to
      * @return If the player is a high enough rank to teleport to the target
      */
-    public static boolean canPlayerWarpTo(@NotNull UUID player, @NotNull UUID target) {
+    public static boolean canPlayerWarpTo(@NotNull MinecraftServer server, @NotNull UUID player, @NotNull UUID target) {
         // Check our chunk permissions
-        ClaimantPlayer permissions = ClaimantPlayer.get(target);
-
+        ClaimantPlayer permissions = ((ClaimsAccessor)server).getClaimManager()
+            .getPlayerClaim(target);
+        
         // Get the ranks of the user and the rank required for performing
         ClaimRanks userRank = permissions.getFriendRank(player);
         ClaimRanks permReq = permissions.getPermissionRankRequirement(ClaimPermissions.WARP);
-
+        
         // Return the test if the user can perform the action
         return permReq.canPerform(userRank);
     }
@@ -372,10 +376,12 @@ public final class ChunkUtils {
     public static final class ClaimSlice {
         
         private final NavigableMap<Integer, InnerClaim> innerChunks = Collections.synchronizedNavigableMap(new TreeMap<>());
+        private final ClaimCache claims;
         private final HeightLimitView view;
         private final int chunkPos;
         
-        public ClaimSlice(@NotNull HeightLimitView view, int chunkPos) {
+        public ClaimSlice(@NotNull ClaimCache claims, @NotNull HeightLimitView view, int chunkPos) {
+            this.claims = claims;
             this.view = view;
             this.chunkPos = chunkPos;
         }
@@ -417,7 +423,7 @@ public final class ChunkUtils {
         }
         
         public void insert(@Nullable UUID owner, int upper, int lower) {
-            this.displace(new InnerClaim(this.view, owner, upper, lower));
+            this.displace(new InnerClaim(owner, upper, lower));
         }
         public void displace(@NotNull InnerClaim newClaim) {
             List<InnerClaim> updates = new ArrayList<>();
@@ -432,9 +438,9 @@ public final class ChunkUtils {
                 }
                 
                 if (claim.upper() > newClaim.upper())
-                    updates.add(new InnerClaim(this.view, claim.getOwner(), claim.upper(), newClaim.upper()));
+                    updates.add(new InnerClaim(claim.getOwner(), claim.upper(), newClaim.upper()));
                 if (claim.lower() < newClaim.lower())
-                    updates.add(new InnerClaim(this.view, claim.getOwner(), newClaim.lower(), claim.lower()));
+                    updates.add(new InnerClaim(claim.getOwner(), newClaim.lower(), claim.lower()));
             }
             
             // Add updated regions into the heightmap
@@ -460,14 +466,68 @@ public final class ChunkUtils {
         public Iterator<InnerClaim> getClaims() {
             return this.innerChunks.values().iterator();
         }
+        
+        public final class InnerClaim implements Claim {
+            private final @Nullable ClaimantPlayer owner;
+            private final int yUpper;
+            private final int yLower;
+            
+            public InnerClaim(@Nullable UUID owner, int upper, int lower) {
+                this.owner = (owner == null ? null : ClaimSlice.this.claims.getPlayerClaim(owner));
+                this.yUpper = Integer.min(ClaimSlice.this.view.getTopY(), Integer.max(upper, lower));
+                this.yLower = Math.max(lower, ClaimSlice.this.view.getBottomY() - 1);
+            }
+            
+            public boolean hasOwner() {
+                return this.getOwner() != null;
+            }
+            public @Nullable UUID getOwner() {
+                return this.owner == null ? null : this.owner.getId();
+            }
+            
+            public int upper() {
+                return this.yUpper;
+            }
+            public int lower() {
+                return this.yLower;
+            }
+            
+            public boolean isWithin(int y) {
+                return y >= this.lower() && y <= this.upper();
+            }
+            public boolean isWithin(@NotNull BlockPos pos) {
+                return this.isWithin(pos.getY());
+            }
+            
+            @Override
+            public boolean canPlayerDo(@Nullable UUID player, @Nullable ClaimPermissions perm) {
+                if (player != null && player.equals(this.getOwner()))
+                    return true;
+                assert this.owner != null;
+
+                // Get the ranks of the user and the rank required for performing
+                ClaimRanks userRank = this.owner.getFriendRank(player);
+                ClaimRanks permReq = this.owner.getPermissionRankRequirement(perm);
+
+                // Return the test if the user can perform the action (If friend of chunk owner OR if friend of town and chunk owned by town owner)
+                return permReq.canPerform(userRank);
+            }
+            
+            @Override
+            public boolean isSetting(@NotNull ClaimSettings setting) {
+                if (this.owner == null)
+                    return setting.getDefault( null );
+                return this.owner.getProtectedChunkSetting( setting );
+            }
+        }
     }
-    public static final class InnerClaim implements Claim {
+    /*public static final class InnerClaim implements Claim {
         private final @Nullable ClaimantPlayer owner;
         private final int yUpper;
         private final int yLower;
         
         public InnerClaim(@NotNull HeightLimitView view, @Nullable UUID owner, int upper, int lower) {
-            this.owner = (owner == null ? null : ClaimantPlayer.get( owner ));
+            this.owner = (owner == null ? null : ClaimantPlayer.getPlayer(owner));
             this.yUpper = Integer.min(view.getTopY(), Integer.max(upper, lower));
             this.yLower = Math.max(lower, view.getBottomY() - 1);
         }
@@ -513,6 +573,5 @@ public final class ChunkUtils {
                 return setting.getDefault( null );
             return this.owner.getProtectedChunkSetting( setting );
         }
-    }
-    
+    }*/
 }

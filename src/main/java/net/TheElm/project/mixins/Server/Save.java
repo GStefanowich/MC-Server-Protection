@@ -28,7 +28,9 @@ package net.TheElm.project.mixins.Server;
 import com.google.common.collect.ImmutableList;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.objects.DynamicLevelProperties;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
@@ -92,12 +94,14 @@ public abstract class Save extends ReentrantThreadExecutor<ServerTask> implement
     @Inject(at = @At("RETURN"), method = "save")
     public void save(boolean silent, boolean boolean_2, boolean boolean_3, @NotNull CallbackInfoReturnable<Boolean> callback) {
         if (callback.getReturnValue()) {
+            ClaimCache claims = ((ClaimsAccessor)this).getClaimManager();
+            
             if (!silent) CoreMod.logInfo("Saving claimed player data");
-            CoreMod.getCacheStream(ClaimantPlayer.class)
+            claims.getCacheStream(ClaimantPlayer.class)
                 .forEach(Claimant::save);
             
             if (!silent) CoreMod.logInfo("Saving claimed town data");
-            CoreMod.getCacheStream(ClaimantTown.class)
+            claims.getCacheStream(ClaimantTown.class)
                 .forEach(Claimant::save);
         }
     }

@@ -30,11 +30,10 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import com.mojang.brigadier.tree.ArgumentCommandNode;
-import com.mojang.brigadier.tree.CommandNode;
-import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.command.CommandSource;
@@ -48,7 +47,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -89,9 +87,13 @@ public final class CommandUtils {
     }
     
     public static @NotNull CompletableFuture<Suggestions> getAllTowns(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+            .getClaimManager();
+        
         Set<String> townNames = new HashSet<>();
-    
-        Stream<ClaimantTown> towns = CoreMod.getCacheStream(ClaimantTown.class);
+        
+        Stream<ClaimantTown> towns = claimCache.getCacheStream(ClaimantTown.class);
         towns.forEach(town -> townNames.add(town.getName().getString()));
         
         return CommandSource.suggestMatching(
@@ -119,7 +121,8 @@ public final class CommandUtils {
         return Arrays.asList(playerManager.getWhitelistedNames());
     }
     public static @NotNull Stream<String> getFriendPlayerNames(@NotNull final MinecraftServer server, @NotNull final ServerPlayerEntity player) {
-        ClaimantPlayer claimant = ClaimantPlayer.get(player);
+        ClaimantPlayer claimant = ((ClaimsAccessor)server).getClaimManager()
+            .getPlayerClaim(player);
         PlayerManager playerManager = server.getPlayerManager();
         
         return playerManager.getPlayerList().stream()

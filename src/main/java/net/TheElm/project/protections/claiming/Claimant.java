@@ -30,6 +30,7 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.objects.ClaimTag;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.entity.player.PlayerEntity;
@@ -59,11 +60,11 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 public abstract class Claimant {
-    
-    protected final Map<UUID, ClaimRanks> USER_RANKS = Collections.synchronizedMap(new HashMap<>());
-    protected final Map<ClaimSettings, Boolean> CHUNK_CLAIM_OPTIONS = Collections.synchronizedMap(new HashMap<>());
-    protected final Map<ClaimPermissions, ClaimRanks> RANK_PERMISSIONS = Collections.synchronizedMap(new HashMap<>());
-    protected final Set<ClaimTag> CLAIMED_CHUNKS = Collections.synchronizedSet(new LinkedHashSet<>());
+    protected final ClaimCache claimCache;
+    protected final Map<UUID, ClaimRanks> userRanks = Collections.synchronizedMap(new HashMap<>());
+    protected final Map<ClaimSettings, Boolean> chunkClaimOptions = Collections.synchronizedMap(new HashMap<>());
+    protected final Map<ClaimPermissions, ClaimRanks> rankPermissions = Collections.synchronizedMap(new HashMap<>());
+    protected final Set<ClaimTag> claimedChunks = Collections.synchronizedSet(new LinkedHashSet<>());
     
     private boolean dirty = false;
     
@@ -72,12 +73,13 @@ public abstract class Claimant {
     
     protected MutableText name = null;
     
-    protected Claimant(@NotNull ClaimantType type, @NotNull UUID uuid) {
+    protected Claimant(@NotNull ClaimCache cache, @NotNull ClaimantType type, @NotNull UUID uuid) {
+        this.claimCache = cache;
         this.type = type;
         this.id = uuid;
         
         // Save to the cache BEFORE loading (For synchronocity!)
-        CoreMod.addToCache(this);
+        this.claimCache.addToCache(this);
         
         // Load all information about the claim
         this.readCustomDataFromTag(NbtUtils.readClaimData( this.type, id ));
@@ -86,7 +88,7 @@ public abstract class Claimant {
     /* Player Friend Options */
     public ClaimRanks getFriendRank(@Nullable UUID player) {
         if (player == null) return ClaimRanks.ENEMY;
-        return this.USER_RANKS.getOrDefault( player, ClaimRanks.PASSIVE );
+        return this.userRanks.getOrDefault( player, ClaimRanks.PASSIVE );
     }
     public boolean isFriend(@Nullable UUID player) {
         if (player == null) return false;
@@ -101,10 +103,10 @@ public abstract class Claimant {
     public boolean updateFriend(@NotNull UUID player, @Nullable ClaimRanks rank) {
         boolean changed = false;
         if (rank == null) {
-            changed = (this.USER_RANKS.remove( player ) != null);
+            changed = (this.userRanks.remove( player ) != null);
         } else {
-            if (((!this.USER_RANKS.containsKey(player)) || (!this.USER_RANKS.get( player ).equals(rank)))) {
-                this.USER_RANKS.put(player, rank);
+            if (((!this.userRanks.containsKey(player)) || (!this.userRanks.get( player ).equals(rank)))) {
+                this.userRanks.put(player, rank);
                 changed = true;
             }
         }
@@ -115,16 +117,16 @@ public abstract class Claimant {
         return this.updateFriend(player.getUuid(), rank);
     }
     protected final Set<UUID> getFriends() {
-        return this.USER_RANKS.keySet();
+        return this.userRanks.keySet();
     }
     
     /* Owner Options */
     public final void updateSetting(ClaimSettings setting, Boolean bool) {
-        this.CHUNK_CLAIM_OPTIONS.put( setting, bool );
+        this.chunkClaimOptions.put( setting, bool );
         this.markDirty();
     }
     public final void updatePermission(ClaimPermissions permission, ClaimRanks rank) {
-        this.RANK_PERMISSIONS.put( permission, rank );
+        this.rankPermissions.put( permission, rank );
         this.markDirty();
     }
     
@@ -151,13 +153,13 @@ public abstract class Claimant {
     
     public final void addToCount(@NotNull WorldChunk... chunks) {
         for (WorldChunk chunk : chunks)
-            this.CLAIMED_CHUNKS.add(ClaimTag.of(chunk));
+            this.claimedChunks.add(ClaimTag.of(chunk));
         this.markDirty();
     }
     public final void removeFromCount(@NotNull WorldChunk... chunks) {
         for (WorldChunk chunk : chunks) {
             ChunkPos pos = chunk.getPos();
-            this.CLAIMED_CHUNKS.removeIf((iteration) -> (
+            this.claimedChunks.removeIf((iteration) -> (
                 Objects.equals(
                     iteration.getDimension(),
                     chunk.getWorld().getRegistryKey()
@@ -170,14 +172,14 @@ public abstract class Claimant {
     }
     
     public final int getCount() {
-        return this.CLAIMED_CHUNKS.size();
+        return this.claimedChunks.size();
     }
     public final void forEachChunk(Consumer<ClaimTag> action) {
-        for (ClaimTag it : new LinkedHashSet<>(this.CLAIMED_CHUNKS))
+        for (ClaimTag it : new LinkedHashSet<>(this.claimedChunks))
             action.accept(it);
     }
     public final @NotNull Collection<ClaimTag> getChunks() {
-        return this.CLAIMED_CHUNKS;
+        return this.claimedChunks;
     }
     
     /* Nbt saving */
@@ -204,12 +206,12 @@ public abstract class Claimant {
     public void writeCustomDataToTag(@NotNull NbtCompound tag) {
         // Save our chunks
         NbtList chunkList = new NbtList();
-        chunkList.addAll(this.CLAIMED_CHUNKS);
+        chunkList.addAll(this.claimedChunks);
         tag.put("landChunks", chunkList);
         
         // Save our list of friends
         NbtList rankList = new NbtList();
-        for (Map.Entry<UUID, ClaimRanks> friend : this.USER_RANKS.entrySet()) {
+        for (Map.Entry<UUID, ClaimRanks> friend : this.userRanks.entrySet()) {
             // Make a map for the ranked player
             NbtCompound friendTag = new NbtCompound();
             friendTag.putUuid("i", friend.getKey());
@@ -222,7 +224,7 @@ public abstract class Claimant {
         
         // Save our list of permissions
         NbtList permList = new NbtList();
-        for (Map.Entry<ClaimPermissions, ClaimRanks> permission : this.RANK_PERMISSIONS.entrySet()) {
+        for (Map.Entry<ClaimPermissions, ClaimRanks> permission : this.rankPermissions.entrySet()) {
             // Make a map for the permission
             NbtCompound permTag = new NbtCompound();
             permTag.putString("k", permission.getKey().name());
@@ -235,7 +237,7 @@ public abstract class Claimant {
         
         // Save our list of settings
         NbtList settingList = new NbtList();
-        for (Map.Entry<ClaimSettings, Boolean> setting : this.CHUNK_CLAIM_OPTIONS.entrySet()) {
+        for (Map.Entry<ClaimSettings, Boolean> setting : this.chunkClaimOptions.entrySet()) {
             // Make a map for the setting
             NbtCompound settingTag = new NbtCompound();
             settingTag.putString("k", setting.getKey().name());
@@ -257,12 +259,12 @@ public abstract class Claimant {
             // Get from Int Array
             for (NbtElement it : tag.getList("landChunks",NbtElement.INT_ARRAY_TYPE)) {
                 claim = ClaimTag.fromArray((NbtIntArray) it);
-                if (claim != null) this.CLAIMED_CHUNKS.add(claim);
+                if (claim != null) this.claimedChunks.add(claim);
             }
             // Get from Compound
             for (NbtElement it : tag.getList("landChunks", NbtElement.COMPOUND_TYPE)) {
                 claim = ClaimTag.fromCompound((NbtCompound) it);
-                if (claim != null) this.CLAIMED_CHUNKS.add(claim);
+                if (claim != null) this.claimedChunks.add(claim);
             }
         }
         
@@ -270,7 +272,7 @@ public abstract class Claimant {
         if (tag.contains(rankNbtTag(this), NbtElement.LIST_TYPE)) {
             for (NbtElement it : tag.getList(rankNbtTag(this), NbtElement.COMPOUND_TYPE)) {
                 NbtCompound friend = (NbtCompound) it;
-                this.USER_RANKS.put(
+                this.userRanks.put(
                     NbtUtils.getUUID(friend, "i"),
                     ClaimRanks.valueOf(friend.getString("r"))
                 );
@@ -281,7 +283,7 @@ public abstract class Claimant {
         if (tag.contains("permissions", NbtElement.LIST_TYPE)) {
             for (NbtElement it : tag.getList("permissions", NbtElement.COMPOUND_TYPE)) {
                 NbtCompound permission = (NbtCompound) it;
-                this.RANK_PERMISSIONS.put(
+                this.rankPermissions.put(
                     ClaimPermissions.valueOf(permission.getString("k")),
                     ClaimRanks.valueOf(permission.getString("v"))
                 );
@@ -292,7 +294,7 @@ public abstract class Claimant {
         if (tag.contains("settings", NbtElement.LIST_TYPE)) {
             for (NbtElement it : tag.getList("settings", NbtElement.COMPOUND_TYPE)) {
                 NbtCompound setting = (NbtCompound) it;
-                this.CHUNK_CLAIM_OPTIONS.put(
+                this.chunkClaimOptions.put(
                     ClaimSettings.valueOf(setting.getString("k")),
                     setting.getBoolean("b")
                 );

@@ -29,8 +29,8 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimRanks;
-import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.PlayerNameUtils;
 import net.TheElm.project.utilities.TownNameUtils;
@@ -60,34 +60,34 @@ public final class ClaimantTown extends Claimant {
     private UUID ownerId;
     private Set<UUID> villagers;
     
-    protected ClaimantTown(@NotNull UUID townId) {
-        super(ClaimantType.TOWN, townId);
+    public ClaimantTown(@NotNull ClaimCache cache, @NotNull UUID townId) {
+        super(cache, ClaimantType.TOWN, townId);
     }
-    protected ClaimantTown(@NotNull UUID townId, @NotNull MutableText townName) {
-        this( townId );
+    public ClaimantTown(@NotNull ClaimCache cache, @NotNull UUID townId, @NotNull MutableText townName) {
+        this(cache, townId);
         this.name = townName;
     }
     
-    public final @NotNull String getTownType() {
+    public @NotNull String getTownType() {
         return TownNameUtils.getTownName( this.getCount(), this.getResidentCount() );
     }
-    public final @NotNull String getOwnerTitle() {
+    public @NotNull String getOwnerTitle() {
         return TownNameUtils.getOwnerTitle( this.getCount(), this.getResidentCount(), true );
     }
-    public final @NotNull MutableText getOwnerName() {
+    public @NotNull MutableText getOwnerName() {
         return PlayerNameUtils.fetchPlayerNick(this.getOwner());
     }
     
-    public final UUID getOwner() {
+    public UUID getOwner() {
         return this.ownerId;
     }
-    public final void setOwner(@NotNull UUID owner) {
+    public void setOwner(@NotNull UUID owner) {
         this.updateFriend( owner, ClaimRanks.OWNER );
         this.ownerId = owner;
         this.markDirty();
     }
     
-    public final int getResidentCount() {
+    public int getResidentCount() {
         return this.getFriends().size()
             + (SewConfig.get(SewConfig.TOWN_VILLAGERS_INCLUDE)
                 && SewConfig.get(SewConfig.TOWN_VILLAGERS_VALUE) > 0 ? this.getVillagers().size() / SewConfig.get(SewConfig.TOWN_VILLAGERS_VALUE) : 0);
@@ -107,10 +107,10 @@ public final class ClaimantTown extends Claimant {
     }
     
     /* Villager Options */
-    public final Set<UUID> getVillagers() {
+    public Set<UUID> getVillagers() {
         return this.villagers;
     }
-    public final boolean addVillager(VillagerEntity villager) {
+    public boolean addVillager(VillagerEntity villager) {
         if (this.villagers.add(villager.getUuid())) {
             CoreMod.logInfo("Added a new villager to " + this.getName().getString() + "!");
             this.markDirty();
@@ -118,7 +118,7 @@ public final class ClaimantTown extends Claimant {
         }
         return false;
     }
-    public final boolean removeVillager(VillagerEntity villager) {
+    public boolean removeVillager(VillagerEntity villager) {
         if (this.villagers.remove(villager.getUuid())) {
             this.markDirty();
             return true;
@@ -128,15 +128,15 @@ public final class ClaimantTown extends Claimant {
     
     /* Player Friend Options */
     @Override
-    public final ClaimRanks getFriendRank(@Nullable UUID player) {
+    public ClaimRanks getFriendRank(@Nullable UUID player) {
         if ( this.getOwner().equals( player ) )
             return ClaimRanks.OWNER;
         return super.getFriendRank( player );
     }
     @Override
-    public final boolean updateFriend(@NotNull final UUID player, @Nullable final ClaimRanks rank) {
+    public boolean updateFriend(@NotNull final UUID player, @Nullable final ClaimRanks rank) {
         if ( super.updateFriend( player, rank ) ) {
-            ClaimantPlayer claim = ClaimantPlayer.get( player );
+            ClaimantPlayer claim = this.claimCache.getPlayerClaim(player);
             claim.setTown(rank == null ? null : this);
             return true;
         }
@@ -154,7 +154,7 @@ public final class ClaimantTown extends Claimant {
     
     /* Send Messages */
     @Override
-    public final void send(@NotNull MinecraftServer server, @NotNull final Text text, @NotNull final MessageType type, @NotNull final UUID from) {
+    public void send(@NotNull MinecraftServer server, @NotNull final Text text, @NotNull final MessageType type, @NotNull final UUID from) {
         this.getFriends().forEach((uuid) -> {
             ServerPlayerEntity player = ServerCore.getPlayer(server, uuid);
             if (player != null)
@@ -163,13 +163,13 @@ public final class ClaimantTown extends Claimant {
     }
     
     /* Tax Options */
-    public final int getTaxRate() {
+    public int getTaxRate() {
         return 0;
     }
     
     /* Nbt saving */
     @Override
-    public final void writeCustomDataToTag(@NotNull NbtCompound tag) {
+    public void writeCustomDataToTag(@NotNull NbtCompound tag) {
         if (this.ownerId == null) throw new RuntimeException("Town owner should not be null");
         
         tag.putUuid("owner", this.ownerId);
@@ -183,7 +183,7 @@ public final class ClaimantTown extends Claimant {
         super.writeCustomDataToTag( tag );
     }
     @Override
-    public final void readCustomDataFromTag(@NotNull NbtCompound tag) {
+    public void readCustomDataFromTag(@NotNull NbtCompound tag) {
         // Get the towns owner
         this.ownerId = (NbtUtils.hasUUID(tag, "owner") ? NbtUtils.getUUID(tag, "owner") : null);
         
@@ -200,7 +200,7 @@ public final class ClaimantTown extends Claimant {
         super.readCustomDataFromTag( tag );
     }
     
-    public final void delete(@NotNull PlayerManager playerManager) {
+    public void delete(@NotNull PlayerManager playerManager) {
         ServerPlayerEntity player;
         
         this.deleted = true;
@@ -212,7 +212,8 @@ public final class ClaimantTown extends Claimant {
         }
         
         // Remove from the cache (So it doesn't save again)
-        CoreMod.removeFromCache(this);
+        this.claimCache.removeFromCache(this);
+        
         NbtUtils.delete(this);
         CoreMod.logInfo("Deleted town " + this.getName().getString() + " (" + this.getId() + ")");
     }
@@ -222,45 +223,4 @@ public final class ClaimantTown extends Claimant {
             return super.forceSave();
         return true;
     }
-    
-    public static @Nullable ClaimantTown get(UUID townId) {
-        ClaimantTown town;
-        
-        // If claims are disabled
-        if ((!SewConfig.get(SewConfig.DO_CLAIMS)) || (townId == null))
-            return null;
-        
-        try {
-            NbtUtils.assertExists(ClaimantType.TOWN, townId);
-            
-            // If contained in the cache
-            if ((town = CoreMod.getFromCache(ClaimantTown.class, townId)) != null)
-                return town;
-            
-            // Return the town object
-            return new ClaimantTown(townId);
-        } catch (NbtNotFoundException e) {
-            return null;
-        }
-    }
-    public static @NotNull ClaimantTown makeTown(@NotNull ServerPlayerEntity founder, @NotNull MutableText townName) {
-        // Generate a random UUID
-        UUID townUUID;
-        do {
-            townUUID = UUID.randomUUID();
-        } while (NbtUtils.exists(ClaimantType.TOWN, townUUID ));
-        return ClaimantTown.makeTown(townUUID, founder.getUuid(), townName );
-    }
-    public static @NotNull ClaimantTown makeTown(@NotNull UUID townUUID, @NotNull UUID founder, @NotNull MutableText townName) {
-        // Create our town
-        ClaimantTown town = new ClaimantTown(townUUID, townName);
-        
-        // Save the town
-        town.setOwner(founder);
-        town.save();
-        
-        // Return the town
-        return town;
-    }
-    
 }
