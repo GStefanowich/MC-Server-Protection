@@ -66,10 +66,10 @@ public abstract class Claimant {
     protected final Map<ClaimPermissions, ClaimRanks> rankPermissions = Collections.synchronizedMap(new HashMap<>());
     protected final Set<ClaimTag> claimedChunks = Collections.synchronizedSet(new LinkedHashSet<>());
     
-    private boolean dirty = false;
-    
     private final @NotNull ClaimantType type;
     private final @NotNull UUID id;
+    
+    private final ClaimCacheEntry<?> saveHandle;
     
     protected MutableText name = null;
     
@@ -79,7 +79,7 @@ public abstract class Claimant {
         this.id = uuid;
         
         // Save to the cache BEFORE loading (For synchronocity!)
-        this.claimCache.addToCache(this);
+        this.saveHandle = this.claimCache.addToCache(this);
         
         // Load all information about the claim
         this.readCustomDataFromTag(NbtUtils.readClaimData( this.type, id ));
@@ -159,16 +159,15 @@ public abstract class Claimant {
     public final void removeFromCount(@NotNull WorldChunk... chunks) {
         for (WorldChunk chunk : chunks) {
             ChunkPos pos = chunk.getPos();
-            this.claimedChunks.removeIf((iteration) -> (
+            if (this.claimedChunks.removeIf((iteration) -> (
                 Objects.equals(
                     iteration.getDimension(),
                     chunk.getWorld().getRegistryKey()
                 )
                 && iteration.getX() == pos.x
                 && iteration.getZ() == pos.z
-            ));
+            ))) this.markDirty();
         }
-        this.markDirty();
     }
     
     public final int getCount() {
@@ -189,18 +188,18 @@ public abstract class Claimant {
         this.save();
     }
     public final void markDirty() {
-        this.dirty = true;
+        this.saveHandle.markDirty();
     }
     public final void save() {
-        if (this.dirty) {
+        if (this.saveHandle.isDirty()) {
             this.forceSave();
-            this.dirty = false;
+            this.saveHandle.markClean();
         }
     }
     public boolean forceSave() {
-        if (DevUtils.isDebugging()) CoreMod.logInfo( "Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
-        boolean success = NbtUtils.writeClaimData( this );
-        if (!success) CoreMod.logInfo( "FAILED TO SAVE " + this.getType().name() + " DATA, " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
+        if (DevUtils.isDebugging()) CoreMod.logInfo("Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
+        boolean success = NbtUtils.writeClaimData(this);
+        if (!success) CoreMod.logInfo("FAILED TO SAVE " + this.getType().name() + " DATA, " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + ".");
         return success;
     }
     public void writeCustomDataToTag(@NotNull NbtCompound tag) {

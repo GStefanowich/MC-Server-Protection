@@ -32,8 +32,6 @@ import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.objects.DynamicLevelProperties;
 import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.protections.claiming.Claimant;
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.DimensionUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
@@ -96,12 +94,8 @@ public abstract class Save extends ReentrantThreadExecutor<ServerTask> implement
         if (callback.getReturnValue()) {
             ClaimCache claims = ((ClaimsAccessor)this).getClaimManager();
             
-            if (!silent) CoreMod.logInfo("Saving claimed player data");
-            claims.getCacheStream(ClaimantPlayer.class)
-                .forEach(Claimant::save);
-            
-            if (!silent) CoreMod.logInfo("Saving claimed town data");
-            claims.getCacheStream(ClaimantTown.class)
+            if (!silent) CoreMod.logInfo("Saving claim data");
+            claims.getCaches()
                 .forEach(Claimant::save);
         }
     }

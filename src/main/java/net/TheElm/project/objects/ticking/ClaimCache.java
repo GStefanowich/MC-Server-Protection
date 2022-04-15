@@ -28,14 +28,18 @@ package net.TheElm.project.objects.ticking;
 import com.mojang.authlib.GameProfile;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
+import net.TheElm.project.interfaces.LogicalWorld;
 import net.TheElm.project.objects.DetachedTickable;
+import net.TheElm.project.protections.claiming.ClaimCacheEntry;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
+import net.minecraft.util.math.MathHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -44,6 +48,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -54,56 +59,70 @@ import java.util.stream.Stream;
  */
 public final class ClaimCache implements Predicate<DetachedTickable> {
     // Reference from player UUID
-    private final Map<UUID, ClaimantPlayer> playerClaimCache = Collections.synchronizedMap(new HashMap<>());
+    private final Map<UUID, PlayerCacheEntry> playerClaimCache = Collections.synchronizedMap(new HashMap<>());
     // Reference from owner UUID
-    private final Map<UUID, ClaimantTown> townClaimCache = Collections.synchronizedMap(new HashMap<>());
+    private final Map<UUID, TownCacheEntry> townClaimCache = Collections.synchronizedMap(new HashMap<>());
     
     private final MinecraftServer server;
     
-    public ClaimCache(MinecraftServer server) {
+    private int index = 1;
+    private List<UUID> players = Collections.emptyList();
+    private List<UUID> towns = Collections.emptyList();
+    
+    public ClaimCache(@NotNull MinecraftServer server, @NotNull ServerWorld mainWorld) {
         this.server = server;
+        
+        // Make sure that the cleanup event is ticked by attaching to the main world
+        ((LogicalWorld)mainWorld).addTickableEvent(this);
     }
     
     /*
      * Cache
      */
     
-    public void addToCache(@Nullable Claimant claimant) {
-        if (claimant instanceof ClaimantPlayer claimantPlayer)
-            this.playerClaimCache.put(claimant.getId(), claimantPlayer);
-        else if (claimant instanceof ClaimantTown claimantTown)
-            this.townClaimCache.put(claimant.getId(), claimantTown);
-    }
-    @Nullable
-    public Claimant removeFromCache(@Nullable Claimant claimant) {
-        if (claimant instanceof ClaimantPlayer)
-            return this.playerClaimCache.remove(claimant.getId());
-        if (claimant instanceof ClaimantTown)
-            return this.townClaimCache.remove(claimant.getId());
+    public @Nullable ClaimCacheEntry<?> addToCache(@Nullable Claimant claimant) {
+        if (claimant instanceof ClaimantPlayer claimantPlayer) {
+            PlayerCacheEntry player = new PlayerCacheEntry(claimantPlayer);
+            
+            this.playerClaimCache.put(claimant.getId(), player);
+            
+            return player;
+        } else if (claimant instanceof ClaimantTown claimantTown) {
+            TownCacheEntry town = new TownCacheEntry(claimantTown);
+            
+            this.townClaimCache.put(claimant.getId(), town);
+            
+            return town;
+        }
         return null;
     }
-    @Nullable
-    public <T extends Claimant> T getFromCache(@NotNull Class<T> type, @NotNull UUID uuid) {
-        return this.getCacheStream( type ).filter((claimant) -> claimant.getId().equals(uuid)).findFirst().orElse(null);
+    public @Nullable Claimant removeFromCache(@Nullable Claimant claimant) {
+        ClaimCacheEntry<?> entry;
+        if (claimant instanceof ClaimantPlayer)
+            entry = this.playerClaimCache.remove(claimant.getId());
+        else if (claimant instanceof ClaimantTown)
+            entry = this.townClaimCache.remove(claimant.getId());
+        else return null;
+        
+        return entry == null ? null : entry.getValue();
     }
-    @Nullable
-    public <T extends Claimant> T getFromCache(@NotNull Class<T> type, @NotNull String name) {
-        return this.getCacheStream( type ).filter((claimant) -> name.equals(claimant.getName().getString())).findFirst().orElse(null);
+    private <T extends Claimant> @Nullable T getFromCache(@NotNull Map<UUID, ? extends ClaimCacheEntry<T>> entries, @NotNull UUID uuid) {
+        ClaimCacheEntry<T> entry = entries.get(uuid);
+        return entry == null ? null : entry.getValue();
     }
-    public Stream<Claimant> getCacheStream() {
-        return this.getCacheStream(null);
+    public @NotNull Stream<ClaimantPlayer> getPlayerCaches() {
+        return this.playerClaimCache.values().stream().map(ClaimCacheEntry::getValue)
+            .filter(Objects::nonNull);
     }
-    public <T extends Claimant> Stream<T> getCacheStream(@Nullable Class<T> type) {
-        List<T> out = new ArrayList<>();
-        if ((type == null) || type.equals(ClaimantPlayer.class)) {
-            for (ClaimantPlayer player : this.playerClaimCache.values())
-                out.add((T) player);
-        }
-        if ((type == null) || type.equals(ClaimantTown.class)) {
-            for ( ClaimantTown town : this.townClaimCache.values() )
-                out.add((T) town);
-        }
-        return out.stream();
+    public @NotNull Stream<ClaimantTown> getTownCaches() {
+        return this.townClaimCache.values().stream().map(ClaimCacheEntry::getValue)
+            .filter(Objects::nonNull);
+    }
+    public @NotNull Stream<Claimant> getCaches() {
+        return Stream.concat(
+            this.getPlayerCaches().map(player -> (Claimant) player),
+            this.getTownCaches().map(town -> (Claimant) town)
+        );
     }
     
     /*
@@ -115,7 +134,7 @@ public final class ClaimCache implements Predicate<DetachedTickable> {
         ClaimantPlayer player;
         
         // If contained in the cache
-        if ((player = this.getFromCache(ClaimantPlayer.class, playerUUID)) != null)
+        if ((player = this.getFromCache(this.playerClaimCache, playerUUID)) != null)
             return player;
         
         // Create new object
@@ -142,7 +161,7 @@ public final class ClaimCache implements Predicate<DetachedTickable> {
             NbtUtils.assertExists(Claimant.ClaimantType.TOWN, townId);
             
             // If contained in the cache
-            if ((town = this.getFromCache(ClaimantTown.class, townId)) != null)
+            if ((town = this.getFromCache(this.townClaimCache, townId)) != null)
                 return town;
             
             // Return the town object
@@ -150,6 +169,14 @@ public final class ClaimCache implements Predicate<DetachedTickable> {
         } catch (NbtNotFoundException e) {
             return null;
         }
+    }
+    public @Nullable ClaimantTown getTownClaim(String name) {
+        return this.townClaimCache.values()
+            .stream()
+            .map(ClaimCacheEntry::getValue)
+            .filter(town -> town != null && Objects.equals(name, town.getName().getString()))
+            .findAny()
+            .orElse(null);
     }
     public @NotNull ClaimantTown makeTownClaim(@NotNull ServerPlayerEntity founder, @NotNull MutableText townName) {
         // Generate a random UUID
@@ -176,7 +203,77 @@ public final class ClaimCache implements Predicate<DetachedTickable> {
      */
     
     @Override
-    public boolean test(@NotNull DetachedTickable detachedTickable) {
-        return false;
+    public boolean test(@NotNull DetachedTickable tickable) {
+        if (tickable.getTicks() % 100 == 0)
+            this.tick();
+        
+        // Only return TRUE if the Tickable is disposed
+        return tickable.isRemoved();
+    }
+    
+    public void tick() {
+        int players = this.playerClaimCache.size();
+        int towns = this.townClaimCache.size();
+        int sum = players + towns;
+        
+        if (this.players.size() != players || this.towns.size() != towns)
+            this.reset(this.players.size() != players, this.towns.size() != towns);
+        else if (sum > this.index)
+            this.index++;
+        else this.index = 1;
+        
+        if (sum == 0)
+            return;
+        
+        boolean onTowns = this.index > players;
+        int pos;
+        List<UUID> list;
+        Map<UUID, ? extends ClaimCacheEntry<?>> reference;
+        
+        if (onTowns) {
+            reference = this.townClaimCache;
+            list = this.towns;
+            pos = this.index - players - 1;
+        } else {
+            reference = this.playerClaimCache;
+            list = this.players;
+            pos = this.index - 1;
+        }
+        
+        UUID uuid = list.get(pos);
+        if (uuid == null) return;
+        
+        ClaimCacheEntry<?> claim = reference.get(uuid);
+        if (claim == null) return;
+        
+        if (claim.isRemovable()) {
+            reference.remove(uuid);
+            this.reset(!onTowns, onTowns);
+        } /*else if ((claimant = claim.getValue()) != null)
+            System.out.println("Named! (" + claimant.getName().getString() + ")");
+        else System.out.println("Illegal value...?");*/
+    }
+    
+    private void reset() {
+        this.reset(true, true);
+    }
+    private void reset(boolean players, boolean towns) {
+        if (players)
+            this.players = new ArrayList<>(this.playerClaimCache.keySet());
+        if (towns)
+            this.towns = new ArrayList<>(this.townClaimCache.keySet());
+        
+        this.index = MathHelper.clamp(this.index, 1, this.players.size() + this.towns.size());
+    }
+    
+    private class PlayerCacheEntry extends ClaimCacheEntry<ClaimantPlayer> {
+        public PlayerCacheEntry(ClaimantPlayer value) {
+            super(value);
+        }
+    }
+    private class TownCacheEntry extends ClaimCacheEntry<ClaimantTown> {
+        public TownCacheEntry(ClaimantTown value) {
+            super(value);
+        }
     }
 }

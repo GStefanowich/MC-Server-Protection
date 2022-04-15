@@ -890,24 +890,31 @@ public final class ClaimCommand {
     }
     private static int adminSetPlayerTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
+        MinecraftServer server = source.getServer();
         
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context,"target");
-        GameProfile player = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
-        
-        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
-            .getClaimManager();
+        GameProfile profile = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Get the town
         String townName = StringArgumentType.getString(context, "town");
-        ClaimantTown town = claimCache.getFromCache(ClaimantTown.class, townName);
+        
+        ClaimCache claimCache = ((ClaimsAccessor) server).getClaimManager();
+        ClaimantTown town = claimCache.getTownClaim(townName);
         
         if (town == null)
             throw TOWN_INVITE_MISSING.create(source.getPlayer());
         
         // Update the rank of the player for the town
-        town.updateFriend(player.getId(), ClaimRanks.ALLY);
-        claimCache.getPlayerClaim(player)
+        town.updateFriend(profile.getId(), ClaimRanks.ALLY);
+        claimCache.getPlayerClaim(profile)
             .setTown(town);
+        
+        // Refresh the command tree
+        PlayerManager players = server.getPlayerManager();
+        ServerPlayerEntity player = players
+            .getPlayer(profile.getId());
+        if (player != null)
+            players.sendCommandTree(player);
         
         return Command.SINGLE_SUCCESS;
     }
@@ -917,7 +924,7 @@ public final class ClaimCommand {
         Collection<? extends Entity> entities = EntityArgumentType.getEntities(context, "entities");
         String townName = StringArgumentType.getString(context, "town");
         ClaimantTown town = ((ClaimsAccessor)source.getServer()).getClaimManager()
-            .getFromCache(ClaimantTown.class, townName);
+            .getTownClaim(townName);
         
         if (town == null)
             throw TOWN_NOT_EXISTS.create();

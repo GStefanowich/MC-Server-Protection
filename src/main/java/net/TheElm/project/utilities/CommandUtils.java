@@ -93,8 +93,8 @@ public final class CommandUtils {
         
         Set<String> townNames = new HashSet<>();
         
-        Stream<ClaimantTown> towns = claimCache.getCacheStream(ClaimantTown.class);
-        towns.forEach(town -> townNames.add(town.getName().getString()));
+        claimCache.getTownCaches()
+            .forEach(town -> townNames.add(town.getName().getString()));
         
         return CommandSource.suggestMatching(
             townNames,

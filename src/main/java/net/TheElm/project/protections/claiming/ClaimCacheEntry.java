@@ -23,28 +23,41 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.mixins.Server;
+package net.TheElm.project.protections.claiming;
 
-import net.TheElm.project.interfaces.ClaimsAccessor;
-import net.TheElm.project.objects.ticking.ClaimCache;
-import net.minecraft.server.MinecraftServer;
-import org.jetbrains.annotations.NotNull;
-import org.spongepowered.asm.mixin.Mixin;
+import org.jetbrains.annotations.Nullable;
+
+import java.lang.ref.WeakReference;
 
 /**
- * Created on Apr 14 2022 at 3:05 PM.
+ * Created on Apr 14 2022 at 8:37 PM.
  * By greg in SewingMachineMod
  */
-@Mixin(MinecraftServer.class)
-public class ClaimHandler implements ClaimsAccessor {
-    private ClaimCache sewingMachineClaimManager;
+public abstract class ClaimCacheEntry<V extends Claimant> {
+    private V value;
+    private WeakReference<V> reference;
     
-    @Override
-    public @NotNull ClaimCache getClaimManager() {
-        if (this.sewingMachineClaimManager == null) {
-            MinecraftServer server = (MinecraftServer) (Object) this;
-            this.sewingMachineClaimManager = new ClaimCache(server, server.getOverworld());
-        }
-        return this.sewingMachineClaimManager;
+    protected ClaimCacheEntry(V value) {
+        this.value = null;
+        this.reference = new WeakReference<>(value);
+    }
+    
+    public void markDirty() {
+        this.value = this.reference.get();
+    }
+    public void markClean() {
+        this.value = null;
+    }
+    public boolean isDirty() {
+        return this.value != null;
+    }
+    public boolean isRemovable() {
+        return !this.isDirty() && this.getValue() == null;
+    }
+    
+    public @Nullable V getValue() {
+        if (this.value != null)
+            return this.value;
+        return this.reference.get();
     }
 }

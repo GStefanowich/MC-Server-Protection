@@ -235,7 +235,15 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
                 Claimant claimant = Objects.requireNonNull(update.getClaimant());
                 
                 // Cleanup/Remove the players count
-                claimant.removeFromCount(worldChunk);
+                if (update.getVerify() || Objects.equals(claimant.getId(), chunk.getOwner()))
+                    claimant.removeFromCount(worldChunk);
+                else if (!update.getVerify()) {
+                    // If we aren't verifying the UNCLAIM, get the existing owner and subtract the chunk from them
+                    ClaimCache claims = chunk.getClaimCache();
+                    if (claims != null && chunk.getOwner() != null)
+                        claims.getPlayerClaim(chunk.getOwner())
+                            .removeFromCount(worldChunk);
+                }
                 
                 // If the chunk is not owned
                 if (update.getVerify() && chunk.getOwner() == null && update.getInitialSize() <= 1)
