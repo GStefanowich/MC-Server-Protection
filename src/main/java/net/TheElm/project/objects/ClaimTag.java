@@ -133,13 +133,4 @@ public final class ClaimTag extends NbtCompound {
     public static @NotNull ClaimTag of(@NotNull World world, @NotNull ChunkPos chunkPos) {
         return new ClaimTag(world, chunkPos);
     }
-    
-    @Override
-    public boolean equals(Object o) {
-        boolean equal = super.equals(o);
-        
-        if (equal) System.out.println("These two are equal?");
-        
-        return equal;
-    }
 }

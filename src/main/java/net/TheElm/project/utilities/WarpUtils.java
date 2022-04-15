@@ -165,7 +165,7 @@ public final class WarpUtils {
             z += dZ;
         }
         
-        System.out.println("Could not get valid teleport position at " + MessageUtils.xyzToString(this.createWarpAt));
+        CoreMod.logDebug("Could not get valid teleport position at " + MessageUtils.xyzToString(this.createWarpAt));
         return this.createWarpAt.up(2);
     }
     
