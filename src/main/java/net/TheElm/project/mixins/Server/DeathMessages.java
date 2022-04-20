@@ -26,22 +26,9 @@ public abstract class DeathMessages {
     @Inject(at = @At("RETURN"), method = "getDeathMessage", cancellable = true)
     public void onFetchMessage(CallbackInfoReturnable<Text> callback) {
         if (this.entity instanceof PlayerEntity) {
-            long worldDay = IntUtils.timeToDays(this.entity.getEntityWorld());
-            long worldYear = worldDay / SewConfig.get(SewConfig.CALENDAR_DAYS);
-            worldDay = worldDay - (worldYear * SewConfig.get(SewConfig.CALENDAR_DAYS));
-            
-            String year = CasingUtils.acronym(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH), true);
-            MutableText yearText = MessageUtils.formatNumber(worldYear);
-            if (!year.isEmpty()) {
-                yearText.append(" " + year);
-                yearText.styled(MessageUtils.simpleHoverText(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH)));
-            }
-            
             Text death = callback.getReturnValue();
             callback.setReturnValue(new LiteralText("On ")
-                .append(MessageUtils.formatNumber("Day ", worldDay))
-                .append(" of ")
-                .append(yearText)
+                .append(MessageUtils.getWorldTime(this.entity.getEntityWorld()))
                 .append(", ")
                 .append(death));
         }

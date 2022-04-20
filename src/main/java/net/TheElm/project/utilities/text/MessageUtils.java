@@ -27,13 +27,16 @@ package net.TheElm.project.utilities.text;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
+import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ChatRooms;
 import net.TheElm.project.interfaces.PlayerChat;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.objects.ChatFormat;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.FormattingUtils;
+import net.TheElm.project.utilities.IntUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.minecraft.block.Block;
 import net.minecraft.client.option.ChatVisibility;
@@ -65,6 +68,7 @@ import net.minecraft.util.registry.Registry;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
+import net.minecraft.world.WorldProperties;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -412,6 +416,27 @@ public final class MessageUtils {
         if (formatting.length > 0)
             return out.formatted(formatting);
         return out.formatted(Formatting.AQUA);
+    }
+
+    public static @NotNull MutableText getWorldTime(@NotNull World world) {
+        return MessageUtils.getWorldTime(world.getLevelProperties());
+    }
+    public static @NotNull MutableText getWorldTime(@NotNull WorldProperties properties) {
+        long worldDay = IntUtils.timeToDays(properties);
+        long worldYear = worldDay / SewConfig.get(SewConfig.CALENDAR_DAYS);
+        worldDay = worldDay - (worldYear * SewConfig.get(SewConfig.CALENDAR_DAYS));
+        
+        String year = CasingUtils.acronym(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH), true);
+        MutableText yearText = MessageUtils.formatNumber(worldYear);
+        if (!year.isEmpty()) {
+            yearText.append(" " + year);
+            yearText.styled(MessageUtils.simpleHoverText(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH)));
+        }
+        
+        return new LiteralText("")
+            .append(MessageUtils.formatNumber("Day ", worldDay))
+            .append(" of ")
+            .append(yearText);
     }
     
     // Text Events

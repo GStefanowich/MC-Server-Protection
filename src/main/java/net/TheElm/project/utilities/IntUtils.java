@@ -1,6 +1,7 @@
 package net.TheElm.project.utilities;
 
 import net.minecraft.world.World;
+import net.minecraft.world.WorldProperties;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Random;
@@ -16,7 +17,10 @@ public final class IntUtils {
     }
     
     public static long timeToDays(@NotNull World world) {
-        return world.getTimeOfDay() / 24000L % 2147483647L;
+        return IntUtils.timeToDays(world.getLevelProperties());
+    }
+    public static long timeToDays(@NotNull WorldProperties properties) {
+        return properties.getTimeOfDay() / 24000L % 2147483647L;
     }
     
     public static boolean between(int lower, int middle, int upper) {

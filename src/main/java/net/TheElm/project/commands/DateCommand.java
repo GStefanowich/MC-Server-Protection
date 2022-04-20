@@ -60,22 +60,10 @@ public final class DateCommand {
     private static int displayDate(@NotNull CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
         
-        long worldDay = IntUtils.timeToDays(source.getWorld());
-        long worldYear = worldDay / SewConfig.get(SewConfig.CALENDAR_DAYS);
-        worldDay = worldDay - (worldYear * SewConfig.get(SewConfig.CALENDAR_DAYS));
-        
-        String year = CasingUtils.acronym(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH), true);
-        MutableText yearText = MessageUtils.formatNumber(worldYear);
-        if (!year.isEmpty()) {
-            yearText.append(" " + year);
-            yearText.styled(MessageUtils.simpleHoverText(SewConfig.get(SewConfig.CALENDAR_YEAR_EPOCH)));
-        }
-        
         source.sendFeedback(new LiteralText("It is currently ")
             .formatted(Formatting.YELLOW)
-            .append(MessageUtils.formatNumber("Day ", worldDay))
-            .append(" of ")
-            .append(yearText), false);
+            .append(MessageUtils.getWorldTime(source.getWorld())), false);
+        
         return Command.SINGLE_SUCCESS;
     }
 }
