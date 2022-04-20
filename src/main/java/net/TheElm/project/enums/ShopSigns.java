@@ -508,7 +508,7 @@ public enum ShopSigns {
                 return Either.right(this.generateNewWarp(player));
             } else {
                 // Warp the player to their home
-                WarpUtils.teleportPlayerAndAttached(warp, player);
+                WarpUtils.teleportEntityAndAttached(player, warp);
             }
             return Either.right(true);
         }

@@ -248,7 +248,7 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
             if (warp != null && this.player instanceof ServerPlayerEntity serverPlayer) {
                 TeleportsCommand.feedback(this.player, warp);
                 
-                WarpUtils.teleportPlayerAndAttached(warp, serverPlayer);
+                WarpUtils.teleportEntityAndAttached(serverPlayer, warp);
                 
                 return true;
             }

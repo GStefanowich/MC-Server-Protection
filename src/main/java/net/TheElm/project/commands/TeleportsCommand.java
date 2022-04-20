@@ -71,6 +71,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Pair;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -94,13 +95,13 @@ public final class TeleportsCommand {
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, "spawn", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
-            .then(CommandManager.argument("player", EntityArgumentType.players())
-                .executes((context) -> TeleportsCommand.sendPlayersToServerSpawn(context.getSource(), EntityArgumentType.getPlayers(context, "player")))
+            .then(CommandManager.argument("targets", EntityArgumentType.entities())
+                .executes((context) -> TeleportsCommand.sendEntitiesToServerSpawn(context.getSource(), EntityArgumentType.getEntities(context, "targets")))
             )
             .executes((context) -> {
                 // Get location information
                 ServerCommandSource source = context.getSource();
-                return TeleportsCommand.sendPlayersToServerSpawn(source, Collections.singleton(source.getPlayer()));
+                return TeleportsCommand.sendEntitiesToServerSpawn(source, Collections.singleton(source.getPlayer()));
             })
         );
         
@@ -113,8 +114,8 @@ public final class TeleportsCommand {
         
         ServerCore.register(dispatcher, "theend", "end teleport", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
-            .then(CommandManager.argument("players", EntityArgumentType.entities())
-                .executes((context) -> TeleportsCommand.sendEntitiesToEnd(context.getSource(), EntityArgumentType.getEntities(context, "players")))
+            .then(CommandManager.argument("targets", EntityArgumentType.entities())
+                .executes((context) -> TeleportsCommand.sendEntitiesToEnd(context.getSource(), EntityArgumentType.getEntities(context, "targets")))
             )
             .executes((context) -> {
                 // Get location information
@@ -324,7 +325,7 @@ public final class TeleportsCommand {
         
         // Accept the teleport automatically
         if ( ChunkUtils.canPlayerWarpTo(server, porter, target.getId()) ) {
-            WarpUtils.teleportPlayerAndAttached(warp, porter);
+            WarpUtils.teleportEntityAndAttached(porter, warp);
             
             TeleportsCommand.feedback(porter, target, warp);
             
@@ -403,7 +404,7 @@ public final class TeleportsCommand {
         }
         
         Warp warp = WarpUtils.getWarp(target.getUuid(), warpTo.getRight());
-        WarpUtils.teleportPlayerAndAttached(warp, porter);
+        WarpUtils.teleportEntityAndAttached(porter, warp);
         
         source.sendFeedback(new LiteralText("Teleport request accepted").formatted(Formatting.GREEN), false);
         
@@ -431,10 +432,12 @@ public final class TeleportsCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    private static int sendPlayersToServerSpawn(@NotNull ServerCommandSource source, @NotNull Collection<ServerPlayerEntity> players) {
+    private static int sendEntitiesToServerSpawn(@NotNull ServerCommandSource source, @NotNull Collection<? extends Entity> players) {
+        RegistryKey<World> worldDimensionKey = ServerCore.defaultWorldKey();
+        
         // Teleport players to location
-        for (ServerPlayerEntity player : players)
-            WarpUtils.teleportPlayerAndAttached(ServerCore.defaultWorldKey(), player);
+        for (Entity entity : players)
+            WarpUtils.teleportEntityAndAttached(worldDimensionKey, entity);
         
         Text spawnText = new LiteralText("Spawn").formatted(Formatting.GOLD);
         if (players.size() == 1)
@@ -444,13 +447,10 @@ public final class TeleportsCommand {
         
         return players.size();
     }
-    private static int sendEntitiesToEnd(@NotNull ServerCommandSource source, @NotNull Collection<? extends Entity> entities) throws CommandSyntaxException {
+    private static int sendEntitiesToEnd(@NotNull ServerCommandSource source, @NotNull Collection<? extends Entity> entities) {
         // Move the player to the end
         for (Entity entity : entities)
-            if (entity instanceof ServerPlayerEntity serverPlayer)
-                WarpUtils.teleportPlayerAndAttached(World.END, serverPlayer);
-            else
-                WarpUtils.teleportEntity(World.END, entity);
+            WarpUtils.teleportEntityAndAttached(World.END, entity);
         
         Text endText = new LiteralText("The End").formatted(Formatting.GOLD);
         if (entities.size() == 1)

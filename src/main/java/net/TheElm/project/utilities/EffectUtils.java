@@ -26,6 +26,9 @@
 package net.TheElm.project.utilities;
 
 import net.TheElm.project.interfaces.LogicalWorld;
+import net.TheElm.project.interfaces.TickableContext;
+import net.TheElm.project.interfaces.TickingAction;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.ai.pathing.Path;
 import net.minecraft.network.packet.s2c.play.ParticleS2CPacket;
@@ -55,69 +58,19 @@ public final class EffectUtils {
     public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final LivingEntity mob, final boolean up, final int count) {
         if (mob.world.isClient)
             return;
-        ((LogicalWorld)mob.world).addTickableEvent(event -> {
-            int ticks = event.getTicks();
-            if (event.isRemoved() || (ticks / EffectUtils.TICK_DELAY) > EffectUtils.TOTAL_STEPS)
-                return true;
-            if (ticks % EffectUtils.TICK_DELAY == 0) {
-                int current = ticks / EffectUtils.TICK_DELAY;
-                int counter = up ? 0 : 15;
-                float radius = mob.getWidth() + 1.5f;
-                
-                double theta = current * EffectUtils.PER_STEP;
-                double height = (((double)(up ? counter + current : counter - current) / EffectUtils.TOTAL_STEPS) * mob.getHeight());
-                
-                EffectUtils.summonSwirl(
-                    particle,
-                    event.getWorld(),
-                    mob.getPos(),
-                    mob.getVelocity(),
-                    height,
-                    theta,
-                    EffectUtils.PER_STEP,
-                    radius,
-                    count
-                );
-            }
-            return false;
-        });
+        ((LogicalWorld)mob.world).addTickableEvent(new RiggedParticleSwirl<>(mob, particle, up, count));
     }
     
-    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final ServerWorld world, final Vec3d mobPos, final boolean up) {
-        EffectUtils.particleSwirl(particle, world, mobPos, up, 1);
+    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final ServerWorld world, final Vec3d pos, final boolean up) {
+        EffectUtils.particleSwirl(particle, world, pos, up, 1);
     }
-    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final ServerWorld world, final Vec3d mobPos, final boolean up, final int count) {
+    public static <T extends ParticleEffect> void particleSwirl(@NotNull final T particle, @NotNull final ServerWorld world, final Vec3d pos, final boolean up, final int count) {
         if (world.isClient)
             return;
-        ((LogicalWorld)world).addTickableEvent(event -> {
-            int ticks = event.getTicks();
-            if (event.isRemoved() || (ticks / EffectUtils.TICK_DELAY) > EffectUtils.TOTAL_STEPS)
-                return true;
-            if (ticks % EffectUtils.TICK_DELAY == 0) {
-                int current = ticks / EffectUtils.TICK_DELAY;
-                int counter = up ? 0 : 15;
-                float radius = 1.5f;
-                
-                double theta = current * EffectUtils.PER_STEP;
-                double height = (((double)(up ? counter + current : counter - current) / EffectUtils.TOTAL_STEPS) * 2);
-                
-                EffectUtils.summonSwirl(
-                    particle,
-                    world,
-                    mobPos,
-                    Vec3d.ZERO,
-                    height,
-                    theta,
-                    EffectUtils.PER_STEP,
-                    radius,
-                    count
-                );
-            }
-            return false;
-        });
+        ((LogicalWorld)world).addTickableEvent(new StaticParticleSwirl<>(pos, particle, up, count));
     }
     
-    private static <T extends ParticleEffect> void summonSwirl(@NotNull final T particle, @NotNull final ServerWorld world, @NotNull final Vec3d mobPos, @NotNull final Vec3d velocity, final double height, final double theta, final double step, final float radius, final int count) {
+    private static <T extends ParticleEffect> void summonSwirl(@NotNull final T particle, @NotNull final ServerWorld world, @NotNull final Vec3d pos, @NotNull final Vec3d velocity, final double height, final double theta, final double step, final float radius, final int count) {
         double speed = 0D;
         
         // Get X/Z coordinates
@@ -128,7 +81,7 @@ public final class EffectUtils {
         EffectUtils.summonParticle(
             particle,
             world,
-            mobPos.add(
+            pos.add(
                 x * radius,
                 0,
                 z * radius
@@ -143,7 +96,7 @@ public final class EffectUtils {
         EffectUtils.summonParticle(
             particle,
             world,
-            mobPos.add(
+            pos.add(
                 x * -radius,
                 0,
                 z * -radius
@@ -243,4 +196,108 @@ public final class EffectUtils {
         }
     }
     
+    private static final class RiggedParticleSwirl<T extends ParticleEffect> extends ParticleSwirl<T> {
+        private final @NotNull Entity rig;
+        
+        public RiggedParticleSwirl(@NotNull Entity rig, @NotNull T particle, boolean playUp, int count) {
+            super(particle, playUp, count);
+            this.rig = rig;
+        }
+        
+        @Override
+        protected float getRadius() {
+            return this.rig.getWidth() + super.getRadius();
+        }
+        
+        @Override
+        protected float getTotalHeight() {
+            return this.rig.getHeight();
+        }
+        
+        @Override
+        protected @NotNull Vec3d getPosition() {
+            return this.rig.getPos();
+        }
+        
+        @Override
+        protected @NotNull Vec3d getVelocity() {
+            return this.rig.getVelocity();
+        }
+        
+        @Override
+        public boolean isCompleted(@NotNull TickableContext tickable) {
+            return !this.rig.isRemoved() && super.isCompleted(tickable);
+        }
+    }
+    private static final class StaticParticleSwirl<T extends ParticleEffect> extends ParticleSwirl<T> {
+        private final @NotNull Vec3d pos;
+        
+        public StaticParticleSwirl(@NotNull Vec3d pos, @NotNull T particle, boolean playUp, int count) {
+            super(particle, playUp, count);
+            this.pos = pos;
+        }
+        
+        @Override
+        protected @NotNull Vec3d getPosition() {
+            return this.pos;
+        }
+        
+        @Override
+        protected @NotNull Vec3d getVelocity() {
+            return Vec3d.ZERO;
+        }
+    }
+    private static abstract class ParticleSwirl<T extends ParticleEffect> implements TickingAction {
+        private final T particle;
+        private final boolean playUp;
+        private final int count;
+        
+        protected ParticleSwirl(@NotNull T particle, boolean playUp, int count) {
+            this.particle = particle;
+            this.playUp = playUp;
+            this.count = count;
+        }
+        
+        protected float getRadius() {
+            return 1.5f;
+        }
+        
+        protected float getTotalHeight() {
+            return 2f;
+        }
+        
+        protected abstract @NotNull Vec3d getPosition();
+        
+        protected abstract @NotNull Vec3d getVelocity();
+        
+        @Override
+        public boolean isCompleted(@NotNull TickableContext tickable) {
+            int ticks = tickable.getTicks();
+            if (tickable.isRemoved() || (ticks / EffectUtils.TICK_DELAY) > EffectUtils.TOTAL_STEPS)
+                return true;
+            
+            if (ticks % EffectUtils.TICK_DELAY == 0) {
+                int current = ticks / EffectUtils.TICK_DELAY;
+                int counter = this.playUp ? 0 : 15;
+                float radius = this.getRadius();
+                
+                double theta = current * EffectUtils.PER_STEP;
+                double height = (((double) (this.playUp ? counter + current : counter - current) / EffectUtils.TOTAL_STEPS) * this.getTotalHeight());
+                
+                EffectUtils.summonSwirl(
+                    this.particle,
+                    tickable.getWorld(),
+                    this.getPosition(),
+                    this.getVelocity(),
+                    height,
+                    theta,
+                    EffectUtils.PER_STEP,
+                    radius,
+                    this.count
+                );
+            }
+            
+            return false;
+        }
+    }
 }

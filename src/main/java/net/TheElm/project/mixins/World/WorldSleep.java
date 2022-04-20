@@ -29,7 +29,8 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.ConstructableEntity;
 import net.TheElm.project.interfaces.LogicalWorld;
-import net.TheElm.project.objects.DetachedTickable;
+import net.TheElm.project.interfaces.TickableContext;
+import net.TheElm.project.objects.DetachedTickableContext;
 import net.TheElm.project.utilities.CasingUtils;
 import net.TheElm.project.utilities.ChunkUtils;
 import net.TheElm.project.utilities.IntUtils;
@@ -72,8 +73,8 @@ import java.util.function.Supplier;
 
 @Mixin(ServerWorld.class)
 public abstract class WorldSleep extends World implements LogicalWorld, ServerWorldAccess {
-    private final @NotNull Queue<DetachedTickable> detachedTickableQueue = new ArrayDeque<>();
-    private final @NotNull List<DetachedTickable> detachedEvents = new LinkedList<>();
+    private final @NotNull Queue<DetachedTickableContext> detachedTickableQueue = new ArrayDeque<>();
+    private final @NotNull List<DetachedTickableContext> detachedEvents = new LinkedList<>();
 
     protected WorldSleep(MutableWorldProperties properties, RegistryKey<World> registryRef, RegistryEntry<DimensionType> registryEntry, Supplier<Profiler> profiler, boolean isClient, boolean debugWorld, long seed) {
         super(properties, registryRef, registryEntry, profiler, isClient, debugWorld, seed);
@@ -115,12 +116,12 @@ public abstract class WorldSleep extends World implements LogicalWorld, ServerWo
     @Inject(at = @At("RETURN"), method = "tickTime")
     public void onWorldTick(@NotNull CallbackInfo callback) {
         // Move any items from the queue
-        DetachedTickable tickable;
+        DetachedTickableContext tickable;
         while ((tickable = this.detachedTickableQueue.poll()) != null)
             this.detachedEvents.add(tickable);
         
         // Iterate over the items in the event list
-        Iterator<DetachedTickable> iterator = this.detachedEvents.iterator();
+        Iterator<DetachedTickableContext> iterator = this.detachedEvents.iterator();
         while (iterator.hasNext()) {
             tickable = iterator.next();
             tickable.tick();
@@ -143,8 +144,8 @@ public abstract class WorldSleep extends World implements LogicalWorld, ServerWo
     }
     
     @Override
-    public @NotNull DetachedTickable addTickableEvent(@NotNull Predicate<DetachedTickable> predicate) {
-        DetachedTickable tickable = new DetachedTickable((ServerWorld)(World) this, predicate);
+    public @NotNull DetachedTickableContext addTickableEvent(@NotNull Predicate<TickableContext> predicate) {
+        DetachedTickableContext tickable = new DetachedTickableContext((ServerWorld)(World) this, predicate);
         this.detachedTickableQueue.add(tickable);
         return tickable;
     }

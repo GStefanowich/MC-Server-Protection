@@ -26,8 +26,9 @@
 package net.TheElm.project.objects.ticking;
 
 import net.TheElm.project.CoreMod;
+import net.TheElm.project.interfaces.TickableContext;
+import net.TheElm.project.interfaces.TickingAction;
 import net.TheElm.project.mixins.Interfaces.InteractionManagerAccessor;
-import net.TheElm.project.objects.DetachedTickable;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.network.Packet;
@@ -38,14 +39,13 @@ import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
-import java.util.function.Predicate;
 
 /**
  * Created on Aug 29 2021 at 12:46 PM.
  * By greg in SewingMachineMod
  */
 @Deprecated
-public class PlayerNoBreak implements Predicate<DetachedTickable> {
+public class PlayerNoBreak implements TickingAction {
     private static final @NotNull StatusEffectInstance FATIGUE = new StatusEffectInstance(StatusEffects.MINING_FATIGUE, 2, 3);
     
     private final @NotNull ServerPlayerEntity player;
@@ -57,7 +57,7 @@ public class PlayerNoBreak implements Predicate<DetachedTickable> {
     }
     
     @Override
-    public boolean test(@NotNull DetachedTickable tickable) {
+    public boolean isCompleted(@NotNull TickableContext tickable) {
         if (tickable.isRemoved() || this.isPlayerGone())
             return true;
         if (tickable.getTicks() % 20 != 0)

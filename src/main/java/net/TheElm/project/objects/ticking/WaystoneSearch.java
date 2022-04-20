@@ -28,7 +28,9 @@ package net.TheElm.project.objects.ticking;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.LogicalWorld;
-import net.TheElm.project.objects.DetachedTickable;
+import net.TheElm.project.interfaces.TickableContext;
+import net.TheElm.project.interfaces.TickingAction;
+import net.TheElm.project.objects.DetachedTickableContext;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.WarpUtils;
 import net.minecraft.network.MessageType;
@@ -39,13 +41,11 @@ import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Predicate;
-
 /**
  * Created on Aug 25 2021 at 11:28 AM.
  * By greg in SewingMachineMod
  */
-public class WaystoneSearch implements Predicate<DetachedTickable> {
+public class WaystoneSearch implements TickingAction {
     private final @Nullable ServerWorld world;
     private final @NotNull BlockPos worldSpawn;
     private final @NotNull ServerPlayerEntity player;
@@ -56,7 +56,7 @@ public class WaystoneSearch implements Predicate<DetachedTickable> {
     private boolean hasVerified = false;
     private boolean hasBuilt = false;
     
-    private @Nullable DetachedTickable child = null;
+    private @Nullable DetachedTickableContext child = null;
     private @Nullable ChunkVerifyUnowned search = null;
     
     public WaystoneSearch(@Nullable ServerWorld world, @NotNull ServerPlayerEntity player) {
@@ -96,7 +96,7 @@ public class WaystoneSearch implements Predicate<DetachedTickable> {
     }
     
     @Override
-    public boolean test(@NotNull DetachedTickable detachedTickable) {
+    public boolean isCompleted(@NotNull TickableContext detachedTickable) {
         // If completed or construction failed, return remove
         if (detachedTickable.isRemoved() || this.initFail)
             return true;
@@ -169,7 +169,7 @@ public class WaystoneSearch implements Predicate<DetachedTickable> {
         if (!this.isPlayerInWorld()) {
             this.player.sendMessage(new LiteralText(""), false);
         } else {
-            WarpUtils.teleportPlayerAndAttached(this.world, this.player, safeTeleportPos);
+            WarpUtils.teleportEntityAndAttached(this.world, this.player, safeTeleportPos);
             
             // Notify the player of their new location
             if ((!SewConfig.get(SewConfig.WORLD_SPECIFIC_SPAWN)) || SewConfig.equals(SewConfig.WARP_DIMENSION, SewConfig.DEFAULT_WORLD))

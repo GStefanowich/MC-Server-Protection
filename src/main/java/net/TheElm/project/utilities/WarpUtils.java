@@ -46,6 +46,7 @@ import net.minecraft.block.entity.CommandBlockBlockEntity;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.decoration.LeashKnotEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -59,7 +60,6 @@ import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.tag.BlockTags;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
@@ -214,7 +214,7 @@ public final class WarpUtils {
         // Don't set up a warp in Fire
         if (material == Material.FIRE)
             return SearchFailures.FIRE;
-
+        
         // Don't set up a warp on top of Trees
         if (material == Material.LEAVES || state.getBlock() instanceof MushroomBlock)
             return SearchFailures.TREE_COLLISION;
@@ -538,54 +538,55 @@ public final class WarpUtils {
     public static boolean isPlayerCreating(@NotNull final ServerPlayerEntity player) {
         return WarpUtils.GENERATING_PLAYERS.contains(player.getUuid());
     }
-    public static Warp teleportPlayerAndAttached(@NotNull ServerPlayerEntity player, @Nullable String location) {
+    public static Warp teleportEntityAndAttached(@NotNull final ServerPlayerEntity player, @Nullable String location) {
         Warp warp = WarpUtils.getWarp(player, location);
         if (warp != null)
-            WarpUtils.teleportPlayerAndAttached(warp, player);
+            WarpUtils.teleportEntityAndAttached(player, warp);
         return warp;
     }
-    public static void teleportPlayerAndAttached(@NotNull final Warp warp, @NotNull final ServerPlayerEntity player) {
-        TitleUtils.showPlayerTitle(player, "", warp.name, Formatting.AQUA);
-        WarpUtils.teleportPlayerAndAttached(warp.world, player, warp.warpPos);
+    public static void teleportEntityAndAttached(@NotNull final Entity entity, @NotNull final Warp warp) {
+        if (entity instanceof ServerPlayerEntity player)
+            TitleUtils.showPlayerTitle(player, "", warp.name, Formatting.AQUA);
+        WarpUtils.teleportEntityAndAttached(warp.world, entity, warp.warpPos);
     }
-    public static void teleportPlayerAndAttached(@NotNull final RegistryKey<World> dimension, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
-        MinecraftServer server = player.getServer();
+    public static void teleportEntityAndAttached(@NotNull final RegistryKey<World> dimension, @NotNull final Entity entity, @NotNull final BlockPos tpPos) {
+        MinecraftServer server = entity.getServer();
         ServerWorld world = server.getWorld(dimension);
         if (world != null)
-            WarpUtils.teleportPlayerAndAttached(world, player, tpPos);
+            WarpUtils.teleportEntityAndAttached(world, entity, tpPos);
     }
-    public static void teleportPlayerAndAttached(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
-        Entity bottom = player.getRootVehicle(),
-            entity = player;
+    public static void teleportEntityAndAttached(@NotNull final ServerWorld world, @NotNull final Entity entity, @NotNull final BlockPos tpPos) {
+        Entity bottom = entity.getRootVehicle(),
+            target = entity;
         
         // Spawn the particles (In the entities world)
         WarpUtils.teleportPoof(bottom, true);
         
         // Warp anything attached to the player
-        WarpUtils.teleportFriendlies(world, player, tpPos);
+        WarpUtils.teleportFriendlies(world, entity, tpPos);
         
         // If the entity can be teleported within the same world
-        if (world == player.world || bottom == player) {
+        if (world == entity.world || bottom == entity) {
             WarpUtils.teleportEntity(world, bottom, tpPos);
             
             // Show an effect in the new location
             if (!bottom.isSpectator())
                 WarpUtils.teleportPoof(world, tpPos, false);
-        } else while (entity != null) {
+        } else while (target != null) {
             // Get the entity vehicle
-            Entity vehicle = entity.getVehicle();
+            Entity vehicle = target.getVehicle();
             
-            WarpUtils.teleportEntity(world, entity, tpPos);
+            WarpUtils.teleportEntity(world, target, tpPos);
             
             // Teleport the vehicle
-            entity = vehicle;
+            target = vehicle;
         }
     }
-    public static void teleportPlayerAndAttached(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player) {
-        WarpUtils.teleportPlayerAndAttached(world, player, ServerCore.getSpawn(world));
+    public static void teleportEntityAndAttached(@NotNull final ServerWorld world, @NotNull final Entity entity) {
+        WarpUtils.teleportEntityAndAttached(world, entity, ServerCore.getSpawn(world));
     }
-    public static void teleportPlayerAndAttached(@NotNull final RegistryKey<World> world, @NotNull final ServerPlayerEntity player) {
-        WarpUtils.teleportPlayerAndAttached(ServerCore.getWorld(player, world), player);
+    public static void teleportEntityAndAttached(@NotNull final RegistryKey<World> world, @NotNull final Entity entity) {
+        WarpUtils.teleportEntityAndAttached(ServerCore.getWorld(entity, world), entity);
     }
     public static void teleportEntity(@NotNull final RegistryKey<World> dimension, @NotNull Entity entity, @NotNull final BlockPos tpPos) {
         WarpUtils.teleportEntity(ServerCore.getWorld(entity, dimension), entity, tpPos);
@@ -662,20 +663,27 @@ public final class WarpUtils {
     public static void teleportEntity(@NotNull final RegistryKey<World> dimension, @NotNull Entity entity) {
         WarpUtils.teleportEntity(ServerCore.getWorld(entity, dimension), entity);
     }
-    private static void teleportFriendlies(@NotNull final ServerWorld world, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos tpPos) {
-        BlockPos playerPos = player.getBlockPos();
+    private static void teleportFriendlies(@NotNull final ServerWorld world, @NotNull final Entity entity, @NotNull final BlockPos tpPos) {
+        // Get the ENTITY location (To get nearby mobs)
+        BlockPos playerPos = entity.getBlockPos();
         int x = playerPos.getX(),
             y = playerPos.getY(),
             z = playerPos.getZ();
-        List<MobEntity> list = world.getNonSpectatingEntities(MobEntity.class, new Box((double)x - 7.0D, (double)y - 7.0D, (double)z - 7.0D, (double)x + 7.0D, (double)y + 7.0D, (double)z + 7.0D));
+        
+        // Get nearby mobs from the ENTITY world (Not 'world' = the world where being sent to)
+        List<MobEntity> list = entity.getEntityWorld()
+            .getNonSpectatingEntities(MobEntity.class, new Box((double)x - 7.0D, (double)y - 7.0D, (double)z - 7.0D, (double)x + 7.0D, (double)y + 7.0D, (double)z + 7.0D));
         Iterator<MobEntity> iterator = list.iterator();
         
         while (iterator.hasNext()) {
             MobEntity mob = iterator.next();
-            boolean lead = (mob.getHoldingEntity() == player),
-                ride = (mob.getVehicle() == player);
             
-            if (lead || ride || (mob instanceof TameableEntity && (!((TameableEntity)mob).isSitting()))) {
+            // Check if the entity that is in the area is being held by our entity
+            boolean lead = (!(entity instanceof LeashKnotEntity)) && (mob.getHoldingEntity() == entity),
+                // Get if the mob is riding on the entity
+                ride = (mob.getVehicle() == entity);
+            
+            if (lead || ride || WarpUtils.mobCanTeleportWith(mob, entity)) {
                 if (lead && (!ride))
                     WarpUtils.teleportPoof(mob, true);
                 WarpUtils.teleportEntity(world, mob, tpPos);
@@ -698,6 +706,12 @@ public final class WarpUtils {
     public static @NotNull BlockPos getWorldSpawn(@NotNull final ServerWorld world) {
         WorldProperties properties = world.getLevelProperties();
         return new BlockPos(properties.getSpawnX(), properties.getSpawnY(), properties.getSpawnZ());
+    }
+    
+    private static boolean mobCanTeleportWith(@NotNull Entity target, @NotNull Entity with) {
+        if (!(with instanceof PlayerEntity) || !(target instanceof TameableEntity tameable))
+            return false;
+        return tameable.isTamed() && !tameable.isSitting() && Objects.equals(with.getUuid(), tameable.getOwnerUuid());
     }
     
     public static CompletableFuture<Suggestions> buildSuggestions(@NotNull MinecraftServer server, @Nullable UUID untrusted, @NotNull ServerPlayerEntity warpOwner, @NotNull SuggestionsBuilder builder) {

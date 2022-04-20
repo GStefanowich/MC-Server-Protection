@@ -25,13 +25,18 @@
 
 package net.TheElm.project.interfaces;
 
-import net.TheElm.project.objects.DetachedTickableContext;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.world.ServerWorld;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.function.Predicate;
-
-public interface LogicalWorld {
+/**
+ * Created on Apr 20 2022 at 4:29 AM.
+ * By greg in SewingMachineMod
+ */
+public interface TickableContext {
+    @NotNull MinecraftServer getServer();
+    @NotNull ServerWorld getWorld();
     
-    @NotNull DetachedTickableContext addTickableEvent(@NotNull Predicate<TickableContext> predicate);
-    
+    int getTicks();
+    boolean isRemoved();
 }

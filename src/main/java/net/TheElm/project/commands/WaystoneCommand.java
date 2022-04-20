@@ -97,14 +97,14 @@ public class WaystoneCommand {
             )
             .then(CommandManager.literal("send")
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
-                .then(CommandManager.argument("players", EntityArgumentType.players())
+                .then(CommandManager.argument("targets", EntityArgumentType.entities())
                     .then(CommandManager.argument("to", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtils::getAllPlayerNames)
                         .then(CommandManager.argument("location", StringArgumentType.string())
-                            .suggests(WaystoneCommand::getPlayersToLocations)
-                            .executes(WaystoneCommand::sendPlayersToLocation)
+                            .suggests(WaystoneCommand::getPlayerSendableLocations)
+                            .executes(WaystoneCommand::sendEntitiesToLocation)
                         )
-                        .executes(WaystoneCommand::sendPlayersTo)
+                        .executes(WaystoneCommand::sendEntitiesTo)
                     )
                     .executes(WaystoneCommand::sendHome)
                 )
@@ -176,10 +176,15 @@ public class WaystoneCommand {
     }
     private static int sendHome(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "players");
+        Collection<? extends Entity> players = EntityArgumentType.getEntities(context, "targets");
+        
+        int sent = 0;
         
         // Iterate players
-        for (ServerPlayerEntity player : players) {
+        for (Entity entity : players) {
+            if (!(entity instanceof ServerPlayerEntity player))
+                continue;
+            
             if (!WarpUtils.hasWarp(player)) {
                 if (source.getEntity() == null)
                     player.sendSystemMessage(new LiteralText("You do not have a waystone.").formatted(Formatting.RED), Util.NIL_UUID);
@@ -189,28 +194,30 @@ public class WaystoneCommand {
             }
             
             // Teleport the player to their warp
-            WarpUtils.Warp warp = WarpUtils.teleportPlayerAndAttached(player, null);
+            WarpUtils.Warp warp = WarpUtils.teleportEntityAndAttached(player, (String) null);
+            
+            sent++;
             
             // Provide feedback about the teleport
             TeleportsCommand.feedback(player, warp);
         }
         
-        return Command.SINGLE_SUCCESS;
+        return sent;
     }
-    private static int sendPlayersTo(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return WaystoneCommand.sendPlayersToLocation(context, null);
+    private static int sendEntitiesTo(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return WaystoneCommand.sendEntitiesToLocation(context, null);
     }
-    private static int sendPlayersToLocation(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return WaystoneCommand.sendPlayersToLocation(context, StringArgumentType.getString(context, "location"));
+    private static int sendEntitiesToLocation(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return WaystoneCommand.sendEntitiesToLocation(context, StringArgumentType.getString(context, "location"));
     }
-    private static int sendPlayersToLocation(@NotNull CommandContext<ServerCommandSource> context, @Nullable String location) throws CommandSyntaxException {
+    private static int sendEntitiesToLocation(@NotNull CommandContext<ServerCommandSource> context, @Nullable String location) throws CommandSyntaxException {
         // Get information about the request
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
         PlayerManager manager = server.getPlayerManager();
         
         // Get information about the teleporting players
-        Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "players");
+        Collection<? extends Entity> entities = EntityArgumentType.getEntities(context, "targets");
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "to");
         
         // Get information about the target
@@ -224,10 +231,12 @@ public class WaystoneCommand {
             throw TARGET_NO_WARP.create(source);
         
         // Teleport all of the players
-        for (ServerPlayerEntity porter : players) {
-            WarpUtils.teleportPlayerAndAttached(warp, porter);
-            
-            TeleportsCommand.feedback(porter, target, warp);
+        for (Entity porter : entities) {
+            if (porter instanceof ServerPlayerEntity portingPlayer) {
+                WarpUtils.teleportEntityAndAttached(portingPlayer, warp);
+                
+                TeleportsCommand.feedback(portingPlayer, target, warp);
+            } else WarpUtils.teleportEntityAndAttached(porter, warp);
             
             // Notify the player
             if (!porter.isSpectator()) {
@@ -242,7 +251,7 @@ public class WaystoneCommand {
             }
         }
         
-        return players.size();
+        return entities.size();
     }
     
     private static int updateLecternToWarpBook(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -293,7 +302,7 @@ public class WaystoneCommand {
         ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
         return WarpUtils.buildSuggestions(source.getServer(), untrusted, player, builder);
     }
-    private static @NotNull CompletableFuture<Suggestions> getPlayersToLocations(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
+    private static @NotNull CompletableFuture<Suggestions> getPlayerSendableLocations(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         Entity entity = source.getEntity();
         UUID untrusted = entity instanceof ServerPlayerEntity ? entity.getUuid() : null;

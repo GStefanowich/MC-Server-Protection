@@ -29,7 +29,8 @@ import com.mojang.authlib.GameProfile;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
 import net.TheElm.project.interfaces.LogicalWorld;
-import net.TheElm.project.objects.DetachedTickable;
+import net.TheElm.project.interfaces.TickableContext;
+import net.TheElm.project.interfaces.TickingAction;
 import net.TheElm.project.protections.claiming.ClaimCacheEntry;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
@@ -50,14 +51,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 /**
  * Created on Apr 14 2022 at 2:32 PM.
  * By greg in SewingMachineMod
  */
-public final class ClaimCache implements Predicate<DetachedTickable> {
+public final class ClaimCache implements TickingAction {
     // Reference from player UUID
     private final Map<UUID, PlayerCacheEntry> playerClaimCache = Collections.synchronizedMap(new HashMap<>());
     // Reference from owner UUID
@@ -203,7 +203,7 @@ public final class ClaimCache implements Predicate<DetachedTickable> {
      */
     
     @Override
-    public boolean test(@NotNull DetachedTickable tickable) {
+    public boolean isCompleted(@NotNull TickableContext tickable) {
         if (tickable.getTicks() % 100 == 0)
             this.tick();
         

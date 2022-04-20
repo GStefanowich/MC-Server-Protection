@@ -25,13 +25,22 @@
 
 package net.TheElm.project.interfaces;
 
-import net.TheElm.project.objects.DetachedTickableContext;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Predicate;
 
-public interface LogicalWorld {
-    
-    @NotNull DetachedTickableContext addTickableEvent(@NotNull Predicate<TickableContext> predicate);
-    
+/**
+ * Created on Apr 20 2022 at 4:25 AM.
+ * By greg in SewingMachineMod
+ */
+@FunctionalInterface
+public interface TickingAction extends Predicate<TickableContext> {
+    boolean isCompleted(@NotNull TickableContext tickable);
+    @Override
+    default boolean test(@Nullable TickableContext tickable) {
+        if (tickable == null)
+            throw new IllegalArgumentException("TickingAction requires TickableContext");
+        return this.isCompleted(tickable);
+    }
 }

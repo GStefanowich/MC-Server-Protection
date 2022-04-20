@@ -30,7 +30,8 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.commands.ClaimCommand;
 import net.TheElm.project.exceptions.TranslationKeyException;
 import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.objects.DetachedTickable;
+import net.TheElm.project.interfaces.TickableContext;
+import net.TheElm.project.interfaces.TickingAction;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
@@ -38,12 +39,12 @@ import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.World;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
@@ -57,14 +58,13 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.UUID;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
  * Created on Aug 25 2021 at 11:28 AM.
  * By greg in SewingMachineMod
  */
-public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
+public class ChunkOwnerUpdate implements TickingAction {
     private final @NotNull ServerCommandSource source;
     private final @Nullable Claimant claimant;
     private final @NotNull ChunkOwnerUpdate.Mode mode;
@@ -101,14 +101,14 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
     }
     
     @Override
-    public boolean test(@NotNull DetachedTickable tickable) {
+    public boolean isCompleted(@NotNull TickableContext tickable) {
         // Check that a claimant was found (If not, just remove)
         if (this.claimant == null || tickable.isRemoved())
             return true;
         // Run every 2 ticks
         if (tickable.getTicks() % 2 != 0)
             return false;
-        ServerWorld world = tickable.getWorld();
+        World world = tickable.getWorld();
         
         BlockPos claimPos = this.positions.poll();
         if (claimPos == null)

@@ -26,21 +26,21 @@
 package net.TheElm.project.objects.ticking;
 
 import net.TheElm.project.interfaces.IClaimedChunk;
-import net.TheElm.project.objects.DetachedTickable;
-import net.minecraft.server.world.ServerWorld;
+import net.TheElm.project.interfaces.TickableContext;
+import net.TheElm.project.interfaces.TickingAction;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayDeque;
 import java.util.Queue;
-import java.util.function.Predicate;
 
 /**
  * Created on Aug 25 2021 at 11:43 PM.
  * By greg in SewingMachineMod
  */
-public class ChunkVerifyUnowned implements Predicate<DetachedTickable> {
+public class ChunkVerifyUnowned implements TickingAction {
     private boolean success = true;
     private final @NotNull Queue<BlockPos> checks = new ArrayDeque<>();
     
@@ -60,7 +60,7 @@ public class ChunkVerifyUnowned implements Predicate<DetachedTickable> {
     }
     
     @Override
-    public boolean test(@NotNull DetachedTickable tickable) {
+    public boolean isCompleted(@NotNull TickableContext tickable) {
         BlockPos check;
         if (tickable.isRemoved())
             return true;
@@ -68,7 +68,7 @@ public class ChunkVerifyUnowned implements Predicate<DetachedTickable> {
             return false;
         if ((check = this.checks.poll()) == null)
             return true;
-        ServerWorld world = tickable.getWorld();
+        World world = tickable.getWorld();
         
         // Create the chunk position
         WorldChunk worldChunk = world.getWorldChunk(check);
