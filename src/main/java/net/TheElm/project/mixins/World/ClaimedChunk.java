@@ -216,17 +216,19 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
             return null;
         return this.chunkPlayer.getId();
     }
-    public @Nullable UUID getOwner(BlockPos pos) {
-        int slicePos = ChunkUtils.getPositionWithinChunk( pos );
-        if ( this.claimSlices[slicePos] != null ) {
-            ClaimSlice slice = claimSlices[slicePos];
-            
-            // Get the players Y position
-            ClaimSlice.InnerClaim claim = slice.get(pos);
-            
-            // Check that the player is within the Y
-            if (claim != null && claim.isWithin(pos))
-                return claim.getOwner();
+    public @Nullable UUID getOwner(@Nullable BlockPos pos) {
+        if (pos != null) {
+            int slicePos = ChunkUtils.getPositionWithinChunk(pos);
+            if (this.claimSlices[slicePos] != null) {
+                ClaimSlice slice = claimSlices[slicePos];
+                
+                // Get the players Y position
+                ClaimSlice.InnerClaim claim = slice.get(pos);
+                
+                // Check that the player is within the Y
+                if (claim != null && claim.isWithin(pos))
+                    return claim.getOwner();
+            }
         }
         return this.getOwner();
     }

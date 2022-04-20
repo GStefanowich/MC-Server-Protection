@@ -29,7 +29,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.commands.ClaimCommand;
 import net.TheElm.project.exceptions.TranslationKeyException;
-import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.objects.DetachedTickable;
 import net.TheElm.project.protections.claiming.Claimant;
@@ -37,9 +36,8 @@ import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.text.MessageUtils;
-import net.minecraft.network.MessageType;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.command.CommandSource;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.LiteralText;
 import net.minecraft.util.ActionResult;
@@ -67,7 +65,7 @@ import java.util.stream.Collectors;
  * By greg in SewingMachineMod
  */
 public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
-    private final @NotNull ServerPlayerEntity source;
+    private final @NotNull ServerCommandSource source;
     private final @Nullable Claimant claimant;
     private final @NotNull ChunkOwnerUpdate.Mode mode;
     private final int initialSize;
@@ -76,7 +74,7 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
     
     private boolean verify = true;
     
-    private ChunkOwnerUpdate(@NotNull ServerPlayerEntity source, @Nullable Claimant claimant, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
+    private ChunkOwnerUpdate(@NotNull ServerCommandSource source, @Nullable Claimant claimant, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
         this.source = source;
         this.claimant = claimant;
         this.mode = mode;
@@ -95,7 +93,7 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
     public int getInitialSize() {
         return this.initialSize;
     }
-    public @NotNull ServerPlayerEntity getSource() {
+    public @NotNull ServerCommandSource getSource() {
         return this.source;
     }
     public @Nullable Claimant getClaimant() {
@@ -125,17 +123,12 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
             if (result == ActionResult.FAIL)
                 throw this.mode.getException(this.source);
         } catch (TranslationKeyException e) {
-            this.source.sendMessage(
-                TranslatableServerSide.text(this.source, e.getKey()).formatted(Formatting.RED),
-                MessageType.SYSTEM,
-                CoreMod.SPAWN_ID
-            );
+            TranslatableServerSide.send(this.source, e.getKey());
             return true;
         } catch (CommandSyntaxException e) {
-            this.source.sendMessage(
+            this.source.sendFeedback(
                 new LiteralText(e.getMessage()).formatted(Formatting.RED),
-                MessageType.SYSTEM,
-                CoreMod.SPAWN_ID
+                false
             );
             return true;
         }
@@ -165,10 +158,10 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
             TranslatableServerSide.send(this.source, this.mode.getSuccessTranslation(), changed);
     }
     
-    public static @NotNull ChunkOwnerUpdate forPlayer(@NotNull ClaimCache claimCache, @NotNull ServerPlayerEntity source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
+    public static @NotNull ChunkOwnerUpdate forPlayer(@NotNull ClaimCache claimCache, @NotNull ServerCommandSource source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
         return new ChunkOwnerUpdate(source, claimCache.getPlayerClaim(uuid), mode, positions);
     }
-    public static @NotNull ChunkOwnerUpdate forTown(@NotNull ClaimCache claimCache, @NotNull ServerPlayerEntity source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
+    public static @NotNull ChunkOwnerUpdate forTown(@NotNull ClaimCache claimCache, @NotNull ServerCommandSource source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
         return new ChunkOwnerUpdate(source, claimCache.getTownClaim(uuid), mode, positions);
     }
     
@@ -176,7 +169,7 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
         CLAIM {
             @Override
             public ActionResult run(@NotNull WorldChunk worldChunk, @NotNull ChunkOwnerUpdate update) throws CommandSyntaxException, TranslationKeyException {
-                ServerPlayerEntity player = update.getSource();
+                ServerCommandSource source = update.getSource();
                 
                 // Check if within the world border
                 WorldBorder border = worldChunk.getWorld()
@@ -193,7 +186,7 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
                     if (!Objects.equals(chunk.getOwner(), claimantTown.getOwner()))
                         return ActionResult.FAIL;
                     if (chunk.getTown() != null && chunk.getTown() != claimantTown)
-                        throw ClaimCommand.CHUNK_ALREADY_OWNED.create(player);
+                        throw ClaimCommand.CHUNK_ALREADY_OWNED.create(source);
                     
                     claimantTown.addToCount(worldChunk);
                     chunk.updateTownOwner(claimant.getId());
@@ -204,7 +197,7 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
                     
                     // Check if the chunk is owned by another player
                     if (chunk.getOwner() != null && !Objects.equals(chunk.getOwner(), claimant.getId()))
-                        throw ClaimCommand.CHUNK_ALREADY_OWNED.create(player);
+                        throw ClaimCommand.CHUNK_ALREADY_OWNED.create(source);
                     
                     // Update the information
                     claimant.addToCount(worldChunk);
@@ -224,8 +217,8 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
                 return "claim.chunk.claimed";
             }
             @Override
-            public @NotNull CommandSyntaxException getException(@NotNull ServerPlayerEntity player) {
-                return ClaimCommand.CHUNK_ALREADY_OWNED.create(player);
+            public @NotNull CommandSyntaxException getException(@NotNull CommandSource source) {
+                return ClaimCommand.CHUNK_ALREADY_OWNED.create(source);
             }
         },
         UNCLAIM {
@@ -269,13 +262,13 @@ public class ChunkOwnerUpdate implements Predicate<DetachedTickable> {
                 return "claim.chunk.unclaimed";
             }
             @Override
-            public @NotNull CommandSyntaxException getException(@NotNull ServerPlayerEntity player) {
-                return ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create(player);
+            public @NotNull CommandSyntaxException getException(@NotNull CommandSource source) {
+                return ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create(source);
             }
         };
         
         public abstract ActionResult run(@NotNull WorldChunk worldChunk, @NotNull ChunkOwnerUpdate update) throws CommandSyntaxException, TranslationKeyException;
         public abstract @NotNull String getSuccessTranslation();
-        public abstract @NotNull CommandSyntaxException getException(@NotNull ServerPlayerEntity player);
+        public abstract @NotNull CommandSyntaxException getException(@NotNull CommandSource source);
     }
 }

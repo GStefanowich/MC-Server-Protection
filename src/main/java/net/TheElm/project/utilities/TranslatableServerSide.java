@@ -32,6 +32,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.interfaces.PlayerServerLanguage;
 import net.TheElm.project.interfaces.ServerTranslatable;
+import net.minecraft.command.CommandSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -53,17 +54,18 @@ public final class TranslatableServerSide {
     
     private TranslatableServerSide() {}
     
-    public static void send(@NotNull ServerCommandSource source, String key, Object... objects) {
-        source.sendFeedback(TranslatableServerSide.text(source, key, objects), true);
+    public static void send(@NotNull CommandSource source, String key, Object... objects) {
+        if (source instanceof ServerCommandSource serverSource)
+            serverSource.sendFeedback(TranslatableServerSide.text(source, key, objects), true);
     }
     public static void send(@NotNull PlayerEntity player, String key, Object... objects) {
         player.sendSystemMessage(TranslatableServerSide.text(player, key, objects), Util.NIL_UUID);
     }
     
-    public static @NotNull MutableText text(@NotNull ServerCommandSource source, String key, Object... objects) {
-        if (source.getEntity() instanceof ServerPlayerEntity serverPlayer)
+    public static @NotNull MutableText text(@NotNull CommandSource source, String key, Object... objects) {
+        if (source instanceof ServerCommandSource serverSource && serverSource.getEntity() instanceof ServerPlayerEntity serverPlayer)
             return TranslatableServerSide.text(serverPlayer, key, objects );
-        return TranslatableServerSide.text( Locale.getDefault(), key, objects );
+        return TranslatableServerSide.text(Locale.getDefault(), key, objects);
     }
     public static @NotNull MutableText text(@NotNull PlayerEntity player, String key, Object... objects) {
         if (!(player instanceof ServerPlayerEntity serverPlayer))
@@ -93,7 +95,7 @@ public final class TranslatableServerSide {
         String[] separated = text.split( "((?<=%[a-z])|(?=%[a-z]))" );
         
         // Get the formatter for numbers
-        NumberFormat formatter = NumberFormat.getInstance( language );
+        NumberFormat formatter = NumberFormat.getInstance(language);
         int c = 0;
         
         MutableText out = null;
@@ -163,8 +165,9 @@ public final class TranslatableServerSide {
             // Throw an exception
             throw new NullPointerException("Could not read language file \"" + filePath + "\"");
         }
+        
         // Return the JSON language file
-        return new JsonParser().parse(new InputStreamReader( resource )).getAsJsonObject();
+        return JsonParser.parseReader(new InputStreamReader( resource )).getAsJsonObject();
     }
     private static @NotNull String getResourcePath(@NotNull Locale locale) {
         return "/assets/" + CoreMod.MOD_ID + "/lang/" + (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase() + ".json";

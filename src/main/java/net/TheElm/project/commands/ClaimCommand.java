@@ -407,11 +407,11 @@ public final class ClaimCommand {
     
     private static int rawSetChunkPlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        Collection<GameProfile> targets = GameProfileArgumentType.getProfileArgument(context, "target");
         
-        ServerPlayerEntity player = source.getPlayer();
+        Collection<GameProfile> targets = GameProfileArgumentType.getProfileArgument(context, "target");
         for (GameProfile target : targets)
-            return ClaimCommand.claimChunkAt(player, player.getWorld(), target.getId(), false, player.getBlockPos());
+            return ClaimCommand.claimChunkAt(source, source.getWorld(), target.getId(), false, new BlockPos(source.getPosition()));
+        
         return 0;
     }
     private static int rawSetChunkTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -424,28 +424,30 @@ public final class ClaimCommand {
      */
     
     private static int claimChunkSelf(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        // Get the source of the command
+        ServerCommandSource source = context.getSource();
+        
         // Get the player running the command
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        ServerPlayerEntity player = source.getPlayer();
         
         // Claim the chunk for own player
         return ClaimCommand.claimChunk(
-            player.getUuid(),
-            player
+            source,
+            player.getUuid()
         );
     }
     private static int claimChunkSelfRadius(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return ClaimCommand.claimChunkRadius(
-            null,
-            context
+            context, null
         );
     }
     private static int claimChunkTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
-        ServerWorld world = player.getWorld();
+        ServerWorld world = source.getWorld();
         
         // Attempt to claim the chunk
-        WorldChunk chunk = world.getWorldChunk(player.getBlockPos());
+        WorldChunk chunk = world.getWorldChunk(new BlockPos(source.getPosition()));
+        ServerPlayerEntity player = source.getPlayer();
         if (!player.getUuid().equals(((IClaimedChunk) chunk).getOwner()))
             ClaimCommand.claimChunkSelf(context);
         
@@ -466,10 +468,6 @@ public final class ClaimCommand {
         return 0;
     }
     private static int claimChunkOther(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        // Get the player running the command
-        ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
-        
         // Get the target player
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context, "target");
         GameProfile targetPlayer = gameProfiles.stream().findAny()
@@ -477,8 +475,8 @@ public final class ClaimCommand {
         
         // Claim the chunk for other player
         return ClaimCommand.claimChunk(
-            targetPlayer.getId(),
-            player
+            context.getSource(),
+            targetPlayer.getId()
         );
     }
     private static int claimChunkOtherRadius(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -488,56 +486,61 @@ public final class ClaimCommand {
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         return ClaimCommand.claimChunkRadius(
-            targetPlayer.getId(),
-            context
+            context, targetPlayer.getId()
         );
     }
     private static int claimChunkSpawn(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        // Get the player running the command
-        ServerCommandSource source = context.getSource();
-        
         // Claim the chunk for spawn
         return ClaimCommand.claimChunk(
-            CoreMod.SPAWN_ID,
-            source.getPlayer()
+            context.getSource(),
+            CoreMod.SPAWN_ID
         );
     }
     private static int claimChunkSpawnRadius(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         return ClaimCommand.claimChunkRadius(
-            CoreMod.SPAWN_ID,
-            context
+            context, CoreMod.SPAWN_ID
         );
     }
-    private static int claimChunk(@Nullable UUID chunkFor, @NotNull final ServerPlayerEntity player) {
-        // Get run from positioning
-        BlockPos blockPos = player.getBlockPos();
-        
-        // Claiming chunks for self player
-        if (chunkFor == null)
-            chunkFor = player.getUuid();
-        
-        return ClaimCommand.claimChunkAt(player, player.getWorld(), chunkFor, true, blockPos);
+    private static int claimChunk(@NotNull final ServerCommandSource source) throws CommandSyntaxException {
+        return ClaimCommand.claimChunk(source, null);
     }
-    private static int claimChunkRadius(@Nullable UUID chunkFor, @NotNull final CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int claimChunk(@NotNull final ServerCommandSource source, @Nullable UUID chunkFor) throws CommandSyntaxException {
+        // Claiming chunks for self player
+        if (chunkFor == null) {
+            ServerPlayerEntity player = source.getPlayer();
+            chunkFor = player.getUuid();
+        }
+        
+        return ClaimCommand.claimChunkAt(
+            source,
+            source.getWorld(),
+            chunkFor,
+            true,
+            new BlockPos(source.getPosition())
+        );
+    }
+    private static int claimChunkRadius(@NotNull final CommandContext<ServerCommandSource> context, @Nullable UUID chunkFor) throws CommandSyntaxException {
         // Get the player running the command
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = null;
         World world = source.getWorld();
         
         // Claiming chunks for self player
-        if (chunkFor == null)
+        if (chunkFor == null) {
+            player = source.getPlayer();
             chunkFor = player.getUuid();
+        }
         
         // Get the players positioning
-        BlockPos blockPos = player.getBlockPos();
+        BlockPos blockPos = new BlockPos(source.getPosition());
         List<BlockPos> chunksToClaim = new ArrayList<>();
         
         // Check the radius that the player wants to claim
         final int radius = IntegerArgumentType.getInteger(context, "radius");
-        IClaimedChunk[] claimedChunks = IClaimedChunk.getOwnedAround(player.getWorld(), player.getBlockPos(), radius);
+        IClaimedChunk[] claimedChunks = IClaimedChunk.getOwnedAround(source.getWorld(), blockPos, radius);
         for (IClaimedChunk claimedChunk : claimedChunks) {
             if (!chunkFor.equals(claimedChunk.getOwner(blockPos)))
-                throw CHUNK_RADIUS_OWNED.create(player, claimedChunk.getOwnerName(player));
+                throw CHUNK_RADIUS_OWNED.create(source, claimedChunk.getOwnerName(player, blockPos));
         }
         
         int chunkX = blockPos.getX() >> 4;
@@ -553,13 +556,19 @@ public final class ClaimCommand {
         }
         
         // Claim all chunks
-        return ClaimCommand.claimChunkAt(player, world, chunkFor, true, chunksToClaim);
+        return ClaimCommand.claimChunkAt(
+            source,
+            world,
+            chunkFor,
+            true,
+            chunksToClaim
+        );
     }
     
-    public static int claimChunkAt(@NotNull ServerPlayerEntity source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull BlockPos... positions) {
+    public static int claimChunkAt(@NotNull ServerCommandSource source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull BlockPos... positions) {
         return ClaimCommand.claimChunkAt(source, world, chunkFor, verify, Arrays.asList(positions));
     }
-    public static int claimChunkAt(@NotNull ServerPlayerEntity source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull Collection<? extends BlockPos> positions) {
+    public static int claimChunkAt(@NotNull ServerCommandSource source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull Collection<? extends BlockPos> positions) {
         ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
         ((LogicalWorld)world).addTickableEvent(ChunkOwnerUpdate.forPlayer(
@@ -576,21 +585,21 @@ public final class ClaimCommand {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         return ClaimCommand.unclaimChunkAt(
-            player,
+            source,
             source.getWorld(),
             player.getUuid(),
             true,
-            player.getBlockPos()
+            new BlockPos(source.getPosition())
         );
     }
     private static int unclaimChunkTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
-        ServerWorld world = player.getWorld();
+        ServerWorld world = source.getWorld();
         
         ClaimantPlayer claimant = ((PlayerData) player).getClaim();
         
-        Chunk chunk = world.getChunk(player.getBlockPos());
+        Chunk chunk = world.getChunk(new BlockPos(source.getPosition()));
         if (((IClaimedChunk) chunk).getTownId() == null)
             throw CHUNK_NOT_OWNED.create( player );
         
@@ -612,11 +621,11 @@ public final class ClaimCommand {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         return ClaimCommand.unclaimChunkAt(
-            player,
+            source,
             source.getWorld(),
             player.getUuid(),
             false,
-            player.getBlockPos()
+            new BlockPos(source.getPosition())
         );
     }
     private static int unclaimAll(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -628,7 +637,7 @@ public final class ClaimCommand {
         Claimant claimed;
         if ((claimed = ((PlayerData) player).getClaim()) != null) {
             ClaimCommand.unclaimChunkAt(
-                player,
+                source,
                 world,
                 player.getUuid(),
                 true,
@@ -643,10 +652,10 @@ public final class ClaimCommand {
         return Command.SINGLE_SUCCESS;
     }
     
-    public static int unclaimChunkAt(@NotNull ServerPlayerEntity source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull BlockPos... positions) {
+    public static int unclaimChunkAt(@NotNull ServerCommandSource source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull BlockPos... positions) {
         return ClaimCommand.unclaimChunkAt(source, world, chunkFor, verify, Arrays.asList(positions));
     }
-    public static int unclaimChunkAt(@NotNull ServerPlayerEntity source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull Collection<? extends BlockPos> positions) {
+    public static int unclaimChunkAt(@NotNull ServerCommandSource source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull Collection<? extends BlockPos> positions) {
         ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
         ((LogicalWorld)world).addTickableEvent(ChunkOwnerUpdate.forPlayer(
@@ -828,15 +837,15 @@ public final class ClaimCommand {
     }
     private static int townGiveChunk(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
         
         // Get the target player
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument( context, "target" );
         GameProfile targetPlayer = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
-        ServerWorld world = player.getWorld();
-        IClaimedChunk claimedChunk = (IClaimedChunk) world.getChunk( player.getBlockPos() );
+        ServerWorld world = source.getWorld();
+        IClaimedChunk claimedChunk = (IClaimedChunk) world.getChunk(new BlockPos(source.getPosition()));
         
+        ServerPlayerEntity player = source.getPlayer();
         ClaimantTown town;
         if ((claimedChunk.getOwner() == null) || ((town = claimedChunk.getTown()) == null) || (!player.getUuid().equals(claimedChunk.getOwner())) || (!player.getUuid().equals( town.getOwner() )))
             throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create(player);

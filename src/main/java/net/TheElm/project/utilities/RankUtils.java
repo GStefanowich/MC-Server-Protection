@@ -252,8 +252,7 @@ public final class RankUtils {
             "permissions.json"
         );
         
-        JsonParser jp = new JsonParser();
-        JsonElement element = jp.parse(new FileReader(ranksFile));
+        JsonElement element = JsonParser.parseReader(new FileReader(ranksFile));
         return element.getAsJsonObject();
     }
     static { reload(); }

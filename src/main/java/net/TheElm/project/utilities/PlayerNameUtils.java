@@ -152,7 +152,7 @@ public final class PlayerNameUtils {
                     content.append(line);
                 }
                 
-                JsonArray nameHistory = new JsonParser().parse(content.toString()).getAsJsonArray();
+                JsonArray nameHistory = JsonParser.parseString(content.toString()).getAsJsonArray();
                 JsonObject nameLatest = nameHistory.get( nameHistory.size() - 1 ).getAsJsonObject();
                 
                 playerName = new LiteralText(nameLatest.get( "name" ).getAsString());

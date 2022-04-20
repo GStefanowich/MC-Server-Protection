@@ -60,16 +60,11 @@ public interface IClaimedChunk {
     }
     boolean canPlayerClaim(@NotNull ClaimantPlayer player, boolean stopIfClaimed) throws TranslationKeyException;
     
-    @Nullable
-    ClaimCache getClaimCache();
-    @Nullable
-    UUID getOwner();
-    @Nullable
-    UUID getOwner(BlockPos pos);
-    @Nullable
-    UUID getTownId();
-    @Nullable
-    ClaimantTown getTown();
+    @Nullable ClaimCache getClaimCache();
+    @Nullable UUID getOwner();
+    @Nullable UUID getOwner(@Nullable BlockPos pos);
+    @Nullable UUID getTownId();
+    @Nullable ClaimantTown getTown();
     
     default MutableText getOwnerName() {
         return this.getOwnerName((UUID) null);
@@ -86,13 +81,13 @@ public interface IClaimedChunk {
         // Get the owners name (Colored using the relation to the zonePlayer)
         return chunkPlayer.getName(zonePlayer);
     }
-    default MutableText getOwnerName(@NotNull PlayerEntity zonePlayer) {
-        return this.getOwnerName(zonePlayer, zonePlayer.getBlockPos());
+    default MutableText getOwnerName(@Nullable PlayerEntity zonePlayer) {
+        return this.getOwnerName(zonePlayer, zonePlayer == null ? null : zonePlayer.getBlockPos());
     }
-    default MutableText getOwnerName(@NotNull PlayerEntity zonePlayer, @NotNull BlockPos pos) {
-        return this.getOwnerName(zonePlayer.getUuid(), pos);
+    default MutableText getOwnerName(@Nullable PlayerEntity zonePlayer, @Nullable BlockPos pos) {
+        return this.getOwnerName(zonePlayer == null ? null : zonePlayer.getUuid(), pos);
     }
-    default MutableText getOwnerName(@NotNull UUID zonePlayer, @NotNull BlockPos pos) {
+    default MutableText getOwnerName(@Nullable UUID zonePlayer, @Nullable BlockPos pos) {
         UUID owner = this.getOwner(pos);
         if ( owner == null )
             return new LiteralText(SewConfig.get(SewConfig.NAME_WILDERNESS))
