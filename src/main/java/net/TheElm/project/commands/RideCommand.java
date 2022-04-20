@@ -30,12 +30,15 @@ public final class RideCommand {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
+        // Get the new entity to ride
         Entity entity = EntityArgumentType.getEntity(context, "entity");
-        boolean riding = player.startRiding(entity);
-        if (riding && entity instanceof ServerPlayerEntity mountedPlayer)
-            mountedPlayer.networkHandler.sendPacket(new EntityPassengersSetS2CPacket(mountedPlayer));
         
-        return riding ? 1 : 0;
+        // If no entity was found, don't try riding
+        if (entity == null)
+            return 0;
+        
+        // Attempt to set the player as riding the entity
+        return player.startRiding(entity) ? 1 : 0;
     }
     
 }

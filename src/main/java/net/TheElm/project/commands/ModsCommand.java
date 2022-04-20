@@ -28,7 +28,6 @@ package net.TheElm.project.commands;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
@@ -38,8 +37,9 @@ import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ContactInformation;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.fabricmc.loader.api.metadata.Person;
+import net.minecraft.resource.ResourcePackProfile;
+import net.minecraft.resource.ResourcePackSource;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.HoverEvent;
 import net.minecraft.text.LiteralText;
@@ -63,10 +63,8 @@ public final class ModsCommand {
         );
     }
     
-    private static int getModList(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    private static int getModList(@NotNull CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
-        
         Collection<ModContainer> mods = CoreMod.getFabric()
             .getAllMods();
         
@@ -112,11 +110,26 @@ public final class ModsCommand {
                     .formatted(Formatting.WHITE));
             
             // Append to lines
-            modText.styled(applicator);
-            output.append(modText);
+            output.append(modText.styled(applicator));
         }
         
-        player.sendMessage(output, false);
+        Collection<ResourcePackProfile> packs = source.getServer().getDataPackManager()
+            .getEnabledProfiles();
+        
+        output.append("\nServer Resource Packs:");
+        for ( ResourcePackProfile pack : packs ) {
+            // Skip the built-in resource packs
+            if (pack.getSource() == ResourcePackSource.PACK_SOURCE_BUILTIN || pack.isAlwaysEnabled())
+                continue;
+            
+            // Add the "Text" json/nbt to the list
+            MutableText packText = new LiteralText("\n ")
+                .append(pack.getDescription());
+            
+            output.append(packText);
+        }
+        
+        source.sendFeedback(output, false);
         return Command.SINGLE_SUCCESS;
     }
     
