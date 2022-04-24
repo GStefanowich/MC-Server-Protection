@@ -64,6 +64,7 @@ public final class DragonLoot {
             DragonLoot.itemReward(2300, Items.WITHER_SKELETON_SKULL, (player, stack) -> stack.setCount(IntUtils.random(DragonLoot.RANDOM, 3, 6)));
             DragonLoot.itemReward(1800, Items.ENCHANTED_GOLDEN_APPLE);
             DragonLoot.itemReward(350, Items.NETHERITE_SCRAP, (player, stack) -> stack.setCount(IntUtils.random(DragonLoot.RANDOM, 1, 8)));
+            DragonLoot.itemReward(2000, Items.SHULKER_SHELL, (player, stack) -> stack.setCount(IntUtils.random(DragonLoot.RANDOM, 1, 3)));
             DragonLoot.itemReward(750, Items.DIAMOND_BLOCK);
             DragonLoot.itemReward(1400, Items.EMERALD_BLOCK);
             DragonLoot.itemReward(1400, Items.EXPERIENCE_BOTTLE, (player, stack) -> stack.setCount(IntUtils.random(DragonLoot.RANDOM, 4, 26)));
@@ -87,12 +88,6 @@ public final class DragonLoot {
             DragonLoot.bookReward(150, Enchantments.EFFICIENCY, 8);
             DragonLoot.bookReward(70, Enchantments.EFFICIENCY, 9);
             DragonLoot.bookReward(30, Enchantments.EFFICIENCY, 10);
-            
-            DragonLoot.bookReward(440, Enchantments.RESPIRATION, 6);
-            DragonLoot.bookReward(300, Enchantments.RESPIRATION, 7);
-            DragonLoot.bookReward(150, Enchantments.RESPIRATION, 8);
-            DragonLoot.bookReward(70, Enchantments.RESPIRATION, 9);
-            DragonLoot.bookReward(30, Enchantments.RESPIRATION, 10);
             
             DragonLoot.bookReward(220, Enchantments.PROTECTION, 5);
             DragonLoot.bookReward(150, Enchantments.PROTECTION, 6);
@@ -121,6 +116,14 @@ public final class DragonLoot {
             DragonLoot.bookReward(70, Enchantments.FEATHER_FALLING, 8);
             DragonLoot.bookReward(30, Enchantments.FEATHER_FALLING, 9);
             DragonLoot.bookReward(10, Enchantments.FEATHER_FALLING, 10);
+            
+            DragonLoot.bookReward(436, Enchantments.RESPIRATION, 4);
+            DragonLoot.bookReward(300, Enchantments.RESPIRATION, 5);
+            DragonLoot.bookReward(150, Enchantments.RESPIRATION, 6);
+            DragonLoot.bookReward(70, Enchantments.RESPIRATION, 7);
+            DragonLoot.bookReward(30, Enchantments.RESPIRATION, 8);
+            DragonLoot.bookReward(10, Enchantments.RESPIRATION, 9);
+            DragonLoot.bookReward(4, Enchantments.RESPIRATION, 10);
             
             DragonLoot.bookReward(436, Enchantments.DEPTH_STRIDER, 4);
             DragonLoot.bookReward(300, Enchantments.DEPTH_STRIDER, 5);
