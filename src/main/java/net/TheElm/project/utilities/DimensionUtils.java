@@ -37,10 +37,12 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.border.WorldBorderListener;
+import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.dimension.DimensionType;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -86,6 +88,13 @@ public final class DimensionUtils {
         return DimensionUtils.getWorldDepth(dimension) + dimension.getHeight();
     }
     
+    public static boolean isWithinProtectedZone(@NotNull WorldChunk chunk) {
+        ChunkPos start = chunk.getPos();
+        return DimensionUtils.isWithinProtectedZone(chunk.getWorld(), start.getStartPos())
+            || DimensionUtils.isWithinProtectedZone(chunk.getWorld(), start.getBlockPos(15, 0, 15))
+            || DimensionUtils.isWithinProtectedZone(chunk.getWorld(), start.getBlockPos(15, 0, 0))
+            || DimensionUtils.isWithinProtectedZone(chunk.getWorld(), start.getBlockPos(0, 0, 15));
+    }
     public static boolean isWithinProtectedZone(@NotNull World world, BlockPos pos) {
         return DimensionUtils.isWithinProtectedZone(world.getRegistryKey(), pos);
     }

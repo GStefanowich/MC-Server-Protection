@@ -69,6 +69,7 @@ import net.TheElm.project.utilities.EffectUtils;
 import net.TheElm.project.utilities.FormattingUtils;
 import net.TheElm.project.utilities.MoneyUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
+import net.TheElm.project.utilities.WarpUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.TheElm.project.utilities.text.TextUtils;
 import net.minecraft.command.CommandSource;
@@ -255,8 +256,13 @@ public final class ClaimCommand {
             )
             // Locate friends using pathing
             .then(CommandManager.literal("locate")
-                .then(CommandManager.argument("friend", EntityArgumentType.player())
+                .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                     .suggests(CommandUtils::getFriendPlayerNames)
+                    .then(CommandManager.argument("location", StringArgumentType.string())
+                        .suggests(ClaimCommand::playerHomeNamesOfFriend)
+                        // TODO: Allow players to LOCATE to another players Waystone
+                        .executes(a -> 0)
+                    )
                     .executes(ClaimCommand::findFriend)
                 )
                 .executes(ClaimCommand::stopFindingPos)
@@ -1186,6 +1192,22 @@ public final class ClaimCommand {
     private static int stopFindingPos(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         return ClaimCommand.findFriend(source.getPlayer(), source.getPlayer());
+    }
+    
+    private static @NotNull CompletableFuture<Suggestions> playerHomeNamesOfFriend(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        
+        // Get the uuid of the executor
+        Entity entity = source.getEntity();
+        UUID untrusted = entity instanceof ServerPlayerEntity ? entity.getUuid() : null;
+        
+        // Get the matching player being looked up
+        Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "friend");
+        GameProfile target = profiles.stream().findAny()
+            .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        
+        // Build the suggestions
+        return WarpUtils.buildSuggestions(source.getServer(), untrusted, target.getId(), builder);
     }
     
     /*

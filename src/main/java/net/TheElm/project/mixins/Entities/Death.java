@@ -127,9 +127,8 @@ public abstract class Death extends Entity {
         );
         
         for (int roll = 0; roll < rolls; ++roll) {
-            Integer random = null;
             // Test the odds
-            if ((!entityIds.contains(mobId)) && ((random = player.world.getRandom().nextInt(800)) == 0)) {
+            if ((!entityIds.contains(mobId)) && (player.world.getRandom().nextInt(800) == 0)) {
                 // Add mob to the list
                 entityIds.add(mobId);
                 
@@ -160,7 +159,6 @@ public abstract class Death extends Entity {
                         .offerOrDrop(itemStack);
                 break;
             }
-            System.out.println(random);
         }
     }
     

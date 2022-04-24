@@ -27,6 +27,7 @@ package net.TheElm.project.protections.events;
 
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.interfaces.BlockBreakCallback;
 import net.TheElm.project.interfaces.BlockBreakEventCallback;
@@ -47,6 +48,7 @@ import net.minecraft.block.SugarCaneBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.TntEntity;
+import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.entity.mob.CreeperEntity;
 import net.minecraft.entity.mob.GhastEntity;
 import net.minecraft.entity.projectile.ExplosiveProjectileEntity;
@@ -65,6 +67,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -212,7 +215,14 @@ public final class BlockBreak {
             if (!ChunkUtils.canPlayerBreakInChunk(tnt.getEntityOwner(), world, blockPos))
                 return ActionResult.FAIL;
         }
-        else if (entity instanceof GhastEntity) {
+        else if (entity instanceof EnderDragonEntity) {
+            /*
+             * Prevent the dragon from breaking items within SPAWN
+             */
+            IClaimedChunk chunk = ((IClaimedChunk)world.getChunk(blockPos));
+            if (Objects.equals(chunk.getOwner(), CoreMod.SPAWN_ID) && !chunk.canPlayerDo(blockPos, null, ClaimPermissions.BLOCKS))
+                return ActionResult.FAIL;
+        } else if (entity instanceof GhastEntity) {
             /*
              * Prevent a ghast from breaking claimed blocks
              */
@@ -249,7 +259,7 @@ public final class BlockBreak {
             );
         }
         else {
-            if (entity != null) CoreMod.logDebug( entity.getClass().getCanonicalName() + " broke a block!" );
+            if (entity != null) CoreMod.logDebug(entity.getClass().getCanonicalName() + " broke a block!");
         }
         
         return ActionResult.PASS;

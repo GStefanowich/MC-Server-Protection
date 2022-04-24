@@ -37,25 +37,36 @@ public final class DragonLoot {
         
         if (SewConfig.get(SewConfig.DRAGON_LOOT_END_ITEMS)) {
             DragonLoot.itemReward(2800, Items.ELYTRA);
-            DragonLoot.itemReward(250, Items.ELYTRA, (p, s) -> ItemUtils.makeUnbreakable(s));
-            DragonLoot.itemReward(250, Items.FISHING_ROD, (p, s) -> ItemUtils.makeUnbreakable(s));
-            DragonLoot.itemReward(5430, Items.DRAGON_EGG);
+            DragonLoot.itemReward(250, Items.ELYTRA, (player, stack) -> ItemUtils.makeUnbreakable(stack));
+            DragonLoot.itemReward(250, Items.FISHING_ROD, (player, stack) -> ItemUtils.makeUnbreakable(stack));
+            DragonLoot.itemReward(5430, "Egg chance", (player) -> {
+                Random random = player.getRandom();
+                ItemStack stack;
+                if (random.nextBoolean())
+                    stack = new ItemStack(Items.DRAGON_EGG);
+                else {
+                    stack = new ItemStack(Items.EXPERIENCE_BOTTLE);
+                    stack.setCount(IntUtils.random(random, 1, 4));
+                }
+                return stack;
+            });
             DragonLoot.itemReward(1400, "Head chance", (player) -> {
                 Random random = player.getRandom();
                 return new ItemStack(random.nextBoolean() ? Items.DRAGON_EGG : Items.DRAGON_HEAD);
             });
-            /*DragonLoot.itemReward(1400, Items.PLAYER_HEAD, (p, s) -> {
-                if (p != null) {
+            /*DragonLoot.itemReward(1400, Items.PLAYER_HEAD, (player, stack) -> {
+                if (player != null) {
                     // Assign the SkullOwner tag
-                    NbtCompound skullOwner = s.getOrCreateNbt();
-                    skullOwner.putString("SkullOwner", p.getGameProfile().getName());
+                    NbtCompound skullOwner = stack.getOrCreateNbt();
+                    skullOwner.putString("SkullOwner", player.getGameProfile().getName());
                 }
             });*/
-            DragonLoot.itemReward(2300, Items.WITHER_SKELETON_SKULL, (player, stack) -> stack.setCount(IntUtils.random(RANDOM, 3, 6)));
+            DragonLoot.itemReward(2300, Items.WITHER_SKELETON_SKULL, (player, stack) -> stack.setCount(IntUtils.random(DragonLoot.RANDOM, 3, 6)));
             DragonLoot.itemReward(1800, Items.ENCHANTED_GOLDEN_APPLE);
+            DragonLoot.itemReward(350, Items.NETHERITE_SCRAP, (player, stack) -> stack.setCount(IntUtils.random(DragonLoot.RANDOM, 1, 8)));
             DragonLoot.itemReward(750, Items.DIAMOND_BLOCK);
             DragonLoot.itemReward(1400, Items.EMERALD_BLOCK);
-            DragonLoot.itemReward(1400, Items.EXPERIENCE_BOTTLE, (player, stack) -> stack.setCount(IntUtils.random(RANDOM, 1, 15)));
+            DragonLoot.itemReward(1400, Items.EXPERIENCE_BOTTLE, (player, stack) -> stack.setCount(IntUtils.random(DragonLoot.RANDOM, 4, 26)));
         }
         
         if (SewConfig.get(SewConfig.DRAGON_LOOT_RARE_BOOKS)) {
@@ -77,6 +88,12 @@ public final class DragonLoot {
             DragonLoot.bookReward(70, Enchantments.EFFICIENCY, 9);
             DragonLoot.bookReward(30, Enchantments.EFFICIENCY, 10);
             
+            DragonLoot.bookReward(440, Enchantments.RESPIRATION, 6);
+            DragonLoot.bookReward(300, Enchantments.RESPIRATION, 7);
+            DragonLoot.bookReward(150, Enchantments.RESPIRATION, 8);
+            DragonLoot.bookReward(70, Enchantments.RESPIRATION, 9);
+            DragonLoot.bookReward(30, Enchantments.RESPIRATION, 10);
+            
             DragonLoot.bookReward(220, Enchantments.PROTECTION, 5);
             DragonLoot.bookReward(150, Enchantments.PROTECTION, 6);
             DragonLoot.bookReward(75, Enchantments.PROTECTION, 7);
@@ -90,7 +107,7 @@ public final class DragonLoot {
             DragonLoot.bookReward(70, Enchantments.FIRE_PROTECTION, 8);
             DragonLoot.bookReward(30, Enchantments.FIRE_PROTECTION, 9);
             DragonLoot.bookReward(10, Enchantments.FIRE_PROTECTION, 10);
-
+            
             DragonLoot.bookReward(440, Enchantments.PROJECTILE_PROTECTION, 5);
             DragonLoot.bookReward(300, Enchantments.PROJECTILE_PROTECTION, 6);
             DragonLoot.bookReward(150, Enchantments.PROJECTILE_PROTECTION, 7);

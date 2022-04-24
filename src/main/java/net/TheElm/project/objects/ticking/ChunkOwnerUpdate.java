@@ -35,6 +35,7 @@ import net.TheElm.project.interfaces.TickingAction;
 import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.utilities.DimensionUtils;
 import net.TheElm.project.utilities.TranslatableServerSide;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.command.CommandSource;
@@ -175,12 +176,17 @@ public class ChunkOwnerUpdate implements TickingAction {
                 WorldBorder border = worldChunk.getWorld()
                     .getWorldBorder();
                 
+                // If the chunk is outside of the world border
                 ChunkPos chunkPos = worldChunk.getPos();
                 if (!border.contains(chunkPos))
                     return ActionResult.PASS;
                 
                 IClaimedChunk chunk = (IClaimedChunk) worldChunk;
                 Claimant claimant = Objects.requireNonNull(update.getClaimant());
+                
+                // Prevent claiming protected areas (IE: End Island)
+                if (update.getVerify() && !claimant.isSpawn() && DimensionUtils.isWithinProtectedZone(worldChunk))
+                    return ActionResult.FAIL;
                 
                 if (claimant instanceof ClaimantTown claimantTown) {
                     if (!Objects.equals(chunk.getOwner(), claimantTown.getOwner()))

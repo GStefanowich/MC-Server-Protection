@@ -181,6 +181,10 @@ public abstract class Claimant {
         return this.claimedChunks;
     }
     
+    public boolean isSpawn() {
+        return Objects.equals(this.getId(), CoreMod.SPAWN_ID);
+    }
+    
     /* Nbt saving */
     @Override
     public final void finalize() {
@@ -197,9 +201,9 @@ public abstract class Claimant {
         }
     }
     public boolean forceSave() {
-        if (DevUtils.isDebugging()) CoreMod.logInfo("Saving " + this.getType().name().toLowerCase() + " data for " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + "." );
+        if (DevUtils.isDebugging()) CoreMod.logInfo("Saving " + this.getType().name().toLowerCase() + " data for " + (this.isSpawn() ? "Spawn" : this.getId()) + "." );
         boolean success = NbtUtils.writeClaimData(this);
-        if (!success) CoreMod.logInfo("FAILED TO SAVE " + this.getType().name() + " DATA, " + (CoreMod.SPAWN_ID.equals(this.getId()) ? "Spawn" : this.getId()) + ".");
+        if (!success) CoreMod.logInfo("FAILED TO SAVE " + this.getType().name() + " DATA, " + (this.isSpawn() ? "Spawn" : this.getId()) + ".");
         return success;
     }
     public void writeCustomDataToTag(@NotNull NbtCompound tag) {
