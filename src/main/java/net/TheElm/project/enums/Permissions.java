@@ -47,7 +47,10 @@ import java.util.stream.Stream;
 public class Permissions {
     private static final Set<PermissionNode> PERMISSIONS = new HashSet<>();
     
-    public static final @NotNull PermissionNode ALL_PERMISSIONS = addInflictable("*", "");
+    public static final @NotNull PermissionNode ALL_PERMISSIONS = addInflictable("*", "Access to all permissions.");
+    public static final @NotNull PermissionNode ADMIN_CLAIMS = addPermission("claims.admin", "Allows admin control over regular player claims");
+    public static final @NotNull PermissionNode ADMIN_CLAIM_TOWNS = addPermission("claims.admin.towns", "Allows admin control of towns, town chunks, and players in towns");
+    public static final @NotNull PermissionNode ADMIN_CLAIM_SHOPS = addPermission("claims.admin.shops", "Allows admin control of shops and shop signs");
     
     /*
      * Self-Inflicting player permissions

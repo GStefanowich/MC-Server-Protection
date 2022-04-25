@@ -46,6 +46,7 @@ import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
 import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.exceptions.ExceptionTranslatableServerSide;
 import net.TheElm.project.exceptions.NotEnoughMoneyException;
 import net.TheElm.project.interfaces.ClaimsAccessor;
@@ -147,15 +148,17 @@ public final class ClaimCommand {
          * Admin Force commands
          */
         ServerCore.register(dispatcher, "Chunk", builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.STOP))
+            .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIMS).or(Permissions.ADMIN_CLAIM_TOWNS))
             .then(CommandManager.literal("set")
                 .then(CommandManager.literal("player")
+                    .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIMS))
                     .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtils::getAllPlayerNames)
                         .executes(ClaimCommand::rawSetChunkPlayer)
                     )
                 )
                 .then(CommandManager.literal("town")
+                    .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIM_TOWNS))
                     .executes(ClaimCommand::rawSetChunkTown)
                 )
             )
@@ -340,7 +343,7 @@ public final class ClaimCommand {
                 .executes(ClaimCommand::playerPartsTown)
             )
             .then(CommandManager.literal("set")
-                .requires(CommandPredicate.opLevel(OpLevels.STOP))
+                .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIM_TOWNS))
                 .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                     .suggests(CommandUtils::getAllPlayerNames)
                     .then(CommandManager.argument("town", StringArgumentType.greedyString())
@@ -350,7 +353,7 @@ public final class ClaimCommand {
                 )
             )
             .then(CommandManager.literal("villagers")
-                .requires(CommandPredicate.opLevel(OpLevels.STOP))
+                .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIM_TOWNS))
                 .then(CommandManager.argument("entities", EntityArgumentType.entities())
                     .then(CommandManager.argument("town", StringArgumentType.greedyString())
                         .suggests(CommandUtils::getAllTowns)

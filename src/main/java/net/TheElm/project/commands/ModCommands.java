@@ -37,6 +37,7 @@ import net.TheElm.project.ServerCore;
 import net.TheElm.project.blocks.entities.LecternGuideBlockEntity;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.CommandPredicate;
 import net.TheElm.project.interfaces.ShopSignData;
 import net.TheElm.project.utilities.BlockUtils;
@@ -84,8 +85,9 @@ public final class ModCommands {
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         ServerCore.register(dispatcher, CoreMod.MOD_ID, (builder) -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.STOP))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.ADMIN_CLAIM_SHOPS))
             .then(CommandManager.literal("reload")
+                .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ALL_PERMISSIONS))
                 .then(CommandManager.literal("config")
                     .executes(ModCommands::reloadConfig)
                 )
@@ -95,6 +97,7 @@ public final class ModCommands {
                 )
             )
             .then(CommandManager.literal("shops")
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.ADMIN_CLAIM_SHOPS))
                 .then(CommandManager.literal("change")
                     .then(CommandManager.literal("item")
                         .then(CommandManager.literal("hand")
@@ -123,6 +126,7 @@ public final class ModCommands {
                 )
             )
             .then(CommandManager.literal("guides")
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                 .then(CommandManager.argument("book", StringArgumentType.string())
                     .suggests(((context, suggestionsBuilder) -> CommandSource.suggestMatching(GuideUtils.getBooks(), suggestionsBuilder)))
                     .then(CommandManager.literal("give")
