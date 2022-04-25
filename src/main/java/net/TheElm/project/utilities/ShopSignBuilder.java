@@ -40,6 +40,7 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.network.MessageType;
+import net.minecraft.recipe.Recipe;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
@@ -56,6 +57,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -149,6 +151,10 @@ public final class ShopSignBuilder implements ShopSignData {
     @Override
     public @NotNull Integer getShopItemCount() {
         return this.stackSize;
+    }
+    @Override
+    public @Nullable List<? extends Recipe<?>> getShopItemRecipes() {
+        return null;
     }
     
     @Override

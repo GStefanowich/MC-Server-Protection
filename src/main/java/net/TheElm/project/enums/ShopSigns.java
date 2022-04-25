@@ -39,6 +39,7 @@ import net.TheElm.project.interfaces.LogicalWorld;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.interfaces.ShopSignData;
 import net.TheElm.project.objects.PlayerBackpack;
+import net.TheElm.project.objects.ShopCraftAction;
 import net.TheElm.project.objects.ShopStats;
 import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.objects.ticking.WaystoneSearch;
@@ -65,6 +66,7 @@ import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.network.MessageType;
+import net.minecraft.recipe.Recipe;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -84,6 +86,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.text.NumberFormat;
+import java.util.List;
 import java.util.Objects;
 
 public enum ShopSigns {
@@ -166,12 +169,28 @@ public enum ShopSigns {
                     
                     // Put players item into chest
                     if (!InventoryUtils.playerToChest(player, signPos, player.getInventory(), chestInventory, sign::itemMatchPredicate, sign.getShopItemCount(), true)) {
-                        // Refund the shopkeeper
-                        if (!(sign.getShopOwner().equals(CoreMod.SPAWN_ID)))
-                            MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
+                        boolean crafted = false;
                         
-                        // Error message
-                        return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
+                        List<? extends Recipe<?>> recipes = sign.getShopItemRecipes();
+                        if (sign.getShopOwner().equals(CoreMod.SPAWN_ID) && recipes != null) {
+                            for (Recipe<?> recipe : recipes) {
+                                ShopCraftAction craft = new ShopCraftAction(recipe, sign, signPos, chestInventory);
+                                
+                                if (craft.craft(player)) {
+                                    crafted = true;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        if (!crafted) {
+                            // Refund the shopkeeper
+                            if (!(sign.getShopOwner().equals(CoreMod.SPAWN_ID)))
+                                MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
+                            
+                            // Error message
+                            return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
+                        }
                     }
                     
                     // Give player money for item
@@ -199,7 +218,7 @@ public enum ShopSigns {
                     return Either.right(true);
                     
                 } catch ( NbtNotFoundException e ) {
-                    CoreMod.logError( "Failed to give " + sign.getShopItemPrice() + " money to \"" + sign.getShopOwner() + "\" (Maybe they haven't joined the server?)." );
+                    CoreMod.logError("Failed to give " + sign.getShopItemPrice() + " money to \"" + sign.getShopOwner() + "\" (Maybe they haven't joined the server?).");
                     // If a database problem occurs
                     return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
                 } catch ( NotEnoughMoneyException e ) {

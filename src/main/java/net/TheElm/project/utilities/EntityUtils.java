@@ -29,6 +29,8 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.enums.ClaimPermissions;
+import net.TheElm.project.enums.OpLevels;
+import net.TheElm.project.enums.Permissions;
 import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.ShopSignData;
 import net.TheElm.project.interfaces.SpawnerMob;
@@ -325,6 +327,19 @@ public final class EntityUtils {
         if (block instanceof BeehiveBlock)
             return ClaimPermissions.STORAGE;
         return null;
+    }
+
+    /**
+     * Check if an Entity is allowed to access the contents of another players Death Chest
+     * @param entity The Entity
+     * @param deathChestUUID The UUID of the player who owns the death chest
+     * @return If the 'entity' is granted access
+     */
+    public static boolean canEntityTakeDeathChest(@Nullable Entity entity, @NotNull UUID deathChestUUID) {
+        return (entity instanceof PlayerEntity player)
+            && (player.getUuid().equals(deathChestUUID)
+                || player.hasPermissionLevel(OpLevels.KICK_BAN_OP)
+                || RankUtils.hasPermission(player, Permissions.INTERACT_OTHER_DEATHCHEST));
     }
     
     /*
@@ -686,7 +701,7 @@ public final class EntityUtils {
      * Disconnect Players
      */
     public static void kickAllPlayers() {
-        EntityUtils.kickAllPlayers( null );
+        EntityUtils.kickAllPlayers(null);
     }
     public static void kickAllPlayers(@Nullable Text reason) {
         MinecraftServer server = ServerCore.get();

@@ -33,9 +33,7 @@ import net.TheElm.project.MySQL.MySQLite;
 import net.TheElm.project.blocks.entities.LecternGuideBlockEntity;
 import net.TheElm.project.blocks.entities.LecternWarpsBlockEntity;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.protections.claiming.Claimant;
-import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.TheElm.project.protections.claiming.ClaimantTown;
+import net.TheElm.project.objects.ShopStats;
 import net.TheElm.project.protections.logging.EventLogger;
 import net.TheElm.project.utilities.DevUtils;
 import net.fabricmc.api.EnvType;
@@ -108,9 +106,13 @@ public abstract class CoreMod {
     }
     
     public void initialize() {
+        // Log that we're starting!
         CoreMod.logInfo("Sewing Machine utilities mod is starting.");
         
-        // Register our server-side block entity
+        // Make sure the Stats we're using are in the Registry before it gets Frozen
+        ShopStats.init();
+        
+        // Register our block entities for use
         CoreMod.GUIDE_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("guide_lectern"), FabricBlockEntityTypeBuilder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
         CoreMod.WARPS_BLOCK_ENTITY = Registry.register(Registry.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("warps_lectern"), FabricBlockEntityTypeBuilder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
     }

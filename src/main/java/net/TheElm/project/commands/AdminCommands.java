@@ -30,7 +30,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
@@ -48,6 +47,7 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -128,7 +128,7 @@ public final class AdminCommands {
     
     private static int selfFlying(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        AdminCommands.toggleFlying(source.getPlayer());
+        AdminCommands.toggleFlying(source, source.getPlayer());
         return Command.SINGLE_SUCCESS;
     }
     private static int targetFlying(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -139,10 +139,14 @@ public final class AdminCommands {
         return AdminCommands.toggleFlying(source, players.stream());
     }
     private static int toggleFlying(@NotNull ServerCommandSource source, @NotNull Stream<ServerPlayerEntity> players) {
-        players.forEach(player -> TranslatableServerSide.send(source, "player.abilities.flying_other." + (AdminCommands.toggleFlying(player) ? "enabled" : "disabled"), player.getDisplayName()));
+        players.forEach(player -> {
+            if (source.getEntity() == player)
+                AdminCommands.toggleFlying(source, player);
+            else TranslatableServerSide.send(source, "player.abilities.flying_other." + (AdminCommands.toggleFlying(null, player) ? "enabled" : "disabled"), player.getDisplayName());
+        });
         return Command.SINGLE_SUCCESS;
     }
-    private static boolean toggleFlying(@NotNull ServerPlayerEntity player) {
+    private static boolean toggleFlying(@Nullable ServerCommandSource source, @NotNull ServerPlayerEntity player) {
         PlayerAbilities abilities = player.getAbilities();
         
         // Toggle flying for the player
@@ -150,9 +154,11 @@ public final class AdminCommands {
         player.setNoGravity(false);
         
         // Tell the player
-        TranslatableServerSide.send(player, "player.abilities.flying_self." + (abilities.allowFlying ? "enabled" : "disabled"));
+        if (source == null)
+            TranslatableServerSide.send(player, "player.abilities.flying_self." + (abilities.allowFlying ? "enabled" : "disabled"));
+        else TranslatableServerSide.send(source, "player.abilities.flying_self." + (abilities.allowFlying ? "enabled" : "disabled"));
         
-        // If flying was turned off, stop the playing mid-flight
+        // If flying was turned off, stop the player mid-flight
         if (!abilities.allowFlying)
             abilities.flying = false;
         
@@ -162,7 +168,7 @@ public final class AdminCommands {
     
     private static int selfGod(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        AdminCommands.toggleGod(source.getPlayer());
+        AdminCommands.toggleGod(source, source.getPlayer());
         return Command.SINGLE_SUCCESS;
     }
     private static int targetGod(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -174,24 +180,31 @@ public final class AdminCommands {
         return AdminCommands.toggleGod(source, players.stream());
     }
     private static int toggleGod(@NotNull ServerCommandSource source, @NotNull Stream<ServerPlayerEntity> players) {
-        players.forEach(player -> TranslatableServerSide.send(source, "player.abilities.godmode_other." + (AdminCommands.toggleGod(player) ? "enabled" : "disabled"), player.getDisplayName()));
+        players.forEach(player -> {
+            if (source.getEntity() == player)
+                AdminCommands.toggleGod(source, player);
+            else TranslatableServerSide.send(source, "player.abilities.godmode_other." + (AdminCommands.toggleGod(null, player) ? "enabled" : "disabled"), player.getDisplayName());
+        });
         return Command.SINGLE_SUCCESS;
     }
-    private static boolean toggleGod(ServerPlayerEntity player) {
+    private static boolean toggleGod(@Nullable ServerCommandSource source, @NotNull ServerPlayerEntity player) {
         PlayerAbilities abilities = player.getAbilities();
         
         // Toggle god mode for the player
         abilities.invulnerable = !abilities.invulnerable;
         player.sendAbilitiesUpdate();
-    
+        
         // Tell the player
-        TranslatableServerSide.send(player, "player.abilities.godmode_self." + (abilities.invulnerable ? "enabled" : "disabled"));
+        if (source == null)
+            TranslatableServerSide.send(player, "player.abilities.godmode_self." + (abilities.invulnerable ? "enabled" : "disabled"));
+        else TranslatableServerSide.send(source, "player.abilities.godmode_self." + (abilities.invulnerable ? "enabled" : "disabled"));
+        
         return abilities.invulnerable;
     }
     
     private static int selfHeal(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        AdminCommands.healPlayer(source.getPlayer());
+        AdminCommands.healPlayer(source, source.getPlayer());
         return Command.SINGLE_SUCCESS;
     }
     private static int targetHeal(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -203,24 +216,30 @@ public final class AdminCommands {
         return AdminCommands.healPlayer(source, players.stream());
     }
     private static int healPlayer(@NotNull ServerCommandSource source, @NotNull Stream<ServerPlayerEntity> players) {
-        players.forEach(player -> TranslatableServerSide.send(source, (AdminCommands.healPlayer(player) ? "player.abilities.healed_other" : "player.abilities.healed_dead"), player.getDisplayName()));
+        players.forEach(player -> {
+            if (source.getEntity() == player)
+                AdminCommands.healPlayer(source, player);
+            else TranslatableServerSide.send(source, (AdminCommands.healPlayer(null, player) ? "player.abilities.healed_other" : "player.abilities.healed_dead"), player.getDisplayName());
+        });
         return Command.SINGLE_SUCCESS;
     }
-    private static boolean healPlayer(@NotNull ServerPlayerEntity player) {
-        boolean alive;
-        if (alive = player.isAlive()) {
+    private static boolean healPlayer(@Nullable ServerCommandSource source, @NotNull ServerPlayerEntity player) {
+        boolean alive = player.isAlive();
+        if (alive) {
             // Heal the player
             player.setHealth(player.getMaxHealth());
             
             // Tell the player
-            TranslatableServerSide.send(player, "player.abilities.healed_self");
+            if (source == null)
+                TranslatableServerSide.send(player, "player.abilities.healed_self");
+            else TranslatableServerSide.send(source, "player.abilities.healed_self");
         }
         return alive;
     }
     
     private static int selfFeed(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        AdminCommands.feedPlayer(source.getPlayer());
+        AdminCommands.feedPlayer(source, source.getPlayer());
         return Command.SINGLE_SUCCESS;
     }
     private static int targetFeed(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -232,10 +251,14 @@ public final class AdminCommands {
         return AdminCommands.feedPlayer(source, players.stream());
     }
     private static int feedPlayer(@NotNull ServerCommandSource source, @NotNull Stream<ServerPlayerEntity> players) {
-        players.forEach(player -> TranslatableServerSide.send(source, (AdminCommands.feedPlayer(player) ? "player.abilities.fed_other" : "player.abilities.fed_dead"), player.getDisplayName()));
+        players.forEach(player -> {
+            if (source.getEntity() == player)
+                AdminCommands.feedPlayer(source, player);
+            else TranslatableServerSide.send(source, (AdminCommands.feedPlayer(null, player) ? "player.abilities.fed_other" : "player.abilities.fed_dead"), player.getDisplayName());
+        });
         return Command.SINGLE_SUCCESS;
     }
-    private static boolean feedPlayer(@NotNull ServerPlayerEntity player) {
+    private static boolean feedPlayer(@Nullable ServerCommandSource source, @NotNull ServerPlayerEntity player) {
         boolean alive;
         if (alive = player.isAlive()) {
             HungerManager hungerManager = player.getHungerManager();
@@ -244,7 +267,9 @@ public final class AdminCommands {
             hungerManager.setFoodLevel(20);
             
             // Tell the player
-            TranslatableServerSide.send(player, "player.abilities.fed_self");
+            if (source == null)
+                TranslatableServerSide.send(player, "player.abilities.fed_self");
+            else TranslatableServerSide.send(source, "player.abilities.fed_self");
         }
         return alive;
     }

@@ -33,9 +33,9 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.interfaces.ClaimsAccessor;
 import net.TheElm.project.interfaces.PlayerData;
+import net.TheElm.project.interfaces.WhitelistedPlayer;
 import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.protections.claiming.ClaimantPlayer;
-import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -52,11 +52,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 public final class CommandUtils {
     
-    public static @NotNull CompletableFuture<Suggestions> getOnlinePlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) {
+    public static @NotNull CompletableFuture<Suggestions> getOnlineNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) {
         PlayerManager manager = context.getSource().getServer().getPlayerManager();
         return CommandSource.suggestMatching(manager.getPlayerList().stream()
             .map(( player ) -> player.getGameProfile().getName()), builder);
@@ -66,9 +65,10 @@ public final class CommandUtils {
         MinecraftServer server = context.getSource()
             .getServer();
         
-        Set<String> userNames = new HashSet<>(CommandUtils.getOnlinePlayerNames(server));
+        // Get a list of all online player names
+        Set<String> userNames = new HashSet<>(CommandUtils.getOnlineNames(server));
         
-        // Add all users
+        // Add all users if using Search
         if (!builder.getRemaining().isEmpty())
             userNames.addAll(CommandUtils.getWhitelistedNames(server));
         
@@ -80,13 +80,23 @@ public final class CommandUtils {
     }
     public static @NotNull CompletableFuture<Suggestions> getFriendPlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
+        MinecraftServer server = source.getServer();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        // Get only a list of friends
+        Set<String> userNames = new HashSet<>(CommandUtils.getFriendNames(server, player));
+        
+        // Add all users if using Search
+        if (!builder.getRemaining().isEmpty())
+            userNames.addAll(CommandUtils.getFriendWhitelistedNames(server, player));
+        
         return CommandSource.suggestMatching(
-            CommandUtils.getFriendPlayerNames(source.getServer(), source.getPlayer()),
+            userNames,
             builder
         );
     }
     
-    public static @NotNull CompletableFuture<Suggestions> getAllTowns(CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
+    public static @NotNull CompletableFuture<Suggestions> getAllTowns(@NotNull CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
@@ -112,7 +122,7 @@ public final class CommandUtils {
         return (((claim = ((PlayerData)player).getClaim()) != null) && (claim.getTown() != null));
     }
     
-    public static @NotNull List<String> getOnlinePlayerNames(@NotNull final MinecraftServer server) {
+    public static @NotNull List<String> getOnlineNames(@NotNull final MinecraftServer server) {
         PlayerManager playerManager = server.getPlayerManager();
         return Arrays.asList(playerManager.getPlayerNames());
     }
@@ -120,15 +130,26 @@ public final class CommandUtils {
         PlayerManager playerManager = server.getPlayerManager();
         return Arrays.asList(playerManager.getWhitelistedNames());
     }
-    public static @NotNull Stream<String> getFriendPlayerNames(@NotNull final MinecraftServer server, @NotNull final ServerPlayerEntity player) {
+    public static @NotNull List<String> getFriendWhitelistedNames(@NotNull final MinecraftServer server, @NotNull final ServerPlayerEntity player) {
+        ClaimantPlayer claimant = ((ClaimsAccessor)server).getClaimManager()
+            .getPlayerClaim(player);
+        PlayerManager playerManager = server.getPlayerManager();
+        
+        return playerManager.getWhitelist().values().stream()
+            .map(entry -> (WhitelistedPlayer)entry)
+            .filter(claimant::isFriend)
+            .map(WhitelistedPlayer::getName)
+            .toList();
+    }
+    public static @NotNull List<String> getFriendNames(@NotNull final MinecraftServer server, @NotNull final ServerPlayerEntity player) {
         ClaimantPlayer claimant = ((ClaimsAccessor)server).getClaimManager()
             .getPlayerClaim(player);
         PlayerManager playerManager = server.getPlayerManager();
         
         return playerManager.getPlayerList().stream()
-            .filter(entity -> claimant.isFriend(entity.getUuid()))
-            .map(entity -> entity.getName()
-                .getString());
+            .filter(claimant::isFriend)
+            .map(PlayerEntity::getEntityName)
+            .toList();
     }
     
     public static @NotNull <S> Command<S> command(@NotNull Command<S> command) {

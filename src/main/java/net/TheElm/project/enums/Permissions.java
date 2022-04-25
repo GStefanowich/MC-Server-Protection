@@ -54,6 +54,9 @@ public class Permissions {
      */
     
     public static final @NotNull PermissionNode INTERACT_WORLD = addPermission("interact.world", "Allows players to interact with the world");
+    
+    public static final @NotNull PermissionNode INTERACT_OTHER_DEATHCHEST = addPermission("interact.death_chest.other", "Allows players to take other players death chests");
+    
     public static final @NotNull PermissionNode PLAYER_NICKNAME = addPermission("player.nick", "Allows players to set their own nickname");
     public static final @NotNull PermissionNode PLAYER_NICKNAME_COLOR = addPermission("player.nick.color", "Allows players to set their own nickname with a color");
     public static final @NotNull PermissionNode PLAYER_NICKNAME_COLOR_GRADIENT = addPermission("player.nick.color.gradient", "Allows players to set their own nickname using a color gradient");

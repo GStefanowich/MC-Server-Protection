@@ -47,6 +47,11 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.recipe.CraftingRecipe;
+import net.minecraft.recipe.Recipe;
+import net.minecraft.recipe.RecipeManager;
+import net.minecraft.recipe.RecipeType;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
@@ -61,7 +66,10 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
 
 @Mixin(SignBlockEntity.class)
@@ -80,6 +88,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
     
     // Item being traded
     private @Nullable Identifier shopSign_item = null;
+    private @Nullable List<Identifier> shopSign_itemRecipes = null;
     private final @NotNull Map<Enchantment, Integer> shopSign_itemEnchants = Maps.newLinkedHashMap();
     
     // Price / Count of item transactioning
@@ -132,6 +141,8 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
     @Override
     public boolean setItem(@NotNull ItemStack stack) {
         this.shopSign_item = Registry.ITEM.getId(stack.getItem());
+        this.shopSign_itemRecipes = null;
+        this.shopSign_itemEnchants.clear();
         this.shopSign_itemEnchants.putAll(EnchantmentHelper.get(stack));
         return !Items.AIR.equals(stack.getItem());
     }
@@ -145,6 +156,38 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
     @Override
     public @Nullable Identifier getShopItemIdentifier() {
         return this.shopSign_item;
+    }
+    
+    @Override
+    public @Nullable List<? extends Recipe<?>> getShopItemRecipes() {
+        if (this.shopSign_itemRecipes == null)
+            this.shopSign_itemRecipes = this.findValidShopItemRecipes();
+        if (this.shopSign_itemRecipes.isEmpty())
+            return null;
+        RecipeManager recipeManager = this.getRecipeManager();
+        if (recipeManager == null)
+            return null;
+        return this.shopSign_itemRecipes.stream()
+            .map(recipeManager::get)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .toList();
+    }
+    private @NotNull List<Identifier> findValidShopItemRecipes() {
+        RecipeManager recipeManager = this.getRecipeManager();
+        if (recipeManager == null || this.shopSign_item == null)
+            return Collections.emptyList();
+        return recipeManager.listAllOfType(RecipeType.CRAFTING).stream()
+            .filter(recipe -> this.shopSign_item.equals(Registry.ITEM.getId(recipe.getOutput().getItem())))
+            .filter(recipe -> recipe.getIngredients().size() == 1)
+            .map(CraftingRecipe::getId)
+            .toList();
+    }
+    private @Nullable RecipeManager getRecipeManager() {
+        if (this.world == null)
+            return null;
+        MinecraftServer server = this.world.getServer();
+        return server == null ? null : server.getRecipeManager();
     }
     
     @Override
@@ -228,8 +271,10 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
                 // Update the parameters here from the builder
                 this.shopSign_Owner = builder.getShopOwner();
                 this.shopSign_item = builder.getShopItemIdentifier();
+                this.shopSign_itemRecipes = null;
                 
                 // Copy the enchantments to the sign from the builder
+                this.shopSign_itemEnchants.clear();
                 this.shopSign_itemEnchants.putAll(builder.getShopItemEnchantments());
                 
                 // Get the item information
@@ -292,6 +337,7 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
                         this.shopSign_item = new Identifier(signItem = (tag.getString("shop_item_mod") + ":" + tag.getString("shop_item_name")));
                     } else if (tag.contains("shop_item", NbtElement.STRING_TYPE))
                         this.shopSign_item = new Identifier(signItem = tag.getString("shop_item"));
+                    this.shopSign_itemRecipes = null;
                 } catch (InvalidIdentifierException e) {
                     CoreMod.logError("Invalid item identifier \"" + signItem + "\" for shop sign.", e);
                 }
@@ -307,8 +353,10 @@ public abstract class ShopSign extends BlockEntity implements ShopSignData {
                     this.shopSign_soundSourcePlayFromPos = BlockPos.fromLong(tag.getLong("shop_sound_location"));
                 
                 // Load the enchantments from the tag
-                if (tag.contains("shop_item_enchants", NbtElement.LIST_TYPE))
+                if (tag.contains("shop_item_enchants", NbtElement.LIST_TYPE)) {
+                    this.shopSign_itemEnchants.clear();
                     this.shopSign_itemEnchants.putAll(NbtUtils.enchantsFromTag(tag.getList("shop_item_enchants", NbtElement.COMPOUND_TYPE)));
+                }
                 
                 // Save the shop owner UUID
                 this.shopSign_Owner = uuid;

@@ -29,10 +29,12 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimRanks;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.interfaces.WhitelistedPlayer;
 import net.TheElm.project.objects.ClaimTag;
 import net.TheElm.project.objects.ticking.ClaimCache;
 import net.TheElm.project.utilities.DevUtils;
 import net.TheElm.project.utilities.nbt.NbtUtils;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -99,6 +101,12 @@ public abstract class Claimant {
             default:
                 return false;
         }
+    }
+    public boolean isFriend(@Nullable Entity entity) {
+        return entity instanceof PlayerEntity player && this.isFriend(player.getUuid());
+    }
+    public boolean isFriend(@Nullable WhitelistedPlayer player) {
+        return player != null && this.isFriend(player.getUUID());
     }
     public boolean updateFriend(@NotNull UUID player, @Nullable ClaimRanks rank) {
         boolean changed = false;

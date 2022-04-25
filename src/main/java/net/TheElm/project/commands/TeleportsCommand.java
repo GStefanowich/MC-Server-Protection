@@ -314,12 +314,12 @@ public final class TeleportsCommand {
         
         // Check if player is within spawn
         if (!ChunkUtils.isPlayerWithinSpawn(porter))
-            throw PLAYER_NOT_IN_SPAWN.create(porter);
+            throw TeleportsCommand.PLAYER_NOT_IN_SPAWN.create(porter);
         
-        Warp warp;
         // If the player to teleport to does not have a warp
-        if ((warp = WarpUtils.getWarp(target.getId(), location)) == null)
-            throw TARGET_NO_WARP.create(porter);
+        Warp warp = WarpUtils.getWarp(target.getId(), location);
+        if (warp == null)
+            throw TeleportsCommand.TARGET_NO_WARP.create(porter);
         
         ServerPlayerEntity targetPlayer = manager.getPlayer(target.getId());
         

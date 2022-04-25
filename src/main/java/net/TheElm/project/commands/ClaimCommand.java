@@ -115,6 +115,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -260,8 +261,7 @@ public final class ClaimCommand {
                     .suggests(CommandUtils::getFriendPlayerNames)
                     .then(CommandManager.argument("location", StringArgumentType.string())
                         .suggests(ClaimCommand::playerHomeNamesOfFriend)
-                        // TODO: Allow players to LOCATE to another players Waystone
-                        .executes(a -> 0)
+                        .executes(ClaimCommand::findFriendWarp)
                     )
                     .executes(ClaimCommand::findFriend)
                 )
@@ -475,9 +475,8 @@ public final class ClaimCommand {
     }
     private static int claimChunkOther(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the target player
-        Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context, "target");
-        GameProfile targetPlayer = gameProfiles.stream().findAny()
-            .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        GameProfile targetPlayer = GameProfileArgumentType.getProfileArgument(context, "target").stream()
+            .findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Claim the chunk for other player
         return ClaimCommand.claimChunk(
@@ -1171,27 +1170,81 @@ public final class ClaimCommand {
     }
     private static int findFriend(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        MinecraftServer server = source.getServer();
+        
+        // Get the GameProfile of the Target
+        GameProfile friend = GameProfileArgumentType.getProfileArgument(context, "friend").stream()
+            .findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        
+        // Get the Claims handler
         ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
-        ServerPlayerEntity player = source.getPlayer();
-        ServerPlayerEntity friend = EntityArgumentType.getPlayer(context, "friend");
+        
+        // Check if the command player and the target are friends
         ClaimantPlayer friendData = claimCache.getPlayerClaim(friend);
         if (!friendData.isFriend(player.getUuid()))
             throw ClaimCommand.PLAYER_NOT_FRIENDS.create(player);
-        if (player.world != friend.world || friend.isInvisible())
+        
+        // Try to get the entity to target
+        Entity target = Optional.ofNullable(server.getPlayerManager()
+            .getPlayer(friend.getId())).orElseThrow(EntityArgumentType.PLAYER_NOT_FOUND_EXCEPTION::create);
+        if (player.world != target.world || target.isInvisible())
             throw ClaimCommand.PLAYER_DIFFERENT_WORLD.create(player);
-        return ClaimCommand.findFriend(player, friend);
+        
+        return ClaimCommand.pathPlayerToTarget(player, target);
     }
-    private static int findFriend(@NotNull ServerPlayerEntity player, @NotNull ServerPlayerEntity target) {
+    private static int findFriendWarp(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerWorld world = source.getWorld();
+        ServerPlayerEntity player = source.getPlayer();
+        
+        // Get the GameProfile of the Target
+        GameProfile friend = GameProfileArgumentType.getProfileArgument(context, "friend").stream()
+            .findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
+        
+        // Get the name of the warp to target to
+        String name = StringArgumentType.getString(context, "location");
+        
+        // Get the Claims handler
+        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+            .getClaimManager();
+        
+        // Check if the command player and the target are friends
+        ClaimantPlayer friendData = claimCache.getPlayerClaim(friend);
+        if (!friendData.isFriend(player.getUuid()))
+            throw ClaimCommand.PLAYER_NOT_FRIENDS.create(player);
+        
+        // Try to get the warp
+        WarpUtils.Warp warp = WarpUtils.getWarp(friend.getId(), name);
+        if (warp == null)
+            throw TeleportsCommand.TARGET_NO_WARP.create(player);
+        
+        // Check that the player is in the world for the warp
+        if (!world.getRegistryKey().equals(warp.world))
+            throw ClaimCommand.PLAYER_DIFFERENT_WORLD.create(player);
+        
+        // Locate to the Targets Waystone
+        return ClaimCommand.pathPlayerToTarget(player, warp.warpPos);
+    }
+    private static int stopFindingPos(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayer();
+        return ClaimCommand.pathPlayerToTarget(player, player);
+    }
+    private static int pathPlayerToTarget(@NotNull ServerPlayerEntity player, @NotNull Entity target) {
         Path navigator = ((PlayerData)player).findPathTo(target, 3);
         if (navigator != null)
             EffectUtils.summonBreadcrumbs(ParticleTypes.FALLING_OBSIDIAN_TEAR, player, navigator);
         else CoreMod.logInfo("Could not find path.");
         return navigator == null ? 0 : 1;
     }
-    private static int stopFindingPos(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerCommandSource source = context.getSource();
-        return ClaimCommand.findFriend(source.getPlayer(), source.getPlayer());
+    private static int pathPlayerToTarget(@NotNull ServerPlayerEntity player, @NotNull BlockPos position) {
+        Path navigator = ((PlayerData)player).findPathTo(position, 3);
+        if (navigator != null)
+            EffectUtils.summonBreadcrumbs(ParticleTypes.FALLING_OBSIDIAN_TEAR, player, navigator);
+        else CoreMod.logInfo("Could not find path.");
+        return navigator == null ? 0 : 1;
     }
     
     private static @NotNull CompletableFuture<Suggestions> playerHomeNamesOfFriend(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {

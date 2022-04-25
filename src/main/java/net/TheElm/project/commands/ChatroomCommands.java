@@ -105,7 +105,7 @@ public final class ChatroomCommands {
                 )
             )
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .suggests(CommandUtils::getOnlinePlayerNames)
+                .suggests(CommandUtils::getOnlineNames)
                 .then(CommandManager.literal("global")
                     .requires(CommandPredicate.isEnabled(SewConfig.CHAT_MUTE_OP)
                         .and(

@@ -131,7 +131,7 @@ public abstract class ArmorStand extends LivingEntity implements PlayerCorpse {
         // Armor Stand is a corpse
         if (this.corpsePlayerUUID != null) {
             // Return the items back to their owner
-            if (player.getUuid().equals(this.corpsePlayerUUID)) {
+            if (EntityUtils.canEntityTakeDeathChest(player, this.corpsePlayerUUID)) {
                 this.returnItemsToPlayer(player);
             } else {
                 // Deny if the corpse does not belong to this player
