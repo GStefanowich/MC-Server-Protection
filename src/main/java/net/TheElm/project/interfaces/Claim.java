@@ -27,6 +27,7 @@ package net.TheElm.project.interfaces;
 
 import net.TheElm.project.enums.ClaimPermissions;
 import net.TheElm.project.enums.ClaimSettings;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -34,8 +35,8 @@ import java.util.UUID;
 
 public interface Claim {
     
-    @Nullable
-    UUID getOwner();
+    @Nullable UUID getOwnerId();
+    @Nullable ClaimantPlayer getOwner();
     boolean canPlayerDo(@Nullable UUID player, @Nullable ClaimPermissions perm);
     boolean isSetting(@NotNull ClaimSettings setting);
     

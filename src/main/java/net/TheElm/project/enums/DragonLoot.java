@@ -46,7 +46,7 @@ public final class DragonLoot {
                     stack = new ItemStack(Items.DRAGON_EGG);
                 else {
                     stack = new ItemStack(Items.EXPERIENCE_BOTTLE);
-                    stack.setCount(IntUtils.random(random, 1, 4));
+                    stack.setCount(IntUtils.random(random, 1, 32));
                 }
                 return stack;
             });
@@ -67,7 +67,7 @@ public final class DragonLoot {
             DragonLoot.itemReward(2000, Items.SHULKER_SHELL, (player, stack) -> stack.setCount(IntUtils.random(DragonLoot.RANDOM, 1, 3)));
             DragonLoot.itemReward(750, Items.DIAMOND_BLOCK);
             DragonLoot.itemReward(1400, Items.EMERALD_BLOCK);
-            DragonLoot.itemReward(1400, Items.EXPERIENCE_BOTTLE, (player, stack) -> stack.setCount(IntUtils.random(DragonLoot.RANDOM, 4, 26)));
+            DragonLoot.itemReward(1400, Items.EXPERIENCE_BOTTLE, (player, stack) -> stack.setCount(IntUtils.random(DragonLoot.RANDOM, 10, 32)));
         }
         
         if (SewConfig.get(SewConfig.DRAGON_LOOT_RARE_BOOKS)) {

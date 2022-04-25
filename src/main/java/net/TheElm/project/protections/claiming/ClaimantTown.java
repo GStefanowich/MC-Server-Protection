@@ -57,7 +57,8 @@ import java.util.UUID;
 public final class ClaimantTown extends Claimant {
     
     private boolean deleted = false;
-    private UUID ownerId;
+    private @Nullable UUID ownerId;
+    private @Nullable ClaimantPlayer owner;
     private Set<UUID> villagers;
     
     public ClaimantTown(@NotNull ClaimCache cache, @NotNull UUID townId) {
@@ -75,15 +76,21 @@ public final class ClaimantTown extends Claimant {
         return TownNameUtils.getOwnerTitle( this.getCount(), this.getResidentCount(), true );
     }
     public @NotNull MutableText getOwnerName() {
-        return PlayerNameUtils.fetchPlayerNick(this.getOwner());
+        return PlayerNameUtils.fetchPlayerNick(this.getOwnerId());
     }
     
-    public UUID getOwner() {
+    public @Nullable UUID getOwnerId() {
         return this.ownerId;
     }
+    public @Nullable ClaimantPlayer getOwner() {
+        if (this.owner == null && this.ownerId != null)
+            this.owner = this.claimCache.getPlayerClaim(this.ownerId);
+        return this.owner;
+    }
     public void setOwner(@NotNull UUID owner) {
-        this.updateFriend( owner, ClaimRanks.OWNER );
+        this.updateFriend(owner, ClaimRanks.OWNER);
         this.ownerId = owner;
+        this.owner = this.claimCache.getPlayerClaim(owner);
         this.markDirty();
     }
     
@@ -110,7 +117,7 @@ public final class ClaimantTown extends Claimant {
     public Set<UUID> getVillagers() {
         return this.villagers;
     }
-    public boolean addVillager(VillagerEntity villager) {
+    public boolean addVillager(@NotNull VillagerEntity villager) {
         if (this.villagers.add(villager.getUuid())) {
             CoreMod.logInfo("Added a new villager to " + this.getName().getString() + "!");
             this.markDirty();
@@ -118,7 +125,7 @@ public final class ClaimantTown extends Claimant {
         }
         return false;
     }
-    public boolean removeVillager(VillagerEntity villager) {
+    public boolean removeVillager(@NotNull VillagerEntity villager) {
         if (this.villagers.remove(villager.getUuid())) {
             this.markDirty();
             return true;
@@ -129,7 +136,7 @@ public final class ClaimantTown extends Claimant {
     /* Player Friend Options */
     @Override
     public ClaimRanks getFriendRank(@Nullable UUID player) {
-        if ( this.getOwner().equals( player ) )
+        if ( this.getOwnerId().equals( player ) )
             return ClaimRanks.OWNER;
         return super.getFriendRank( player );
     }
@@ -186,6 +193,7 @@ public final class ClaimantTown extends Claimant {
     public void readCustomDataFromTag(@NotNull NbtCompound tag) {
         // Get the towns owner
         this.ownerId = (NbtUtils.hasUUID(tag, "owner") ? NbtUtils.getUUID(tag, "owner") : null);
+        this.owner = null;
         
         // Get the town name
         if (tag.contains("name", NbtElement.STRING_TYPE))

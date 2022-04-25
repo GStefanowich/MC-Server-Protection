@@ -39,6 +39,7 @@
     "Entities.Decorative.WolfDye",
     
     "Entities.AnimalInteract",
+    "Entities.Breeders",
     "Entities.CorralMobs",
     "Entities.Cow",
     

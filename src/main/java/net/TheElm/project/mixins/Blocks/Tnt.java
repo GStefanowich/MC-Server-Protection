@@ -34,7 +34,6 @@ import net.minecraft.block.BlockState;
 import net.minecraft.block.TntBlock;
 import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.hit.BlockHitResult;
@@ -60,7 +59,7 @@ public abstract class Tnt extends Block {
         boolean burning = instance.isOnFire();
         if (burning) {
             WorldChunk chunk = world.getWorldChunk(hit.getBlockPos());
-            if (((IClaimedChunk)chunk).getOwner() != null) {
+            if (((IClaimedChunk)chunk).getOwnerId() != null) {
                 boolean allow = instance.getOwner() instanceof ServerPlayerEntity && ChunkUtils.canPlayerDoInChunk(
                     ClaimPermissions.BLOCKS,
                     (ServerPlayerEntity)instance.getOwner(),

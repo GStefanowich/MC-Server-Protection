@@ -31,10 +31,12 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.exceptions.NbtNotFoundException;
+import net.TheElm.project.interfaces.IClaimedChunk;
 import net.TheElm.project.interfaces.LogicalWorld;
 import net.TheElm.project.interfaces.PlayerData;
 import net.TheElm.project.objects.MaskSet;
 import net.TheElm.project.protections.BlockRange;
+import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.TheElm.project.utilities.nbt.NbtUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.TheElm.project.utilities.text.TextUtils;
@@ -62,6 +64,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
@@ -545,8 +548,21 @@ public final class WarpUtils {
         return warp;
     }
     public static void teleportEntityAndAttached(@NotNull final Entity entity, @NotNull final Warp warp) {
-        if (entity instanceof ServerPlayerEntity player)
-            TitleUtils.showPlayerTitle(player, "", warp.name, Formatting.AQUA);
+        if (entity instanceof ServerPlayerEntity player) {
+            Text townName = null;
+            
+            MinecraftServer server = entity.getServer();
+            if (server != null) {
+                ServerWorld world = server.getWorld(warp.world);
+                if (world != null) {
+                    ClaimantTown town = ((IClaimedChunk)world.getChunk(warp.warpPos)).getTown();
+                    if (town != null)
+                        townName = town.getName();
+                }
+            }
+            
+            TitleUtils.showPlayerTitle(player, townName, new LiteralText(warp.name).formatted(Formatting.AQUA));
+        }
         WarpUtils.teleportEntityAndAttached(warp.world, entity, warp.warpPos);
     }
     public static void teleportEntityAndAttached(@NotNull final RegistryKey<World> dimension, @NotNull final Entity entity, @NotNull final BlockPos tpPos) {

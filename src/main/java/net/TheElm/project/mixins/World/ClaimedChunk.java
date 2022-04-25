@@ -66,6 +66,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
     
     private final ClaimSlice[] claimSlices = new ClaimSlice[256];
     
+    // Town is a weak reference here but NOT in ClaimantPlayer, we only want to load the Town once from the Player
     private WeakReference<ClaimantTown> chunkTown = null;
     private ClaimantPlayer chunkPlayer = null;
     
@@ -151,7 +152,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         for (int y = yMin; y <= yMax; y++) {
             ClaimSlice.InnerClaim claim = slice.get(y);
             if (claim != null)
-                owners.add(claim.getOwner());
+                owners.add(claim.getOwnerId());
         }
         
         return owners.toArray(new UUID[0]);
@@ -176,13 +177,14 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
             ClaimSlice.InnerClaim inner = slice.get(blockPos.getY());
             
             // If claim inner is not nobody
-            if (inner != null && inner.getOwner() != null && inner.isWithin(blockPos.getY()))
+            if (inner != null && inner.getOwnerId() != null && inner.isWithin(blockPos.getY()))
                 return inner;
         }
         
         return this;
     }
     
+    @Override
     public boolean canPlayerClaim(@NotNull ClaimantPlayer player, boolean stopIfClaimed) throws TranslationKeyException {
         // If the chunk is owned, return false
         if (this.chunkPlayer != null) {
@@ -211,12 +213,14 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         
         return null;
     }
-    public @Nullable UUID getOwner() {
+    @Override
+    public @Nullable UUID getOwnerId() {
         if (this.chunkPlayer == null)
             return null;
         return this.chunkPlayer.getId();
     }
-    public @Nullable UUID getOwner(@Nullable BlockPos pos) {
+    @Override
+    public @Nullable UUID getOwnerId(@Nullable BlockPos pos) {
         if (pos != null) {
             int slicePos = ChunkUtils.getPositionWithinChunk(pos);
             if (this.claimSlices[slicePos] != null) {
@@ -227,17 +231,23 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
                 
                 // Check that the player is within the Y
                 if (claim != null && claim.isWithin(pos))
-                    return claim.getOwner();
+                    return claim.getOwnerId();
             }
         }
-        return this.getOwner();
+        return this.getOwnerId();
     }
+    @Override
+    public @Nullable ClaimantPlayer getOwner() {
+        return this.chunkPlayer;
+    }
+    @Override
     public @Nullable UUID getTownId() {
         ClaimantTown town;
         if ((town = this.getTown()) == null)
             return null;
         return town.getId();
     }
+    @Override
     public @Nullable ClaimantTown getTown() {
         if (( this.chunkPlayer == null ))
             return null;
@@ -254,7 +264,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         if (this.chunkPlayer == null || (player != null && player.equals(this.chunkPlayer.getId())))
             return true;
         ClaimantTown town;
-        if ( ((town = this.getTown()) != null ) && (player != null) && player.equals( town.getOwner() ) )
+        if ( ((town = this.getTown()) != null ) && (player != null) && player.equals( town.getOwnerId() ) )
             return true;
         
         // Get the ranks of the user and the rank required for performing
@@ -262,7 +272,7 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
         ClaimRanks permReq = this.chunkPlayer.getPermissionRankRequirement(perm);
         
         // Return the test if the user can perform the action (If friend of chunk owner OR if friend of town and chunk owned by town owner)
-        return permReq.canPerform(userRank) || ((town != null) && (this.chunkPlayer.getId().equals(town.getOwner())) && permReq.canPerform(town.getFriendRank(player)));
+        return permReq.canPerform(userRank) || ((town != null) && (this.chunkPlayer.getId().equals(town.getOwnerId())) && permReq.canPerform(town.getFriendRank(player)));
     }
     @Override
     public boolean canPlayerDo(@NotNull BlockPos pos, @Nullable UUID player, @Nullable ClaimPermissions perm) {
@@ -272,13 +282,13 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
     @Override
     public boolean isSetting(@NotNull ClaimSettings setting) {
         if (this.chunkPlayer == null)
-            return setting.getDefault( this.getOwner() );
-        return this.chunkPlayer.getProtectedChunkSetting( setting );
+            return setting.getDefault(this.getOwnerId());
+        return setting.hasSettingSet(this);
     }
     @Override
     public boolean isSetting(@NotNull BlockPos pos, @NotNull ClaimSettings setting) {
         if ( !setting.isEnabled() )
-            return setting.getDefault( this.getOwner() );
+            return setting.getDefault( this.getOwnerId() );
         else
             return this.getClaim( pos )
                 .isSetting( setting );
@@ -303,12 +313,12 @@ public abstract class ClaimedChunk implements BlockView, IClaimedChunk, Claim {
                 ClaimSlice.InnerClaim claim = claims.next();
                 
                 // If bottom of world, or no owner
-                if ((claim.lower() == -1) || (claim.getOwner() == null))
+                if ((claim.lower() == -1) || (claim.getOwnerId() == null))
                     continue;
                 
                 // Save data to the tag
                 NbtCompound claimTag = new NbtCompound();
-                claimTag.putUuid("owner", claim.getOwner());
+                claimTag.putUuid("owner", claim.getOwnerId());
                 claimTag.putInt("upper", claim.upper());
                 claimTag.putInt("lower", claim.lower());
                 

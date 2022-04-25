@@ -36,7 +36,6 @@ import net.minecraft.world.ChunkSerializer;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ProtoChunk;
 import net.minecraft.world.chunk.ReadOnlyChunk;
-import net.minecraft.world.chunk.WorldChunk;
 import net.minecraft.world.poi.PointOfInterestStorage;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
@@ -57,7 +56,7 @@ public class ChunkSaving {
         NbtCompound levelTag = callback.getReturnValue();
         
         // Save the chunks owned-player
-        UUID player = ((IClaimedChunk)chunk).getOwner();
+        UUID player = ((IClaimedChunk)chunk).getOwnerId();
         if (player != null)
             levelTag.putUuid(sewingMachineSerializationPlayer, player);
         

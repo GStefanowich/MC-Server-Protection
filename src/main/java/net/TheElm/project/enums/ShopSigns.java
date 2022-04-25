@@ -636,7 +636,7 @@ public enum ShopSigns {
                         throw new ShopBuilderException(new LiteralText("Deed sign must be placed within a town."));
                     
                     // Check who placed the sign
-                    if (!(creator.getUuid().equals(town.getOwner())) && creator.getUuid().equals(((IClaimedChunk) chunk).getOwner()))
+                    if (!(creator.getUuid().equals(town.getOwnerId())) && creator.getUuid().equals(((IClaimedChunk) chunk).getOwnerId()))
                         throw new ShopBuilderException(new LiteralText("Deed signs may only be placed in chunks belonging to the town owner, by the town owner."));
                     
                     sign.setTextOnRow(1, new LiteralText(CasingUtils.sentence(deedType)));

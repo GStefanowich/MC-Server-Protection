@@ -189,7 +189,7 @@ public class ChunkOwnerUpdate implements TickingAction {
                     return ActionResult.FAIL;
                 
                 if (claimant instanceof ClaimantTown claimantTown) {
-                    if (!Objects.equals(chunk.getOwner(), claimantTown.getOwner()))
+                    if (!Objects.equals(chunk.getOwnerId(), claimantTown.getOwnerId()))
                         return ActionResult.FAIL;
                     if (chunk.getTown() != null && chunk.getTown() != claimantTown)
                         throw ClaimCommand.CHUNK_ALREADY_OWNED.create(source);
@@ -202,7 +202,7 @@ public class ChunkOwnerUpdate implements TickingAction {
                         return ActionResult.FAIL;
                     
                     // Check if the chunk is owned by another player
-                    if (chunk.getOwner() != null && !Objects.equals(chunk.getOwner(), claimant.getId()))
+                    if (chunk.getOwnerId() != null && !Objects.equals(chunk.getOwnerId(), claimant.getId()))
                         throw ClaimCommand.CHUNK_ALREADY_OWNED.create(source);
                     
                     // Update the information
@@ -234,22 +234,22 @@ public class ChunkOwnerUpdate implements TickingAction {
                 Claimant claimant = Objects.requireNonNull(update.getClaimant());
                 
                 // Cleanup/Remove the players count
-                if (update.getVerify() || Objects.equals(claimant.getId(), chunk.getOwner()))
+                if (update.getVerify() || Objects.equals(claimant.getId(), chunk.getOwnerId()))
                     claimant.removeFromCount(worldChunk);
                 else if (!update.getVerify()) {
                     // If we aren't verifying the UNCLAIM, get the existing owner and subtract the chunk from them
                     ClaimCache claims = chunk.getClaimCache();
-                    if (claims != null && chunk.getOwner() != null)
-                        claims.getPlayerClaim(chunk.getOwner())
+                    if (claims != null && chunk.getOwnerId() != null)
+                        claims.getPlayerClaim(chunk.getOwnerId())
                             .removeFromCount(worldChunk);
                 }
                 
                 // If the chunk is not owned
-                if (update.getVerify() && chunk.getOwner() == null && update.getInitialSize() <= 1)
+                if (update.getVerify() && chunk.getOwnerId() == null && update.getInitialSize() <= 1)
                     throw ClaimCommand.CHUNK_NOT_OWNED.create(update.getSource());
                 
                 // If the chunk is owned by another player
-                if (update.getVerify() && chunk.getOwner() != null && !Objects.equals(claimant.getId(), chunk.getOwner()) )
+                if (update.getVerify() && chunk.getOwnerId() != null && !Objects.equals(claimant.getId(), chunk.getOwnerId()) )
                     return update.getInitialSize() > 1 ? ActionResult.PASS : ActionResult.FAIL;
                 
                 // Remove the towns count

@@ -84,7 +84,7 @@ public final class WhereCommand {
             IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(pos);
             
             // Append where they are located
-            if (chunk.getOwner(pos) != null) {
+            if (chunk.getOwnerId(pos) != null) {
                 feedback.append("\n")
                     .append("They are currently in ")
                     .append(chunk.getOwnerName(commandSource instanceof PlayerEntity ? (PlayerEntity) commandSource : player, pos))

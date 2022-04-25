@@ -80,6 +80,7 @@ import net.minecraft.entity.boss.BossBar;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.mob.PiglinEntity;
+import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.CatEntity;
 import net.minecraft.entity.passive.ChickenEntity;
 import net.minecraft.entity.passive.CodEntity;
@@ -468,6 +469,22 @@ public final class EntityUtils {
             || type == EntityType.DRAGON_FIREBALL;
     }
     
+    public static boolean areBreedable(@NotNull Entity entityA, @NotNull Entity entityB) {
+        if (entityA == entityB)
+            return false;
+        if (entityA.getClass() != entityB.getClass())
+            return false;
+        if (entityA instanceof AnimalEntity animalA && entityB instanceof AnimalEntity animalB) {
+            if (animalA.getBreedingAge() != 0 || animalB.getBreedingAge() != 0)
+                return false;
+            if (!animalA.canEat() || !animalB.canEat())
+                return false;
+            if (animalA.isAiDisabled() || animalB.isAiDisabled())
+                return false;
+        }
+        return true;
+    }
+    
     /*
      * Generic Entities
      */
@@ -574,7 +591,7 @@ public final class EntityUtils {
         World world = entity.getEntityWorld();
         IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(entity.getBlockPos());
         
-        if (CoreMod.SPAWN_ID.equals(chunk.getOwner()))
+        if (CoreMod.SPAWN_ID.equals(chunk.getOwnerId()))
             return new LiteralText("Spawn")
                 .formatted(Formatting.AQUA);
         
@@ -583,7 +600,7 @@ public final class EntityUtils {
             return town.getName()
                 .styled(style -> style.withHoverEvent(town.getHoverText()).withColor(Formatting.AQUA));
         
-        if (chunk.getOwner() != null)
+        if (chunk.getOwnerId() != null)
             return new LiteralText("")
                 .append(chunk.getOwnerName()
                     .formatted(Formatting.AQUA))

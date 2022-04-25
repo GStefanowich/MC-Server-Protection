@@ -132,10 +132,10 @@ public final class ClaimantPlayer extends Claimant {
     }
     
     /* Claimed chunk options */
-    public boolean getProtectedChunkSetting(ClaimSettings setting) {
-        if ( this.chunkClaimOptions.containsKey( setting ) )
-            return this.chunkClaimOptions.get( setting );
-        return setting.getDefault( this.getId() );
+    public boolean getProtectedChunkSetting(@NotNull ClaimSettings setting) {
+        if ( this.chunkClaimOptions.containsKey(setting) )
+            return this.chunkClaimOptions.get(setting);
+        return setting.getDefault(this.getId());
     }
     public int getMaxChunkLimit() {
         return this.additionalClaims + SewConfig.get(SewConfig.PLAYER_CLAIMS_LIMIT);

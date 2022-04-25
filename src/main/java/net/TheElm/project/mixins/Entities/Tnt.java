@@ -59,7 +59,7 @@ public abstract class Tnt extends Entity implements OwnableEntity {
             this.entityOwner = this.causingEntity.getUuid();
         else {
             IClaimedChunk claimed = (IClaimedChunk) this.world.getWorldChunk(this.getBlockPos());
-            this.entityOwner = claimed.getOwner();
+            this.entityOwner = claimed.getOwnerId();
         }
     }
     

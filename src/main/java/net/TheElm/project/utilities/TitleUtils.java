@@ -42,6 +42,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public final class TitleUtils {
     
@@ -71,11 +72,14 @@ public final class TitleUtils {
     }
     
     public static void showPlayerTitle(@NotNull ServerPlayerEntity player, @NotNull String base, @NotNull String sub, Formatting... formatting) {
+        TitleUtils.showPlayerTitle(player, new LiteralText(base), new LiteralText(sub).formatted(formatting));
+    }
+    public static void showPlayerTitle(@NotNull ServerPlayerEntity player, @Nullable Text base, @Nullable Text sub) {
         ServerPlayNetworkHandler networkHandler = player.networkHandler;
         networkHandler.sendPacket(new ClearTitleS2CPacket(false));
         networkHandler.sendPacket(new TitleFadeS2CPacket(10, 40, 20));
-        networkHandler.sendPacket(new SubtitleS2CPacket(new LiteralText(sub).formatted(formatting)));
-        networkHandler.sendPacket(new TitleS2CPacket(new LiteralText(base)));
+        networkHandler.sendPacket(new SubtitleS2CPacket(sub == null ? new LiteralText("") : sub));
+        networkHandler.sendPacket(new TitleS2CPacket(base == null ? new LiteralText("") : base));
     }
     
     private static Text combineTextChunks(Formatting formatting, Text... text) {

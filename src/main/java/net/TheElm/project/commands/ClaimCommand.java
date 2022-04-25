@@ -454,7 +454,7 @@ public final class ClaimCommand {
         // Attempt to claim the chunk
         WorldChunk chunk = world.getWorldChunk(new BlockPos(source.getPosition()));
         ServerPlayerEntity player = source.getPlayer();
-        if (!player.getUuid().equals(((IClaimedChunk) chunk).getOwner()))
+        if (!player.getUuid().equals(((IClaimedChunk) chunk).getOwnerId()))
             ClaimCommand.claimChunkSelf(context);
         
         // Update owner of the town
@@ -545,7 +545,7 @@ public final class ClaimCommand {
         final int radius = IntegerArgumentType.getInteger(context, "radius");
         IClaimedChunk[] claimedChunks = IClaimedChunk.getOwnedAround(source.getWorld(), blockPos, radius);
         for (IClaimedChunk claimedChunk : claimedChunks) {
-            if (!chunkFor.equals(claimedChunk.getOwner(blockPos)))
+            if (!chunkFor.equals(claimedChunk.getOwnerId(blockPos)))
                 throw CHUNK_RADIUS_OWNED.create(source, claimedChunk.getOwnerName(player, blockPos));
         }
         
@@ -735,7 +735,7 @@ public final class ClaimCommand {
         
         // Check if owner
         if ((claim != null) && ((town = claim.getTown()) != null))
-            return player.getUuid().equals(town.getOwner());
+            return player.getUuid().equals(town.getOwnerId());
         
         return false;
     }
@@ -853,7 +853,7 @@ public final class ClaimCommand {
         
         ServerPlayerEntity player = source.getPlayer();
         ClaimantTown town;
-        if ((claimedChunk.getOwner() == null) || ((town = claimedChunk.getTown()) == null) || (!player.getUuid().equals(claimedChunk.getOwner())) || (!player.getUuid().equals( town.getOwner() )))
+        if ((claimedChunk.getOwnerId() == null) || ((town = claimedChunk.getTown()) == null) || (!player.getUuid().equals(claimedChunk.getOwnerId())) || (!player.getUuid().equals( town.getOwnerId() )))
             throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create(player);
         
         claimedChunk.updatePlayerOwner( targetPlayer.getId() );

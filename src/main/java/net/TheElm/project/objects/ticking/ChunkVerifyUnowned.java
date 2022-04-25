@@ -74,7 +74,7 @@ public class ChunkVerifyUnowned implements TickingAction {
         WorldChunk worldChunk = world.getWorldChunk(check);
         
         // If the chunk is claimed
-        this.success = ((IClaimedChunk) worldChunk).getOwner() == null;
+        this.success = ((IClaimedChunk) worldChunk).getOwnerId() == null;
         return !this.success || this.checks.isEmpty();
     }
 }

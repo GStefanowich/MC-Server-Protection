@@ -29,6 +29,10 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
 import net.TheElm.project.interfaces.BoolEnums;
+import net.TheElm.project.interfaces.Claim;
+import net.TheElm.project.interfaces.IClaimedChunk;
+import net.TheElm.project.protections.claiming.ClaimantPlayer;
+import net.TheElm.project.protections.claiming.ClaimantTown;
 import net.minecraft.text.LiteralText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -43,7 +47,29 @@ public enum ClaimSettings implements BoolEnums {
     WEATHER_GRIEFING(SewConfig.CLAIM_ALLOW_GRIEFING_WEATHER, "Allow weather to damage blocks", false, true, false),
     CREEPER_GRIEFING(SewConfig.CLAIM_ALLOW_GRIEFING_CREEPER, "Allow Creepers to destroy blocks", false, true, false),
     GHAST_GRIEFING(SewConfig.CLAIM_ALLOW_GRIEFING_GHAST, "Allow Ghasts to destroy blocks", false, true, false),
-    PLAYER_COMBAT(SewConfig.CLAIM_ALLOW_PLAYER_COMBAT, "Allow Player vs Player", false, true, false),
+    PLAYER_COMBAT(SewConfig.CLAIM_ALLOW_PLAYER_COMBAT, "Allow Player vs Player", false, true, false) {
+        @Override
+        public boolean hasSettingSet(@NotNull Claim claimant) {
+            ClaimantPlayer owner = claimant.getOwner();
+            
+            // This Setting should be overriden in Towns by the town (If the owner isn't SPAWN (Takes priority)).
+            if (owner != null && !owner.isSpawn() && claimant instanceof IClaimedChunk chunk) {
+                // Get the town
+                ClaimantTown town = chunk.getTown();
+                if (town != null) {
+                    // Get the settings of the towns owner
+                    ClaimantPlayer townOwner = town.getOwner();
+                    
+                    // Return the town owners settings
+                    if (townOwner != null)
+                        return townOwner.getProtectedChunkSetting(this);
+                }
+            }
+            
+            // Fallback to the default
+            return super.hasSettingSet(claimant);
+        }
+    },
     FIRE_SPREAD(SewConfig.CLAIM_ALLOW_FIRE_SPREAD, "Allow fire to spread and destroy blocks", false, true, false),
     HURT_TAMED("Allow Players to harm Wolves, Cats and other tamed pets", false, false, false),
     
@@ -103,5 +129,12 @@ public enum ClaimSettings implements BoolEnums {
     @Override
     public boolean isEnabled() {
         return this.configOption == null || SewConfig.get(this.configOption);
+    }
+    
+    public boolean hasSettingSet(@NotNull Claim claimant) {
+        ClaimantPlayer player = claimant.getOwner();
+        if (player != null)
+            return player.getProtectedChunkSetting(this);
+        return this.getDefault(null);
     }
 }

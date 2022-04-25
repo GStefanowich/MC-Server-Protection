@@ -61,8 +61,9 @@ public interface IClaimedChunk {
     boolean canPlayerClaim(@NotNull ClaimantPlayer player, boolean stopIfClaimed) throws TranslationKeyException;
     
     @Nullable ClaimCache getClaimCache();
-    @Nullable UUID getOwner();
-    @Nullable UUID getOwner(@Nullable BlockPos pos);
+    @Nullable UUID getOwnerId();
+    @Nullable UUID getOwnerId(@Nullable BlockPos pos);
+    @Nullable ClaimantPlayer getOwner();
     @Nullable UUID getTownId();
     @Nullable ClaimantTown getTown();
     
@@ -70,7 +71,7 @@ public interface IClaimedChunk {
         return this.getOwnerName((UUID) null);
     }
     default MutableText getOwnerName(@Nullable UUID zonePlayer) {
-        UUID owner = this.getOwner();
+        UUID owner = this.getOwnerId();
         if ( owner == null )
             return new LiteralText(SewConfig.get(SewConfig.NAME_WILDERNESS))
                 .formatted(Formatting.GREEN);
@@ -88,7 +89,7 @@ public interface IClaimedChunk {
         return this.getOwnerName(zonePlayer == null ? null : zonePlayer.getUuid(), pos);
     }
     default MutableText getOwnerName(@Nullable UUID zonePlayer, @Nullable BlockPos pos) {
-        UUID owner = this.getOwner(pos);
+        UUID owner = this.getOwnerId(pos);
         if ( owner == null )
             return new LiteralText(SewConfig.get(SewConfig.NAME_WILDERNESS))
                 .formatted(Formatting.GREEN);
@@ -106,8 +107,7 @@ public interface IClaimedChunk {
     /*
      * Claim Slices
      */
-    @NotNull
-    NbtList serializeSlices();
+    @NotNull NbtList serializeSlices();
     void deserializeSlices(@NotNull NbtList serialized);
     
     default void updateSliceOwner(@Nullable UUID owner, int slicePos) {
@@ -141,7 +141,7 @@ public interface IClaimedChunk {
                 WorldChunk worldChunk = world.getWorldChunk(new BlockPos( x << 4, 0, z << 4 ));
                 
                 // If the chunk is claimed
-                if (((IClaimedChunk) worldChunk).getOwner() != null)
+                if (((IClaimedChunk) worldChunk).getOwnerId() != null)
                     claimedChunks.add( (IClaimedChunk)worldChunk );
             }
         }

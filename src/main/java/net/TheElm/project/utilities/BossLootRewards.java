@@ -77,7 +77,7 @@ public final class BossLootRewards {
         // Get the loot inventory to insert into
         LootInventory inventory = this.getPlayerLoot(uuid);
         
-        if (!inventory.addStack(stack).isEmpty())
+        if (!inventory.insertLoot(stack))
             return false;
         
         // Save the players loot

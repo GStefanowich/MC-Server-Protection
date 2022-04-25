@@ -56,7 +56,7 @@ public abstract class ChunkBuild extends Chunk implements IClaimedChunk {
     @Inject(at = @At("RETURN"), method = "<init>(Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/world/chunk/ProtoChunk;Lnet/minecraft/world/chunk/WorldChunk$EntityLoader;)V")
     public void onConstructFromProto(ServerWorld world, ProtoChunk protoChunk, @Nullable WorldChunk.EntityLoader entityLoader, CallbackInfo callback) {
         // Update the chunks player-owner
-        this.updatePlayerOwner(((IClaimedChunk)protoChunk).getOwner(), false);
+        this.updatePlayerOwner(((IClaimedChunk)protoChunk).getOwnerId(), false);
         
         // Load the inner claims
         this.setSlices(((IClaimedChunk)protoChunk).getSlices());

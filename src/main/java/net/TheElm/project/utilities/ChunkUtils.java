@@ -335,7 +335,7 @@ public final class ChunkUtils {
     }
     
     public static Optional<UUID> getPosOwner(World world, BlockPos pos) {
-        return Optional.ofNullable( ((IClaimedChunk)world.getChunk( pos )).getOwner() );
+        return Optional.ofNullable( ((IClaimedChunk)world.getChunk( pos )).getOwnerId() );
     }
     
     /*public static boolean lightChunk(WorldChunk chunk) {
@@ -438,16 +438,16 @@ public final class ChunkUtils {
                 }
                 
                 if (claim.upper() > newClaim.upper())
-                    updates.add(new InnerClaim(claim.getOwner(), claim.upper(), newClaim.upper()));
+                    updates.add(new InnerClaim(claim.getOwnerId(), claim.upper(), newClaim.upper()));
                 if (claim.lower() < newClaim.lower())
-                    updates.add(new InnerClaim(claim.getOwner(), newClaim.lower(), claim.lower()));
+                    updates.add(new InnerClaim(claim.getOwnerId(), newClaim.lower(), claim.lower()));
             }
             
             // Add updated regions into the heightmap
             this.setAll(updates);
             
             // Don't save unclaimed regions into the heightmap
-            if (newClaim.getOwner() != null)
+            if (newClaim.getOwnerId() != null)
                 this.set(newClaim);
         }
         
@@ -458,7 +458,7 @@ public final class ChunkUtils {
                 InnerClaim claim = entry.getValue();
                 
                 // Remove all that are not SPAWN
-                if (!CoreMod.SPAWN_ID.equals( claim.getOwner() ))
+                if (!CoreMod.SPAWN_ID.equals( claim.getOwnerId() ))
                     it.remove();
             }
         }
@@ -479,9 +479,14 @@ public final class ChunkUtils {
             }
             
             public boolean hasOwner() {
-                return this.getOwner() != null;
+                return this.getOwnerId() != null;
             }
-            public @Nullable UUID getOwner() {
+            @Override
+            public @Nullable ClaimantPlayer getOwner() {
+                return this.owner;
+            }
+            @Override
+            public @Nullable UUID getOwnerId() {
                 return this.owner == null ? null : this.owner.getId();
             }
             
@@ -501,7 +506,7 @@ public final class ChunkUtils {
             
             @Override
             public boolean canPlayerDo(@Nullable UUID player, @Nullable ClaimPermissions perm) {
-                if (player != null && player.equals(this.getOwner()))
+                if (player != null && player.equals(this.getOwnerId()))
                     return true;
                 assert this.owner != null;
 
@@ -516,8 +521,8 @@ public final class ChunkUtils {
             @Override
             public boolean isSetting(@NotNull ClaimSettings setting) {
                 if (this.owner == null)
-                    return setting.getDefault( null );
-                return this.owner.getProtectedChunkSetting( setting );
+                    return setting.getDefault(null);
+                return setting.hasSettingSet(this);
             }
         }
     }

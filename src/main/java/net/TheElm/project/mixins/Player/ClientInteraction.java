@@ -256,7 +256,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
             
         } else {
             UUID playerLocation = CoreMod.PLAYER_LOCATIONS.get( player );
-            UUID chunkOwner = ( chunk == null ? null : ((IClaimedChunk) chunk).getOwner( blockPos ) );
+            UUID chunkOwner = ( chunk == null ? null : ((IClaimedChunk) chunk).getOwnerId( blockPos ) );
             
             // If the location has changed
             if ((( playerLocation != null ) && (!playerLocation.equals( chunkOwner )) ) || ( ( chunkOwner != null ) && (!chunkOwner.equals(playerLocation)))) {
@@ -269,7 +269,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
         BlockPos playerPos = player.getBlockPos();
         UUID locationOwner;
         
-        if (( local == null ) || ((locationOwner = ((IClaimedChunk) local).getOwner(playerPos)) == null )) {
+        if (( local == null ) || ((locationOwner = ((IClaimedChunk) local).getOwnerId(playerPos)) == null )) {
             MutableText popupText = ChunkUtils.getPlayerWorldWilderness(player)
                 .append(
                     new LiteralText(" [").formatted(Formatting.RED)
@@ -307,7 +307,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                 
                 if (town == null) {
                     // If player is in their own land (No Town)
-                    if ((locationOwner.equals(claimedChunk.getOwner())) && (locationOwner.equals(player.getUuid()))) {
+                    if ((locationOwner.equals(claimedChunk.getOwnerId())) && (locationOwner.equals(player.getUuid()))) {
                         popupText.append(new LiteralText("your " + landName).formatted(Formatting.DARK_GREEN));
                         return;
                     }
@@ -320,7 +320,7 @@ public abstract class ClientInteraction implements ServerPlayPacketListener, Pla
                 
                 // If player is in another players town
                 popupText.append(town.getName(player.getUuid())); // Town name
-                if (!locationOwner.equals(town.getOwner())) // Append the chunk owner (If not the towns)
+                if (!locationOwner.equals(town.getOwnerId())) // Append the chunk owner (If not the towns)
                     popupText.append(" - ").append(claimedChunk.getOwnerName(player));
                 popupText.append( // Town type
                     new LiteralText(" (")

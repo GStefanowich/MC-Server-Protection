@@ -45,6 +45,7 @@ import net.minecraft.tag.BlockTags;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.RaycastContext;
@@ -54,7 +55,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 public final class BlockUtils {
     
@@ -162,7 +162,7 @@ public final class BlockUtils {
         WorldChunk sourceChunk = world.getWorldChunk(sourcePos);
         
         // Check that first chunk owner can modify the next chunk
-        return ((IClaimedChunk) protectedChunk).canPlayerDo(protectedPos, ((IClaimedChunk) sourceChunk).getOwner(sourcePos), permission);
+        return ((IClaimedChunk) protectedChunk).canPlayerDo(protectedPos, ((IClaimedChunk) sourceChunk).getOwnerId(sourcePos), permission);
     }
     
     /**
@@ -238,6 +238,15 @@ public final class BlockUtils {
     public static double angleBetween(int x1, int z1, int x2, int z2) {
         double angle = Math.toDegrees(Math.atan2(x2 - x1, z2 - z1));
         return angle + Math.ceil( -angle / 360 ) * 360;
+    }
+    
+    public static @Nullable Direction getDirection(@NotNull BlockPos pos1, @NotNull BlockPos pos2) {
+        for (Direction direction : Direction.values()) {
+            if (direction.getOffsetY() != 0)
+                continue;
+            System.out.println(direction);
+        }
+        return null;
     }
     
     /**
