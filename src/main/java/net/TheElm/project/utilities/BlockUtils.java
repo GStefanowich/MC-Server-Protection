@@ -46,6 +46,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.RaycastContext;
@@ -241,11 +242,15 @@ public final class BlockUtils {
     }
     
     public static @Nullable Direction getDirection(@NotNull BlockPos pos1, @NotNull BlockPos pos2) {
-        for (Direction direction : Direction.values()) {
-            if (direction.getOffsetY() != 0)
-                continue;
-            System.out.println(direction);
-        }
+        int x = MathHelper.clamp(pos1.getX() - pos2.getX(), -1, 1);
+        int z = MathHelper.clamp(pos1.getZ() - pos2.getZ(), -1, 1);
+        
+        if (x != 0 && z != 0)
+            return null;
+        
+        for (Direction direction : Direction.values())
+            if (direction.getOffsetY() != 0 && direction.getOffsetX() == x && direction.getOffsetZ() == z)
+                return direction;
         return null;
     }
     

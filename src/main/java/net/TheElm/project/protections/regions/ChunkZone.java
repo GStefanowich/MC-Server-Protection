@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections.claiming;
+package net.TheElm.project.protections.regions;
 
 import com.flowpowered.math.vector.Vector2d;
 import de.bluecolored.bluemap.api.BlueMapAPI;
@@ -31,6 +31,7 @@ import de.bluecolored.bluemap.api.marker.Shape;
 import de.bluecolored.bluemap.api.marker.ShapeMarker;
 import net.TheElm.project.CoreMod;
 import net.TheElm.project.objects.ClaimTag;
+import net.TheElm.project.protections.claiming.Claimant;
 import net.TheElm.project.utilities.MapUtils;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.util.registry.RegistryKey;
@@ -42,8 +43,6 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -52,7 +51,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.IntFunction;
 
 /**
  * Created on Jul 30 2021 at 11:02 PM.

@@ -23,11 +23,10 @@
  * SOFTWARE.
  */
 
-package net.TheElm.project.protections.claiming;
+package net.TheElm.project.protections.regions;
 
 import com.flowpowered.math.vector.Vector2d;
 import net.TheElm.project.objects.ClaimTag;
-import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.Vec3i;
@@ -45,7 +44,8 @@ import java.util.Objects;
  * Created on Aug 29 2021 at 3:22 PM.
  * By greg in SewingMachineMod
  */
-public class LinkedPointChunk {
+@Deprecated(since = "Use 'BlockPosChainLink' which uses a grid-connection format, while 'LinkedPointChunk' uses a corners-connection format", forRemoval = true)
+public final class LinkedPointChunk {
     private final int x;
     private final int z;
     

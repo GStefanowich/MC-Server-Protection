@@ -59,6 +59,7 @@ import net.TheElm.project.commands.WhereCommand;
 import net.TheElm.project.commands.WorldCommand;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
+import net.TheElm.project.protections.regions.BlockPosChainLink;
 import net.TheElm.project.protections.events.BlockBreak;
 import net.TheElm.project.protections.events.BlockInteraction;
 import net.TheElm.project.protections.events.EntityAttack;
@@ -80,6 +81,7 @@ import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
@@ -101,6 +103,20 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     @Override
     public void onInitializeServer() {
         super.initialize();
+        
+        /*StringBuilder builder = new StringBuilder();
+        BlockPosChainLink cube = new BlockPosChainLink(new ChunkPos(0, 0))
+            .addChunk(new ChunkPos(0, 1))
+            .addChunk(new ChunkPos(1, 0))
+            .addChunk(new ChunkPos(1, 1));
+        BlockPosChainLink chain = new BlockPosChainLink(new ChunkPos(1, 2))
+            .addChain(cube);
+        
+        System.out.println("Size: " + chain.size());
+        chain.forEach(link -> {
+            builder.append("(" + link.pos.getX() + "," + link.pos.getZ() + ")");
+        });
+        System.out.println(builder);*/
         
         if ( DevUtils.isDebugging() )
             SharedConstants.isDevelopment = true;
@@ -167,7 +183,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             }
         } catch (SQLException e) {
             CoreMod.logInfo( "Error executing MySQL Database setup." );
-
+            
             throw new RuntimeException( "Could not connect to database server.", e );
         }
         
@@ -181,20 +197,6 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         } catch (IOException e) {
             CoreMod.logError("Error during startup", e);
         }
-        
-        /*LinkedPointChunk[] chunks = new LinkedPointChunk[] {
-            LinkedPointChunk.of(0, 0),
-            LinkedPointChunk.of(0, 1)
-        };
-        
-        LinkedPointChunk chunk = chunks[0];
-        System.out.println("Connected: " + chunk.setLinked(chunks[1]));
-        
-        for (LinkedPointChunk link : chunks) {
-            for (BlockPos point : link.gatherPoints()) {
-                System.out.println(MessageUtils.xzToString(point));
-            }
-        }*/
     }
     
     public static @NotNull MinecraftServer get() {
