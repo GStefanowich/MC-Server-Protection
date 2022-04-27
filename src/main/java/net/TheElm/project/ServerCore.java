@@ -56,10 +56,10 @@ import net.TheElm.project.commands.DebugCommands;
 import net.TheElm.project.commands.TeleportsCommand;
 import net.TheElm.project.commands.WaystoneCommand;
 import net.TheElm.project.commands.WhereCommand;
+import net.TheElm.project.commands.WhitelistTree;
 import net.TheElm.project.commands.WorldCommand;
 import net.TheElm.project.config.ConfigOption;
 import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.protections.regions.BlockPosChainLink;
 import net.TheElm.project.protections.events.BlockBreak;
 import net.TheElm.project.protections.events.BlockInteraction;
 import net.TheElm.project.protections.events.EntityAttack;
@@ -81,7 +81,6 @@ import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.registry.RegistryKey;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
@@ -150,6 +149,7 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             TeleportsCommand.register(dispatcher);
             WaystoneCommand.register(dispatcher);
             WhereCommand.register(dispatcher);
+            WhitelistTree.register(dispatcher);
             WorldCommand.register(dispatcher);
             
             ScoreboardCommand.modify(dispatcher);

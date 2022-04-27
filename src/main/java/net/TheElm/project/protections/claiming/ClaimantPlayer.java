@@ -120,7 +120,7 @@ public final class ClaimantPlayer extends Claimant {
         return FormattingUtils.deepCopy(this.name);
     }
     public @NotNull MutableText updateName() {
-        return PlayerNameUtils.fetchPlayerNick(this.getId());
+        return PlayerNameUtils.fetchPlayerNick(this.claimCache.getServer(), this.getId());
     }
     
     /* Send Messages */

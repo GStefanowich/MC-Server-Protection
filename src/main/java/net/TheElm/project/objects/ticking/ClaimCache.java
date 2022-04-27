@@ -118,6 +118,10 @@ public final class ClaimCache implements TickingAction {
         );
     }
     
+    public MinecraftServer getServer() {
+        return this.server;
+    }
+    
     /*
      * Players
      */

@@ -142,7 +142,7 @@ public abstract class MOTD {
         
         for (int i = 0; i < profiles.length; i++) {
             GameProfile profile = profiles[i];
-            String name = PlayerNameUtils.fetchPlayerNick(profile.getId())
+            String name = PlayerNameUtils.fetchPlayerNick(ServerCore.get(), profile.getId())
                 .getString();
             
             // If the player has any rank
@@ -156,7 +156,7 @@ public abstract class MOTD {
             
             profiles[i] = new GameProfile(
             profile.getId(),
-            name
+                name
             );
         }
         

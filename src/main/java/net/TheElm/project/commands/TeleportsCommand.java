@@ -473,7 +473,7 @@ public final class TeleportsCommand {
             .append(" was teleported to ");
         
         if (porter.getUuid().equals(target.getId())) feedback.append("their");
-        else feedback.append(PlayerNameUtils.fetchPlayerNick(target.getId())).append("'s");
+        else feedback.append(PlayerNameUtils.fetchPlayerNick(porter.getServer(), target.getId())).append("'s");
         
         feedback.append(" '")
             .append(location == null ? WarpUtils.PRIMARY_DEFAULT_HOME : location.name)

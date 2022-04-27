@@ -125,6 +125,7 @@ public final class LoggingCommand {
         );
     }
     private static int getBlockHistorySize(@NotNull CommandContext<ServerCommandSource> context, int limit) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
         ServerWorld world = DimensionArgumentType.getDimensionArgument(context, "dimension");
         BlockPos blockPos = BlockPosArgumentType.getBlockPos(context, "pos");
         
@@ -153,14 +154,14 @@ public final class LoggingCommand {
                 return new LiteralText("\n" + results.getRow() + ". ")
                     .append(new LiteralText( add ? "+ " : "- " ).append(new TranslatableText(blockTranslation)).formatted( add ? Formatting.GREEN: Formatting.RED ))
                     .append(" by ")
-                    .append(PlayerNameUtils.fetchPlayerName(updatedBy).formatted(Formatting.AQUA)
+                    .append(PlayerNameUtils.fetchPlayerName(source.getServer(), updatedBy).formatted(Formatting.AQUA)
                         .styled(MessageUtils.simpleHoverText(updatedBy.toString())))
                     .append("\n     at ")
                     .append(new LiteralText(results.getTimestamp("updatedAt").toString()).formatted(Formatting.GRAY));
             }));
             
             // Send the text to the player
-            context.getSource().sendFeedback(text, false);
+            source.sendFeedback(text, false);
             
         } catch (SQLException e) {
             // SQL statement
@@ -183,6 +184,7 @@ public final class LoggingCommand {
         );
     }
     private static int searchForUsedItems(@NotNull CommandContext<ServerCommandSource> context, int limit) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
         ServerWorld world = DimensionArgumentType.getDimensionArgument(context, "dimension");
         BlockPos centerPos = BlockPosArgumentType.getBlockPos(context, "pos");
         Item item = ItemStackArgumentType.getItemStackArgument(context, "item").getItem();
@@ -215,7 +217,7 @@ public final class LoggingCommand {
                 return new LiteralText("\n" + results.getRow() + ". ")
                     .append(new LiteralText( add ? "+ " : "- " ).append(new TranslatableText(blockTranslation)).formatted( add ? Formatting.GREEN: Formatting.RED ))
                     .append(" by ")
-                    .append(PlayerNameUtils.fetchPlayerName(updatedBy).formatted(Formatting.AQUA).styled(hoverEvent))
+                    .append(PlayerNameUtils.fetchPlayerName(source.getServer(), updatedBy).formatted(Formatting.AQUA).styled(hoverEvent))
                     .append("\n     at ")
                     .append(MessageUtils.xyzToText(new BlockPos(results.getInt("blockX"), results.getInt("blockY"), results.getInt("blockZ"))).formatted(Formatting.GRAY))
                     .append("\n     at ")
@@ -223,7 +225,7 @@ public final class LoggingCommand {
             }));
             
             // Send the text to the player
-            context.getSource().sendFeedback(text, false);
+            source.sendFeedback(text, false);
             
         } catch (SQLException e) {
             // SQL statement

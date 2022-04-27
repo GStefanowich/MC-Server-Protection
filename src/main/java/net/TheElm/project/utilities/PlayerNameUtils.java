@@ -111,32 +111,33 @@ public final class PlayerNameUtils {
             .styled((style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new LiteralText( name ).formatted( Formatting.WHITE )))));
     }
     
-    public static @NotNull MutableText fetchPlayerNick(@NotNull UUID uuid) {
+    public static @NotNull MutableText fetchPlayerNick(@NotNull MinecraftServer server, @NotNull UUID uuid) {
         MutableText out;
         if ((!uuid.equals(CoreMod.SPAWN_ID)) && ((out = PlayerNameUtils.getOfflinePlayerNickname(uuid)) != null))
             return out;
-        return PlayerNameUtils.fetchPlayerName( uuid );
+        return PlayerNameUtils.fetchPlayerName(server, uuid);
     }
-    public static @NotNull MutableText fetchPlayerName(@NotNull UUID uuid) {
+    public static @NotNull MutableText fetchPlayerName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
         // If we're looking up UUID 0, 0 (Spawn) don't try to do a lookup
         if ( uuid.equals( CoreMod.SPAWN_ID) )
             return new LiteralText(SewConfig.get(SewConfig.NAME_SPAWN));
         
         // Check if there is an online player with UUID (No unnecessary web calls)
         MutableText playerName;
-        if ((playerName = getOnlinePlayerName(uuid)) != null)
+        if ((playerName = getOnlinePlayerName(server, uuid)) != null)
             return playerName;
         
         String cachedName;
-        if (((cachedName = getCachedPlayerName(uuid)) != null) && (!StringUtils.isBlank(cachedName)))
+        if (((cachedName = getCachedPlayerName(server, uuid)) != null) && (!StringUtils.isBlank(cachedName)))
+            return new LiteralText(cachedName);
         
         // Log that a request is being made
-        CoreMod.logInfo( "Looking up username of " + uuid.toString() );
+        CoreMod.logInfo("Looking up username of " + uuid);
         
         HttpURLConnection connection = null;
         try {
             // Create the URL
-            URL url = new URL( "https://api.mojang.com/user/profiles/" + PlayerNameUtils.stripUUID( uuid ) + "/names" );
+            URL url = new URL( "https://api.mojang.com/user/profiles/" + PlayerNameUtils.stripUUID(uuid) + "/names" );
             
             // Opening connection 
             connection = (HttpURLConnection) url.openConnection();
@@ -155,10 +156,10 @@ public final class PlayerNameUtils {
                 JsonArray nameHistory = JsonParser.parseString(content.toString()).getAsJsonArray();
                 JsonObject nameLatest = nameHistory.get( nameHistory.size() - 1 ).getAsJsonObject();
                 
-                playerName = new LiteralText(nameLatest.get( "name" ).getAsString());
+                playerName = new LiteralText(nameLatest.get("name").getAsString());
                 
                 // Save the player name to the cache
-                ServerCore.get().getUserCache().add(new GameProfile(
+                server.getUserCache().add(new GameProfile(
                     uuid,
                     playerName.getString()
                 ));
@@ -171,22 +172,20 @@ public final class PlayerNameUtils {
             if (connection != null)
                 connection.disconnect();
             if ( playerName == null )
-                CoreMod.logInfo("Player name of " + uuid.toString() + " [LOOKUP FAILED]");
-            else CoreMod.logInfo("Player name of " + uuid.toString() + " is " + playerName.getString());
+                CoreMod.logInfo("Player name of " + uuid + " [LOOKUP FAILED]");
+            else CoreMod.logInfo("Player name of " + uuid + " is " + playerName.getString());
         }
         
         return ( playerName == null ? new LiteralText("Unknown player") : playerName );
     }
-    private static @Nullable MutableText getOnlinePlayerName(@NotNull UUID uuid) {
-        MinecraftServer server = ServerCore.get();
+    private static @Nullable MutableText getOnlinePlayerName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
         ServerPlayerEntity player;
-        if ((player = server.getPlayerManager().getPlayer( uuid )) == null)
+        if ((player = server.getPlayerManager().getPlayer(uuid)) == null)
             return null;
         return (MutableText) player.getName();
     }
-    private static @Nullable String getCachedPlayerName(@NotNull UUID uuid) {
-        return ServerCore.get()
-            .getUserCache()
+    private static @Nullable String getCachedPlayerName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
+        return server.getUserCache()
             .getByUuid(uuid)
             .map(GameProfile::getName)
             .orElse(null);
