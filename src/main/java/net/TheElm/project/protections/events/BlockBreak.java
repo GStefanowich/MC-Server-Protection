@@ -220,8 +220,9 @@ public final class BlockBreak {
              * Prevent the dragon from breaking items within SPAWN
              */
             IClaimedChunk chunk = ((IClaimedChunk)world.getChunk(blockPos));
-            if (Objects.equals(chunk.getOwnerId(), CoreMod.SPAWN_ID) && !chunk.canPlayerDo(blockPos, null, ClaimPermissions.BLOCKS))
+            if (Objects.equals(chunk.getOwnerId(blockPos), CoreMod.SPAWN_ID) && !chunk.canPlayerDo(blockPos, null, ClaimPermissions.BLOCKS))
                 return ActionResult.FAIL;
+            
         } else if (entity instanceof GhastEntity) {
             /*
              * Prevent a ghast from breaking claimed blocks

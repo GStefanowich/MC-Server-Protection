@@ -81,19 +81,12 @@ public final class ClaimCache implements TickingAction {
      */
     
     public @Nullable ClaimCacheEntry<?> addToCache(@Nullable Claimant claimant) {
-        if (claimant instanceof ClaimantPlayer claimantPlayer) {
-            PlayerCacheEntry player = new PlayerCacheEntry(claimantPlayer);
-            
-            this.playerClaimCache.put(claimant.getId(), player);
-            
-            return player;
-        } else if (claimant instanceof ClaimantTown claimantTown) {
-            TownCacheEntry town = new TownCacheEntry(claimantTown);
-            
-            this.townClaimCache.put(claimant.getId(), town);
-            
-            return town;
-        }
+        if (claimant instanceof ClaimantPlayer claimantPlayer)
+            return this.playerClaimCache.computeIfAbsent(claimant.getId(), id -> new PlayerCacheEntry(claimantPlayer));
+        
+        if (claimant instanceof ClaimantTown claimantTown)
+            return this.townClaimCache.computeIfAbsent(claimant.getId(), id -> new TownCacheEntry(claimantTown));
+        
         return null;
     }
     public @Nullable Claimant removeFromCache(@Nullable Claimant claimant) {
@@ -241,17 +234,17 @@ public final class ClaimCache implements TickingAction {
         }
         
         UUID uuid = list.get(pos);
-        if (uuid == null) return;
+        if (uuid == null)
+            return;
         
         ClaimCacheEntry<?> claim = reference.get(uuid);
-        if (claim == null) return;
+        if (claim == null)
+            return;
         
         if (claim.isRemovable()) {
             reference.remove(uuid);
             this.reset(!onTowns, onTowns);
-        } /*else if ((claimant = claim.getValue()) != null)
-            System.out.println("Named! (" + claimant.getName().getString() + ")");
-        else System.out.println("Illegal value...?");*/
+        }
     }
     
     private void reset() {
