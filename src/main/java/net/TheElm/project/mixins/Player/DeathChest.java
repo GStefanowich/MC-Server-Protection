@@ -41,7 +41,6 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.boss.dragon.EnderDragonEntity;
-import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
@@ -61,6 +60,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -83,10 +83,10 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
         super(entityType_1, world_1);
     }
     
-    /* 
-     * If player drops inventory (At death, stop that!)
+    /**
+     * Check if we should spawn a death chest for the player BEFORE vanilla drops any of the players items
+     * @param callback The Mixin Callback
      */
-    
     @Inject(at = @At("HEAD"), method = "dropInventory", cancellable = true)
     public void onInventoryDrop(CallbackInfo callback) {
         boolean keepInventory = this.world.getGameRules().getBoolean(GameRules.KEEP_INVENTORY);
@@ -136,10 +136,12 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
         }
     }
     
-    /*
+    /**
      * Stats of Mob Kills
+     * @param serverWorld The world the target was killed in
+     * @param livingEntity The entity that we killed
+     * @param callback The Mixin callback
      */
-    
     @Inject(at = @At("HEAD"), method = "onKilledOther", cancellable = true)
     public void onKilledTarget(ServerWorld serverWorld, LivingEntity livingEntity, CallbackInfo callback) {
         if (livingEntity instanceof EnderDragonEntity)
@@ -173,10 +175,14 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
         }
     }
     
-    @Inject(at = @At("RETURN"), method = "damage")
-    public void onDamage(DamageSource source, float damage, CallbackInfoReturnable<Boolean> callback) {
-        if ((!this.world.isClient) && ((Entity) this) instanceof ServerPlayerEntity) {
-            if (source.getAttacker() instanceof PlayerEntity && callback.getReturnValue()) {
+    /**
+     * Set the attacker for PvP
+     * @param attacker The attacker
+     */
+    @Override
+    public void setAttacker(@Nullable LivingEntity attacker) {
+        if (!this.world.isClient) {
+            if (attacker instanceof PlayerEntity) {
                 // If player just entered combat
                 if (this.hitByOtherPlayerAt == null)
                     this.sendSystemMessage(new LiteralText("You are now in combat.").formatted(Formatting.YELLOW), Util.NIL_UUID);
@@ -185,10 +191,17 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
                 this.hitByOtherPlayerAt = System.currentTimeMillis();
             }
         }
+        
+        super.setAttacker(attacker);
     }
     
+    /**
+     * If an Arrow was not found for Infinite Arrows, return a Regular Arrow
+     * @param weapon
+     * @param callback
+     */
     @Inject(at = @At("RETURN"), method = "getArrowType", cancellable = true)
-    public void onCheckArrowType(ItemStack weapon, CallbackInfoReturnable<ItemStack> callback) {
+    public void onCheckArrowType(@NotNull ItemStack weapon, @NotNull CallbackInfoReturnable<ItemStack> callback) {
         if ((weapon.getItem() instanceof RangedWeaponItem) && callback.getReturnValue().isEmpty() && (EnchantmentHelper.getLevel(Enchantments.INFINITY, weapon) > 0 ))
             callback.setReturnValue(new ItemStack(Items.ARROW));
     }
@@ -207,7 +220,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
      */
     @Inject(at = @At("RETURN"), method = "initDataTracker")
     public void onInitDataTracking(CallbackInfo callback) {
-        this.dataTracker.startTracking( MONEY, SewConfig.get(SewConfig.STARTING_MONEY) );
+        this.dataTracker.startTracking(MONEY, SewConfig.get(SewConfig.STARTING_MONEY));
     }
     @Inject(at = @At("TAIL"), method = "writeCustomDataToNbt")
     public void onSavingData(NbtCompound tag, CallbackInfo callback) {
@@ -249,7 +262,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
      */
     @Override
     public int getPlayerWallet() {
-        return this.dataTracker.get( MONEY );
+        return this.dataTracker.get(MONEY);
     }
     
     /*
@@ -260,8 +273,8 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
         return this.backpack;
     }
     @Override
-    public void setBackpack(PlayerBackpack backpack) {
-        this.backpack = backpack;
+    public void setBackpack(@Nullable PlayerBackpack backpack) {
+        this.backpack = backpack == null || backpack.getPlayer() == (LivingEntity)this ? backpack : new PlayerBackpack((PlayerEntity)(LivingEntity)this, backpack);
     }
     @Inject(at = @At("TAIL"), method = "vanishCursedItems")
     public void onVanishCursedItems(CallbackInfo callback) {

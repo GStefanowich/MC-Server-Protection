@@ -26,6 +26,7 @@
 package net.TheElm.project.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.tree.CommandNode;
 import net.TheElm.project.interfaces.WhitelistedPlayer;
@@ -70,9 +71,17 @@ public final class WhitelistTree implements Comparable<WhitelistTree> {
     public @NotNull UUID getUUID() {
         return this.player.getUUID();
     }
+    public @NotNull Text getName() {
+        return new LiteralText(this.player.getName());
+    }
     public @NotNull Text getName(@NotNull MinecraftServer server) {
-        return PlayerNameUtils.fetchPlayerName(server, this.getUUID())
-            .formatted(Formatting.GOLD);
+        return this.getName(server, false);
+    }
+    public @NotNull Text getName(@NotNull MinecraftServer server, boolean pretty) {
+        Text name = pretty ? PlayerNameUtils.fetchPlayerNick(server, this.getUUID()) : this.getName();
+        if (name instanceof MutableText mutable && name.getStyle().isEmpty())
+            return mutable.formatted(Formatting.GOLD);
+        return name;
     }
     public @Nullable UUID getInvitedBy() {
         return this.invitedBy;
@@ -98,14 +107,16 @@ public final class WhitelistTree implements Comparable<WhitelistTree> {
         return total;
     }
     
-    public MutableText print(@NotNull ServerCommandSource source) {
-        return this.print(source, 0);
+    public MutableText print(@NotNull ServerCommandSource source, boolean pretty) {
+        return this.print(source, pretty, 0);
     }
-    public MutableText print(@NotNull ServerCommandSource source, int depth) {
+    public MutableText print(@NotNull ServerCommandSource source, boolean pretty, int depth) {
         String prefix = StringUtils.repeat(' ', depth);
         
-        MutableText text = new LiteralText("\n" + prefix + "|  ")
-            .append(this.getName(source.getServer()));
+        MutableText text = new LiteralText("\n" + prefix)
+            .append(MessageUtils.formatNumber(depth, Formatting.GRAY))
+            .append("|  ")
+            .append(this.getName(source.getServer(), pretty));
         
         if (this.hasInvited())
             text.append(" invited [")
@@ -120,10 +131,10 @@ public final class WhitelistTree implements Comparable<WhitelistTree> {
             WhitelistTree tree = iterator.next();
             
             if (tree.hasInvited() || i == 0)
-                text.append(tree.print(source, depth + 1));
+                text.append(tree.print(source, pretty, depth + 1));
             else {
                 text.append(" ")
-                    .append(tree.getName(source.getServer()));
+                    .append(tree.getName(source.getServer(), pretty));
             }
             
             if (iterator.hasNext() && !tree.hasInvited())
@@ -154,11 +165,20 @@ public final class WhitelistTree implements Comparable<WhitelistTree> {
             .getChild("whitelist");
         if (whitelist != null)
             whitelist.addChild(CommandManager.literal("tree")
+                .then(CommandManager.argument("pretty", BoolArgumentType.bool())
+                    .executes(WhitelistTree::prettyPrintTree)
+                )
                 .executes(WhitelistTree::printTree)
                 .build()
             );
     }
+    private static int prettyPrintTree(@NotNull CommandContext<ServerCommandSource> context) {
+        return WhitelistTree.printTree(context, BoolArgumentType.getBool(context, "pretty"));
+    }
     private static int printTree(@NotNull CommandContext<ServerCommandSource> context) {
+        return WhitelistTree.printTree(context, false);
+    }
+    private static int printTree(@NotNull CommandContext<ServerCommandSource> context, boolean pretty) {
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
         Collection<WhitelistEntry> whitelist = server.getPlayerManager()
@@ -175,17 +195,17 @@ public final class WhitelistTree implements Comparable<WhitelistTree> {
         for (Map.Entry<UUID, WhitelistTree> entry : all.entrySet()) {
             final WhitelistTree self = entry.getValue();
             WhitelistTree tree = self;
-
+            
             int i = 0;
             do {
                 UUID inviteeId = tree.getInvitedBy();
                 if (inviteeId == null)
                     continue cleanup;
-
+                
                 tree = all.get(inviteeId);
                 if (tree == null || tree.getInvitedBy() == null)
                     continue cleanup;
-
+                
                 if (Objects.equals(self.getUUID(), tree.getInvitedBy())) {
                     self.resetInvited();
                     tree.resetInvited();
@@ -197,7 +217,7 @@ public final class WhitelistTree implements Comparable<WhitelistTree> {
         for (Map.Entry<UUID, WhitelistTree> entry : all.entrySet()) {
             WhitelistTree tree = entry.getValue();
             WhitelistTree invitee;
-            
+
             UUID inviteeId = tree.getInvitedBy();
             if (inviteeId == null || ((invitee = all.get(inviteeId)) == null))
                 main.add(tree);
@@ -210,7 +230,7 @@ public final class WhitelistTree implements Comparable<WhitelistTree> {
             Collections.sort(main);
             
             for (WhitelistTree tree : main) {
-                text.append(tree.print(source));
+                text.append(tree.print(source, pretty));
             }
         }
         

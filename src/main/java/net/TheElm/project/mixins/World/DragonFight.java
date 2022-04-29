@@ -291,7 +291,7 @@ public abstract class DragonFight {
     }
     
     @Inject(at = @At("TAIL"), method = "generateEndPortal")
-    public void onGeneratePortal(boolean opened, CallbackInfo callback) {
+    private void onGeneratePortal(boolean opened, CallbackInfo callback) {
         // Get the portal
         BlockPattern.Result portal = this.findEndPortal();
         if (portal != null) {

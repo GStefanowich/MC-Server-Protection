@@ -439,16 +439,6 @@ public abstract class WorldInteraction extends PlayerEntity implements PlayerDat
     }
     @Inject(at = @At("TAIL"), method = "readCustomDataFromNbt")
     public void onReadingData(@NotNull NbtCompound tag, CallbackInfo callback) {
-        // Read the player warp location after restarting
-        /*if ( tag.contains( "playerWarpX" ) && tag.contains( "playerWarpY" ) && tag.contains( "playerWarpZ" ) ) {
-            this.warpPos = new BlockPos(
-                tag.getInt("playerWarpX"),
-                tag.getInt("playerWarpY"),
-                tag.getInt("playerWarpZ")
-            );
-            if ( tag.contains( "playerWarpD" ) )
-                this.warpDimension = NbtUtils.worldRegistryFromTag(tag.get("playerWarpD"));
-        }*/
         this.warps.putAll(WarpUtils.fromNBT(tag));
         
         // Get the nickname

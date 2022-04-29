@@ -56,7 +56,7 @@ public class PlayerBackpack extends SimpleInventory {
     
     private final Set<Identifier> autopickup = new HashSet<>();
     private final int rows;
-    private final PlayerEntity player;
+    private final @NotNull PlayerEntity player;
     
     // Create an entirely new backpack
     public PlayerBackpack(@NotNull PlayerEntity player, int rows) {
@@ -64,9 +64,19 @@ public class PlayerBackpack extends SimpleInventory {
         this.rows = rows;
         this.player = player;
     }
+    public PlayerBackpack(@NotNull PlayerEntity player, @NotNull PlayerBackpack old) {
+        this(player, old.getRows());
+        
+        // Transfer the contents of the inventory
+        this.readTags(old.getTags());
+        
+        // Transfer the auto-pickup settings
+        this.readPickupTags(old.getPickupTags());
+    }
+    
     // Copy items to the backpack from the previous
     public PlayerBackpack(@NotNull PlayerBackpack backpack) {
-        this( backpack, backpack.getRows() + 1);
+        this(backpack, backpack.getRows() + 1);
     }
     public PlayerBackpack(@NotNull PlayerBackpack backpack, int rows) {
         this(backpack.getPlayer(), rows);
@@ -211,7 +221,7 @@ public class PlayerBackpack extends SimpleInventory {
             }
         }
     }
-    public NbtList getTags() {
+    public @NotNull NbtList getTags() {
         NbtList listTag = new NbtList();
         
         for(int slot = 0; slot < this.size(); ++slot) {
@@ -237,7 +247,7 @@ public class PlayerBackpack extends SimpleInventory {
             ));
         }
     }
-    public NbtList getPickupTags() {
+    public @NotNull NbtList getPickupTags() {
         NbtList listTag = new NbtList();
         
         for (Identifier identifier : this.autopickup) {
@@ -249,7 +259,7 @@ public class PlayerBackpack extends SimpleInventory {
         return listTag;
     }
     
-    public PlayerEntity getPlayer() {
+    public @NotNull PlayerEntity getPlayer() {
         return this.player;
     }
     
@@ -257,7 +267,7 @@ public class PlayerBackpack extends SimpleInventory {
         return this.rows;
     }
     
-    public Text getName() {
+    public @NotNull Text getName() {
         return new LiteralText(this.player.getDisplayName().getString() + "'s Backpack");
     }
     
@@ -295,7 +305,13 @@ public class PlayerBackpack extends SimpleInventory {
         return !in;
     }
     public boolean shouldAutoPickup(@NotNull ItemStack stack) {
-        return this.autopickup.contains(Registry.ITEM.getId(stack.getItem()));
+        return this.shouldAutoPickup(stack.getItem());
+    }
+    public boolean shouldAutoPickup(@NotNull Item item) {
+        return this.shouldAutoPickup(Registry.ITEM.getId(item));
+    }
+    public boolean shouldAutoPickup(@NotNull Identifier identifier) {
+        return this.autopickup.contains(identifier);
     }
     
     @Override

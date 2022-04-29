@@ -55,8 +55,11 @@ public final class TranslatableServerSide {
     private TranslatableServerSide() {}
     
     public static void send(@NotNull CommandSource source, String key, Object... objects) {
+        TranslatableServerSide.send(source, true, key, objects);
+    }
+    public static void send(@NotNull CommandSource source, boolean notify, String key, Object... objects) {
         if (source instanceof ServerCommandSource serverSource)
-            serverSource.sendFeedback(TranslatableServerSide.text(source, key, objects), true);
+            serverSource.sendFeedback(TranslatableServerSide.text(source, key, objects), notify);
     }
     public static void send(@NotNull PlayerEntity player, String key, Object... objects) {
         player.sendSystemMessage(TranslatableServerSide.text(player, key, objects), Util.NIL_UUID);

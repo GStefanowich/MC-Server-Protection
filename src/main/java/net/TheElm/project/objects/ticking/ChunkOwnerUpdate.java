@@ -106,6 +106,7 @@ public class ChunkOwnerUpdate implements TickingAction {
         // Check that a claimant was found (If not, just remove)
         if (this.claimant == null || tickable.isRemoved())
             return true;
+        
         // Run every 2 ticks
         if (tickable.getTicks() % 2 != 0)
             return false;
@@ -124,7 +125,7 @@ public class ChunkOwnerUpdate implements TickingAction {
             if (result == ActionResult.FAIL)
                 throw this.mode.getException(this.source);
         } catch (TranslationKeyException e) {
-            TranslatableServerSide.send(this.source, e.getKey());
+            TranslatableServerSide.send(this.source, !this.verify, e.getKey());
             return true;
         } catch (CommandSyntaxException e) {
             this.source.sendFeedback(
@@ -156,7 +157,7 @@ public class ChunkOwnerUpdate implements TickingAction {
         // Log the chunks that were changed
         CoreMod.logInfo(this.claimant.getName().getString() + " has " + this.mode.name().toLowerCase(Locale.ROOT) + "ed " + changed + " chunk(s): (" + log + ")");
         if (changed > 0)
-            TranslatableServerSide.send(this.source, this.mode.getSuccessTranslation(), changed);
+            TranslatableServerSide.send(this.source, !this.verify, this.mode.getSuccessTranslation(), changed);
     }
     
     public static @NotNull ChunkOwnerUpdate forPlayer(@NotNull ClaimCache claimCache, @NotNull ServerCommandSource source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
@@ -191,6 +192,7 @@ public class ChunkOwnerUpdate implements TickingAction {
                 if (claimant instanceof ClaimantTown claimantTown) {
                     if (!Objects.equals(chunk.getOwnerId(), claimantTown.getOwnerId()))
                         return ActionResult.FAIL;
+                    
                     if (chunk.getTown() != null && chunk.getTown() != claimantTown)
                         throw ClaimCommand.CHUNK_ALREADY_OWNED.create(source);
                     
