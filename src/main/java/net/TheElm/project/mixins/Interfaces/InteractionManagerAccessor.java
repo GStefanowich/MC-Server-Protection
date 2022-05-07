@@ -25,7 +25,6 @@
 
 package net.TheElm.project.mixins.Interfaces;
 
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.util.math.BlockPos;
 import org.spongepowered.asm.mixin.Mixin;
@@ -39,7 +38,7 @@ import org.spongepowered.asm.mixin.gen.Accessor;
 public interface InteractionManagerAccessor {
     @Accessor("mining")
     boolean isMining();
-
+    
     @Accessor("miningPos")
     BlockPos miningPos();
 }

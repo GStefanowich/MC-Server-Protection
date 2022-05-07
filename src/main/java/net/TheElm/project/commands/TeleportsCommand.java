@@ -358,10 +358,10 @@ public final class TeleportsCommand {
             targetPlayer.sendMessage(ColorUtils.format(porter.getName(), Formatting.AQUA)
                 .append(new LiteralText(" sent you a teleport request, Click ").formatted(Formatting.YELLOW)
                     .append(new LiteralText("here to accept it").formatted(Formatting.GREEN).styled(
-                        (consumer) -> consumer.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tpaccept " + porter.getName().asString()))))
+                        (consumer) -> consumer.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tpaccept " + porter.getEntityName()))))
                     .append(", or ")
                     .append(new LiteralText("here to deny it").formatted(Formatting.RED).styled(
-                        (consumer) -> consumer.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tpdeny " + porter.getName().asString()))))
+                        (consumer) -> consumer.withClickEvent(new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/tpdeny " + porter.getEntityName()))))
                     .append(".")
                 ), MessageType.CHAT, porter.getUuid());
         }

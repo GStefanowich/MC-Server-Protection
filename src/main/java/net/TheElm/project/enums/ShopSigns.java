@@ -142,9 +142,10 @@ public enum ShopSigns {
                 return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
             
             // Check if the attached chest exists
-            if (CoreMod.SPAWN_ID.equals(sign.getShopOwner()) || ((chest = InventoryUtils.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
+            if (sign.isInfinite() || ((chest = InventoryUtils.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
                 if (player.getUuid().equals(sign.getShopOwner()))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.self_sell"));
+                
                 /*
                  * Check if chest is valid
                  */
@@ -159,12 +160,13 @@ public enum ShopSigns {
                     if (InventoryUtils.getInventoryCount(player.getInventory(), sign::itemMatchPredicate) < sign.getShopItemCount())
                         return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
                 }
+                
                 /*
                  * Transfer the items from chest to player
                  */
                 try {
                     // Take shop keepers money
-                    if (!(sign.getShopOwner().equals(CoreMod.SPAWN_ID) || MoneyUtils.takePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice())))
+                    if (!(sign.isInfinite() || MoneyUtils.takePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice())))
                         return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
                     
                     // Put players item into chest
@@ -172,7 +174,7 @@ public enum ShopSigns {
                         boolean crafted = false;
                         
                         List<? extends Recipe<?>> recipes = sign.getShopItemRecipes();
-                        if (sign.getShopOwner().equals(CoreMod.SPAWN_ID) && recipes != null) {
+                        if (sign.isInfinite() && recipes != null) {
                             for (Recipe<?> recipe : recipes) {
                                 ShopCraftAction craft = new ShopCraftAction(recipe, sign, signPos, chestInventory);
                                 
@@ -185,7 +187,7 @@ public enum ShopSigns {
                         
                         if (!crafted) {
                             // Refund the shopkeeper
-                            if (!(sign.getShopOwner().equals(CoreMod.SPAWN_ID)))
+                            if (!sign.isInfinite())
                                 MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
                             
                             // Error message
@@ -286,7 +288,7 @@ public enum ShopSigns {
                 return Either.right(true);
             
             // Check if the attached chest exists
-            if (CoreMod.SPAWN_ID.equals(sign.getShopOwner()) || ((chest = InventoryUtils.getAttachedChest(player.getEntityWorld(), signPos)) != null)) {
+            if (sign.isInfinite() || ((chest = InventoryUtils.getAttachedChest(player.getEntityWorld(), signPos)) != null)) {
                 if (player.getUuid().equals(sign.getShopOwner()))
                     return Either.left(TranslatableServerSide.text(player, "shop.error.self_buy"));
                 
@@ -326,7 +328,7 @@ public enum ShopSigns {
                     player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
                     
                     // Give the shop keeper money
-                    if (!sign.getShopOwner().equals(CoreMod.SPAWN_ID)) {
+                    if (!sign.isInfinite()) {
                         try {
                             MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
                         } catch (NbtNotFoundException e) {
@@ -350,7 +352,7 @@ public enum ShopSigns {
                     );
                     
                     // Log the event
-                    CoreMod.logInfo(player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format( sign.getShopItemPrice() ) + " from " + permissions.getName().asString() );
+                    CoreMod.logInfo(player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format( sign.getShopItemPrice() ) + " from " + permissions.getName().getString() );
                     player.increaseStat(ShopStats.SHOP_TYPE_BOUGHT.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
                     
                     return Either.right(true);
@@ -414,7 +416,7 @@ public enum ShopSigns {
                 return Either.right( true );
             
             // Check if the attached chest exists
-            if (CoreMod.SPAWN_ID.equals(sign.getShopOwner()) || ((chest = InventoryUtils.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
+            if (sign.isInfinite() || ((chest = InventoryUtils.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
                 if (player.getUuid().equals(sign.getShopOwner()))
                     return Either.left(new LiteralText("Cannot buy items from yourself."));
                 
@@ -645,7 +647,7 @@ public enum ShopSigns {
             ClaimantTown town = null;
             
             // Get the deed type
-            String deedType = ( builder.getLines()[1].asString().equalsIgnoreCase("region") ? "region" : "chunk" );
+            String deedType = ( builder.getLines()[1].getString().equalsIgnoreCase("region") ? "region" : "chunk" );
             
             // Handle the deed type
             switch (deedType) {

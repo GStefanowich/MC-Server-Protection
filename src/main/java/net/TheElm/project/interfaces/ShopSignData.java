@@ -30,6 +30,7 @@ import net.TheElm.project.CoreMod;
 import net.TheElm.project.ServerCore;
 import net.TheElm.project.enums.ShopSigns;
 import net.TheElm.project.utilities.nbt.NbtUtils;
+import net.TheElm.project.utilities.text.MessageUtils;
 import net.TheElm.project.utilities.text.StyleApplicator;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.block.entity.SignBlockEntity;
@@ -69,8 +70,23 @@ public interface ShopSignData {
     @NotNull StyleApplicator APPLICATOR_GREEN = new StyleApplicator("#32CD32");
     @NotNull StyleApplicator APPLICATOR_RED = new StyleApplicator("#B22222");
     
+    /**
+     * Get the attached container Entity for the Sign
+     * @return The attached container, or NULL if none found
+     */
     @Nullable LootableContainerBlockEntity getContainer();
+    
+    /**
+     * Get the Signs Entity
+     * @return The Signs Entity
+     */
     @NotNull SignBlockEntity getSign();
+    
+    /**
+     * Find the attached inventory for the Sign (The inventory of the container)
+     * @return The attached inventory, or NULL if none found
+     */
+    @Nullable Inventory getInventory();
     
     @Nullable Text getSignLine(int line);
     void setSignLine(int row, @Nullable Text text);
@@ -103,7 +119,7 @@ public interface ShopSignData {
             return new LiteralText("");
         return new TranslatableText(item.getTranslationKey());
     }
-
+    
     @Nullable List<? extends Recipe<?>> getShopItemRecipes();
     
     @Nullable Integer getShopItemCount();
@@ -114,10 +130,20 @@ public interface ShopSignData {
     @Nullable BlockPos getFirstPos();
     @Nullable BlockPos getSecondPos();
     
-    @Nullable Inventory getInventory();
-    
     @Nullable ShopSigns getShopType();
     
+    /**
+     * Check if item-transfer can be ignored
+     * @return If infinite
+     */
+    default boolean isInfinite() {
+        return Objects.equals(CoreMod.SPAWN_ID, this.getShopOwner());
+    }
+    
+    /**
+     * Read the Item from the Sign and return the Formatting of the item
+     * @return The formatted item name
+     */
     default MutableText textParseItem() {
         Integer itemSize = this.getShopItemCount();
         Item tradeItem = this.getShopItem();
@@ -126,40 +152,43 @@ public interface ShopSignData {
             return null;
         
         MutableText baseText = new LiteralText(itemSize == 1 ? "" : (itemSize + " "));
-        TranslatableText translatable = new TranslatableText(tradeItem.getTranslationKey());
+        MutableText translatable = new TranslatableText(tradeItem.getTranslationKey());
         
         if (Items.ENCHANTED_BOOK.equals(tradeItem) && enchantments.size() == 1) {
-            Optional<Map.Entry<Enchantment, Integer>> optional = enchantments.entrySet().stream()
-                .findAny();
-            if (optional.isPresent()) {
-                Map.Entry<Enchantment, Integer> entry = optional.get();
-                Enchantment enchantment = entry.getKey();
-                int level = entry.getValue();
-
-                // Set the text
-                translatable = new TranslatableText(enchantment.getTranslationKey());
-
-                // Add the level of the enchantment
-                if (level != 1 || enchantment.getMaxLevel() != 1) {
-                    translatable.append(" ")
-                        .append(new TranslatableText("enchantment.level." + level));
-                }
-            }
+            Optional<MutableText> optional = enchantments.entrySet()
+                .stream()
+                .findAny()
+                .map(MessageUtils::enchantmentToText);
+            if (optional.isPresent())
+                translatable = optional.get();
         }
         
         return baseText.formatted(Formatting.BLACK)
             .append(translatable.formatted(Formatting.DARK_AQUA));
     }
+    
+    /**
+     * Read the shop owner from the Sign and return the Formatted name
+     * @return The formatted owners name
+     */
     default MutableText textParseOwner() {
         Optional<GameProfile> lookup = this.getShopOwnerProfile();
         return lookup.map(profile -> Objects.equals(CoreMod.SPAWN_ID, profile.getId()) ? null : new LiteralText(profile.getName()))
             .orElseGet(() -> new LiteralText(""));
     }
     
+    /**
+     * Rerun the sign formatter. Updates the owners name (If changed) and any formatting
+     * @return If the sign was successfully rendered
+     */
     default boolean renderSign() {
         ShopSigns type = this.getShopType();
         return type != null && type.renderSign(this);
     }
+    
+    /**
+     * Clear the signs editors
+     */
     default void removeEditor() {
         SignBlockEntity sign = this.getSign();
         
@@ -173,11 +202,27 @@ public interface ShopSignData {
         sign.setEditor(null);
     }
     
+    /**
+     * Set the position that any sounds will come from
+     * @param pos The sound source
+     */
     default void setSoundSourcePosition(@Nullable BlockPos pos) {
     }
+    
+    /**
+     * Get the position that sounds should be played from
+     * @return The sound source
+     */
     default @Nullable BlockPos getSoundSourcePosition() {
         return null;
     }
+    
+    /**
+     * Play a sound for interacting with the sign
+     * @param player The player to play the sound for (Will play for everyone nearby if the sign has set a SoundSourcePosition)
+     * @param event The sound to play
+     * @param category The category to use for the sounds volume
+     */
     default void playSound(@NotNull ServerPlayerEntity player, @NotNull SoundEvent event, @NotNull SoundCategory category) {
         ServerWorld world = player.getWorld();
         BlockPos source;
@@ -187,6 +232,11 @@ public interface ShopSignData {
             world.playSound(null, source, event, category, 1.0f, 1.0f);
     }
     
+    /**
+     * Test if an ItemStack matches the Item exactly for this sign
+     * @param stack The ItemStack to check
+     * @return If the ItemStack matches the Item and Enchantments of this sign
+     */
     default boolean itemMatchPredicate(@NotNull ItemStack stack) {
         // Items must be equals
         if (!Objects.equals(this.getShopItem(), stack.getItem()))
@@ -200,12 +250,19 @@ public interface ShopSignData {
         Map<Enchantment, Integer> enchantments = this.getShopItemEnchantments();
         return enchantments == null || NbtUtils.enchantsEquals(enchantments, EnchantmentHelper.get(stack));
     }
-    default ItemStack createItemStack(int count) {
+    
+    /**
+     * Item Spawner if this Sign is Infinite
+     * @param count The stack count to create
+     * @return An ItemStack
+     */
+    default @NotNull ItemStack createItemStack(int count) {
         Item item = this.getShopItem();
         if (item == null)
             item = Items.AIR;
-        ItemStack stack = new ItemStack(item, Collections.min(Arrays.asList(count, item.getMaxCount())));
+        ItemStack stack = new ItemStack(item, Math.min(count, item.getMaxCount()));
         
+        // Apply enchantments to the stack
         Map<Enchantment, Integer> enchantments = this.getShopItemEnchantments();
         if (enchantments != null && !enchantments.isEmpty())
             EnchantmentHelper.set(enchantments, stack);

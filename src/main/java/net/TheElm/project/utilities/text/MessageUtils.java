@@ -490,4 +490,21 @@ public final class MessageUtils {
     public static @NotNull MutableText detailedItem(@NotNull Item item) {
         return new TranslatableText(item.getTranslationKey());
     }
+    
+    // Enchantments
+    public static @NotNull MutableText enchantmentToText(@NotNull Map.Entry<Enchantment, Integer> entry) {
+        return MessageUtils.enchantmentToText(entry.getKey(), entry.getValue());
+    }
+    public static @NotNull MutableText enchantmentToText(@NotNull Enchantment enchantment, int level) {
+        // Set the text to the enchantment translation key
+        TranslatableText translatable = new TranslatableText(enchantment.getTranslationKey());
+        
+        // Add the level of the enchantment
+        if (level != 1 || enchantment.getMaxLevel() != 1) {
+            translatable.append(" ")
+                .append(new TranslatableText("enchantment.level." + level));
+        }
+        
+        return translatable;
+    }
 }

@@ -65,7 +65,7 @@ public abstract class FluidFlow extends Fluid {
                 return;
             
             // Check that first chunk owner can modify the next chunk
-            if (!((IClaimedChunk) nextChunk).canPlayerDo(flowPos, ((IClaimedChunk) startingChunk).getOwnerId(), ClaimPermissions.BLOCKS))
+            if (!((IClaimedChunk) nextChunk).canPlayerDo(flowPos, ((IClaimedChunk) startingChunk).getOwnerId(sourcePos), ClaimPermissions.BLOCKS))
                 cir.setReturnValue(false);
         }
     }
@@ -77,13 +77,13 @@ public abstract class FluidFlow extends Fluid {
             // Get chunks
             Chunk startingChunk = world.getChunk(sourcePos);
             Chunk nextChunk = world.getChunk(flowPos);
-
+            
             // If chunk is the same chunk, Allow
             if (startingChunk == nextChunk)
                 return;
-
+            
             // Check that first chunk owner can modify the next chunk
-            if (!((IClaimedChunk) nextChunk).canPlayerDo(flowPos, ((IClaimedChunk) startingChunk).getOwnerId(), ClaimPermissions.BLOCKS))
+            if (!((IClaimedChunk) nextChunk).canPlayerDo(flowPos, ((IClaimedChunk) startingChunk).getOwnerId(sourcePos), ClaimPermissions.BLOCKS))
                 cir.setReturnValue(false);
         }
     }

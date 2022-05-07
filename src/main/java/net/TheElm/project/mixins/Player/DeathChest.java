@@ -219,11 +219,11 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
      * Tracked Data
      */
     @Inject(at = @At("RETURN"), method = "initDataTracker")
-    public void onInitDataTracking(CallbackInfo callback) {
+    public void onInitDataTracking(@NotNull CallbackInfo callback) {
         this.dataTracker.startTracking(MONEY, SewConfig.get(SewConfig.STARTING_MONEY));
     }
     @Inject(at = @At("TAIL"), method = "writeCustomDataToNbt")
-    public void onSavingData(NbtCompound tag, CallbackInfo callback) {
+    public void onSavingData(@NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
         // Save the players money
         tag.putInt(MoneyHolder.SAVE_KEY, this.getPlayerWallet());
         
@@ -238,7 +238,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
         }
     }
     @Inject(at = @At("TAIL"), method = "readCustomDataFromNbt")
-    public void onReadingData(NbtCompound tag, CallbackInfo callback) {
+    public void onReadingData(@NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
         // Read the players money
         if (tag.contains(MoneyHolder.SAVE_KEY, NbtElement.NUMBER_TYPE))
             this.dataTracker.set( MONEY, tag.getInt( MoneyHolder.SAVE_KEY ) );
@@ -253,7 +253,7 @@ public abstract class DeathChest extends LivingEntity implements MoneyHolder, Ba
         } else {
             int startingBackpack = SewConfig.get(SewConfig.BACKPACK_STARTING_ROWS);
             if ( startingBackpack > 0 )
-                this.backpack = new PlayerBackpack((PlayerEntity)(LivingEntity)this, Math.min(startingBackpack, 6));
+                this.backpack = new PlayerBackpack((PlayerEntity)(LivingEntity)this, startingBackpack);
         }
     }
     

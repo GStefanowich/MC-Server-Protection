@@ -276,7 +276,7 @@ public final class ShopSignBuilder implements ShopSignData {
     }
     public boolean textMatchCount(@NotNull Text text) {
         try {
-            this.stackSize = Integer.parseUnsignedInt(text.asString());
+            this.stackSize = Integer.parseUnsignedInt(text.getString());
         } catch (NumberFormatException e) {
             return false;
         }
@@ -311,25 +311,15 @@ public final class ShopSignBuilder implements ShopSignData {
     }
     public MutableText textParseItem() {
         MutableText baseText = new LiteralText(this.getShopItemCount() == 1 ? "" : (this.getShopItemCount() + " "));
-        TranslatableText translatable = new TranslatableText(this.getShopItem().getTranslationKey());
+        MutableText translatable = new TranslatableText(this.getShopItem().getTranslationKey());
         
         if (Items.ENCHANTED_BOOK.equals(this.tradeItem) && this.tradeItemEnchants.size() == 1) {
-            Optional<Map.Entry<Enchantment, Integer>> optional = this.tradeItemEnchants.entrySet().stream()
-                .findFirst();
-            if (optional.isPresent()) {
-                Map.Entry<Enchantment, Integer> entry = optional.get();
-                Enchantment enchantment = entry.getKey();
-                int level = entry.getValue();
-                
-                // Set the text
-                translatable = new TranslatableText(enchantment.getTranslationKey());
-                
-                // Add the level of the enchantment
-                if (level != 1 || enchantment.getMaxLevel() != 1) {
-                    translatable.append(" ")
-                        .append(new TranslatableText("enchantment.level." + level));
-                }
-            }
+            Optional<MutableText> optional = this.tradeItemEnchants.entrySet()
+                .stream()
+                .findFirst()
+                .map(MessageUtils::enchantmentToText);
+            if (optional.isPresent())
+                translatable = optional.get();
         }
         
         return baseText.formatted(Formatting.BLACK)

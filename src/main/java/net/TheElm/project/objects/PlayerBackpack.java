@@ -44,6 +44,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
 import net.minecraft.util.crash.CrashReportSection;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.registry.Registry;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -60,7 +61,7 @@ public class PlayerBackpack extends SimpleInventory {
     
     // Create an entirely new backpack
     public PlayerBackpack(@NotNull PlayerEntity player, int rows) {
-        super(rows * 9);
+        super(MathHelper.clamp(rows, 1, 6) * 9);
         this.rows = rows;
         this.player = player;
     }

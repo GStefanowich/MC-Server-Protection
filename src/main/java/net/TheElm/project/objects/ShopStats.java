@@ -2,9 +2,7 @@ package net.TheElm.project.objects;
 
 import net.TheElm.project.CoreMod;
 import net.minecraft.item.Item;
-import net.minecraft.stat.StatFormatter;
 import net.minecraft.stat.StatType;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.registry.Registry;
 import org.jetbrains.annotations.NotNull;
 

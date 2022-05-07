@@ -50,24 +50,7 @@ public enum ClaimSettings implements BoolEnums {
     PLAYER_COMBAT(SewConfig.CLAIM_ALLOW_PLAYER_COMBAT, "Allow Player vs Player", false, true, false) {
         @Override
         public boolean hasSettingSet(@NotNull Claim claimant) {
-            ClaimantPlayer owner = claimant.getOwner();
-            
-            // This Setting should be overriden in Towns by the town (If the owner isn't SPAWN (Takes priority)).
-            if (owner != null && !owner.isSpawn() && claimant instanceof IClaimedChunk chunk) {
-                // Get the town
-                ClaimantTown town = chunk.getTown();
-                if (town != null) {
-                    // Get the settings of the towns owner
-                    ClaimantPlayer townOwner = town.getOwner();
-                    
-                    // Return the town owners settings
-                    if (townOwner != null)
-                        return townOwner.getProtectedChunkSetting(this);
-                }
-            }
-            
-            // Fallback to the default
-            return super.hasSettingSet(claimant);
+            return this.hasSettingSet(claimant, true);
         }
     },
     FIRE_SPREAD(SewConfig.CLAIM_ALLOW_FIRE_SPREAD, "Allow fire to spread and destroy blocks", false, true, false),
@@ -77,10 +60,10 @@ public enum ClaimSettings implements BoolEnums {
     CROP_AUTOREPLANT(SewConfig.CLAIM_ALLOW_CROP_AUTOREPLANT, "Automatically replant harvested crops", true, false, true),
     TREE_CAPACITATE(SewConfig.CLAIM_ALLOW_TREE_CAPACITATOR, "Automatically knock down entire trees", true, false, false),
     VEIN_MINER(SewConfig.CLAIM_ALLOW_VEIN_MINER, "Automatically mine entire ore veins", true, false, false);
-    
-    private final @NotNull Text description;
-    private final @Nullable ConfigOption<Boolean> configOption;
-    private final boolean valueShouldBe;
+
+    protected final @NotNull Text description;
+    protected final @Nullable ConfigOption<Boolean> configOption;
+    protected final boolean valueShouldBe;
     private final boolean playrDef;
     private final boolean spawnDef;
     
@@ -132,9 +115,39 @@ public enum ClaimSettings implements BoolEnums {
     }
     
     public boolean hasSettingSet(@NotNull Claim claimant) {
+        return this.hasSettingSet(claimant, false);
+    }
+    public final boolean hasSettingSet(@NotNull Claim claimant, boolean prioritizeTown) {
         ClaimantPlayer player = claimant.getOwner();
-        if (player != null)
-            return player.getProtectedChunkSetting(this);
+        
+        // This Setting should be overriden in Towns by the town (If the owner isn't SPAWN (Takes priority)).
+        if (player != null) {
+            boolean playerSetting = player.getProtectedChunkSetting(this);
+            
+            // If the setting is allowed to be overridden by the Town
+            if (prioritizeTown) {
+                if (playerSetting == this.valueShouldBe)
+                    return playerSetting;
+                
+                if (!player.isSpawn() && claimant instanceof IClaimedChunk chunk) {
+                    // Get the town
+                    ClaimantTown town = chunk.getTown();
+                    
+                    if (town != null) {
+                        // Get the settings of the towns owner
+                        ClaimantPlayer townOwner = town.getOwner();
+                        
+                        // Return the town owners settings
+                        if (townOwner != null)
+                            return townOwner.getProtectedChunkSetting(this);
+                    }
+                }
+            }
+            
+            return playerSetting;
+        }
+        
+        // Fallback to the default
         return this.getDefault(null);
     }
 }

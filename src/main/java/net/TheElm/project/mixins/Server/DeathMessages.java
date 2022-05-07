@@ -1,14 +1,10 @@
 package net.TheElm.project.mixins.Server;
 
-import net.TheElm.project.config.SewConfig;
-import net.TheElm.project.utilities.CasingUtils;
-import net.TheElm.project.utilities.IntUtils;
 import net.TheElm.project.utilities.text.MessageUtils;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.damage.DamageTracker;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.LiteralText;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;

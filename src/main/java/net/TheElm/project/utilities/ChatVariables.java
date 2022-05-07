@@ -65,7 +65,7 @@ public class ChatVariables {
         Map<String, ChatFunction> variables = new HashMap<>();
         
         // Get the regular name
-        variables.put("name", (EntityChatFunction)(source, entity, casing) -> TextUtils.literal(entity.getEntityName(), casing));
+        variables.put("name", (source, chatMessage, room, casing) -> TextUtils.literal(source.getName(), casing));
         
         // Get the uuid
         variables.put("uuid", (EntityChatFunction)(source, entity, casing) -> TextUtils.literal(entity.getUuidAsString(), casing));

@@ -244,7 +244,7 @@ public final class DeathChestUtils {
         ItemStack head = new ItemStack(Items.PLAYER_HEAD);
         NbtCompound headData = head.getOrCreateNbt();
         
-        String playerName = copyOf.getName().asString();
+        String playerName = copyOf.getEntityName();
         headData.putString("SkullOwner", playerName);
         
         // Set the armor stands equipped item
