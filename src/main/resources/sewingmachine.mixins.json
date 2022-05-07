@@ -1,0 +1,127 @@
+{
+	"required": true,
+	"package": "net.theelm.sewingmachine.mixins",
+	"compatibilityLevel": "JAVA_16",
+	"mixins": [
+	],
+	"server": [
+		"Interfaces.InteractionManagerAccessor",
+		"Interfaces.WhitelistAccessor",
+		"Interfaces.PowderBlockAccessor",
+		"Interfaces.LightningAccessor",
+
+		"Commands.Ban",
+		"Commands.Kick",
+		"Commands.Me",
+		"Commands.Pardon",
+		"Commands.Stop",
+		"Commands.Time",
+		"Commands.Whisper",
+		"Commands.WorldBorder",
+
+		"Blocks.BeeNest",
+		"Blocks.FireSpread",
+		"Blocks.HopperBlock",
+		"Blocks.Lecterns",
+		"Blocks.LootChest",
+		"Blocks.LootChestEntity",
+		"Blocks.Pistons",
+		"Blocks.Tnt",
+
+		"Items.LocatorPearls",
+		"Items.RepairCost",
+		"Items.SpawnEggs",
+		"Items.UsableItems",
+
+		"Entities.Base",
+
+		"Entities.Decorative.CatDye",
+		"Entities.Decorative.WolfDye",
+
+		"Entities.AnimalInteract",
+		"Entities.Breeders",
+		"Entities.CorralMobs",
+		"Entities.Cow",
+
+		"Entities.ArrowEffect",
+		"Entities.Villager",
+
+		"Entities.PotionDamage",
+		"Entities.Damage",
+		"Entities.Tnt",
+		"Entities.Trident",
+		"Entities.Death",
+
+		"Entities.EndCrystal",
+		"Entities.Enderdragon",
+
+		"Entities.EndermenFixes",
+		"Entities.EndermenPickup",
+		"Entities.EndermenPlace",
+		"Entities.Lightning",
+
+		"Entities.FireballFix",
+		"Entities.WitherBoss",
+
+		"Entities.Phantom",
+		"Entities.LimitedSkeletons",
+		"Entities.WanderingTraders",
+		"Entities.WarmStriders",
+		"Entities.WolfBuff",
+
+		"Player.Interaction.ItemPickup",
+		"Player.Interaction.ArmorStand",
+		"Player.Interaction.FarmProtection",
+		"Player.Interaction.HorseRide",
+		"Player.Interaction.ItemFrames",
+		"Player.Interaction.LeadProtection",
+		"Player.Interaction.TamedLead",
+		"Player.Interaction.MinecartLock",
+		"Player.Interaction.MinecartRide",
+		"Player.Interaction.Paintings",
+		"Player.Interaction.ShopSign",
+
+		"Player.FullInventory",
+		"Player.DeathChest",
+
+		"Player.ClientInteraction",
+		"Player.ServerInteraction",
+		"Player.WorldInteraction",
+
+		"World.Clumps",
+		"World.BlockChanges",
+		"World.CauldronCleaning",
+		"World.MobSpawners",
+		"World.Campfires",
+		"World.Saw",
+		"World.ChunkBuild",
+		"World.ChunkSaving",
+		"World.ClaimedChunk",
+		"World.DragonFight",
+		"World.RaidFight",
+		"World.WorldSleep",
+		"World.FluidFlow",
+		"World.Portals",
+		"World.Nether",
+
+		"Server.Books",
+		"Server.ClaimHandler",
+		"Server.DeathMessages",
+		"Server.Explosions",
+		"Server.VanillaProtection",
+		"Server.MOTD",
+		"Server.PlayerList",
+		"Server.PlayerListEntry",
+		"Server.PlayerManager",
+		"Server.Save",
+		"Server.SaveFolder",
+		"Server.ServerWorldAccessor",
+		"Server.WanderingSpawns",
+		"Server.Whitelist",
+		"Ui.AnvilCost",
+		"Ui.Smithing"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
