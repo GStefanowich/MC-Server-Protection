@@ -1,104 +1,76 @@
 plugins {
-	id 'fabric-loom' version '0.10-SNAPSHOT'
-	id 'com.github.johnrengelman.shadow' version '7.1.0'
+	id 'java-library'
+	id 'idea'
 	id 'maven-publish'
+	id 'fabric-loom' version '1.2.7' apply false
 }
 
-repositories {
-	maven { url 'https://jitpack.io' }
-}
+version = project.version
+logger.lifecycle("Building the project.")
 
-//apply plugin: "com.github.johnrengelman.shadow"
-
-sourceCompatibility = JavaVersion.VERSION_17
-targetCompatibility = JavaVersion.VERSION_17
-
-archivesBaseName = project.archives_base_name
-version = project.mod_version
-group = project.maven_group
-
-minecraft {
-}
-
-dependencies {
-	//to change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-	modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+allprojects {
+	group = "net.theelm.sewingmachine"
 	
-	// Fabric API. Used for commands
-	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+	apply plugin: 'java-library'
+	apply plugin: 'fabric-loom'
 	
-	// Bluemap API
-	implementation 'com.github.BlueMap-Minecraft:BlueMapAPI:v1.7.0'
-	
-	// https://mvnrepository.com/artifact/mysql/mysql-connector-java
-	implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'
-	implementation 'com.intellij:annotations:+@jar'
-	
-	shadow group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
-	shadow group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'
-	shadow group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: 'v1.7.0'
-}
-
-shadowJar {
-	classifier = "shadow"
-	configurations = [project.configurations.shadow]
-}
-
-remapJar {
-	dependsOn shadowJar
-	archiveFileName = "sewing-machine-${project.mod_version}_mc-${project.minecraft_version}.jar"
-	input = shadowJar.archiveFile
-}
-
-processResources {
-	inputs.property "version", project.version
-	
-	filesMatching("fabric.mod.json") {
-		expand "version": project.version
+	tasks.withType(JavaCompile).configureEach {
+		it.options.release = 17
 	}
-}
-
-// ensure that the encoding is set to UTF-8, no matter what the system default is
-// this fixes some edge cases with special characters not displaying correctly
-// see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
-tasks.withType(JavaCompile).configureEach {
-	it.options.release = 16
-}
-
-// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-// if it is present.
-// If you remove this task, sources will not be generated.
-task sourcesJar(type: Jar, dependsOn: classes) {
-	classifier = "sources"
-	from sourceSets.main.allSource
-}
-
-java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
-	withSourcesJar()
-}
-
-jar {
-	from ("LICENSE") {
-		rename { "${it}_${project.archivesBaseName}"}
+	
+	java {
+		// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+		// if it is present.
+		// If you remove this line, sources will not be generated.
+		withSourcesJar()
 	}
-}
+	
+	sourceSets {
 
-// configure the maven publication
-publishing {
-	publications {
-		mavenJava(MavenPublication) {
-			from components.java
+	}
+
+	allprojects.each { p ->
+		loom.mods.register(p.name) {
+			sourceSet p.sourceSets.main
+			//sourceSet p.sourceSets.client
 		}
 	}
-
-	// select the repositories you want to publish to
-	repositories {
-		// uncomment to publish to the local maven
-		// mavenLocal()
+	
+	dependencies {
+		//to change the versions see the gradle.properties file
+		minecraft "com.mojang:minecraft:${project.minecraft_version}"
+		mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+		modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+		
+		// Fabric API. Used for commands
+		modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+		
+		implementation 'com.intellij:annotations:+@jar'
+		
+		logger.info(project.name)
+		if (project.name != "sewingmachine-base") {
+			implementation project(':sewingmachine-base')
+		}
+		
+		/*shadow group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
+		shadow group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'
+		shadow group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: 'v1.7.0'*/
+	}
+	
+	tasks.withType(ProcessResources).configureEach {
+		inputs.property "version", project.version
+		
+		filesMatching("fabric.mod.json") {
+			expand "version": project.version
+		}
+	}
+	
+	tasks.withType(AbstractArchiveTask).configureEach {
+		preserveFileTimestamps = false
+		reproducibleFileOrder = true
+	}
+	
+	tasks.register('generateSources') {
+		group = "fabric"
 	}
 }

@@ -1,0 +1,36 @@
+{
+	"schemaVersion": 1,
+	"id": "sewing-machine",
+	"version": "${version}",
+	"name": "Sewing Machine",
+	"description": "A mod for sewing your worlds chunks together. Provides chunk claiming and other server utilities.",
+	"authors": [
+		"TheElm"
+	],
+
+	"contact": {
+		"sources": "https://github.com/GStefanowich/MC-Server-Protection",
+		"issues": "https://github.com/GStefanowich/MC-Server-Protection/issues"
+	},
+
+	"license": "MIT",
+	"icon": "assets/sewing-machine/icon.png",
+
+	"environment": "*",
+	"entrypoints": {
+		"client": [
+			"net.theelm.sewingmachine.base.ClientCore"
+		],
+		"server": [
+			"net.theelm.sewingmachine.base.ServerCore"
+		]
+	},
+	"mixins": [
+		"sewingmachine.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.12.8",
+		"fabric": "*"
+	},
+	"suggests": {}
+}

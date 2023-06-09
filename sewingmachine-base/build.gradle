@@ -1,0 +1,12 @@
+archivesBaseName = "sewing-machine-base"
+
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+
+dependencies {
+    // Bluemap API
+    implementation 'com.github.BlueMap-Minecraft:BlueMapAPI:v2.5.1'
+    
+    implementation group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'
+}
