@@ -31,7 +31,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
 import net.theelm.sewingmachine.objects.ticking.ClaimCache;

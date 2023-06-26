@@ -23,19 +23,20 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.objects.ticking;
+package net.theelm.sewingmachine.protection.objects.ticking;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.commands.ClaimCommand;
 import net.theelm.sewingmachine.exceptions.TranslationKeyException;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.interfaces.TickableContext;
 import net.theelm.sewingmachine.interfaces.TickingAction;
-import net.theelm.sewingmachine.protections.claiming.Claimant;
-import net.theelm.sewingmachine.protections.claiming.ClaimantPlayer;
-import net.theelm.sewingmachine.protections.claiming.ClaimantTown;
+import net.theelm.sewingmachine.protection.claims.Claimant;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.claims.ClaimantTown;
+import net.theelm.sewingmachine.protection.commands.ClaimCommand;
+import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;

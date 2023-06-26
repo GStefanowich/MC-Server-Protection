@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.protection.events;
 
+import net.fabricmc.fabric.api.event.Event;
 import net.theelm.sewingmachine.interfaces.ItemUseCallback;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
@@ -75,8 +76,8 @@ public final class ItemUse {
     /**
      * Initialize our callback listener for Item Usage
      */
-    public static void init() {
-        ItemUseCallback.EVENT.register(ItemUse::blockInteract);
+    public static void register(@NotNull Event<ItemUseCallback> event) {
+        event.register(ItemUse::blockInteract);
     }
     
     private static @NotNull ActionResult blockInteract(@NotNull ServerPlayerEntity player, @NotNull World world, @NotNull Hand hand, @NotNull ItemStack itemStack) {

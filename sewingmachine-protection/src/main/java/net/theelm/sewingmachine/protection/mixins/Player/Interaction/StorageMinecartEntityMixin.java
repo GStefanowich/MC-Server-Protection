@@ -25,20 +25,14 @@
 
 package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 
-import net.minecraft.text.Text;
-import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
-import net.theelm.sewingmachine.utilities.EntityUtils;
-import net.theelm.sewingmachine.utilities.TitleUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.vehicle.AbstractMinecartEntity;
 import net.minecraft.entity.vehicle.StorageMinecartEntity;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.WorldChunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -63,17 +57,7 @@ public abstract class StorageMinecartEntityMixin extends AbstractMinecartEntity 
             return;
         
         // Play sound to player
-        this.playSound(EntityUtils.getLockSound( this ), 1, 1);
-        
-        // Get the world chunk that the minecart is in
-        WorldChunk chunk = this.getWorld()
-            .getWorldChunk(this.getBlockPos());
-        
-        // Display that this item can't be opened
-        TitleUtils.showPlayerAlert( player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
-            EntityUtils.getLockedName(this),
-            ( chunk == null ? Text.literal("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, this.getBlockPos()))
-        ));
+        EntityLockUtils.playLockSoundFromSource(this, player);
         
         // Cancel the event
         callback.setReturnValue(false);

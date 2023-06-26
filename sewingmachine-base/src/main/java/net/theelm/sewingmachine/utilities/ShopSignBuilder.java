@@ -29,6 +29,7 @@ import com.google.common.collect.Maps;
 import net.minecraft.block.entity.SignText;
 import net.minecraft.registry.Registries;
 import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.enums.ShopSigns;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
@@ -76,7 +77,7 @@ public final class ShopSignBuilder implements ShopSignData {
      * Shop information
      */
     private @Nullable UUID ownerUUID = null;
-    private @Nullable ShopSigns signType = null;
+    private @Nullable ShopSign signType = null;
     
     private @Nullable Identifier tradeItemIdentifier = null;
     private final @NotNull Map<Enchantment, Integer> tradeItemEnchants = Maps.newLinkedHashMap();
@@ -132,7 +133,7 @@ public final class ShopSignBuilder implements ShopSignData {
     }
     
     @Override
-    public @Nullable ShopSigns getShopType() {
+    public @Nullable ShopSign getShopType() {
         return this.signType;
     }
     @Override
@@ -182,11 +183,6 @@ public final class ShopSignBuilder implements ShopSignData {
     public void regionPositioning(@Nullable BlockPos first, @Nullable BlockPos second) {
         this.regionPosA = first;
         this.regionPosB = second;
-    }
-    
-    @Nullable
-    public ShopSigns getType() {
-        return this.signType;
     }
     
     /*

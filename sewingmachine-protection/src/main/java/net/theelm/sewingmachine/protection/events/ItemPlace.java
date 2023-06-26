@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.protection.events;
 
+import net.fabricmc.fabric.api.event.Event;
 import net.theelm.sewingmachine.interfaces.BlockPlaceCallback;
 import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
 import net.theelm.sewingmachine.utilities.ItemUtils;
@@ -43,8 +44,8 @@ public final class ItemPlace {
     /**
      * Initialize our callback listener for Item Usage
      */
-    public static void init() {
-        BlockPlaceCallback.EVENT.register(ItemPlace::blockPlace);
+    public static void register(@NotNull Event<BlockPlaceCallback> event) {
+        event.register(ItemPlace::blockPlace);
     }
     
     private static @NotNull ActionResult blockPlace(final ServerPlayerEntity player, final World world, final BlockPos blockPos, final Direction direction, final ItemStack stack) {

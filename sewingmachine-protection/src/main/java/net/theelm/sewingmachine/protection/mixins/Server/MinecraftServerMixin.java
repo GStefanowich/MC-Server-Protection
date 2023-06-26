@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.protection.mixins.Server;
 
-import net.theelm.sewingmachine.interfaces.ClaimsAccessor;
+import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;

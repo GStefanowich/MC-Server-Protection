@@ -144,7 +144,7 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
             MinecraftServer server = this.getServer();
             if (server != null) {
                 server.getPlayerManager()
-                    .sendToAll(new WanderingTraderProfileCollection().getPacket(PlayerListS2CPacket.Action.REMOVE_PLAYER));
+                    .sendToAll(new WanderingTraderProfileCollection().getPacket(PlayerListS2CPacket.Action.UPDATE_LISTED));
             }
         }
         super.remove(removalReason);

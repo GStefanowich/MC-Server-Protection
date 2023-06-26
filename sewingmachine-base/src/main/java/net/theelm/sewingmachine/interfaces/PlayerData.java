@@ -54,12 +54,6 @@ public interface PlayerData {
     @NotNull Map<String, WarpUtils.Warp> getWarps();
     
     /*
-     * Player claim information
-     */
-    
-    ClaimantPlayer getClaim();
-    
-    /*
      * Player join information
      */
     

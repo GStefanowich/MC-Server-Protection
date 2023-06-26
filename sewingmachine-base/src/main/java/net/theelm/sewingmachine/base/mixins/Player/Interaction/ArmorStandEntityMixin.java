@@ -30,7 +30,6 @@ import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.ArmorStandPose;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.interfaces.PlayerCorpse;
 import net.theelm.sewingmachine.objects.PlayerBackpack;
 import net.theelm.sewingmachine.utilities.CasingUtils;
@@ -77,12 +76,7 @@ import java.util.Iterator;
 import java.util.UUID;
 
 @Mixin(ArmorStandEntity.class)
-public abstract class ArmorStandEntityMixin extends LivingEntity implements PlayerCorpse {
-    
-    private UUID corpsePlayerUUID = null;
-    private NbtList corpsePlayerItems = null;
-    private NbtList corpsePlayerBackpack = null;
-    
+public abstract class ArmorStandEntityMixin extends LivingEntity {
     @Shadow public native boolean shouldShowArms();
     @Shadow private native void setShowArms( boolean show );
     
@@ -128,227 +122,70 @@ public abstract class ArmorStandEntityMixin extends LivingEntity implements Play
     
     @Inject(at = @At("HEAD"), method = "interactAt", cancellable = true)
     public void onPlayerInteract(PlayerEntity player, Vec3d vec3d, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
-        // Armor Stand is a corpse
-        if (this.corpsePlayerUUID != null) {
-            // Return the items back to their owner
-            if (EntityUtils.canEntityTakeDeathChest(player, this.corpsePlayerUUID)) {
-                this.returnItemsToPlayer(player);
-            } else {
-                // Deny if the corpse does not belong to this player
-                callback.setReturnValue(ActionResult.FAIL);
-            }
-            return;
-        }
+        ItemStack handStack = player.getStackInHand(hand);
         
-        // Player is in creative
-        if ((player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS))
-            || player.isSpectator()
-            // If player can loot armor stand
-            || ChunkUtils.canPlayerLootChestsInChunk(player, this.getBlockPos()))
-        {
-            ItemStack handStack = player.getStackInHand( hand );
-            
-            if (!this.shouldHideBasePlate()) {
-                if (player.isSneaking() && handStack.isEmpty() && (vec3d.y < 0.5D)) {
-                    this.setHideBasePlate(true);
-                    
-                    this.dropStack(new ItemStack(Items.SMOOTH_STONE_SLAB, 1));
-                    
-                    callback.setReturnValue(ActionResult.SUCCESS);
-                    return;
-                }
-            } else if (handStack.getItem().equals(Items.SMOOTH_STONE_SLAB)) {
-                handStack.decrement(1);
-                this.setHideBasePlate(false);
+        if (!this.shouldHideBasePlate()) {
+            if (player.isSneaking() && handStack.isEmpty() && (vec3d.y < 0.5D)) {
+                this.setHideBasePlate(true);
+                
+                this.dropStack(new ItemStack(Items.SMOOTH_STONE_SLAB, 1));
                 
                 callback.setReturnValue(ActionResult.SUCCESS);
                 return;
             }
+        } else if (handStack.getItem().equals(Items.SMOOTH_STONE_SLAB)) {
+            handStack.decrement(1);
+            this.setHideBasePlate(false);
             
-            // Take away the arms
-            if (this.shouldShowArms()) {
-                if (!player.isSneaking() && handStack.getItem().equals(Items.STICK)) {
-                    // Get the next pose after the current
-                    ArmorStandPose pose = ArmorStandPose.getCurrent(this)
-                        .next();
-                    
-                    // Apply that pose
-                    ArmorStandPose.apply(pose, this);
-                    
-                    // Tell the player
-                    player.sendMessage(Text.literal(CasingUtils.words(pose.name()
-                        .replace('_', ' '))).formatted(Formatting.YELLOW), true);
-                    
-                    // Eat the interaction
-                    callback.setReturnValue(ActionResult.SUCCESS);
-                    return;
-                } else if (player.isSneaking() && handStack.isEmpty()) {
-                    this.setShowArms(false);
-                    
-                    ItemStack mainHand = this.getStackInHand(Hand.MAIN_HAND);
-                    ItemStack offHand = this.getStackInHand(Hand.OFF_HAND);
-                    
-                    // Remove items from hands
-                    if (!mainHand.isEmpty()) {
-                        this.dropStack(mainHand);
-                        this.setStackInHand(Hand.MAIN_HAND, ItemStack.EMPTY);
-                    }
-                    if (!offHand.isEmpty()) {
-                        this.dropStack(offHand);
-                        this.setStackInHand(Hand.OFF_HAND, ItemStack.EMPTY);
-                    }
-                    
-                    // Drop the arms on the ground
-                    this.dropStack(new ItemStack(Items.STICK, 2));
-                    
-                    callback.setReturnValue(ActionResult.SUCCESS);
-                    return;
+            callback.setReturnValue(ActionResult.SUCCESS);
+            return;
+        }
+        
+        // Take away the arms
+        if (this.shouldShowArms()) {
+            if (!player.isSneaking() && handStack.getItem().equals(Items.STICK)) {
+                // Get the next pose after the current
+                ArmorStandPose pose = ArmorStandPose.getCurrent(this)
+                    .next();
+                
+                // Apply that pose
+                ArmorStandPose.apply(pose, this);
+                
+                // Tell the player
+                player.sendMessage(Text.literal(CasingUtils.words(pose.name()
+                    .replace('_', ' '))).formatted(Formatting.YELLOW), true);
+                
+                // Eat the interaction
+                callback.setReturnValue(ActionResult.SUCCESS);
+            } else if (player.isSneaking() && handStack.isEmpty()) {
+                this.setShowArms(false);
+                
+                ItemStack mainHand = this.getStackInHand(Hand.MAIN_HAND);
+                ItemStack offHand = this.getStackInHand(Hand.OFF_HAND);
+                
+                // Remove items from hands
+                if (!mainHand.isEmpty()) {
+                    this.dropStack(mainHand);
+                    this.setStackInHand(Hand.MAIN_HAND, ItemStack.EMPTY);
                 }
-            }
-            
-            // Add arms
-            else if (handStack.getItem().equals(Items.STICK) && (handStack.getCount() >= 2)) {
-                handStack.decrement(2);
-                this.setShowArms(true);
+                if (!offHand.isEmpty()) {
+                    this.dropStack(offHand);
+                    this.setStackInHand(Hand.OFF_HAND, ItemStack.EMPTY);
+                }
+                
+                // Drop the arms on the ground
+                this.dropStack(new ItemStack(Items.STICK, 2));
                 
                 callback.setReturnValue(ActionResult.SUCCESS);
-                return;
-            }
-            
-            return;
-        }
-        
-        // Player sound
-        this.playSound(EntityUtils.getLockSound(this), 1, 1);
-        
-        WorldChunk chunk = this.getWorld()
-            .getWorldChunk(this.getBlockPos());
-        
-        // Display that this item can't be opened
-        TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
-            EntityUtils.getLockedName(this),
-            (chunk == null ? Text.literal("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, this.getBlockPos()))
-        ));
-        
-        callback.setReturnValue(ActionResult.FAIL);
-    }
-    
-    /*
-     * Player Death Chests
-     */
-    
-    @Override
-    public void onPlayerCollision(PlayerEntity player) {
-        // If the corpse belongs to the player
-        if ( (this.corpsePlayerUUID != null) && player.getUuid().equals(this.corpsePlayerUUID)) {
-            this.returnItemsToPlayer(player);
-            return;
-        }
-        // Regular collision
-        super.onPlayerCollision(player);
-    }
-    
-    @Override
-    public void setCorpseData(UUID owner, NbtList inventory, NbtList backpack) {
-        this.corpsePlayerUUID = owner;
-        this.corpsePlayerItems = inventory;
-        this.corpsePlayerBackpack = backpack;
-    }
-    private void giveCorpseItems(@NotNull final PlayerEntity player) {
-        Iterator<NbtElement> items;
-        
-        // Get all of the items to give back
-        if (this.corpsePlayerItems != null) {
-            items = this.corpsePlayerItems.iterator();
-            while (items.hasNext()) {
-                // Create the item from the tag
-                ItemStack itemStack = ItemStack.fromNbt((NbtCompound) items.next());
-                
-                // Try equipping the item if the slot is available
-                EquipmentSlot slot = null;
-                
-                if (itemStack.getItem() instanceof ArmorItem && !EnchantmentHelper.hasBindingCurse(itemStack)) {
-                    // If armor
-                    slot = ((ArmorItem) itemStack.getItem()).getSlotType();
-                } else if (itemStack.getItem().equals(Items.SHIELD)) {
-                    // If shield
-                    slot = EquipmentSlot.OFFHAND;
-                }
-                
-                // If slot is set, equip it there (If allowed)
-                if ((slot != null) && player.getEquippedStack(slot).getItem() == Items.AIR)
-                    player.equipStack(slot, itemStack);
-                else // Add to the inventory (If not equipped)
-                    player.getInventory().offerOrDrop(itemStack);
-                
-                // Remove from the iterator (Tag list)
-                items.remove();
             }
         }
         
-        // Get all of the backpack items back
-        if (this.corpsePlayerBackpack != null) {
-            items = this.corpsePlayerBackpack.iterator();
-            while (items.hasNext()) {
-                // Create the item from the tag
-                ItemStack itemStack = ItemStack.fromNbt((NbtCompound) items.next());
-                PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
-                
-                // Attempt to put items into the backpack
-                if ((backpack == null) || (!backpack.insertStack(itemStack)))
-                    player.getInventory().offerOrDrop(itemStack);
-                
-                // Remove from the iterator (Tag list)
-                items.remove();
-            }
-        }
-    }
-    private void returnItemsToPlayer(@NotNull final PlayerEntity player) {
-        // Give the items back to the player
-        this.giveCorpseItems(player);
-        
-        if (((this.corpsePlayerItems == null) || this.corpsePlayerItems.isEmpty()) && ((this.corpsePlayerBackpack == null) || this.corpsePlayerBackpack.isEmpty())) {
-            BlockPos blockPos = this.getBlockPos().up();
+        // Add arms
+        else if (handStack.getItem().equals(Items.STICK) && (handStack.getCount() >= 2)) {
+            handStack.decrement(2);
+            this.setShowArms(true);
             
-            // Play sound
-            player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f);
-            
-            // Spawn particles
-            ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.TOTEM_OF_UNDYING,
-                blockPos.getX() + 0.5D,
-                blockPos.getY() + 1.0D,
-                blockPos.getZ() + 0.5D,
-                150,
-                1.0D,
-                0.5D,
-                1.0D,
-                0.3D
-            );
-            
-            // Remove the armor stand
-            this.discard();
-        }
-    }
-    
-    @Inject(at=@At("TAIL"), method = "writeCustomDataToNbt")
-    public void onSavingData(NbtCompound tag, CallbackInfo callback) {
-        // Save the player warp location for restarts
-        if ( this.corpsePlayerUUID != null ) {
-            tag.putUuid("corpsePlayerUUID", this.corpsePlayerUUID);
-            if ((this.corpsePlayerItems != null) && (!this.corpsePlayerItems.isEmpty()))
-                tag.put("corpsePlayerItems", this.corpsePlayerItems);
-            if ((this.corpsePlayerBackpack != null) && (!this.corpsePlayerBackpack.isEmpty()))
-                tag.put("corpsePlayerBackpack", this.corpsePlayerBackpack);
-        }
-    }
-    @Inject(at=@At("TAIL"), method = "readCustomDataFromNbt")
-    public void onReadingData(NbtCompound tag, CallbackInfo callback) {
-        if ( NbtUtils.hasUUID(tag, "corpsePlayerUUID") ) {
-            this.corpsePlayerUUID = NbtUtils.getUUID(tag, "corpsePlayerUUID");
-            if (tag.contains("corpsePlayerItems", NbtElement.LIST_TYPE))
-                this.corpsePlayerItems = tag.getList("corpsePlayerItems", NbtElement.COMPOUND_TYPE);
-            if (tag.contains("corpsePlayerBackpack", NbtElement.LIST_TYPE))
-                this.corpsePlayerBackpack = tag.getList("corpsePlayerBackpack", NbtElement.COMPOUND_TYPE);
+            callback.setReturnValue(ActionResult.SUCCESS);
         }
     }
 }

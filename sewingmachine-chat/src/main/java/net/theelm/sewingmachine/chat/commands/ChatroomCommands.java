@@ -38,7 +38,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.chat.config.SewChatConfig;
 import net.theelm.sewingmachine.chat.utilities.ChatRoomUtilities;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;

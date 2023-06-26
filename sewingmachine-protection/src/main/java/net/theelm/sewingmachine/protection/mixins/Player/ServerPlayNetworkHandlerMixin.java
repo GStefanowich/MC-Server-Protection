@@ -42,7 +42,6 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
-import net.theelm.sewingmachine.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;

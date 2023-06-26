@@ -28,6 +28,7 @@ package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
@@ -60,7 +61,7 @@ public abstract class LeashKnotEntityMixin extends AbstractDecorationEntity {
         
         // Display that this leash can't be removed
         TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
-            EntityUtils.getLockedName(this),
+            EntityLockUtils.getLockedName(this),
             ( chunk == null ? Text.literal("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, this.getBlockPos()) )
         ));
         

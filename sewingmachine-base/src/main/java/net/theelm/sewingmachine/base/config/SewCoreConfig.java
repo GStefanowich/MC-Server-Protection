@@ -92,6 +92,7 @@ public class SewCoreConfig {
      * Primary Functions Booleans
      */
     
+    @Deprecated(forRemoval = true)
     public static final ConfigOption<Boolean> DO_CLAIMS = ConfigOption.json("claims.enabled", true);
     public static final ConfigOption<Boolean> CLAIM_CREATIVE_BYPASS = ConfigOption.json("claims.creative_bypass", true);
     public static final ConfigOption<Boolean> DISABLE_VANILLA_PROTECTION = ConfigOption.json("claims.disable_vanilla", true);

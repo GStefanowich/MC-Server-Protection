@@ -47,9 +47,9 @@ import net.minecraft.village.VillagerDataContainer;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.interfaces.ClaimsAccessor;
+import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
-import net.theelm.sewingmachine.interfaces.VillagerTownie;
+import net.theelm.sewingmachine.protection.interfaces.VillagerTownie;
 import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.utilities.ColorUtils;
@@ -115,7 +115,7 @@ public abstract class VillagerEntityMixin extends MerchantEntity implements Inte
         if (this.town != null) {
             town = ((ClaimsAccessor)this.getServer()).getClaimManager()
                 .getTownClaim(this.town);
-
+            
             // Reset the town
             if (town == null)
                 this.setTown(null);

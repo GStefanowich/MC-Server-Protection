@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.protection.events;
 
+import net.fabricmc.fabric.api.event.Event;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
@@ -79,9 +80,9 @@ public final class BlockBreak {
     /**
      * Initialize our callback listener for Block Breaking
      */
-    public static void init() {
+    public static void register(@NotNull Event<BlockBreakCallback> event) {
         // Register the block break event
-        BlockBreakCallback.EVENT.register(BlockBreak::blockBreak);
+        event.register(BlockBreak::blockBreak);
     }
     
     /**

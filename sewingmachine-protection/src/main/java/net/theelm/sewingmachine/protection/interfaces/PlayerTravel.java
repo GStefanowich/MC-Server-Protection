@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.protection.interfaces;
 
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -36,8 +37,26 @@ import java.util.UUID;
  * By greg in sewingmachine
  */
 public interface PlayerTravel {
+    /**
+     * @return Get the Players claim information
+     */
+    ClaimantPlayer getClaim();
+
+    /**
+     * @return Get the Players current position (as a Claim)
+     */
     @Nullable PlayerVisitor getLocation();
     
+    /**
+     * Set the Player as positioned in another Players claimed terrority
+     * @param uuid The playerspace that the Player is in
+     * @return The Players current position (as a Claim)
+     */
     @NotNull PlayerVisitor updateLocation(@NotNull UUID uuid);
+
+    /**
+     * Set the Player as positioned in unclaimed territory
+     * @return The Players current position (as a Claim)
+     */
     @NotNull PlayerVisitor updateLocation();
 }

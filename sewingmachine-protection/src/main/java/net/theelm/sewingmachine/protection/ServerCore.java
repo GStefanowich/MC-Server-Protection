@@ -27,7 +27,11 @@ package net.theelm.sewingmachine.protection;
 
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.theelm.sewingmachine.events.ClaimUpdateCallback;
-import net.theelm.sewingmachine.interfaces.PlayerData;
+import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
+import net.theelm.sewingmachine.interfaces.BlockInteractionCallback;
+import net.theelm.sewingmachine.interfaces.BlockPlaceCallback;
+import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
+import net.theelm.sewingmachine.interfaces.ItemUseCallback;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.protection.events.BlockBreak;
 import net.theelm.sewingmachine.protection.events.BlockInteraction;
@@ -36,6 +40,7 @@ import net.theelm.sewingmachine.protection.events.ItemPlace;
 import net.theelm.sewingmachine.protection.events.ItemUse;
 import net.theelm.sewingmachine.protection.interfaces.PlayerMovement;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 
 /**
  * Created on Jun 08 2023 at 11:58 PM.
@@ -45,15 +50,15 @@ public class ServerCore implements DedicatedServerModInitializer, SewPlugin {
     @Override
     public void onInitializeServer() {
         // Create registry based listeners
-        BlockBreak.init();
-        BlockInteraction.init();
-        EntityAttack.init();
-        ItemPlace.init();
-        ItemUse.init();
+        BlockBreak.register(BlockBreakCallback.EVENT);
+        BlockInteraction.register(BlockInteractionCallback.EVENT);
+        EntityAttack.register(DamageEntityCallback.EVENT);
+        ItemPlace.register(BlockPlaceCallback.EVENT);
+        ItemUse.register(ItemUseCallback.EVENT);
         
         ClaimUpdateCallback.EVENT.register((owner, refresh) -> {
             // Update the name in the claim cache
-            ClaimantPlayer claim = ((PlayerData) owner).getClaim();
+            ClaimantPlayer claim = ((PlayerTravel) owner).getClaim();
             
             // Update claim details
             if (refresh) {

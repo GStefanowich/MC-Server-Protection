@@ -32,7 +32,6 @@ import net.minecraft.registry.RegistryKey;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.AdminCommands;
 import net.theelm.sewingmachine.commands.BackpackCommand;
-import net.theelm.sewingmachine.commands.ClaimCommand;
 import net.theelm.sewingmachine.commands.DateCommand;
 import net.theelm.sewingmachine.commands.FireworksCommand;
 import net.theelm.sewingmachine.commands.GameModesCommand;
@@ -144,7 +143,6 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         return new SewCommand[]{
             new AdminCommands(),
             new BackpackCommand(),
-            new ClaimCommand(),
             new DateCommand(),
             new FireworksCommand(),
             new GameModesCommand(),

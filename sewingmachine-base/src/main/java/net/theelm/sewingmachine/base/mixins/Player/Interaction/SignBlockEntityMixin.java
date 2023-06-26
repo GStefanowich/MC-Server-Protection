@@ -30,6 +30,7 @@ import net.minecraft.block.entity.SignText;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.filter.FilteredMessage;
 import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.enums.ShopSigns;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
@@ -76,9 +77,6 @@ import java.util.UUID;
 
 @Mixin(SignBlockEntity.class)
 public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSignData {
-    
-    @Shadow public abstract UUID getEditor();
-    
     /*
      * Mixin variables
      */
@@ -87,7 +85,7 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     
     // Shop Owner (Necessary to be a shop sign)
     private @Nullable UUID shopSign_Owner = null;
-    private @Nullable ShopSigns shopSign_Type = null;
+    private @Nullable ShopSign shopSign_Type = null;
     
     // Item being traded
     private @Nullable Identifier shopSign_item = null;
@@ -231,7 +229,7 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     }
     
     @Override
-    public @Nullable ShopSigns getShopType() {
+    public @Nullable ShopSign getShopType() {
         return this.shopSign_Type;
     }
     
@@ -272,10 +270,10 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
             if (!builder.build(serverPlayer))
                 return;
             
-            this.shopSign_Type = builder.getType();
+            this.shopSign_Type = builder.getShopType();
             assert this.shopSign_Type != null;
             
-            CoreMod.logInfo("Built new shop sign " + this.shopSign_Type.name() + " at " + this.pos.getX() + ", " + this.pos.getY() + ", " + this.pos.getZ());
+            CoreMod.logInfo("Built new shop sign " + this.shopSign_Type.name + " at " + this.pos.getX() + ", " + this.pos.getY() + ", " + this.pos.getZ());
             
             // Update the parameters here from the builder
             this.shopSign_Owner = builder.getShopOwner();

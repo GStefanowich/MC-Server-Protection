@@ -41,11 +41,5 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     @Override
     public void onInitializeServer() {
         ServerMessageDecoratorEvent.EVENT.register(ServerMessageDecoratorEvent.CONTENT_PHASE, new ChatDecorator());
-        
-        CommandRegistrationCallback.EVENT.register((dispatcher, access, environment) -> {
-            ChatroomCommands.register(dispatcher);
-            NickNameCommand.register(dispatcher);
-            TagUserCommand.register(dispatcher);
-        });
     }
 }

@@ -32,15 +32,11 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.PlayerSpawnCommand;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.enums.ClaimSettings;
 import net.theelm.sewingmachine.enums.CompassDirections;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.interfaces.MoneyHolder;
 import net.theelm.sewingmachine.interfaces.PlayerData;
-import net.theelm.sewingmachine.interfaces.PlayerPermissions;
 import net.theelm.sewingmachine.interfaces.PlayerServerLanguage;
-import net.theelm.sewingmachine.protections.claiming.ClaimantPlayer;
 import net.theelm.sewingmachine.utilities.EffectUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.SleepUtils;
@@ -96,8 +92,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(ServerPlayerEntity.class)
-public abstract class ServerPlayerEntityMixin extends PlayerEntity implements PlayerData, PlayerPermissions, PlayerServerLanguage {
-    @Shadow public ServerPlayerInteractionManager interactionManager;
+public abstract class ServerPlayerEntityMixin extends PlayerEntity implements PlayerData, PlayerServerLanguage {
     @Shadow public ServerPlayNetworkHandler networkHandler;
     @Shadow private boolean notInAnyWorld;
     
@@ -200,18 +195,6 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
             this.healthBar.clearPlayers();
         }
     }
-    @Inject(at = @At("HEAD"), method = "shouldDamagePlayer", cancellable = true)
-    public void shouldDamage(PlayerEntity entity, CallbackInfoReturnable<Boolean> callback) {
-        IClaimedChunk chunk = (IClaimedChunk) this.getServerWorld().getWorldChunk(this.getBlockPos());
-        
-        // If player hurt themselves
-        if ( this == entity )
-            return;
-        
-        // If PvP is off, disallow
-        if ( !chunk.isSetting(this.getBlockPos(), ClaimSettings.PLAYER_COMBAT) )
-            callback.setReturnValue(false);
-    }
     @Inject(at = @At("RETURN"), method = "damage")
     public void onDamage(DamageSource damageSource, float amount, CallbackInfoReturnable<Boolean> callback) {
         if ((!this.getServerWorld().isClient)) {
@@ -232,15 +215,6 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
         if (this.healthBar != null || !create)
             return this.healthBar;
         return (this.healthBar = EntityUtils.createHealthBar(this));
-    }
-    
-    /*
-     * Claims
-     */
-    
-    @Override
-    public ClaimantPlayer getClaim() {
-        return ((PlayerData)this.networkHandler).getClaim();
     }
     
     /*

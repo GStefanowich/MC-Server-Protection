@@ -25,23 +25,23 @@
 
 package net.theelm.sewingmachine.protection.events;
 
+import net.fabricmc.fabric.api.event.Event;
 import net.minecraft.block.ButtonBlock;
 import net.minecraft.sound.BlockSoundGroup;
-import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.ClaimPermissions;
 import net.theelm.sewingmachine.enums.ShopSigns;
 import net.theelm.sewingmachine.interfaces.BlockInteractionCallback;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
-import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.theelm.sewingmachine.protections.logging.BlockEvent;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -78,8 +78,76 @@ public final class BlockInteraction {
     /**
      * Initialize our callback listener for Block Interaction
      */
-    public static void init() {
-        BlockInteractionCallback.EVENT.register(BlockInteraction::blockInteract);
+    public static void register(@NotNull Event<BlockInteractionCallback> event) {
+        // Interactions with redstone objects
+        event.register(BlockInteraction::interactSwitches);
+        
+        // Interactions with doors
+        event.register(BlockInteraction::interactDoors);
+    }
+    
+    private static ActionResult interactSwitches(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
+        final BlockPos blockPos = blockHitResult.getBlockPos();
+        final BlockState blockState = world.getBlockState(blockPos);
+        final Block block = blockState.getBlock();
+        
+        // Block must be a button or lever
+        if (!(block instanceof ButtonBlock || block instanceof LeverBlock))
+            return ActionResult.PASS;
+        
+        // If allowed to bypass permissions in creative mode
+        if (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
+            return ActionResult.SUCCESS;
+        
+        WorldChunk chunk = player.getEntityWorld()
+            .getWorldChunk(blockPos);
+        return ChunkUtils.canPlayerToggleMechanisms(player, chunk, blockPos) ? ActionResult.SUCCESS : ActionResult.FAIL;
+    }
+    
+    private static ActionResult interactDoors(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
+        final BlockPos blockPos = blockHitResult.getBlockPos();
+        final BlockState blockState = world.getBlockState(blockPos);
+        final Block block = blockState.getBlock();
+        
+        // If block is a door, trapdoor, or gate
+        if (!(block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock))
+            return ActionResult.PASS;
+        
+        // If allowed to bypass permissions in creative mode
+        if (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
+            return ActionResult.SUCCESS;
+        
+        WorldChunk chunk = player.getEntityWorld()
+            .getWorldChunk(blockPos);
+        if (ChunkUtils.canPlayerToggleDoor(player, chunk, blockPos)) {
+            // TODO: Remove double door function out of the PROTECTION module
+            // Toggle double doors
+            if ((!player.isSneaking()) && block instanceof DoorBlock && (blockState.getSoundGroup() != BlockSoundGroup.METAL)) {
+                DoubleBlockHalf doorHalf = blockState.get(DoorBlock.HALF);
+                Direction doorDirection = blockState.get(DoorBlock.FACING);
+                DoorHinge doorHinge = blockState.get(DoorBlock.HINGE);
+
+                BlockPos otherDoorPos = blockPos.offset(doorHinge == DoorHinge.LEFT ? doorDirection.rotateYClockwise() : doorDirection.rotateYCounterclockwise())
+                    .offset(Direction.UP, doorHalf == DoubleBlockHalf.UPPER ? 0 : 1);
+                BlockState otherDoorState = world.getBlockState(otherDoorPos);
+
+                // Other block is DOOR, Material matches, is same door half, and opposite hinge
+                if ((otherDoorState.getBlock() instanceof DoorBlock) && (blockState.getSoundGroup() == otherDoorState.getSoundGroup()) && (otherDoorState.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER) && (doorHinge != otherDoorState.get(DoorBlock.HINGE))) {
+                    boolean doorIsOpen = blockState.get(DoorBlock.OPEN);
+                    boolean otherIsOpen = otherDoorState.get(DoorBlock.OPEN);
+
+                    if (doorIsOpen == otherIsOpen) {
+                        // Toggle the doors
+                        world.setBlockState(otherDoorPos, otherDoorState.with(DoorBlock.OPEN, !doorIsOpen), 10);
+                        world.syncWorldEvent(player, otherIsOpen ? 1006 : 1012, otherDoorPos, 0);
+                    }
+                }
+            }
+            
+            return ActionResult.PASS;
+        }
+        
+        return ActionResult.FAIL;
     }
     
     private static ActionResult blockInteract(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
@@ -91,8 +159,8 @@ public final class BlockInteraction {
         final Lazy<WorldChunk> claimedChunkInfo = new Lazy<>(() -> player.getEntityWorld().getWorldChunk(blockPos));
         
         // Check if the block interacted with is a sign (For shop signs)
-        if ( blockEntity instanceof ShopSignData shopSign && blockEntity instanceof SignBlockEntity sign) {
-            ShopSigns shopSignType;
+        if ( blockEntity instanceof ShopSignData shopSign && blockEntity instanceof SignBlockEntity) {
+            ShopSign shopSignType;
             
             // Interact with the sign
             if ((shopSign.getShopOwner() != null) && ((shopSignType = shopSign.getShopType()) != null)) {
@@ -113,52 +181,6 @@ public final class BlockInteraction {
             }
         }
         
-        // If block is a button or lever
-        if (block instanceof ButtonBlock || block instanceof LeverBlock) {
-            if ((!SewConfig.get(SewCoreConfig.DO_CLAIMS))
-                || (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
-                || ChunkUtils.canPlayerToggleMechanisms(player, claimedChunkInfo.get(), blockPos))
-            {
-                return ActionResult.PASS;
-            }
-        }
-        
-        // If block is a button, door, trapdoor, or gate
-        if (block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock) {
-            if ((!SewConfig.get(SewCoreConfig.DO_CLAIMS))
-                || (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
-                || ChunkUtils.canPlayerToggleDoor(player, claimedChunkInfo.get(), blockPos))
-            {
-                // Toggle double doors
-                if ((!player.isSneaking()) && block instanceof DoorBlock && (blockState.getSoundGroup() != BlockSoundGroup.METAL)) {
-                    DoubleBlockHalf doorHalf = blockState.get(DoorBlock.HALF);
-                    Direction doorDirection = blockState.get(DoorBlock.FACING);
-                    DoorHinge doorHinge = blockState.get(DoorBlock.HINGE);
-                    
-                    BlockPos otherDoorPos = blockPos.offset(doorHinge == DoorHinge.LEFT ? doorDirection.rotateYClockwise() : doorDirection.rotateYCounterclockwise())
-                        .offset(Direction.UP, doorHalf == DoubleBlockHalf.UPPER ? 0 : 1);
-                    BlockState otherDoorState = world.getBlockState(otherDoorPos);
-                    
-                    // Other block is DOOR, Material matches, is same door half, and opposite hinge
-                    if ((otherDoorState.getBlock() instanceof DoorBlock) && (blockState.getSoundGroup() == otherDoorState.getSoundGroup()) && (otherDoorState.get(DoorBlock.HALF) == DoubleBlockHalf.UPPER) && (doorHinge != otherDoorState.get(DoorBlock.HINGE))) {
-                        boolean doorIsOpen = blockState.get(DoorBlock.OPEN);
-                        boolean otherIsOpen = otherDoorState.get(DoorBlock.OPEN);
-                        
-                        if (doorIsOpen == otherIsOpen) {
-                            // Toggle the doors
-                            world.setBlockState(otherDoorPos, otherDoorState.with(DoorBlock.OPEN, !doorIsOpen), 10);
-                            world.syncWorldEvent(player, otherIsOpen ? 1006 : 1012, otherDoorPos, 0);
-                        }
-                    }
-                }
-                
-                // Allow the action
-                return ActionResult.PASS;
-            }
-            
-            return ActionResult.FAIL;
-        }
-        
         // If the block is something that can be accessed (Like a chest)
         if ( (!player.shouldCancelInteraction() || (!(itemStack.getItem() instanceof BlockItem || itemStack.getItem() instanceof BucketItem))) ) {
             if ( player.isSpectator() || (blockEntity instanceof EnderChestBlockEntity))
@@ -166,7 +188,7 @@ public final class BlockInteraction {
             
             // Get the permission of the block
             ClaimPermissions blockPermission;
-            if ((((blockPermission = EntityUtils.getLockPermission(blockEntity)) != null) || ((blockPermission = EntityUtils.getLockPermission(block)) != null))) {
+            if ((((blockPermission = EntityLockUtils.getLockPermission(blockEntity)) != null) || ((blockPermission = EntityLockUtils.getLockPermission(block)) != null))) {
                 // Check if allowed to open storages in this location
                 if (ChunkUtils.canPlayerDoInChunk(blockPermission, player, claimedChunkInfo.get(), blockPos)) {
                     // Check if the chest is NOT part of a shop, Or the player owns that shop
@@ -176,25 +198,15 @@ public final class BlockInteraction {
                 }
                 
                 // Play a sound to the player
-                world.playSound(null, blockPos, EntityUtils.getLockSound(block, blockState, blockEntity), SoundCategory.BLOCKS, 0.5f, 1f);
+                EntityLockUtils.playLockSoundFromSource(blockEntity, blockState, player);
                 
-                // Display that this item can't be opened
-                TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
-                    EntityUtils.getLockedName(block),
-                    (claimedChunkInfo.get() == null ? Text.literal("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) claimedChunkInfo.get()).getOwnerName(player, blockPos))
-                ));
-                
+                // FAIL that the result is not allowed
                 return ActionResult.FAIL;
             }
         }
         
         // Test if the block can be placed
-        ActionResult placeResult = BlockInteraction.blockPlace(player, world, hand, itemStack, blockHitResult);
-        
-        // Adjust the stack size of the players placed block
-        if (placeResult == ActionResult.FAIL)
-            EntityUtils.resendInventory(player);
-        return placeResult;
+        return BlockInteraction.blockPlace(player, world, hand, itemStack, blockHitResult);
     }
     private static ActionResult blockPlace(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
         // Get the item being used

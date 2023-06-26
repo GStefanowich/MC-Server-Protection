@@ -27,9 +27,7 @@ package net.theelm.sewingmachine.base.mixins.Entities;
 
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.util.math.random.Random;
-import net.theelm.sewingmachine.enums.ClaimSettings;
 import net.theelm.sewingmachine.interfaces.EndermanGoal;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.mob.EndermanEntity;
@@ -80,9 +78,8 @@ public abstract class EndermanEntityPickupMixin extends Goal implements Enderman
         
         // If the block is able to be held my endermen
         if (blockState.isIn(BlockTags.ENDERMAN_HOLDABLE) && bool) {
-            
             // Get the chunk permissions
-            WorldChunk chunk = world.getWorldChunk( blockPos );
+            WorldChunk chunk = world.getWorldChunk(blockPos);
             
             // Check if enderman griefing is allowed (Invert because FALSE == NOT ALLOWED)
             if ((chunk != null) && (!((IClaimedChunk) chunk).isSetting( blockPos, ClaimSettings.ENDERMAN_GRIEFING ))) {

@@ -29,10 +29,10 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.AbstractHorseEntity;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.interfaces.ClaimsAccessor;
+import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
-import net.theelm.sewingmachine.utilities.EntityUtils;
+import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.minecraft.entity.passive.HorseEntity;
@@ -87,11 +87,11 @@ public abstract class HorseEntityMixin extends AbstractHorseEntity {
         }
         
         // Horse makes an angry sound at the player
-        this.playSound(EntityUtils.getLockSound( this ),0.5f, 1f);
+        this.playSound(EntityLockUtils.getLockSound( this ),0.5f, 1f);
         
         // Display that this item can't be ridden
         TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
-            EntityUtils.getLockedName(this),
+            EntityLockUtils.getLockedName(this),
             owner
         ));
         

@@ -23,18 +23,11 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.protection.interfaces;
 
-import net.theelm.sewingmachine.objects.ticking.ClaimCache;
-import org.jetbrains.annotations.NotNull;
+import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 
-/**
- * Created on Apr 14 2022 at 3:05 PM.
- * By greg in SewingMachineMod
- */
-public interface ClaimsAccessor {
-    /*
-     * Cache
-     */
-    @NotNull ClaimCache getClaimManager();
+public interface VillagerTownie {
+    boolean setTown(ClaimantTown town);
+    ClaimantTown getTown();
 }

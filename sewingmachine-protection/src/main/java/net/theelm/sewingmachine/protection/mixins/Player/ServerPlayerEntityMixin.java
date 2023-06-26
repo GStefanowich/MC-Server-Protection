@@ -27,14 +27,24 @@ package net.theelm.sewingmachine.protection.mixins.Player;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.interfaces.PlayerData;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.enums.ClaimSettings;
+import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 
@@ -44,10 +54,18 @@ import java.util.UUID;
  */
 @Mixin(ServerPlayerEntity.class)
 public abstract class ServerPlayerEntityMixin extends PlayerEntity implements PlayerTravel {
+    @Shadow public abstract ServerWorld getServerWorld();
+    @Shadow public ServerPlayNetworkHandler networkHandler;
+    
     private PlayerVisitor visitor = null;
     
     public ServerPlayerEntityMixin(World world, BlockPos pos, float yaw, GameProfile gameProfile) {
         super(world, pos, yaw, gameProfile);
+    }
+    
+    @Override
+    public ClaimantPlayer getClaim() {
+        return ((PlayerTravel)this.networkHandler).getClaim();
     }
     
     @Override
@@ -63,6 +81,19 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
     @Override
     public @NotNull PlayerVisitor updateLocation() {
         return this.swap(new PlayerVisitor((ServerPlayerEntity)(Object)this));
+    }
+    
+    @Inject(at = @At("HEAD"), method = "shouldDamagePlayer", cancellable = true)
+    public void shouldDamage(PlayerEntity entity, CallbackInfoReturnable<Boolean> callback) {
+        IClaimedChunk chunk = (IClaimedChunk) this.getServerWorld().getWorldChunk(this.getBlockPos());
+        
+        // If player hurt themselves
+        if ( this == entity )
+            return;
+        
+        // If PvP is off, disallow
+        if ( !chunk.isSetting(this.getBlockPos(), ClaimSettings.PLAYER_COMBAT) )
+            callback.setReturnValue(false);
     }
     
     private PlayerVisitor swap(PlayerVisitor visitor) {

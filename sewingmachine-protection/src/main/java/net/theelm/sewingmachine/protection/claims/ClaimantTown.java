@@ -29,9 +29,10 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.enums.ClaimRanks;
-import net.theelm.sewingmachine.interfaces.PlayerData;
+import net.theelm.sewingmachine.protection.enums.ClaimRanks;
+import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.utilities.ClaimNbtUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.PlayerNameUtils;
 import net.theelm.sewingmachine.utilities.TownNameUtils;
@@ -151,7 +152,7 @@ public final class ClaimantTown extends Claimant {
     @Override
     public boolean updateFriend(@NotNull ServerPlayerEntity player, @Nullable ClaimRanks rank) {
         if ( super.updateFriend( player, rank ) ) {
-            ClaimantPlayer claim = ((PlayerData) player).getClaim();
+            ClaimantPlayer claim = ((PlayerTravel) player).getClaim();
             claim.setTown(rank == null ? null : this);
             return true;
         }
@@ -215,13 +216,13 @@ public final class ClaimantTown extends Claimant {
         // Remove all players from the town
         for (UUID member : this.getFriends()) {
             if ((player = playerManager.getPlayer(member)) != null)
-                ((PlayerData)player).getClaim().setTown(null);
+                ((PlayerTravel)player).getClaim().setTown(null);
         }
         
         // Remove from the cache (So it doesn't save again)
         this.claimCache.removeFromCache(this);
         
-        NbtUtils.delete(this);
+        ClaimNbtUtils.delete(this);
         CoreMod.logInfo("Deleted town " + this.getName().getString() + " (" + this.getId() + ")");
     }
     @Override

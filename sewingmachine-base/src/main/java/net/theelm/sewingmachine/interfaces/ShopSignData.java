@@ -27,13 +27,11 @@ package net.theelm.sewingmachine.interfaces;
 
 import com.mojang.authlib.GameProfile;
 import net.minecraft.block.entity.SignText;
-import net.minecraft.recipe.CraftingRecipe;
 import net.minecraft.text.LiteralTextContent;
-import net.minecraft.text.TextContent;
-import net.minecraft.text.TranslatableTextContent;
 import net.minecraft.util.DyeColor;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.ServerCore;
+import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.enums.ShopSigns;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
@@ -100,16 +98,16 @@ public interface ShopSignData {
      * @return
      */
     boolean setSign(@NotNull SignText text);
-
+    
     /**
      * Set the signs front-side text with the applied first-line preformatting
      * @return
      */
     default boolean setSign(@NotNull Text[] text) {
         Text[] render = new Text[4];
-        ShopSigns shop = this.getShopType();
+        ShopSign shop = this.getShopType();
         
-        render[0] = MutableText.of(new LiteralTextContent("[" + shop.name() + "]" )).styled(shop.getApplicator());
+        render[0] = MutableText.of(new LiteralTextContent("[" + shop.name + "]" )).styled(shop.getApplicator());
         
         for (int i = 0; i < 3; i++) {
             render[i + 1] = i >= text.length ? Text.literal("") : text[i];
@@ -157,7 +155,7 @@ public interface ShopSignData {
     @Nullable BlockPos getFirstPos();
     @Nullable BlockPos getSecondPos();
     
-    @Nullable ShopSigns getShopType();
+    @Nullable ShopSign getShopType();
     
     /**
      * Check if item-transfer can be ignored
@@ -209,7 +207,7 @@ public interface ShopSignData {
      * @return If the sign was successfully rendered
      */
     default boolean renderSign() {
-        ShopSigns type = this.getShopType();
+        ShopSign type = this.getShopType();
         return type != null && type.renderSign(this);
     }
     

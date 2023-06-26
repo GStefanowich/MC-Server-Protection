@@ -44,7 +44,6 @@ import net.theelm.sewingmachine.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.interfaces.Claim;
-import net.theelm.sewingmachine.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;

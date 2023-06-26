@@ -33,13 +33,20 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.utilities.EntityUtils;
 
 public interface BlockInteractionCallback {
     Event<BlockInteractionCallback> EVENT = EventFactory.createArrayBacked( BlockInteractionCallback.class, (listeners) -> (player, world, hand, itemStack, blockHitResult) -> {
         for (BlockInteractionCallback event : listeners) {
             ActionResult result = event.interact(player, world, hand, itemStack, blockHitResult);
-            if (result != ActionResult.PASS)
+            if (result != ActionResult.PASS) {
+                // If the result is a failure resend the player inventory to fix any lost counts
+                if (result == ActionResult.FAIL)
+                    EntityUtils.resendInventory(player);
+                
+                // Return the result of the interaction
                 return result;
+            }
         }
         
         return ActionResult.PASS;

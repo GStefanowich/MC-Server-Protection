@@ -27,7 +27,6 @@ package net.theelm.sewingmachine.base.mixins.Entities;
 
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.interfaces.VillagerTownie;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.InteractionObserver;
@@ -43,7 +42,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(VillagerEntity.class)
-public abstract class VillagerEntityMixin extends MerchantEntity implements InteractionObserver, VillagerDataContainer, VillagerTownie {
+public abstract class VillagerEntityMixin extends MerchantEntity implements InteractionObserver, VillagerDataContainer {
     public VillagerEntityMixin(EntityType<? extends MerchantEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
     }

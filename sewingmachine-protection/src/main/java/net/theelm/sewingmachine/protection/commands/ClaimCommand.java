@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.protection.commands;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
@@ -42,33 +42,35 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.MySQL.MySQLStatement;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.commands.TeleportsCommand;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.commands.arguments.EnumArgumentType;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.ClaimPermissions;
-import net.theelm.sewingmachine.enums.ClaimRanks;
-import net.theelm.sewingmachine.enums.ClaimSettings;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.Permissions;
 import net.theelm.sewingmachine.events.ClaimUpdateCallback;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
-import net.theelm.sewingmachine.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.interfaces.LogicalWorld;
 import net.theelm.sewingmachine.interfaces.PlayerData;
-import net.theelm.sewingmachine.interfaces.VillagerTownie;
+import net.theelm.sewingmachine.protection.interfaces.VillagerTownie;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
 import net.theelm.sewingmachine.objects.Value;
-import net.theelm.sewingmachine.objects.ticking.ChunkOwnerUpdate;
-import net.theelm.sewingmachine.objects.ticking.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ticking.ChunkOwnerUpdate;
+import net.theelm.sewingmachine.protection.claims.Claimant;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.claims.ClaimantTown;
+import net.theelm.sewingmachine.protection.enums.ClaimRanks;
+import net.theelm.sewingmachine.protection.enums.ClaimSettings;
+import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
+import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
+import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
 import net.theelm.sewingmachine.protections.BlockRange;
-import net.theelm.sewingmachine.protections.claiming.Claimant;
-import net.theelm.sewingmachine.protections.claiming.ClaimantPlayer;
-import net.theelm.sewingmachine.protections.claiming.ClaimantTown;
 import net.theelm.sewingmachine.utilities.CasingUtils;
-import net.theelm.sewingmachine.utilities.ChunkUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.EffectUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
@@ -140,9 +142,6 @@ public final class ClaimCommand extends SewCommand {
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        if (!SewConfig.get(SewCoreConfig.DO_CLAIMS))
-            return;
-        
         /*
          * Admin Force commands
          */
@@ -338,7 +337,7 @@ public final class ClaimCommand extends SewCommand {
                 )
             )
             .then(CommandManager.literal("leave")
-                .requires(CommandPredicate.cast(this::sourceInTown).and(this::sourceNotMayor))
+                .requires(CommandPredicate.cast(ClaimCommand::sourceInTown).and(ClaimCommand::sourceNotMayor))
                 .executes(this::playerPartsTown)
             )
             .then(CommandManager.literal("set")
@@ -460,7 +459,7 @@ public final class ClaimCommand extends SewCommand {
             this.claimChunkSelf(context);
         
         // Update owner of the town
-        ClaimantPlayer claim = ((PlayerData) player).getClaim();
+        ClaimantPlayer claim = ((PlayerTravel) player).getClaim();
         ClaimantTown town = claim.getTown();
         if (town != null) {
             if ((((IClaimedChunk) chunk).getTownId() != null))
@@ -606,7 +605,7 @@ public final class ClaimCommand extends SewCommand {
         ServerPlayerEntity player = source.getPlayer();
         ServerWorld world = source.getWorld();
         
-        ClaimantPlayer claim = ((PlayerData) player).getClaim();
+        ClaimantPlayer claim = ((PlayerTravel) player).getClaim();
         
         Chunk chunk = world.getChunk(BlockPos.ofFloored(source.getPosition()));
         if (((IClaimedChunk) chunk).getTownId() == null)
@@ -645,7 +644,7 @@ public final class ClaimCommand extends SewCommand {
         
         // Update total count
         Claimant claimed;
-        if ((claimed = ((PlayerData) player).getClaim()) != null) {
+        if ((claimed = ((PlayerTravel) player).getClaim()) != null) {
             this.unclaimChunkAt(
                 source,
                 world,
@@ -736,7 +735,7 @@ public final class ClaimCommand extends SewCommand {
     }
     @Deprecated
     public static boolean sourceIsMayor(@NotNull final ServerPlayerEntity player) {
-        ClaimantPlayer claim = ((PlayerData) player).getClaim();
+        ClaimantPlayer claim = ((PlayerTravel) player).getClaim();
         ClaimantTown town;
         
         // Check if owner
@@ -755,7 +754,7 @@ public final class ClaimCommand extends SewCommand {
     }
     @Deprecated
     private static boolean sourceInTown(@NotNull final ServerPlayerEntity player) {
-        ClaimantPlayer claim = ((PlayerData) player).getClaim();
+        ClaimantPlayer claim = ((PlayerTravel) player).getClaim();
         return ((claim != null) && claim.getTown() != null);
     }
     @Deprecated
@@ -801,7 +800,7 @@ public final class ClaimCommand extends SewCommand {
         MinecraftServer server = source.getServer();
         ServerPlayerEntity founder = source.getPlayer();
         
-        ClaimantPlayer claimantPlayer = ((PlayerData) founder).getClaim();
+        ClaimantPlayer claimantPlayer = ((PlayerTravel) founder).getClaim();
         ClaimantTown claimantTown;
         
         // Check that player is in a town (Should ALWAYS be TRUE here)
@@ -825,7 +824,7 @@ public final class ClaimCommand extends SewCommand {
     private int townInvite(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
-        ClaimantPlayer claimant = ((PlayerData) player).getClaim();
+        ClaimantPlayer claimant = ((PlayerTravel) player).getClaim();
         ClaimantTown town = claimant.getTown();
         if (town == null) return -1; // Towns SHOULD always be set when reaching here
         
@@ -833,7 +832,7 @@ public final class ClaimCommand extends SewCommand {
             throw ClaimCommand.TOWN_INVITE_RANK.create(player);
         
         ServerPlayerEntity target = EntityArgumentType.getPlayer(context, "target");
-        ClaimantPlayer targetClaimant = ((PlayerData) target).getClaim();
+        ClaimantPlayer targetClaimant = ((PlayerTravel) target).getClaim();
         
         if ( !targetClaimant.inviteTown(town) )
             throw ClaimCommand.TOWN_INVITE_FAIL.create(player);
@@ -869,7 +868,7 @@ public final class ClaimCommand extends SewCommand {
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
         ServerPlayerEntity player = source.getPlayer();
-        ClaimantPlayer claimant = ((PlayerData) player).getClaim();
+        ClaimantPlayer claimant = ((PlayerTravel) player).getClaim();
         
         String townName = StringArgumentType.getString(context, "town");
         ClaimantTown town = claimant.getTownInvite(townName);
@@ -894,13 +893,14 @@ public final class ClaimCommand extends SewCommand {
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
         ServerPlayerEntity player = source.getPlayer();
-        ClaimantPlayer claimaint = ((PlayerData) player).getClaim();
+        ClaimantPlayer claimaint = ((PlayerTravel) player).getClaim();
         
         /*
          * Remove town from player
          */
         ClaimantTown town = claimaint.getTown();
-        if (town != null) town.updateFriend( player.getUuid(), null );
+        if (town != null)
+            town.updateFriend(player.getUuid(), null);
         //claimaint.setTown( null );
         
         // Refresh the command tree
@@ -975,7 +975,7 @@ public final class ClaimCommand extends SewCommand {
     private CompletableFuture<Suggestions> listTownInvites(@NotNull CommandContext<ServerCommandSource> context, SuggestionsBuilder suggestionsBuilder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
-        ClaimantPlayer claimant = ((PlayerData) player).getClaim();
+        ClaimantPlayer claimant = ((PlayerTravel) player).getClaim();
         
         // Suggestion set
         Set<String> set = new HashSet<>();
@@ -1019,7 +1019,7 @@ public final class ClaimCommand extends SewCommand {
     }
     private void updateSetting(@NotNull ServerPlayerEntity player, ClaimPermissions permission, ClaimRanks rank) throws CommandSyntaxException {
         // Update the runtime
-        ((PlayerData) player).getClaim()
+        ((PlayerTravel) player).getClaim()
             .updatePermission(permission, rank);
         
         // Notify the player
@@ -1039,7 +1039,7 @@ public final class ClaimCommand extends SewCommand {
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         // Update the runtime
-        ClaimantPlayer claim = ((PlayerData) player).getClaim();
+        ClaimantPlayer claim = ((PlayerTravel) player).getClaim();
         claim.updateSetting(setting, enabled);
         
         // Notify other players
@@ -1078,7 +1078,7 @@ public final class ClaimCommand extends SewCommand {
             throw SELF_RANK_CHANGE.create(player);
         
         // Update our runtime
-        ((PlayerData) player).getClaim()
+        ((PlayerTravel) player).getClaim()
             .updateFriend(friend.getId(), rank);
         
         // Attempting to update the friend
@@ -1129,7 +1129,7 @@ public final class ClaimCommand extends SewCommand {
                 .executeUpdate();
             
             // Update our runtime
-            ((PlayerData) player).getClaim()
+            ((PlayerTravel) player).getClaim()
                 .updateFriend( player.getUuid(), null );
             
             // Attempting to remove the friend

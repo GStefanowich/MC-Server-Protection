@@ -36,6 +36,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.GameMode;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.EnumSet;
@@ -53,19 +54,19 @@ public class WanderingTraderProfileCollection implements Collection<ServerPlayer
     private final @NotNull Text name;
     
     public WanderingTraderProfileCollection() {
-        this((Entity) null);
+        this(null);
     }
-    public WanderingTraderProfileCollection(Entity entity) {
-        this(entity instanceof WanderingTraderEntity trader ? EntityUtils.wanderingTraderDepartureTime(trader) : Text.literal("Mob").formatted(Formatting.RED));
+    public WanderingTraderProfileCollection(@Nullable Entity entity) {
+        this(entity instanceof WanderingTraderEntity trader ? EntityUtils.wanderingTraderDepartureTime(trader) : Text.literal("Mob").formatted(Formatting.RED), entity != null);
     }
-    public WanderingTraderProfileCollection(Text text) {
+    private WanderingTraderProfileCollection(@NotNull Text text, boolean show) {
         this.profile = new GameProfile(UUID.fromString("bd482739-767c-45dc-a1f8-c33c40530952"), "MHF_VILLAGER");
         this.name = Text.literal("").formatted(Formatting.WHITE)
             .append(Text.translatable(EntityType.WANDERING_TRADER.getTranslationKey()).formatted(Formatting.BLUE))
             .append(" - ")
             .append(text);
         
-        this.entry = new PlayerListS2CPacket.Entry(this.profile.getId(), this.profile, true, 0, GameMode.DEFAULT, this.name, null);
+        this.entry = new PlayerListS2CPacket.Entry(this.profile.getId(), this.profile, show, 0, GameMode.DEFAULT, this.name, null);
     }
     
     public @NotNull PlayerListS2CPacket getPacket(PlayerListS2CPacket.Action action) {

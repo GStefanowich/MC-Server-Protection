@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.protection.events;
 
+import net.fabricmc.fabric.api.event.Event;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
@@ -32,7 +33,7 @@ import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
 import net.theelm.sewingmachine.base.mixins.Interfaces.LightningAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
-import net.theelm.sewingmachine.utilities.EntityUtils;
+import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.minecraft.block.BarrelBlock;
 import net.minecraft.block.Block;
@@ -71,9 +72,9 @@ public final class EntityAttack {
     /**
      * Initialize our callback listener for Entity Attacks
      */
-    public static void init() {
+    public static void register(@NotNull Event<DamageEntityCallback> event) {
         // Register our event for when an entity is attacked
-        DamageEntityCallback.EVENT.register(EntityAttack::attack);
+        event.register(EntityAttack::attack);
     }
     
     /**
@@ -168,10 +169,10 @@ public final class EntityAttack {
             }
             
             if (target instanceof LivingEntity)
-                sound = EntityUtils.getLockSound(target);
+                sound = EntityLockUtils.getLockSound(target);
             
             if (sound != null)
-                target.playSound(EntityUtils.getLockSound(target), 0.5f, 1);
+                target.playSound(EntityLockUtils.getLockSound(target), 0.5f, 1);
             
         } else if (attacker instanceof CreeperEntity) {
             // Protect item frames if creeper damage is off
