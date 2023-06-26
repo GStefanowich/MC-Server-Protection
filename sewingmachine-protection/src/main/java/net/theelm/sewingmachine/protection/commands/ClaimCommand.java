@@ -68,7 +68,7 @@ import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
@@ -696,7 +696,7 @@ public final class ClaimCommand extends SewCommand {
         );
         
         // Claim the defined slices
-        ChunkUtils.claimSlices(source.getWorld(), target, region);
+        ClaimChunkUtils.claimSlices(source.getWorld(), target, region);
         source.sendFeedback(
             () -> Text.literal("Claimed ")
                 .append(region.formattedVolume())
@@ -715,7 +715,7 @@ public final class ClaimCommand extends SewCommand {
         );
         
         // Unclaim the defined slices
-        ChunkUtils.unclaimSlices(source.getWorld(), region);
+        ClaimChunkUtils.unclaimSlices(source.getWorld(), region);
         source.sendFeedback(
             () -> Text.literal("Unclaimed ")
                 .append(region.formattedVolume())

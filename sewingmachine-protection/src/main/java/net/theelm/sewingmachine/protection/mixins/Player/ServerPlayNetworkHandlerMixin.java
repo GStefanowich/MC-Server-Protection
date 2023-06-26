@@ -46,7 +46,7 @@ import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.protection.interfaces.PlayerMovement;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.utilities.CasingUtils;
@@ -122,7 +122,7 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement {
         UUID locationOwner;
 
         if (( local == null ) || ((locationOwner = ((IClaimedChunk) local).getOwnerId(playerPos)) == null )) {
-            MutableText popupText = ChunkUtils.getPlayerWorldWilderness(player)
+            MutableText popupText = ClaimChunkUtils.getPlayerWorldWilderness(player)
                 .append(
                     Text.literal(" [").formatted(Formatting.RED)
                         .append(TranslatableServerSide.text(player, "claim.chunk.pvp"))

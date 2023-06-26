@@ -68,7 +68,7 @@ public final class Carver implements TickingAction {
         this.position = starting;
     }
     public Carver(@NotNull ServerWorld world, @NotNull Vec3d starting) {
-        this(world, new BlockPos(starting));
+        this(world, BlockPos.ofFloored(starting));
     }
     
     @Override

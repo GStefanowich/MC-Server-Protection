@@ -58,7 +58,8 @@ public abstract class ExplodingEntitiesMixin extends Entity {
     @Override
     public boolean canExplosionDestroyBlock(Explosion explosion, BlockView world, BlockPos blockPos, @NotNull BlockState blockState, float damage) {
         if ((!blockState.isAir()) && (world instanceof ServerWorld serverWorld)) {
-            ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this, serverWorld, Hand.MAIN_HAND, blockPos, null, null);
+            ActionResult result = BlockBreakCallback.EVENT.invoker()
+                .destroy(this, serverWorld, Hand.MAIN_HAND, blockPos, null, null);
             if (result != ActionResult.PASS)
                 return (result == ActionResult.SUCCESS);
         }

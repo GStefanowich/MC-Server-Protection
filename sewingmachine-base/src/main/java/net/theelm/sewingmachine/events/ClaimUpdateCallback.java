@@ -31,9 +31,9 @@ import net.minecraft.entity.player.PlayerEntity;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Created on Jun 09 2023 at 12:05 AM.
- * By greg in sewingmachine
+ * Called when a Claim has been updated and players inside the Claim should be notified
  */
+@FunctionalInterface
 public interface ClaimUpdateCallback {
     Event<ClaimUpdateCallback> EVENT = EventFactory.createArrayBacked(ClaimUpdateCallback.class, (listeners) -> (player, refresh) -> {
         for (ClaimUpdateCallback callback : listeners)
@@ -42,12 +42,12 @@ public interface ClaimUpdateCallback {
     
     /**
      * Notifies members of a Claim that something has been updated
-     * @param player The player that owns the Claim
+     * @param owner The player that owns the Claim
      * @param refresh Refresh the information about the Claim
      */
-    void update(@NotNull PlayerEntity player, boolean refresh);
+    void update(@NotNull PlayerEntity owner, boolean refresh);
     
-    default void update(@NotNull PlayerEntity player) {
-        this.update(player, false);
+    default void update(@NotNull PlayerEntity owner) {
+        this.update(owner, false);
     }
 }

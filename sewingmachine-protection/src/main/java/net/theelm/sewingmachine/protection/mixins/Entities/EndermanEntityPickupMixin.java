@@ -23,10 +23,13 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.mixins.Entities;
+package net.theelm.sewingmachine.protection.mixins.Entities;
 
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.random.Random;
+import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
 import net.theelm.sewingmachine.interfaces.EndermanGoal;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.ai.goal.Goal;
@@ -41,6 +44,8 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import net.theelm.sewingmachine.protection.enums.ClaimSettings;
+import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -54,7 +59,7 @@ public abstract class EndermanEntityPickupMixin extends Goal implements Enderman
     public void tick() {
         // Get endermans information
         Random random = this.enderman.getRandom();
-        World world = this.enderman.getEntityWorld();
+        ServerWorld world = (ServerWorld) this.enderman.getWorld();
         
         // Get random vector
         int int_1 = MathHelper.floor(this.enderman.getX() - 2.0D + random.nextDouble() * 4.0D);
@@ -79,10 +84,11 @@ public abstract class EndermanEntityPickupMixin extends Goal implements Enderman
         // If the block is able to be held my endermen
         if (blockState.isIn(BlockTags.ENDERMAN_HOLDABLE) && bool) {
             // Get the chunk permissions
-            WorldChunk chunk = world.getWorldChunk(blockPos);
+            boolean grief = BlockBreakCallback.EVENT.invoker()
+                .canDestroy(this.enderman, world, Hand.MAIN_HAND, blockPos, null, null);
             
             // Check if enderman griefing is allowed (Invert because FALSE == NOT ALLOWED)
-            if ((chunk != null) && (!((IClaimedChunk) chunk).isSetting( blockPos, ClaimSettings.ENDERMAN_GRIEFING ))) {
+            if (!grief) {
                 this.sadEnderman();
                 return;
             }

@@ -33,10 +33,9 @@ import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.ClaimPermissions;
-import net.theelm.sewingmachine.enums.ShopSigns;
 import net.theelm.sewingmachine.interfaces.BlockInteractionCallback;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.theelm.sewingmachine.protections.logging.BlockEvent;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
@@ -101,7 +100,7 @@ public final class BlockInteraction {
         
         WorldChunk chunk = player.getEntityWorld()
             .getWorldChunk(blockPos);
-        return ChunkUtils.canPlayerToggleMechanisms(player, chunk, blockPos) ? ActionResult.SUCCESS : ActionResult.FAIL;
+        return ClaimChunkUtils.canPlayerToggleMechanisms(player, chunk, blockPos) ? ActionResult.SUCCESS : ActionResult.FAIL;
     }
     
     private static ActionResult interactDoors(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
@@ -119,7 +118,7 @@ public final class BlockInteraction {
         
         WorldChunk chunk = player.getEntityWorld()
             .getWorldChunk(blockPos);
-        if (ChunkUtils.canPlayerToggleDoor(player, chunk, blockPos)) {
+        if (ClaimChunkUtils.canPlayerToggleDoor(player, chunk, blockPos)) {
             // TODO: Remove double door function out of the PROTECTION module
             // Toggle double doors
             if ((!player.isSneaking()) && block instanceof DoorBlock && (blockState.getSoundGroup() != BlockSoundGroup.METAL)) {
@@ -190,7 +189,7 @@ public final class BlockInteraction {
             ClaimPermissions blockPermission;
             if ((((blockPermission = EntityLockUtils.getLockPermission(blockEntity)) != null) || ((blockPermission = EntityLockUtils.getLockPermission(block)) != null))) {
                 // Check if allowed to open storages in this location
-                if (ChunkUtils.canPlayerDoInChunk(blockPermission, player, claimedChunkInfo.get(), blockPos)) {
+                if (ClaimChunkUtils.canPlayerDoInChunk(blockPermission, player, claimedChunkInfo.get(), blockPos)) {
                     // Check if the chest is NOT part of a shop, Or the player owns that shop
                     ShopSignData shopSign;
                     if ((!EntityUtils.isValidShopContainer(blockEntity)) || ((shopSign = EntityUtils.getAttachedShopSign(world, blockPos)) == null) || player.getUuid().equals(shopSign.getShopOwner()))
@@ -234,7 +233,7 @@ public final class BlockInteraction {
     }
     private static ActionResult canBlockPlace(@NotNull ServerPlayerEntity player, @NotNull BlockPos blockPos, @NotNull BlockHitResult blockHitResult) {
         // Test the players permissions to the chunk
-        if (ChunkUtils.canPlayerBreakInChunk(player, blockPos))
+        if (ClaimChunkUtils.canPlayerBreakInChunk(player, blockPos))
             return ActionResult.PASS;
         
         // If cannot break, prevent the action

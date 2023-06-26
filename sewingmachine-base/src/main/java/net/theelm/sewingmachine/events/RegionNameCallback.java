@@ -23,35 +23,38 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.events;
+package net.theelm.sewingmachine.events;
 
 import net.fabricmc.fabric.api.event.Event;
-import net.theelm.sewingmachine.interfaces.BlockPlaceCallback;
-import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
-import net.theelm.sewingmachine.utilities.ItemUtils;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
+import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.entity.Entity;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public final class ItemPlace {
-    
-    private ItemPlace() {}
+/**
+ * Get the name for a Region
+ */
+@FunctionalInterface
+public interface RegionNameCallback {
+    Event<RegionNameCallback> EVENT = EventFactory.createArrayBacked(RegionNameCallback.class, (listeners) -> (world, pos, entity, nameOnly, strict) -> {
+        for (RegionNameCallback callback : listeners) {
+            Text text = callback.getName(world, pos, entity, nameOnly, strict);
+            if (text != null)
+                return text;
+        }
+        return null;
+    });
     
     /**
-     * Initialize our callback listener for Item Usage
+     * Get the name of a region
+     * @param world The world
+     * @param pos The position of the region
+     * @param entity The entity location within the region
+     * @param nameOnly If no additional formatting should be done
+     * @param strict
+     * @return The name of the Region
      */
-    public static void register(@NotNull Event<BlockPlaceCallback> event) {
-        event.register(ItemPlace::blockPlace);
-    }
-    
-    private static @NotNull ActionResult blockPlace(final ServerPlayerEntity player, final World world, final BlockPos blockPos, final Direction direction, final ItemStack stack) {
-        if (!ClaimChunkUtils.canPlayerDoInChunk(ItemUtils.getPermission(stack), player, blockPos.offset( direction ) ))
-            return ActionResult.FAIL;
-        return ActionResult.PASS;
-    }
-    
+    @Nullable Text getName(World world, BlockPos pos, Entity entity, boolean nameOnly, boolean strict);
 }

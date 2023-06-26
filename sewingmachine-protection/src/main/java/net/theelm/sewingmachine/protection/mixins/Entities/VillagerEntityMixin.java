@@ -50,7 +50,7 @@ import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.VillagerTownie;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.utilities.ColorUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
@@ -79,7 +79,7 @@ public abstract class VillagerEntityMixin extends MerchantEntity implements Inte
     
     @Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
     public void onAttemptInteract(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
-        if (!ChunkUtils.canPlayerTradeAt(player, this.getBlockPos())) {
+        if (!ClaimChunkUtils.canPlayerTradeAt(player, this.getBlockPos())) {
             // Shake head
             this.sayNo();
 

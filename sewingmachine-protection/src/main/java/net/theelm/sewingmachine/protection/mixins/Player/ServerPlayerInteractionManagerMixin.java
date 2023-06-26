@@ -35,9 +35,7 @@ import net.minecraft.block.enums.BedPart;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.network.packet.s2c.play.BlockBreakingProgressS2CPacket;
 import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.PlayerActionResponseS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.server.world.ServerWorld;
@@ -70,8 +68,9 @@ public abstract class ServerPlayerInteractionManagerMixin {
     
     @Inject(at = @At("HEAD"), method = "processBlockBreakingAction", cancellable = true)
     private void onBlockBreakChange(BlockPos pos, PlayerActionC2SPacket.Action action, Direction direction, int worldHeight, int sequence, CallbackInfo callback) {
-        ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this.player, this.world, this.player.preferredHand, pos, direction, action);
-        if ( result != ActionResult.PASS ) {
+        boolean result = BlockBreakCallback.EVENT.invoker()
+            .canDestroy(this.player, this.world, this.player.preferredHand, pos, direction, action);
+        if ( result ) {
             // Send the player a failed notice
             this.world.setBlockBreakingInfo(this.player.getId(), pos, -1);
             this.method_41250(pos, true, sequence, "may not interact");

@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.protection.events;
 import net.fabricmc.fabric.api.event.Event;
 import net.theelm.sewingmachine.interfaces.ItemUseCallback;
 import net.theelm.sewingmachine.interfaces.PlayerData;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.minecraft.block.BedBlock;
@@ -91,7 +91,7 @@ public final class ItemUse {
              * If item is stick and player has build permission
              */
             BlockHitResult hitResult = BlockUtils.getLookingBlock(world, player, 10, RaycastContext.FluidHandling.NONE);
-            if ((hitResult.getType() != HitResult.Type.MISS) && ChunkUtils.canPlayerBreakInChunk(player, hitResult.getBlockPos()) && ItemUse.stickBlockInteraction(player, world, hitResult))
+            if ((hitResult.getType() != HitResult.Type.MISS) && ClaimChunkUtils.canPlayerBreakInChunk(player, hitResult.getBlockPos()) && ItemUse.stickBlockInteraction(player, world, hitResult))
                 return ActionResult.SUCCESS;
         }
         

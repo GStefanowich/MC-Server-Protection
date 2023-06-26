@@ -71,8 +71,9 @@ public abstract class EnderDragonEntityMixin extends MobEntity implements Monste
     public boolean breakBlocks(@NotNull World world, @NotNull BlockPos pos, boolean move) {
         BlockState blockState = world.getBlockState(pos);
         if (!blockState.isAir() && world instanceof ServerWorld serverWorld) {
-            ActionResult result = BlockBreakCallback.EVENT.invoker().interact(this, serverWorld, Hand.MAIN_HAND, pos, null, null);
-            if (result != ActionResult.PASS)
+            boolean result = BlockBreakCallback.EVENT.invoker()
+                .canDestroy(this, serverWorld, Hand.MAIN_HAND, pos, null, null);
+            if (!result)
                 return false;
         }
         

@@ -30,6 +30,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.entity.player.PlayerEntity;
@@ -66,7 +67,7 @@ public final class RankUtils {
     private static final String GLOBAL_RANK = "*";
 
     private RankUtils() {}
-
+    
     public static @NotNull CompletableFuture<Suggestions> getSuggestions(@NotNull SuggestionsBuilder builder) {
         Set<Map.Entry<String, PlayerRank>> ranks = RankUtils.RANKS.entrySet();
         for (Map.Entry<String, PlayerRank> entry : ranks) {
@@ -81,7 +82,11 @@ public final class RankUtils {
 
         return builder.buildFuture();
     }
-
+    
+    public static @NotNull <S> CompletableFuture<Suggestions> suggestRanks(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
+        return RankUtils.getSuggestions(builder);
+    }
+    
     /*
      * Stored ranks
      */

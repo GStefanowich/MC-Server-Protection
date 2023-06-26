@@ -23,13 +23,14 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.mixins.Entities;
+package net.theelm.sewingmachine.protection.mixins.Entities;
 
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.random.Random;
-import net.theelm.sewingmachine.enums.ClaimSettings;
+import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
 import net.theelm.sewingmachine.interfaces.EndermanGoal;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.ai.goal.Goal;
 import net.minecraft.entity.mob.EndermanEntity;
@@ -37,12 +38,11 @@ import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.Chunk;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(targets = "net/minecraft/entity/mob/EndermanEntity$PlaceBlockGoal", priority = 10000)
-public abstract class EntermanEntityPlaceMixin extends Goal implements EndermanGoal {
+public abstract class EndermanEntityPlaceMixin extends Goal implements EndermanGoal {
     @Shadow
     private EndermanEntity enderman;
     @Shadow
@@ -52,7 +52,7 @@ public abstract class EntermanEntityPlaceMixin extends Goal implements EndermanG
     public void tick() {
         // Get endermans information
         Random random = this.enderman.getRandom();
-        World world = this.enderman.getWorld();
+        ServerWorld world = (ServerWorld) this.enderman.getWorld();
         
         // Get random vector
         int int_1 = MathHelper.floor(this.enderman.getX() - 1.0D + random.nextDouble() * 2.0D);
@@ -70,12 +70,12 @@ public abstract class EntermanEntityPlaceMixin extends Goal implements EndermanG
         BlockState carriedBlock = this.enderman.getCarriedBlock();
         
         if (carriedBlock != null && this.canPlaceOn(world, blockPositionPlace, carriedBlock, blockStatePlace, blockStateGround, blockPositionGround)) {
-            
             // Get the chunk permissions
-            Chunk chunk = world.getChunk(blockPositionPlace);
+            boolean grief = BlockBreakCallback.EVENT.invoker()
+                .canDestroy(this.enderman, world, Hand.MAIN_HAND, blockPositionPlace, null, null);
             
             // Check if enderman griefing is allowed (Invert because FALSE == NOT ALLOWED)
-            if ((chunk != null) && (!((IClaimedChunk) chunk).isSetting( blockPositionPlace, ClaimSettings.ENDERMAN_GRIEFING ))) {
+            if (!grief) {
                 this.sadEnderman();
                 return;
             }

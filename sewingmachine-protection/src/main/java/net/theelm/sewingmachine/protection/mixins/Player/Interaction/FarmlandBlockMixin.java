@@ -32,7 +32,7 @@ import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -51,7 +51,7 @@ public abstract class FarmlandBlockMixin extends Block {
             return;
         
         // If player is allowed to break in the chunk
-        if (ChunkUtils.canPlayerBreakInChunk( player, pos ))
+        if (ClaimChunkUtils.canPlayerBreakInChunk( player, pos ))
             return;
         
         // Cancel the event

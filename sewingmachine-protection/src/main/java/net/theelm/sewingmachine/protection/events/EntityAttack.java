@@ -32,7 +32,7 @@ import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
 import net.theelm.sewingmachine.base.mixins.Interfaces.LightningAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.minecraft.block.BarrelBlock;
@@ -113,7 +113,7 @@ public final class EntityAttack {
                     // If the block behind the item frame is a storage
                     if (containerBlock instanceof ChestBlock || containerBlock instanceof BarrelBlock) {
                         // Check chunk permissions
-                        if (!ChunkUtils.canPlayerLootChestsInChunk(player, containerPos))
+                        if (!ClaimChunkUtils.canPlayerLootChestsInChunk(player, containerPos))
                             return ActionResult.FAIL;
                         
                         Inventory containerInventory = InventoryUtils.getInventoryOf(world, containerPos);
@@ -128,7 +128,7 @@ public final class EntityAttack {
                 }
                 
                 // If player should be able to interact with the item frame
-                if (!ChunkUtils.canPlayerBreakInChunk(player, itemFrame.getBlockPos()))
+                if (!ClaimChunkUtils.canPlayerBreakInChunk(player, itemFrame.getBlockPos()))
                     return ActionResult.FAIL;
                 
                 return ActionResult.PASS;
@@ -164,7 +164,7 @@ public final class EntityAttack {
                 
             } else {
                 // If player can interact with docile mobs
-                if (ChunkUtils.canPlayerInteractFriendlies(player, target.getBlockPos()))
+                if (ClaimChunkUtils.canPlayerInteractFriendlies(player, target.getBlockPos()))
                     return ActionResult.PASS;
             }
             

@@ -30,7 +30,6 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.theelm.sewingmachine.enums.Permissions;
 import net.theelm.sewingmachine.utilities.ColorUtils;
-import net.theelm.sewingmachine.utilities.RankUtils;
 import net.theelm.sewingmachine.utilities.text.StyleApplicator;
 import net.minecraft.command.CommandSource;
 import net.minecraft.text.Text;
@@ -44,14 +43,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
 public class ArgumentSuggestions {
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestNodes(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return Permissions.getSuggestions(builder);
-    }
-    
-    public static @NotNull <S> CompletableFuture<Suggestions> suggestRanks(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return RankUtils.getSuggestions(builder);
-    }
-    
     public static @NotNull <S> CompletableFuture<Suggestions> suggestColors(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
         return ArgumentSuggestions.suggest(ColorUtils.COLORS.entrySet().stream().map(stringColorEntry -> {
             Text tooltip = Text.literal(stringColorEntry.getKey())

@@ -52,7 +52,7 @@ public final class SignWarp extends ShopSign {
     public SignWarp() {
         super("WARP", Formatting.DARK_PURPLE);
     }
-
+    
     @Override
     public boolean formatSign(@NotNull final ShopSignBuilder sign, @NotNull final ServerPlayerEntity creator) {
         // Break if not in creative mode

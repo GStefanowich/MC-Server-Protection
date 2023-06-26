@@ -35,7 +35,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -59,7 +59,7 @@ public abstract class ArmorStandEntityMixin extends LivingEntity {
             return;
         
         // Pass if the player is allowed to loot here
-        if (ChunkUtils.canPlayerLootChestsInChunk(player, this.getBlockPos()))
+        if (ClaimChunkUtils.canPlayerLootChestsInChunk(player, this.getBlockPos()))
             return;
 
         EntityLockUtils.playLockSoundFromSource(this, player);

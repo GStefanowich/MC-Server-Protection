@@ -45,7 +45,7 @@ import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
@@ -91,7 +91,7 @@ public abstract class MobEntityMixin extends LivingEntity {
             return;
         
         // If player can interact with tameable
-        if (ChunkUtils.canPlayerInteractFriendlies(player, this.getBlockPos()))
+        if (ClaimChunkUtils.canPlayerInteractFriendlies(player, this.getBlockPos()))
             return;
         
         ActionResult result;

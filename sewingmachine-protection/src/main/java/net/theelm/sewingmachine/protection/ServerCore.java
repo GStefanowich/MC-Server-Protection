@@ -26,7 +26,10 @@
 package net.theelm.sewingmachine.protection;
 
 import net.fabricmc.api.DedicatedServerModInitializer;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.text.Text;
 import net.theelm.sewingmachine.events.ClaimUpdateCallback;
+import net.theelm.sewingmachine.events.RegionNameCallback;
 import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
 import net.theelm.sewingmachine.interfaces.BlockInteractionCallback;
 import net.theelm.sewingmachine.interfaces.BlockPlaceCallback;
@@ -38,9 +41,14 @@ import net.theelm.sewingmachine.protection.events.BlockInteraction;
 import net.theelm.sewingmachine.protection.events.EntityAttack;
 import net.theelm.sewingmachine.protection.events.ItemPlace;
 import net.theelm.sewingmachine.protection.events.ItemUse;
+import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.PlayerMovement;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
+import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
+
+import java.util.UUID;
 
 /**
  * Created on Jun 08 2023 at 11:58 PM.
@@ -70,6 +78,26 @@ public class ServerCore implements DedicatedServerModInitializer, SewPlugin {
                 PlayerMovement movement = ((PlayerMovement) player.networkHandler);
                 movement.showPlayerNewLocation(player, player.getWorld().getWorldChunk(player.getBlockPos()));
             });
+        });
+        RegionNameCallback.EVENT.register((world, pos, entity, nameOnly, strict) -> {
+            IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(pos);
+            UUID owner = chunk.getOwnerId(pos);
+            if (owner == null) {
+                if (strict && entity instanceof PlayerEntity player)
+                    return ClaimChunkUtils.getPlayerWorldWilderness(player);
+                return null;
+            }
+            
+            ClaimCache claims = chunk.getClaimCache();
+            ClaimantPlayer claim = claims.getPlayerClaim(owner);
+            
+            Text name = claim.getName(entity instanceof PlayerEntity player ? player.getUuid() : null);
+            if (nameOnly)
+                return name;
+            
+            return Text.literal("")
+                .append(name)
+                .append("'s claimed area");
         });
     }
 }

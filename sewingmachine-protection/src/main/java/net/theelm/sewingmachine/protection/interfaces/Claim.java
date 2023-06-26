@@ -23,35 +23,21 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.events;
+package net.theelm.sewingmachine.protection.interfaces;
 
-import net.fabricmc.fabric.api.event.Event;
-import net.theelm.sewingmachine.interfaces.BlockPlaceCallback;
-import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
-import net.theelm.sewingmachine.utilities.ItemUtils;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
+import net.theelm.sewingmachine.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public final class ItemPlace {
+import java.util.UUID;
+
+public interface Claim {
     
-    private ItemPlace() {}
-    
-    /**
-     * Initialize our callback listener for Item Usage
-     */
-    public static void register(@NotNull Event<BlockPlaceCallback> event) {
-        event.register(ItemPlace::blockPlace);
-    }
-    
-    private static @NotNull ActionResult blockPlace(final ServerPlayerEntity player, final World world, final BlockPos blockPos, final Direction direction, final ItemStack stack) {
-        if (!ClaimChunkUtils.canPlayerDoInChunk(ItemUtils.getPermission(stack), player, blockPos.offset( direction ) ))
-            return ActionResult.FAIL;
-        return ActionResult.PASS;
-    }
+    @Nullable UUID getOwnerId();
+    @Nullable ClaimantPlayer getOwner();
+    boolean canPlayerDo(@Nullable UUID player, @Nullable ClaimPermissions perm);
+    boolean isSetting(@NotNull ClaimSettings setting);
     
 }

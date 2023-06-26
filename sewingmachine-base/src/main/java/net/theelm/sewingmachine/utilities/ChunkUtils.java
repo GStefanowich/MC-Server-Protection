@@ -23,21 +23,20 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.utilities;
 
-import net.theelm.sewingmachine.enums.ClaimPermissions;
-import net.theelm.sewingmachine.enums.ClaimSettings;
-import net.theelm.sewingmachine.protections.claiming.ClaimantPlayer;
+import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.UUID;
-
-public interface Claim {
+/**
+ * Created on Jun 26 2023 at 1:23 AM.
+ * By greg in sewingmachine
+ */
+public final class ChunkUtils {
+    private ChunkUtils() {}
     
-    @Nullable UUID getOwnerId();
-    @Nullable ClaimantPlayer getOwner();
-    boolean canPlayerDo(@Nullable UUID player, @Nullable ClaimPermissions perm);
-    boolean isSetting(@NotNull ClaimSettings setting);
-    
+    public static int getPositionWithinChunk(@NotNull BlockPos blockPos) {
+        int chunkIndex = blockPos.getX() & 0xF;
+        return (chunkIndex |= (blockPos.getZ() & 0xF) << 4);
+    }
 }

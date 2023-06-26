@@ -31,7 +31,7 @@ import net.minecraft.entity.decoration.AbstractDecorationEntity;
 import net.minecraft.entity.decoration.painting.PaintingEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.World;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import org.spongepowered.asm.mixin.Mixin;
 
 /**
@@ -46,6 +46,6 @@ public abstract class PaintingEntityMixin extends AbstractDecorationEntity {
     
     @Override
     public boolean damage(DamageSource source, float amount) {
-        return (!(source.getAttacker() instanceof PlayerEntity player) || ChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos())) && super.damage(source, amount);
+        return (!(source.getAttacker() instanceof PlayerEntity player) || ClaimChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos())) && super.damage(source, amount);
     }
 }

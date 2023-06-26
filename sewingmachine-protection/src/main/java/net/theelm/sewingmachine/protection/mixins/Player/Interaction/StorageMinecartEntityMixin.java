@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -50,10 +50,10 @@ public abstract class StorageMinecartEntityMixin extends AbstractMinecartEntity 
         Type minecartType = this.getMinecartType();
         
         if (minecartType.equals(Type.RIDEABLE)) { // If the Cart type is RIDEABLE, allow if riding is enabled
-            if (ChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
+            if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
                 return;
             
-        } else if (ChunkUtils.canPlayerLootChestsInChunk(player, this.getBlockPos())) // Entity contains a storage and should be treated as a lootable block
+        } else if (ClaimChunkUtils.canPlayerLootChestsInChunk(player, this.getBlockPos())) // Entity contains a storage and should be treated as a lootable block
             return;
         
         // Play sound to player

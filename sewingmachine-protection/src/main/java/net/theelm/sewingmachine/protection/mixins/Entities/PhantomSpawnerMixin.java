@@ -27,7 +27,7 @@ package net.theelm.sewingmachine.protection.mixins.Entities;
 
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.spawner.PhantomSpawner;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -41,6 +41,6 @@ public abstract class PhantomSpawnerMixin {
      */
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/network/ServerPlayerEntity.isSpectator()Z"), method = "spawn")
     public boolean spawn(ServerPlayerEntity player) {
-        return player.isSpectator() || ChunkUtils.isPlayerWithinSpawn(player);
+        return player.isSpectator() || ClaimChunkUtils.isPlayerWithinSpawn(player);
     }
 }

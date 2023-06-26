@@ -27,9 +27,8 @@ package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
-import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.minecraft.entity.EntityType;
@@ -54,7 +53,7 @@ public abstract class LeashKnotEntityMixin extends AbstractDecorationEntity {
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     private void onInteract(PlayerEntity player, Hand hand, CallbackInfoReturnable<Boolean> callback) {
-        if (ChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
+        if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
             return;
         
         WorldChunk chunk = this.getEntityWorld().getWorldChunk(this.getBlockPos());

@@ -39,7 +39,7 @@ import net.minecraft.world.dimension.DimensionType;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.interfaces.ConstructableEntity;
 import net.theelm.sewingmachine.interfaces.LogicalWorld;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
@@ -61,7 +61,7 @@ public abstract class ServerWorldMixin extends World implements LogicalWorld, Se
     public void onSpawnMob(@NotNull Entity entity, @NotNull CallbackInfoReturnable<Boolean> callback) {
         if (entity instanceof ConstructableEntity constructableEntity) {
             Optional<UUID> chunkOwner;
-            if ((chunkOwner = ChunkUtils.getPosOwner(this.toServerWorld(), entity.getBlockPos() )).isPresent())
+            if ((chunkOwner = ClaimChunkUtils.getPosOwner(this.toServerWorld(), entity.getBlockPos() )).isPresent())
                 constructableEntity.setEntityOwner(chunkOwner.get());
             
             if (entity instanceof WitherEntity)

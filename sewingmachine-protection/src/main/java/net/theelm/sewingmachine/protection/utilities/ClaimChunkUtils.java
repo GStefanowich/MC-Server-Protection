@@ -43,13 +43,15 @@ import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
-import net.theelm.sewingmachine.interfaces.Claim;
+import net.theelm.sewingmachine.protection.interfaces.Claim;
+import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.utilities.ChunkUtils;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
@@ -68,12 +70,12 @@ import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
 
-public final class ChunkUtils {
+public final class ClaimChunkUtils {
     /**
      * Check the database if a user can perform an action within the specified chunk
      */
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(perm, player, player.getEntityWorld().getWorldChunk(blockPos), blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(perm, player, player.getEntityWorld().getWorldChunk(blockPos), blockPos);
     }
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // If claims are disabled
@@ -81,7 +83,7 @@ public final class ChunkUtils {
             return true;
 
         // Check if player can do action in chunk
-        return ChunkUtils.canPlayerDoInChunk(perm, EntityUtils.getUUID(player), chunk, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(perm, EntityUtils.getUUID(player), chunk, blockPos);
     }
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable UUID playerId, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         if (!SewConfig.get(SewCoreConfig.DO_CLAIMS))
@@ -94,7 +96,7 @@ public final class ChunkUtils {
         // Check if player can do action in chunk
         return ((IClaimedChunk) chunk).canPlayerDo(blockPos, playerId, perm);
     }
-
+    
     /**
      * Check the database if a user can ride entities within the specified chunk
      * @param player The player to check
@@ -102,9 +104,9 @@ public final class ChunkUtils {
      * @return If the player can ride entities
      */
     public static boolean canPlayerRideInChunk(PlayerEntity player, BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.RIDING, player, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.RIDING, player, blockPos);
     }
-
+    
     /**
      * Check the database if a user can interact with doors within the specified chunk
      * @param player The player to check
@@ -112,12 +114,12 @@ public final class ChunkUtils {
      * @return If player can interact with doors
      */
     public static boolean canPlayerSleep(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.BEDS, player, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.BEDS, player, blockPos);
     }
     public static boolean canPlayerSleep(@NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.BEDS, player, chunk, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.BEDS, player, chunk, blockPos);
     }
-
+    
     /**
      * Check the database if a user can place/break blocks within the specified chunk
      * @param player The player to check
@@ -125,12 +127,12 @@ public final class ChunkUtils {
      * @return If the player can break blocks
      */
     public static boolean canPlayerBreakInChunk(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.BLOCKS, player, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.BLOCKS, player, blockPos);
     }
     public static boolean canPlayerBreakInChunk(@Nullable UUID playerId, @NotNull World world, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.BLOCKS, playerId, world.getWorldChunk(blockPos), blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.BLOCKS, playerId, world.getWorldChunk(blockPos), blockPos);
     }
-
+    
     /**
      * Check the database if a user can loot chests within the specified chunk
      * @param player The player to check
@@ -138,12 +140,12 @@ public final class ChunkUtils {
      * @return If the player can loot storages
      */
     public static boolean canPlayerLootChestsInChunk(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.STORAGE, player, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.STORAGE, player, blockPos);
     }
     public static boolean canPlayerLootChestsInChunk(@NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.STORAGE, player, chunk, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.STORAGE, player, chunk, blockPos);
     }
-
+    
     /**
      * Check the database if a user can  within the specified chunk
      * @param player The player to check
@@ -151,9 +153,9 @@ public final class ChunkUtils {
      * @return If player can pick up dropped items
      */
     public static boolean canPlayerLootDropsInChunk(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk( ClaimPermissions.PICKUP, player, blockPos );
+        return ClaimChunkUtils.canPlayerDoInChunk( ClaimPermissions.PICKUP, player, blockPos );
     }
-
+    
     /**
      * Check the database if a user can interact with doors within the specified chunk
      * @param player The player to check
@@ -161,12 +163,12 @@ public final class ChunkUtils {
      * @return If player can interact with doors
      */
     public static boolean canPlayerToggleDoor(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.DOORS, player, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.DOORS, player, blockPos);
     }
     public static boolean canPlayerToggleDoor(@NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.DOORS, player, chunk, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.DOORS, player, chunk, blockPos);
     }
-
+    
     /**
      * Check the database if a user can interact with redstone mechanisms within the specified chunk
      * @param player The player to check
@@ -174,12 +176,12 @@ public final class ChunkUtils {
      * @return If player can interact with mechanisms
      */
     public static boolean canPlayerToggleMechanisms(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.REDSTONE, player, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.REDSTONE, player, blockPos);
     }
     public static boolean canPlayerToggleMechanisms(@NotNull PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.REDSTONE, player, chunk, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.REDSTONE, player, chunk, blockPos);
     }
-
+    
     /**
      * Check the database if a user can interact with mobs within the specified chunk
      * @param player The player to check
@@ -187,9 +189,9 @@ public final class ChunkUtils {
      * @return If player can harm or loot friendly entities
      */
     public static boolean canPlayerInteractFriendlies(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.CREATURES, player, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.CREATURES, player, blockPos);
     }
-
+    
     /**
      * Check the database if a user can trade with villagers within the specified chunk
      * @param player The player to check
@@ -197,9 +199,9 @@ public final class ChunkUtils {
      * @return If player can trade with villagers
      */
     public static boolean canPlayerTradeAt(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.TRADING, player, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.TRADING, player, blockPos);
     }
-
+    
     /**
      * Check the database if a user can harvest crops within the specified chunk
      * @param player The player to check
@@ -207,9 +209,9 @@ public final class ChunkUtils {
      * @return If the player is allowed to harvest crops
      */
     public static boolean canPlayerHarvestCrop(@NotNull PlayerEntity player, @NotNull BlockPos blockPos) {
-        return ChunkUtils.canPlayerDoInChunk(ClaimPermissions.HARVEST, player, blockPos);
+        return ClaimChunkUtils.canPlayerDoInChunk(ClaimPermissions.HARVEST, player, blockPos);
     }
-
+    
     /**
      * @param player The player that wants to teleport
      * @param target The destination to teleport to
@@ -218,9 +220,9 @@ public final class ChunkUtils {
     public static boolean canPlayerWarpTo(@NotNull MinecraftServer server, @NotNull PlayerEntity player, @NotNull UUID target) {
         if ((!SewConfig.get(SewCoreConfig.DO_CLAIMS)) || (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator())))
             return SewConfig.get(SewCoreConfig.COMMAND_WARP_TPA);
-        return ChunkUtils.canPlayerWarpTo(server, player.getUuid(), target);
+        return ClaimChunkUtils.canPlayerWarpTo(server, player.getUuid(), target);
     }
-
+    
     /**
      * @param player The player that wants to teleport
      * @param target The destination to teleport to
@@ -230,20 +232,20 @@ public final class ChunkUtils {
         // Check our chunk permissions
         ClaimantPlayer permissions = ((ClaimsAccessor)server).getClaimManager()
             .getPlayerClaim(target);
-
+        
         // Get the ranks of the user and the rank required for performing
         ClaimRanks userRank = permissions.getFriendRank(player);
         ClaimRanks permReq = permissions.getPermissionRankRequirement(ClaimPermissions.WARP);
-
+        
         // Return the test if the user can perform the action
         return permReq.canPerform(userRank);
     }
-
+    
     public static boolean isSetting(@NotNull ClaimSettings setting, @NotNull WorldView world, @NotNull BlockPos blockPos) {
         Chunk chunk = world.getChunk(blockPos);
         return chunk instanceof IClaimedChunk claimedChunk ? claimedChunk.isSetting(blockPos, setting) : setting.getDefault(null);
     }
-
+    
     /*
      * Claim slices between two areas
      */
@@ -251,19 +253,19 @@ public final class ChunkUtils {
         // Get range of values
         BlockPos min = region.getLower();
         BlockPos max = region.getUpper();
-
+        
         // Log the blocks being claimed
         CoreMod.logDebug("Claiming " + MessageUtils.xyzToString(min) + " to " + MessageUtils.xyzToString(max) + " in '" + DimensionUtils.dimensionIdentifier(world) + "'.");
-
+        
         // Iterate through the blocks
         for (int x = min.getX(); x <= max.getX(); x++) {
             for (int z = min.getZ(); z <= max.getZ(); z++) {
                 BlockPos sliceLoc = new BlockPos(x, 0, z);
                 int slicePos = ChunkUtils.getPositionWithinChunk(sliceLoc);
-
+                
                 // Get the chunk
                 WorldChunk chunk = world.getWorldChunk(sliceLoc);
-
+                
                 // Update the owner of the chunk
                 ((IClaimedChunk) chunk).updateSliceOwner(player, slicePos, min.getY(), max.getY());
             }
@@ -273,74 +275,68 @@ public final class ChunkUtils {
         // Get range of values
         BlockPos min = region.getLower();
         BlockPos max = region.getUpper();
-
+        
         // Log the blocks being claimed
         CoreMod.logDebug("Unclaiming " + MessageUtils.xyzToString(min) + " to " + MessageUtils.xyzToString(max));
-
+        
         // Iterate through the blocks
         for (int x = min.getX(); x <= max.getX(); x++) {
             for (int z = min.getZ(); z <= max.getZ(); z++) {
                 BlockPos sliceLoc = new BlockPos(x, 0, z);
                 int slicePos = ChunkUtils.getPositionWithinChunk(sliceLoc);
-
+                
                 // Get the chunk
                 WorldChunk chunk = world.getWorldChunk(sliceLoc);
-
+                
                 ((IClaimedChunk) chunk).updateSliceOwner(null, slicePos, min.getY(), max.getY());
             }
         }
     }
-
+    
     public static boolean canPlayerClaimSlices(@NotNull ServerWorld world, @NotNull BlockRange region) {
         // Get range of values
         BlockPos min = region.getLower();
         BlockPos max = region.getUpper();
-
+        
         // Iterate through the blocks
         for (int x = min.getX(); x <= max.getX(); x++) {
             for (int z = min.getZ(); z <= max.getZ(); z++) {
                 BlockPos sliceLoc = new BlockPos(x, 0, z);
                 int slicePos = ChunkUtils.getPositionWithinChunk(sliceLoc);
-
+                
                 WorldChunk chunk = world.getWorldChunk( sliceLoc );
                 if (((IClaimedChunk) chunk).getSliceOwner(slicePos, min.getY(), max.getY()).length > 0)
                     return false;
             }
         }
-
+        
         return true;
     }
 
     /*
      * Get data about where the player is
      */
-
+    
     public static @Nullable UUID getPlayerLocation(@NotNull final ServerPlayerEntity player) {
         PlayerVisitor visitor = ((PlayerTravel) player).getLocation();
         return visitor == null ? null : visitor.get();
     }
     public static boolean isPlayerWithinSpawn(@NotNull final ServerPlayerEntity player) {
-        if (!SewConfig.get(SewCoreConfig.DO_CLAIMS))
-            return true;
         // If player is in creative/spectator, or is within Spawn
         return (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
-            || CoreMod.SPAWN_ID.equals(ChunkUtils.getPlayerLocation( player ));
+            || CoreMod.SPAWN_ID.equals(ClaimChunkUtils.getPlayerLocation( player ));
     }
-    public static int getPositionWithinChunk(BlockPos blockPos) {
-        int chunkIndex = blockPos.getX() & 0xF;
-        return (chunkIndex |= (blockPos.getZ() & 0xF) << 4);
-    }
-
+    
     public static MutableText getPlayerWorldWilderness(@NotNull final PlayerEntity player) {
         if (World.END.equals(player.getEntityWorld().getRegistryKey()))
             return TranslatableServerSide.text(player, "claim.wilderness.end").formatted(Formatting.BLACK);
         if (World.NETHER.equals(player.getEntityWorld().getRegistryKey()))
             return TranslatableServerSide.text(player, "claim.wilderness.nether").formatted(Formatting.LIGHT_PURPLE);
-        return TranslatableServerSide.text( player, "claim.wilderness.general" ).formatted(Formatting.GREEN);
+        return TranslatableServerSide.text(player, "claim.wilderness.general").formatted(Formatting.GREEN);
     }
-
+    
     public static Optional<UUID> getPosOwner(World world, BlockPos pos) {
-        return Optional.ofNullable( ((IClaimedChunk)world.getChunk( pos )).getOwnerId() );
+        return Optional.ofNullable(((IClaimedChunk)world.getChunk( pos )).getOwnerId(pos));
     }
     
     /*public static boolean lightChunk(WorldChunk chunk) {
@@ -475,13 +471,13 @@ public final class ChunkUtils {
             private final @Nullable ClaimantPlayer owner;
             private final int yUpper;
             private final int yLower;
-
+            
             public InnerClaim(@Nullable UUID owner, int upper, int lower) {
                 this.owner = (owner == null ? null : ClaimSlice.this.claims.getPlayerClaim(owner));
                 this.yUpper = Integer.min(ClaimSlice.this.view.getTopY(), Integer.max(upper, lower));
                 this.yLower = Math.max(lower, ClaimSlice.this.view.getBottomY() - 1);
             }
-
+            
             public boolean hasOwner() {
                 return this.getOwnerId() != null;
             }
@@ -493,7 +489,7 @@ public final class ChunkUtils {
             public @Nullable UUID getOwnerId() {
                 return this.owner == null ? null : this.owner.getId();
             }
-
+            
             public int upper() {
                 return this.yUpper;
             }

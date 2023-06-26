@@ -36,8 +36,8 @@ import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.events.RegionNameCallback;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
@@ -78,19 +78,20 @@ public final class WhereCommand extends SewCommand {
             .append(" in ")
             .append(Text.literal(player.getWorld().getRegistryKey().getValue().toString()).formatted(Formatting.AQUA));
         
-        if (SewConfig.get(SewCoreConfig.DO_CLAIMS)) {
-            Entity commandSource = source.getEntity();
-            
-            ServerWorld world = source.getWorld();
-            IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(pos);
-            
-            // Append where they are located
-            if (chunk.getOwnerId(pos) != null) {
-                feedback.append("\n")
-                    .append("They are currently in ")
-                    .append(chunk.getOwnerName(commandSource instanceof PlayerEntity ? (PlayerEntity) commandSource : player, pos))
-                    .append("'s claimed area.");
-            }
+        Text location = RegionNameCallback.EVENT.invoker()
+            .getName(
+                source.getWorld(),
+                pos,
+                source.getEntity(),
+                false,
+                false
+            );
+        
+        if (location != null) {
+            feedback.append("\n")
+                .append("They are currently in ")
+                .append(location)
+                .append(".");
         }
         
         source.sendFeedback(

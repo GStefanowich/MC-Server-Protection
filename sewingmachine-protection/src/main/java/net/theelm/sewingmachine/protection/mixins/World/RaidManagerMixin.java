@@ -30,7 +30,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.village.raid.Raid;
 import net.minecraft.village.raid.RaidManager;
 import net.minecraft.world.PersistentState;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -43,9 +43,9 @@ public abstract class RaidManagerMixin extends PersistentState {
         // Get the players position
         BlockPos pos = player.getBlockPos();
         // Test if the player has permission to interact with the village
-        if (!(ChunkUtils.canPlayerInteractFriendlies(player, pos)
-            && ChunkUtils.canPlayerBreakInChunk(player, pos)
-            && ChunkUtils.canPlayerLootChestsInChunk(player, pos))
+        if (!(ClaimChunkUtils.canPlayerInteractFriendlies(player, pos)
+            && ClaimChunkUtils.canPlayerBreakInChunk(player, pos)
+            && ClaimChunkUtils.canPlayerLootChestsInChunk(player, pos))
         ) callback.setReturnValue(null);
     }
 }

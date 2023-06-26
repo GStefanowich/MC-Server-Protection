@@ -31,7 +31,7 @@ import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
@@ -65,7 +65,7 @@ public abstract class HorseEntityMixin extends AbstractHorseEntity {
             return;
         
         // If riding is allowed, allow
-        if (ChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
+        if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
             return;
         
         Text owner;

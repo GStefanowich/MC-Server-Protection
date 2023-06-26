@@ -27,7 +27,7 @@ package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;
@@ -53,7 +53,7 @@ public abstract class MinecartEntityMixin extends AbstractMinecartEntity {
             return;
         
         // If player can enter Minecart
-        if (ChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
+        if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
             return;
         
         // Player sound

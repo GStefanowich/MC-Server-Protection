@@ -27,26 +27,89 @@ package net.theelm.sewingmachine.interfaces;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket.Action;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
+import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protections.logging.BlockEvent;
+import net.theelm.sewingmachine.protections.logging.EventLogger;
+import net.theelm.sewingmachine.utilities.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public interface BlockBreakCallback {
-    Event<BlockBreakCallback> EVENT = EventFactory.createArrayBacked(BlockBreakCallback.class, (listeners) -> (player, world, hand, blockPos, direction, action) -> {
+    Event<BlockBreakCallback> EVENT = EventFactory.createArrayBacked(BlockBreakCallback.class, (listeners) -> (entity, world, hand, pos, direction, action) -> {
+        ActionResult result = ActionResult.PASS;
+        
         for (BlockBreakCallback event : listeners) {
-            ActionResult result = event.interact(player, world, hand, blockPos, direction, action);
+            result = event.destroy(entity, world, hand, pos, direction, action);
             if (result != ActionResult.PASS)
-                return result;
+                break;
         }
         
-        return ActionResult.PASS;
+        if (result != ActionResult.FAIL && SewConfig.get(SewCoreConfig.LOG_BLOCKS_BREAKING) && action == Action.STOP_DESTROY_BLOCK)
+            BlockBreakCallback.onSuccess(entity, world, hand, pos, direction);
+        else if (result == ActionResult.FAIL)
+            BlockBreakCallback.onFailure(entity, world, hand, pos, direction);
+        
+        return result;
     });
     
-    ActionResult interact(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos blockPos, @Nullable Direction direction, @Nullable Action action);
+    ActionResult destroy(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos blockPos, @Nullable Direction direction, @Nullable Action action);
+    default boolean canDestroy(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos blockPos, @Nullable Direction direction, @Nullable Action action) {
+        return this.destroy(entity, world, hand, blockPos, direction, action) != ActionResult.FAIL;
+    }
+    
+    /**
+     * When a block is successfully run, perform actions based on the block
+     * @param entity The entity responsible for breaking the block
+     * @param world The world that the block was broken in
+     * @param hand The hand used to break the block
+     * @param blockPos The position that the block was broken at
+     * @param blockFace The block face that was broken
+     */
+    private static void onSuccess(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace) {
+        // Log the block being broken
+        BlockBreakCallback.logBlockBreak(entity, world, blockPos);
+        
+        // Take additional actions if the entity breaking is a player
+        if (entity instanceof ServerPlayerEntity player)
+            BlockBreakEventCallback.EVENT.invoker()
+                .activate(player, world, hand, blockPos, blockFace);
+    }
+    
+    /**
+     * When a block break is failed, perform actions based on the block
+     * @param entity The entity responsible for breaking the block
+     * @param world The world that the block was broken in
+     * @param hand The hand used to break the block
+     * @param blockPos The position that the block was broken at
+     * @param blockFace The block face that was broken
+     */
+    private static void onFailure(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace) {
+        BlockState blockState = world.getBlockState(blockPos);
+        if (entity instanceof ServerPlayerEntity player && EntityUtils.hasClientBlockData(blockState)) {
+            BlockEntity blockEntity = world.getBlockEntity(blockPos);
+            if (blockEntity != null)
+                player.networkHandler.sendPacket(blockEntity.toUpdatePacket());
+        }
+    }
+    
+    /**
+     * Log the event of our block being broken into SQL
+     * @param entity The entity responsible for breaking the block
+     * @param world The world that the block was broken in
+     * @param blockPos The position that the block was broken at
+     */
+    private static void logBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final BlockPos blockPos) {
+        EventLogger.log(new BlockEvent(entity, EventLogger.BlockAction.BREAK, world.getBlockState(blockPos).getBlock(), blockPos));
+    }
 }

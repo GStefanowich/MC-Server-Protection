@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.enums;
 
+import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.text.Text;
@@ -129,5 +130,8 @@ public class Permissions {
     public static @NotNull CompletableFuture<Suggestions> getSuggestions(@NotNull SuggestionsBuilder builder) {
         Permissions.PERMISSIONS.forEach(node -> builder.suggest(node.isWildcard() ? TextUtils.quoteWrap(node.getNode()) : node.getNode(), Text.literal(node.getDescription())));
         return builder.buildFuture();
+    }
+    public static @NotNull <S> CompletableFuture<Suggestions> suggestNodes(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
+        return Permissions.getSuggestions(builder);
     }
 }

@@ -34,8 +34,8 @@ import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
-import net.theelm.sewingmachine.commands.arguments.ArgumentSuggestions;
 import net.theelm.sewingmachine.enums.OpLevels;
+import net.theelm.sewingmachine.enums.Permissions;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.permissions.utilities.RankUtils;
 import net.theelm.sewingmachine.permissions.objects.PlayerRank;
@@ -59,17 +59,17 @@ public final class PermissionCommand extends SewCommand {
             // Delete a Rank
             .then(CommandManager.literal("remove")
                 .then(CommandManager.argument("rank", StringArgumentType.string())
-                    .suggests(ArgumentSuggestions::suggestRanks)
+                    .suggests(RankUtils::suggestRanks)
                     .executes(PermissionCommand::delRank)
                 )
             )
             // Modify a Ranks Permissions
             .then(CommandManager.literal("modify")
                 .then(CommandManager.argument("rank", StringArgumentType.string())
-                    .suggests(ArgumentSuggestions::suggestRanks)
+                    .suggests(RankUtils::suggestRanks)
                     .then(CommandManager.literal("nodes")
                         .then(CommandManager.argument("permission", StringArgumentType.string())
-                            .suggests(ArgumentSuggestions::suggestNodes)
+                            .suggests(Permissions::suggestNodes)
                             .then(CommandManager.literal("grant")
                                 .executes(PermissionCommand::grantNodeToRank)
                             )
@@ -83,7 +83,7 @@ public final class PermissionCommand extends SewCommand {
                     )
                     .then(CommandManager.literal("inherits")
                         .then(CommandManager.argument("from", StringArgumentType.string())
-                            .suggests(ArgumentSuggestions::suggestRanks)
+                            .suggests(RankUtils::suggestRanks)
                             //.executes()
                         )
                     )

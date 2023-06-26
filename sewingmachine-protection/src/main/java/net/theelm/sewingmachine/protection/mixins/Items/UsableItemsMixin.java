@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.protection.mixins.Items;
 
-import net.theelm.sewingmachine.protection.utilities.ChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.ItemUtils;
 import net.minecraft.entity.player.PlayerEntity;
@@ -76,7 +76,7 @@ public abstract class UsableItemsMixin extends Item {
     public void onUseOfItem(@NotNull ItemUsageContext context, @NotNull CallbackInfoReturnable<ActionResult> callback) {
         PlayerEntity player = context.getPlayer();
         if (player != null) {
-            if (!ChunkUtils.canPlayerDoInChunk(ItemUtils.getPermission(context.getStack()), player, context.getBlockPos())) {
+            if (!ClaimChunkUtils.canPlayerDoInChunk(ItemUtils.getPermission(context.getStack()), player, context.getBlockPos())) {
                 // Update the inventory slot
                 EntityUtils.resendInventory(player);
                 
