@@ -289,10 +289,8 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
             this.shopSign_itemPrice = builder.getShopItemPrice();
             
             // Copy the block ranges
-            if (this.shopSign_Type == ShopSigns.DEED) {
-                this.shopSign_posA = builder.getFirstPos();
-                this.shopSign_posB = builder.getSecondPos();
-            }
+            this.shopSign_posA = builder.getFirstPos();
+            this.shopSign_posB = builder.getSecondPos();
         }
     }
     

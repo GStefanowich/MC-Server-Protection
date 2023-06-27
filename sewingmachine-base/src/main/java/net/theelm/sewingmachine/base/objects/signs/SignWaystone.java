@@ -31,18 +31,19 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
+import net.theelm.sewingmachine.events.PlayerBalanceCallback;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
+import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
-import net.theelm.sewingmachine.utilities.MoneyUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.WarpUtils;
@@ -100,35 +101,45 @@ public final class SignWaystone extends ShopSign {
     
     @Override
     public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
-        try {
-            ServerWorld world = player.getServerWorld();
-            if (DimensionUtils.isOutOfBuildLimitVertically(world, signPos) || DimensionUtils.isWithinProtectedZone(world, signPos) || !ChunkUtils.canPlayerBreakInChunk(player, signPos))
-                return Either.left(Text.literal("Can't build that here"));
-            
-            final String warpName = sign.getSignLine(1)
-                .getString();
-            
-            if (WarpUtils.getWarps(player).size() >= SewConfig.get(SewCoreConfig.WARP_WAYSTONES_ALLOWED) && (WarpUtils.getWarp(player, warpName) == null))
-                return Either.left(Text.literal("Too many waystones. Can't build any more."));
-            
-            if (!MoneyUtils.takePlayerMoney(player, SewConfig.get(SewCoreConfig.WARP_WAYSTONE_COST)))
-                return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
-            
-            WarpUtils warp = new WarpUtils(warpName, player, player.getServerWorld(),signPos.down());
-            if (!warp.claimAndBuild(() -> warp.save(warp.getSafeTeleportPos(), player))) {
-                // Notify the player
-                player.sendMessage(
-                    Text.literal("Can't build that here")
-                        .formatted(Formatting.RED)
-                );
-                
-                // Refund the player
-                MoneyUtils.givePlayerMoney(player, SewConfig.get(SewCoreConfig.WARP_WAYSTONE_COST));
-            }
-            
-            return Either.right(Boolean.TRUE);
-        } catch (NotEnoughMoneyException e) {
+        ServerWorld world = player.getServerWorld();
+        
+        // Check the build permissions
+        if (
+            DimensionUtils.isOutOfBuildLimitVertically(world, signPos)
+                || DimensionUtils.isWithinProtectedZone(world, signPos)
+                || !BlockBreakCallback.EVENT.invoker().canDestroy(player, world, Hand.MAIN_HAND, signPos, null, null)
+        ) return Either.left(Text.literal("Can't build that here"));
+        
+        final String warpName = sign.getSignLine(1)
+            .getString();
+        
+        int warps = WarpUtils.getWarps(player)
+            .size();
+        int allowed = SewConfig.get(SewCoreConfig.WARP_WAYSTONES_ALLOWED);
+        
+        if (warps >= allowed && (WarpUtils.getWarp(player, warpName) == null))
+            return Either.left(Text.literal("Too many waystones. Can't build any more."));
+        
+        int cost = SewConfig.get(SewCoreConfig.WARP_WAYSTONE_COST);
+        
+        PlayerBalanceCallback bank = PlayerBalanceCallback.EVENT.invoker();
+        
+        if (!bank.hasBalance(player, cost))
             return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
+        
+        WarpUtils warp = new WarpUtils(warpName, player, player.getServerWorld(),signPos.down());
+        if (!warp.claimAndBuild(() -> {
+            bank.take(player, cost);
+
+            warp.save(warp.getSafeTeleportPos(), player);
+        })) {
+            // Notify the player
+            player.sendMessage(
+                Text.literal("Can't build that here")
+                    .formatted(Formatting.RED)
+            );
         }
+        
+        return Either.right(Boolean.TRUE);
     }
 }
