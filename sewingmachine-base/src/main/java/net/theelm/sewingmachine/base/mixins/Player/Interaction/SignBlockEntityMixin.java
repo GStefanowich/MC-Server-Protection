@@ -31,10 +31,10 @@ import net.minecraft.registry.Registries;
 import net.minecraft.server.filter.FilteredMessage;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.objects.ShopSign;
-import net.theelm.sewingmachine.enums.ShopSigns;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
+import net.theelm.sewingmachine.utilities.ShopSigns;
 import net.theelm.sewingmachine.utilities.nbt.NbtGet;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.block.BlockState;
@@ -336,7 +336,7 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
             .getString();
         
         // Shop signs
-        if ((this.shopSign_Type = ShopSigns.valueOf(type)) != null) {
+        if ((this.shopSign_Type = ShopSigns.get(type)) != null) {
             NbtUtils.tryGet(tag, NbtGet.UUID, "shop_owner", (uuid) -> {
                 String signItem = "";
                 try {

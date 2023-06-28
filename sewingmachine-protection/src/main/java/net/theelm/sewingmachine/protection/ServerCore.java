@@ -53,9 +53,12 @@ import net.theelm.sewingmachine.protection.interfaces.PlayerMovement;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.signs.SignDeed;
+import net.theelm.sewingmachine.protection.objects.signs.SignPlots;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.MessageClaimUtils;
 import net.theelm.sewingmachine.utilities.EntityVariables;
+import net.theelm.sewingmachine.utilities.ShopSigns;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 
 import java.util.UUID;
@@ -157,5 +160,8 @@ public class ServerCore implements DedicatedServerModInitializer, SewPlugin {
             
             return false;
         });
+        
+        ShopSigns.add(SignDeed::new);
+        ShopSigns.add(SignPlots::new);
     }
 }

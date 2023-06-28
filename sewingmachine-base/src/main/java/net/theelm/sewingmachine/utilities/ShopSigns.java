@@ -23,34 +23,42 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.enums;
+package net.theelm.sewingmachine.utilities;
 
-import net.theelm.sewingmachine.utilities.ShopSignBuilder;
-import net.theelm.sewingmachine.utilities.text.MessageUtils;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.theelm.sewingmachine.base.objects.ShopSign;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public enum ShopSigns {
-    /*
-     * Allow players to sell chunks/region in their towns
-     */
-    DEED;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.function.Supplier;
+
+/**
+ * Created on Jun 28 2023 at 12:06 AM.
+ * By greg in sewingmachine
+ */
+public final class ShopSigns {
+    private static final @NotNull Map<String, ShopSign> SIGNS = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     
-    public static @Nullable ShopSigns valueOf(@NotNull Text text) {
+    private ShopSigns() {}
+    
+    public static @Nullable ShopSign getFromText(@NotNull Text text) {
         String str = text.getString();
         if ( str.startsWith( "[" ) && str.endsWith( "]" ) ) {
             str = str.substring(1, str.length() - 1).toUpperCase();
-            try {
-                return ShopSigns.valueOf(str);
-            } catch ( IllegalArgumentException e ) {
-                return null;
-            }
+            return ShopSigns.get(str);
         }
         return null;
+    }
+    public static @Nullable ShopSign get(@NotNull String key) {
+        return ShopSigns.SIGNS.get(key);
+    }
+    public static void add(@NotNull String key, @NotNull ShopSign instance) {
+        ShopSigns.SIGNS.put(key, instance);
+    }
+    public static void add(@NotNull Supplier<ShopSign> provider) {
+        ShopSign instance = provider.get();
+        ShopSigns.add(instance.name, instance);
     }
 }

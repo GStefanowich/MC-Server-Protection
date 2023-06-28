@@ -47,9 +47,8 @@ import net.theelm.sewingmachine.utilities.ShopSignBuilder;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Created on Jun 25 2023 at 10:26 PM.
- * By greg in sewingmachine
+/*
+ * Allow players to sell chunks/region in their towns
  */
 public final class SignDeed extends ShopSign {
     public SignDeed() {

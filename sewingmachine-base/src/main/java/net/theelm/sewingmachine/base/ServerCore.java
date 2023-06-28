@@ -30,6 +30,14 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.registry.RegistryKey;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.objects.signs.SignBackpack;
+import net.theelm.sewingmachine.base.objects.signs.SignBalance;
+import net.theelm.sewingmachine.base.objects.signs.SignGuide;
+import net.theelm.sewingmachine.base.objects.signs.SignShopBuy;
+import net.theelm.sewingmachine.base.objects.signs.SignShopFree;
+import net.theelm.sewingmachine.base.objects.signs.SignShopSell;
+import net.theelm.sewingmachine.base.objects.signs.SignWarp;
+import net.theelm.sewingmachine.base.objects.signs.SignWaystone;
 import net.theelm.sewingmachine.commands.AdminCommands;
 import net.theelm.sewingmachine.commands.BackpackCommand;
 import net.theelm.sewingmachine.commands.DateCommand;
@@ -77,6 +85,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
+import net.theelm.sewingmachine.utilities.ShopSigns;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -125,6 +134,15 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         try {
             SewConfig.set(SewCoreConfig.CONFIG_VERSION, ConfigOption.convertToJSON(CoreMod.getModVersion()));
             SewConfig.save();
+            
+            ShopSigns.add(SignBackpack::new);
+            ShopSigns.add(SignBalance::new);
+            ShopSigns.add(SignGuide::new);
+            ShopSigns.add(SignShopBuy::new);
+            ShopSigns.add(SignShopFree::new);
+            ShopSigns.add(SignShopSell::new);
+            ShopSigns.add(SignWarp::new);
+            ShopSigns.add(SignWaystone::new);
             
             // Alert the mod presence
             CoreMod.logInfo("Finished loading.");

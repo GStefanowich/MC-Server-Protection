@@ -37,12 +37,11 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.enums.ShopSigns;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
-import net.theelm.sewingmachine.utilities.ColorUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
+import net.theelm.sewingmachine.utilities.ShopSigns;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.StyleApplicator;
 import org.jetbrains.annotations.NotNull;
@@ -108,16 +107,7 @@ public abstract class ShopSign {
      * @return A registered ShopSign, if one exists
      */
     public static @Nullable ShopSign valueOf(@NotNull Text text) {
-        String str = text.getString();
-        if ( str.startsWith( "[" ) && str.endsWith( "]" ) ) {
-            str = str.substring(1, str.length() - 1).toUpperCase();
-            try {
-                return ShopSigns.valueOf(str);
-            } catch ( IllegalArgumentException e ) {
-                return null;
-            }
-        }
-        return null;
+        return ShopSigns.getFromText(text);
     }
     
     public static abstract class BuyTradeSell extends ShopSign {

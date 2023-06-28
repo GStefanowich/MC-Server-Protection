@@ -30,7 +30,6 @@ import net.minecraft.block.entity.SignText;
 import net.minecraft.registry.Registries;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.objects.ShopSign;
-import net.theelm.sewingmachine.enums.ShopSigns;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
@@ -205,7 +204,7 @@ public final class ShopSignBuilder implements ShopSignData {
          * [HEAL]
          */
         try {
-            this.signType = ShopSigns.valueOf(this.lines[0]);
+            this.signType = ShopSigns.getFromText(this.lines[0]);
             if ((this.signType == null) || (!this.signType.isEnabled()))
                 return false;
             this.formatOrBreak(player);
