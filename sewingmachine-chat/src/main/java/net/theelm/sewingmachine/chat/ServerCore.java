@@ -28,10 +28,27 @@ package net.theelm.sewingmachine.chat;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.message.v1.ServerMessageDecoratorEvent;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.theelm.sewingmachine.chat.commands.ChatroomCommands;
 import net.theelm.sewingmachine.chat.commands.NickNameCommand;
 import net.theelm.sewingmachine.chat.commands.TagUserCommand;
+import net.theelm.sewingmachine.chat.enums.ChatRooms;
+import net.theelm.sewingmachine.chat.interfaces.ChatMessageFunction;
 import net.theelm.sewingmachine.chat.objects.ChatDecorator;
+import net.theelm.sewingmachine.chat.utilities.PlayerNameUtils;
+import net.theelm.sewingmachine.events.MessageDeployer;
+import net.theelm.sewingmachine.events.PlayerNameCallback;
+import net.theelm.sewingmachine.utilities.EntityVariables;
+import net.theelm.sewingmachine.utilities.text.MessageUtils;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Objects;
+import java.util.UUID;
 
 /**
  * Created on Jul 17 2022 at 11:01 AM.
@@ -41,5 +58,45 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     @Override
     public void onInitializeServer() {
         ServerMessageDecoratorEvent.EVENT.register(ServerMessageDecoratorEvent.CONTENT_PHASE, new ChatDecorator());
+
+        PlayerNameCallback.INSTANCE.register(new PlayerNameCallback() {
+            @Override
+            public @Nullable Text getDisplayName(PlayerEntity player) {
+                return PlayerNameUtils.getPlayerDisplayName((ServerPlayerEntity) player);
+            }
+            
+            @Override
+            public @NotNull Text getDisplayName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
+                return PlayerNameUtils.fetchPlayerNick(server, uuid);
+            }
+        });
+        
+        MessageDeployer.EVENT.register((room, player, tags, message) -> {
+            if (room instanceof ChatRooms rooms) {
+                switch (rooms) {
+                    // Local message
+                    case LOCAL:
+                        return MessageUtils.sendToLocal(player.getWorld(), player.getBlockPos(), tags, message);
+                    // Global message
+                    case GLOBAL:
+                        return MessageUtils.sendToAll(message, tags);
+                }
+            }
+            
+            return false;
+        });
+        
+        // Get the nickname (Or regular name)
+        EntityVariables.add("nick", (source, message, room, casing) -> {
+            if (source.getEntity() instanceof ServerPlayerEntity player)
+                return PlayerNameUtils.getPlayerDisplayName(player);
+            return source.getDisplayName();
+        });
+        
+        // Chat room
+        EntityVariables.add("chat", (ChatMessageFunction)(room, message, casing) -> room instanceof ChatRooms rooms ? TextUtils.literal(rooms.name(), casing) : TextUtils.literal());
+        
+        // Get the chat message
+        EntityVariables.add("message", (ChatMessageFunction)(room, message, casing) -> message);
     }
 }

@@ -28,6 +28,7 @@ package net.theelm.sewingmachine.chat.interfaces;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
+import net.theelm.sewingmachine.interfaces.variables.VariableFunction;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,10 +37,11 @@ import org.jetbrains.annotations.NotNull;
  * By greg in SewingMachineMod
  */
 @FunctionalInterface
-public interface ChatMessageFunction extends ChatFunction {
-    Text parseVar(@NotNull ChatRooms room, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing);
+public interface ChatMessageFunction extends VariableFunction {
+    Text parseVar(@NotNull Object room, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing);
+    
     @Override
-    default Text parseVar(@NotNull ServerCommandSource source, @NotNull ChatRooms room, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing) {
+    default Text parseVar(@NotNull ServerCommandSource source, @NotNull Object room, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing) {
         return this.parseVar(room, chatMessage, casing);
     }
 }

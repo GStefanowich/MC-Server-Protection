@@ -25,7 +25,6 @@
 
 package net.theelm.sewingmachine.utilities;
 
-import net.theelm.sewingmachine.enums.ClaimPermissions;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.BlockItem;
@@ -72,29 +71,6 @@ public final class ItemUtils {
     }
     
     private static void nothing(@NotNull ItemStack stack) {}
-    
-    public static @Nullable ClaimPermissions getPermission(@NotNull ItemStack stack) {
-        if (stack.isEmpty())
-            return null;
-        return ItemUtils.getPermission(stack.getItem());
-    }
-    public static @NotNull ClaimPermissions getPermission(@NotNull Item item) {
-        if (item instanceof BlockItem)
-            return ClaimPermissions.BLOCKS;
-        if (item instanceof ToolItem || item instanceof BucketItem)
-            return ClaimPermissions.BLOCKS;
-        if (item instanceof EndCrystalItem)
-            return ClaimPermissions.BLOCKS;
-        if (item instanceof MusicDiscItem)
-            return ClaimPermissions.STORAGE;
-        if (item instanceof WritableBookItem || item instanceof WrittenBookItem)
-            return ClaimPermissions.STORAGE;
-        if (item instanceof EnderEyeItem)
-            return ClaimPermissions.STORAGE;
-        if (item instanceof LeadItem)
-            return ClaimPermissions.CREATURES;
-        return ClaimPermissions.BLOCKS;
-    }
     
     public static boolean areEqualStacks(@NotNull ItemStack stack1, @NotNull ItemStack stack2) {
         if (stack1.isEmpty() && stack2.isEmpty())

@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.mixins.Player.Interaction;
+package net.theelm.sewingmachine.base.mixins.World;
 
 import net.minecraft.entity.damage.DamageTypes;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
@@ -68,22 +68,6 @@ public abstract class ItemEntityMixin extends Entity {
     private void OnConstruct(ItemStack stack, CallbackInfo callback) {
         Map<Item, Integer> items = SewConfig.get(SewCoreConfig.ITEM_DESPAWN_TIMES);
         this.overriddenSewingDespawnTime = items.get(stack.getItem());
-    }
-    
-    @Inject(at = @At("HEAD"), method = "onPlayerCollision", cancellable = true)
-    public void attemptPickup(PlayerEntity player, CallbackInfo callback) {
-        if (!this.getWorld().isClient()) {
-            if ( this.pickupDelay == 0 ) {
-                // Check if the entity is owned by the player (They dropped it)
-                if (player.getUuid().equals(this.thrower) || player.getUuid().equals(this.owner) || (player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)))
-                    return;
-                
-                // Check if the player can pickup items in the chunk
-                BlockPos itemPos = this.getBlockPos();
-                if (!ChunkUtils.canPlayerLootDropsInChunk(player, itemPos))
-                    callback.cancel();
-            }
-        }
     }
     
     @Inject(at = @At("RETURN"), method = "damage")

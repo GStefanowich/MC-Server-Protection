@@ -39,6 +39,7 @@ import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
@@ -93,7 +94,7 @@ public final class SignPlots extends ShopSign {
         if ( !this.isEnabled() )
             return Either.right(Boolean.TRUE);
         
-        ClaimantPlayer claim = ((PlayerTravel) player).getClaim();
+        ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
         
         try {
             // Take the players money
@@ -104,10 +105,11 @@ public final class SignPlots extends ShopSign {
                 return Either.left(Text.translatable("Can't buy any more of that."));
             
             // Increase the players chunk count
-            ((PlayerTravel) player).getClaim().increaseMaxChunkLimit( sign.getShopItemCount() );
+            ((PlayerClaimData) player).getClaim()
+                .increaseMaxChunkLimit( sign.getShopItemCount() );
             
             // Log the transaction
-            CoreMod.logInfo( player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " chunks for $" + FormattingUtils.format( sign.getShopItemPrice() ) );
+            CoreMod.logInfo(player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " chunks for $" + FormattingUtils.format(sign.getShopItemPrice()));
             
         } catch (NotEnoughMoneyException e) {
             return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));

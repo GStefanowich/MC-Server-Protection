@@ -63,16 +63,6 @@ public abstract class ServerPlayNetworkHandlerMixin implements ServerPlayPacketL
     @Shadow private ServerPlayerEntity player;
     
     /*
-     * Claims
-     */
-    private ClaimantPlayer playerClaimData = null;
-    
-    @Override
-    public ClaimantPlayer getClaim() {
-        return this.playerClaimData;
-    }
-    
-    /*
      * Health Bars
      */
     public @Contract("true -> !null") ServerBossBar getHealthBar(boolean create) {
@@ -88,9 +78,6 @@ public abstract class ServerPlayNetworkHandlerMixin implements ServerPlayPacketL
     public void onPlayerConnect(MinecraftServer server, ClientConnection client, ServerPlayerEntity player, CallbackInfo callback) {
         // Set the players position as in the wilderness
         CoreMod.PLAYER_LOCATIONS.put(player, null);
-        
-        // Initialize user claims from database
-        this.playerClaimData = ( SewConfig.get(SewCoreConfig.DO_CLAIMS) ? ((ClaimsAccessor)this.server).getClaimManager().getPlayerClaim(player) : null );
         
         // Check if server has been joined before
         if (((PlayerData) player).getFirstJoinAt() == null) {

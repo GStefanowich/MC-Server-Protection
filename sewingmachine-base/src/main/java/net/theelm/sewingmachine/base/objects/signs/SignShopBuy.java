@@ -40,6 +40,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
@@ -51,6 +52,7 @@ import net.theelm.sewingmachine.utilities.MoneyUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 
 /*
@@ -157,8 +159,8 @@ public final class SignShopBuy extends ShopSign.BuyTradeSell {
                 }
                 
                 // Get the shop owner
-                ClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
-                ClaimantPlayer permissions = claimCache.getPlayerClaim(sign.getShopOwner());
+                Text name = TextUtils.mutable(PlayerNameCallback.getName(server, sign.getShopOwner()))
+                    .formatted(Formatting.AQUA);
                 
                 // Tell the player
                 TitleUtils.showPlayerAlert(
@@ -168,11 +170,11 @@ public final class SignShopBuy extends ShopSign.BuyTradeSell {
                     Text.literal(FormattingUtils.format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
                     Text.translatable(sign.getShopItemTranslationKey()).formatted(Formatting.AQUA),
                     Text.literal(" from "),
-                    permissions.getName().formatted(Formatting.AQUA)
+                    name
                 );
                 
                 // Log the event
-                CoreMod.logInfo(player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format( sign.getShopItemPrice() ) + " from " + permissions.getName().getString() );
+                CoreMod.logInfo(player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format( sign.getShopItemPrice() ) + " from " + name.getString() );
                 player.increaseStat(ShopStats.SHOP_TYPE_BOUGHT.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
                 
                 return Either.right(Boolean.TRUE);

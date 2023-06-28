@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.utilities;
+package net.theelm.sewingmachine.chat.utilities;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -32,9 +32,11 @@ import com.mojang.authlib.GameProfile;
 import net.minecraft.registry.RegistryKey;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.chat.interfaces.Nicknamable;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
-import net.theelm.sewingmachine.interfaces.Nicknamable;
+import net.theelm.sewingmachine.utilities.DimensionUtils;
+import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.StyleApplicator;
@@ -49,6 +51,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -68,7 +71,7 @@ public final class PlayerNameUtils {
         if (((Nicknamable)player).getPlayerNickname() == null)
             return PlayerNameUtils.applyPlayerNameStyle(((MutableText)player.getName()).formatted(Formatting.GOLD), player);
         
-        return Text.literal("").append(PlayerNameUtils.applyPlayerNameStyle(
+        return TextUtils.literal().append(PlayerNameUtils.applyPlayerNameStyle(
             FormattingUtils.deepCopy(player.getDisplayName()),
             player
         ));
@@ -116,11 +119,11 @@ public final class PlayerNameUtils {
         
         // Check if there is an online player with UUID (No unnecessary web calls)
         MutableText playerName;
-        if ((playerName = getOnlinePlayerName(server, uuid)) != null)
+        if ((playerName = PlayerNameUtils.getOnlinePlayerName(server, uuid)) != null)
             return playerName;
         
         String cachedName;
-        if (((cachedName = getCachedPlayerName(server, uuid)) != null) && (!StringUtils.isBlank(cachedName)))
+        if (((cachedName = PlayerNameUtils.getCachedPlayerName(server, uuid)) != null) && (!StringUtils.isBlank(cachedName)))
             return Text.literal(cachedName);
         
         // Log that a request is being made
@@ -148,13 +151,16 @@ public final class PlayerNameUtils {
                 JsonArray nameHistory = JsonParser.parseString(content.toString()).getAsJsonArray();
                 JsonObject nameLatest = nameHistory.get( nameHistory.size() - 1 ).getAsJsonObject();
                 
-                playerName = Text.literal(nameLatest.get("name").getAsString());
+                GameProfile profile = new GameProfile(
+                    uuid,
+                    nameLatest.get("name").getAsString()
+                );
+                
+                playerName = Text.literal(profile.getName());
                 
                 // Save the player name to the cache
-                server.getUserCache().add(new GameProfile(
-                    uuid,
-                    playerName.getString()
-                ));
+                server.getUserCache()
+                    .add(profile);
             }
             
         } catch (IOException e) {

@@ -32,8 +32,8 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
 import net.theelm.sewingmachine.chat.objects.ChatFormat;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
+import net.theelm.sewingmachine.events.MessageDeployer;
 import net.theelm.sewingmachine.interfaces.PlayerData;
-import net.theelm.sewingmachine.protections.claiming.ClaimantPlayer;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
@@ -72,26 +72,11 @@ public final class ChatRoomUtilities {
     }
     
     // General send
-    public static void sendTo(@NotNull ChatRooms chatRoom, @NotNull ServerPlayerEntity player, @NotNull Text chatText) {
-        ChatRoomUtilities.sendTo(chatRoom, player, Collections.emptyList(), chatText);
+    public static void sendTo(@NotNull ChatRooms room, @NotNull ServerPlayerEntity player, @NotNull Text message) {
+        ChatRoomUtilities.sendTo(room, player, Collections.emptyList(), message);
     }
-    public static boolean sendTo(@NotNull ChatRooms chatRoom, @NotNull ServerPlayerEntity player, @NotNull Collection<ServerPlayerEntity> tags, @NotNull Text chatText) {
-        switch (chatRoom) {
-            // Local message
-            case LOCAL: {
-                return MessageUtils.sendToLocal(player.getWorld(), player.getBlockPos(), tags, chatText);
-            }
-            // Global message
-            case GLOBAL: {
-                MessageUtils.sendToAll(chatText, tags);
-                return true;
-            }
-            // Message to the players town
-            case TOWN: {
-                ClaimantPlayer claimantPlayer = ((PlayerData) player).getClaim();
-                return MessageUtils.sendToTown(claimantPlayer.getTown(), tags, chatText);
-            }
-        }
-        return false;
+    public static void sendTo(@NotNull ChatRooms room, @NotNull ServerPlayerEntity player, @NotNull Collection<ServerPlayerEntity> tags, @NotNull Text message) {
+        MessageDeployer.EVENT.invoker()
+            .send(room, player, tags, message);
     }
 }

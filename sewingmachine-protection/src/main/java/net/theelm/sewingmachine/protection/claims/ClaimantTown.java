@@ -29,12 +29,12 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
-import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
+import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimNbtUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
-import net.theelm.sewingmachine.utilities.PlayerNameUtils;
 import net.theelm.sewingmachine.utilities.TownNameUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.entity.passive.VillagerEntity;
@@ -47,6 +47,7 @@ import net.minecraft.text.HoverEvent;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -76,7 +77,7 @@ public final class ClaimantTown extends Claimant {
         return TownNameUtils.getOwnerTitle( this.getCount(), this.getResidentCount(), true );
     }
     public @NotNull MutableText getOwnerName() {
-        return PlayerNameUtils.fetchPlayerNick(this.claimCache.getServer(), this.getOwnerId());
+        return TextUtils.mutable(PlayerNameCallback.getName(this.claimCache.getServer(), this.getOwnerId()));
     }
     
     public @Nullable UUID getOwnerId() {
@@ -152,7 +153,7 @@ public final class ClaimantTown extends Claimant {
     @Override
     public boolean updateFriend(@NotNull ServerPlayerEntity player, @Nullable ClaimRanks rank) {
         if ( super.updateFriend( player, rank ) ) {
-            ClaimantPlayer claim = ((PlayerTravel) player).getClaim();
+            ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
             claim.setTown(rank == null ? null : this);
             return true;
         }
@@ -216,7 +217,7 @@ public final class ClaimantTown extends Claimant {
         // Remove all players from the town
         for (UUID member : this.getFriends()) {
             if ((player = playerManager.getPlayer(member)) != null)
-                ((PlayerTravel)player).getClaim().setTown(null);
+                ((PlayerClaimData) player).getClaim().setTown(null);
         }
         
         // Remove from the cache (So it doesn't save again)

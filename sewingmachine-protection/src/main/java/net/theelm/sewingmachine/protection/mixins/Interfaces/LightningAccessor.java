@@ -23,24 +23,19 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.chat.interfaces;
+package net.theelm.sewingmachine.protection.mixins.Interfaces;
 
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.theelm.sewingmachine.chat.enums.ChatRooms;
-import net.theelm.sewingmachine.utilities.CasingUtils;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.entity.LightningEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
 /**
- * Created on Dec 20 2021 at 9:56 PM.
+ * Created on Jun 13 2021 at 10:57 PM.
  * By greg in SewingMachineMod
  */
-@FunctionalInterface
-public interface ServerChatFunction extends ChatFunction {
-    Text parseVar(@NotNull MinecraftServer server, @NotNull CasingUtils.Casing casing);
-    @Override
-    default Text parseVar(@NotNull ServerCommandSource source, @NotNull ChatRooms chatRoom, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing) {
-        return this.parseVar(source.getServer(), casing);
-    }
+@Mixin(LightningEntity.class)
+public interface LightningAccessor {
+    @Accessor("channeler")
+    ServerPlayerEntity getChanneler();
 }

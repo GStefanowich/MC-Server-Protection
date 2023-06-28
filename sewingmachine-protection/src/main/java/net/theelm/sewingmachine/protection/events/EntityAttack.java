@@ -30,7 +30,7 @@ import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
-import net.theelm.sewingmachine.base.mixins.Interfaces.LightningAccessor;
+import net.theelm.sewingmachine.protection.mixins.Interfaces.LightningAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;

@@ -32,6 +32,7 @@ import net.minecraft.entity.decoration.EndCrystalEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.World;
+import net.minecraft.world.dimension.DimensionTypes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -49,7 +50,7 @@ public abstract class EndCrystalEntityMixin extends Entity {
         // If attacker is a player
         if ((this.getWorld() instanceof ServerWorld serverWorld) && (damageSource.getAttacker() instanceof PlayerEntity)) {
             // If end the end, and ender dragon exists
-            if ((this.getWorld().getDimension().hasEnderDragonFight()) && (serverWorld.getAliveEnderDragons().size() <= 0))
+            if ((this.getWorld().getDimensionEntry().matchesKey(DimensionTypes.THE_END)) && (serverWorld.getAliveEnderDragons().size() <= 0))
                 callback.setReturnValue(false);
         }
     }

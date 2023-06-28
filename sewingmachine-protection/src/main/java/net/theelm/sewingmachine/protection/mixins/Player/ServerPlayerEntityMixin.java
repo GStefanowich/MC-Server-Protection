@@ -36,6 +36,7 @@ import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +54,7 @@ import java.util.UUID;
  * By greg in sewingmachine
  */
 @Mixin(ServerPlayerEntity.class)
-public abstract class ServerPlayerEntityMixin extends PlayerEntity implements PlayerTravel {
+public abstract class ServerPlayerEntityMixin extends PlayerEntity implements PlayerTravel, PlayerClaimData {
     @Shadow public abstract ServerWorld getServerWorld();
     @Shadow public ServerPlayNetworkHandler networkHandler;
     
@@ -65,7 +66,7 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
     
     @Override
     public ClaimantPlayer getClaim() {
-        return ((PlayerTravel)this.networkHandler).getClaim();
+        return ((PlayerClaimData) this.networkHandler).getClaim();
     }
     
     @Override

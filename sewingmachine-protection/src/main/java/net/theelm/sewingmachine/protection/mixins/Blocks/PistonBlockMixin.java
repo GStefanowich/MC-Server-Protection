@@ -23,9 +23,10 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.mixins.Blocks;
+package net.theelm.sewingmachine.protection.mixins.Blocks;
 
-import net.theelm.sewingmachine.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.PistonBlock;
@@ -37,7 +38,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(PistonBlock.class)
+@Mixin(value = PistonBlock.class, priority = 10000)
 public abstract class PistonBlockMixin {
     @Inject(at = @At("RETURN"), method = "isMovable", cancellable = true)
     private static void isMovable(BlockState blockState, World world, BlockPos blockPos, Direction moveDir, boolean bl, Direction pistonDir, CallbackInfoReturnable<Boolean> callback) {
@@ -62,7 +63,7 @@ public abstract class PistonBlockMixin {
         }
         
         // Check that first chunk owner can modify the next chunk
-        if (!BlockUtils.canBlockModifyBlock(world, movePos, pistonPos, ClaimPermissions.BLOCKS )) {
+        if (!ClaimChunkUtils.canBlockModifyBlock(world, movePos, pistonPos, ClaimPermissions.BLOCKS)) {
             // Send the ghost block update
             if (!pushing)
                 BlockUtils.markDirty(world, movePos);

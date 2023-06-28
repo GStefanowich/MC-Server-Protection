@@ -23,28 +23,22 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.chat.interfaces;
+package net.theelm.sewingmachine.interfaces.variables;
 
-import net.minecraft.entity.LivingEntity;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Created on Dec 20 2021 at 11:26 PM.
+ * Created on Dec 20 2021 at 7:34 PM.
  * By greg in SewingMachineMod
  */
 @FunctionalInterface
-public interface EntityChatFunction extends ChatFunction {
-    Text parseVar(@NotNull ServerCommandSource source, @NotNull LivingEntity entity, @NotNull CasingUtils.Casing casing);
-    @Override
-    default Text parseVar(@NotNull ServerCommandSource source, @NotNull ChatRooms chatRoom, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing) {
-        return this.parseVar(source, (LivingEntity) source.getEntity(), casing);
-    }
-    @Override
+public interface VariableFunction {
+    Text parseVar(@NotNull ServerCommandSource source, @NotNull Object room, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing);
+    
     default boolean canBeParsed(ServerCommandSource source) {
-        return source.getEntity() instanceof LivingEntity;
+        return true;
     }
 }

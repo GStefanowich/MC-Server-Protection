@@ -23,19 +23,27 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.mixins.Interfaces;
+package net.theelm.sewingmachine.interfaces.variables;
 
-import net.minecraft.entity.LightningEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.gen.Accessor;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
+import net.theelm.sewingmachine.utilities.CasingUtils;
+import org.jetbrains.annotations.NotNull;
 
 /**
- * Created on Jun 13 2021 at 10:57 PM.
+ * Created on Dec 20 2021 at 11:26 PM.
  * By greg in SewingMachineMod
  */
-@Mixin(LightningEntity.class)
-public interface LightningAccessor {
-    @Accessor("channeler")
-    ServerPlayerEntity getChanneler();
+@FunctionalInterface
+public interface EntityVariableFunction extends VariableFunction {
+    Text parseVar(@NotNull ServerCommandSource source, @NotNull LivingEntity entity, @NotNull CasingUtils.Casing casing);
+    @Override
+    default Text parseVar(@NotNull ServerCommandSource source, @NotNull Object room, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing) {
+        return this.parseVar(source, (LivingEntity) source.getEntity(), casing);
+    }
+    @Override
+    default boolean canBeParsed(ServerCommandSource source) {
+        return source.getEntity() instanceof LivingEntity;
+    }
 }

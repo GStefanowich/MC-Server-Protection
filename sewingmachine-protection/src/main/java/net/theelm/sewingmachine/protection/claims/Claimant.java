@@ -26,7 +26,7 @@
 package net.theelm.sewingmachine.protection.claims;
 
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;

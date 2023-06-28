@@ -51,17 +51,6 @@ public abstract class PlayerListEntryMixin {
             : FormattingUtils.deepCopy(this.displayName)
         );
         
-        for (PlayerRank rank : RankUtils.getPlayerRanks(this.profile)) {
-            Text display;
-            if ((display = rank.getDisplay()) != null) {
-                // Open bracket
-                displayName.append(Text.literal(" [").formatted(Formatting.WHITE)
-                    .append(display)
-                    .append("]"));
-                break; // Only append one
-            }
-        }
-        
         // Set the return value
         callback.setReturnValue(displayName);
     }

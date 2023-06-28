@@ -64,7 +64,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 
-@Mixin(VillagerEntity.class)
+@Mixin(value = VillagerEntity.class, priority = 10000)
 public abstract class VillagerEntityMixin extends MerchantEntity implements InteractionObserver, VillagerDataContainer, VillagerTownie {
     // TODO: Attempt saving the town UUID as a Memory, not directly as a property
     /*private static final MemoryModuleType<UUID> TOWN;*/

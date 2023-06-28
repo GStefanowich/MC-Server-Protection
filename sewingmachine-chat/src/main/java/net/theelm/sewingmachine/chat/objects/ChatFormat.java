@@ -32,8 +32,8 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
-import net.theelm.sewingmachine.chat.interfaces.ChatFunction;
-import net.theelm.sewingmachine.chat.utilities.ChatVariables;
+import net.theelm.sewingmachine.interfaces.variables.VariableFunction;
+import net.theelm.sewingmachine.utilities.EntityVariables;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
@@ -93,7 +93,7 @@ public final class ChatFormat {
             
             while (matcher.find()) {
                 String key = matcher.group(1);
-                ChatFunction function = ChatVariables.get(key.toLowerCase());
+                VariableFunction function = EntityVariables.get(key.toLowerCase());
                 if (function != null) {
                     if (!function.canBeParsed(source))
                         continue;

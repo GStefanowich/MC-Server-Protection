@@ -64,11 +64,11 @@ public abstract class ShulkerBoxBlockMixin extends BlockWithEntity {
                 if (identifier != null) {
                     BossLootRewards rewards = BossLootRewards.get(identifier);
                     if (rewards == null)
-                        serverPlayer.sendMessage(Text.literal("Couldn't find any loot for that boss.").formatted(Formatting.RED), MessageType.GAME_INFO, CoreMod.SPAWN_ID);
+                        serverPlayer.sendMessage(Text.literal("Couldn't find any loot for that boss.").formatted(Formatting.RED));
                     else {
                         LootInventory inventory = rewards.getPlayerLoot(player.getUuid());
                         if (inventory.isEmpty())
-                            serverPlayer.sendMessage(Text.literal("You don't have any loot from the ").formatted(Formatting.RED).append(rewards.getEntityName()).append("."), MessageType.GAME_INFO, CoreMod.SPAWN_ID);
+                            serverPlayer.sendMessage(Text.literal("You don't have any loot from the ").formatted(Formatting.RED).append(rewards.getEntityName()).append("."));
                         else {
                             player.openHandledScreen(new SimpleNamedScreenHandlerFactory((i, playerInventory, playerEntity) ->
                                 inventory.createContainer(i, playerInventory),

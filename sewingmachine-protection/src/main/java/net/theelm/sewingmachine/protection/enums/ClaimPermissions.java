@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.enums;
+package net.theelm.sewingmachine.protection.enums;
 
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.minecraft.text.Text;

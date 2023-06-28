@@ -40,13 +40,14 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
+import net.theelm.sewingmachine.events.PlayerCanTeleport;
+import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.utilities.ColorUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
-import net.theelm.sewingmachine.utilities.PlayerNameUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.WarpUtils;
@@ -309,7 +310,7 @@ public final class TeleportsCommand extends SewCommand {
         final PlayerManager manager = server.getPlayerManager();
         
         // Check if player is within spawn
-        if (!ChunkUtils.isPlayerWithinSpawn(porter))
+        if (!PlayerCanTeleport.canTeleport(server, porter))
             throw TeleportsCommand.PLAYER_NOT_IN_SPAWN.create(porter);
         
         // If the player to teleport to does not have a warp
@@ -320,7 +321,7 @@ public final class TeleportsCommand extends SewCommand {
         ServerPlayerEntity targetPlayer = manager.getPlayer(target.getId());
         
         // Accept the teleport automatically
-        if ( ChunkUtils.canPlayerWarpTo(server, porter, target.getId()) ) {
+        if ( PlayerCanTeleport.canTeleport(server, porter, target.getId()) ) {
             WarpUtils.teleportEntityAndAttached(porter, warp);
             
             TeleportsCommand.feedback(porter, target, warp);
@@ -400,7 +401,7 @@ public final class TeleportsCommand extends SewCommand {
         if ((( warpTo = CoreMod.PLAYER_WARP_INVITES.get(porter) ) == null) || (!target.getUuid().equals(warpTo.getLeft())) )
             throw TARGET_NOT_REQUESTING.create(target);
         
-        if (!ChunkUtils.isPlayerWithinSpawn(porter)) {
+        if (!PlayerCanTeleport.canTeleport(source.getServer(), porter)) {
             porter.sendMessage(Text.literal("Your warp could not be completed, you must be within spawn to warp.").formatted(Formatting.RED));
             throw TARGET_NOT_IN_SPAWN.create(target);
         }
@@ -481,7 +482,7 @@ public final class TeleportsCommand extends SewCommand {
             .append(" was teleported to ");
         
         if (porter.getUuid().equals(target.getId())) feedback.append("their");
-        else feedback.append(PlayerNameUtils.fetchPlayerNick(porter.getServer(), target.getId())).append("'s");
+        else feedback.append(PlayerNameCallback.getName(porter.getServer(), target.getId())).append("'s");
         
         feedback.append(" '")
             .append(location == null ? WarpUtils.PRIMARY_DEFAULT_HOME : location.name)

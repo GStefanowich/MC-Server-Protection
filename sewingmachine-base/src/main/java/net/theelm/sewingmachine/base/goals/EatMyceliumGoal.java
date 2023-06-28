@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.goals;
+package net.theelm.sewingmachine.base.goals;
 
 import net.minecraft.block.Block;
 import net.minecraft.block.Blocks;

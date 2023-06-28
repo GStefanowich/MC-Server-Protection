@@ -27,27 +27,37 @@ package net.theelm.sewingmachine.events;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.world.ServerWorld;
+import net.theelm.sewingmachine.protections.BlockRange;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-/**
- * Called when a Claim has been updated and players inside the Claim should be notified
- */
+import java.util.UUID;
+
 @FunctionalInterface
-public interface ClaimUpdateCallback {
-    Event<ClaimUpdateCallback> EVENT = EventFactory.createArrayBacked(ClaimUpdateCallback.class, (listeners) -> (player, refresh) -> {
-        for (ClaimUpdateCallback callback : listeners)
-            callback.update(player, refresh);
-    });
+public interface RegionManageCallback {
+    Event<RegionManageCallback> HANDLER = EventFactory.createArrayBacked(
+        RegionManageCallback.class,
+        (world, player, region, claimed) -> true,
+        (listeners) -> (world, player, region, claimed) -> {
+            for (RegionManageCallback callback : listeners) {
+                boolean result = callback.tryUpdate(world, player, region, claimed);
+                if (result)
+                    return true;
+            }
+            
+            return false;
+        }
+    );
     
-    /**
-     * Notifies members of a Claim that something has been updated
-     * @param owner The player that owns the Claim
-     * @param refresh Refresh the information about the Claim
-     */
-    void update(@NotNull PlayerEntity owner, boolean refresh);
+    boolean tryUpdate(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockRange region, boolean claimed);
     
-    default void update(@NotNull PlayerEntity owner) {
-        this.update(owner, false);
+    static boolean tryClaim(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockRange region) {
+        return RegionManageCallback.HANDLER.invoker()
+            .tryUpdate(world, player, region, true);
+    }
+    static boolean tryUnclaim(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockRange region) {
+        return RegionManageCallback.HANDLER.invoker()
+            .tryUpdate(world, player, region, false);
     }
 }

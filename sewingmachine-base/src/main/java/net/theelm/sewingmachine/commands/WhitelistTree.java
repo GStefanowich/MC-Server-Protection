@@ -25,8 +25,8 @@
 
 package net.theelm.sewingmachine.commands;
 
+import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
-import net.theelm.sewingmachine.utilities.PlayerNameUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
@@ -68,7 +68,7 @@ public final class WhitelistTree implements Comparable<WhitelistTree> {
         return this.getName(server, false);
     }
     public @NotNull Text getName(@NotNull MinecraftServer server, boolean pretty) {
-        Text name = pretty ? PlayerNameUtils.fetchPlayerNick(server, this.getUUID()) : this.getName();
+        Text name = pretty ? PlayerNameCallback.getName(server, this.getUUID()) : this.getName();
         if (name instanceof MutableText mutable && name.getStyle().isEmpty())
             return mutable.formatted(Formatting.GOLD);
         return name;

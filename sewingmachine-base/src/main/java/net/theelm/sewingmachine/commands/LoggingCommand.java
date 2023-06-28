@@ -38,11 +38,11 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.interfaces.SQLFunction;
 import net.theelm.sewingmachine.protections.logging.EventLogger.BlockAction;
 import net.theelm.sewingmachine.utilities.CommandUtils;
-import net.theelm.sewingmachine.utilities.PlayerNameUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.argument.BlockPosArgumentType;
@@ -61,6 +61,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.ResultSet;
@@ -153,7 +154,7 @@ public final class LoggingCommand extends SewCommand {
                 return Text.literal("\n" + results.getRow() + ". ")
                     .append(Text.literal( add ? "+ " : "- " ).append(Text.translatable(blockTranslation)).formatted( add ? Formatting.GREEN: Formatting.RED ))
                     .append(" by ")
-                    .append(PlayerNameUtils.fetchPlayerName(source.getServer(), updatedBy).formatted(Formatting.AQUA)
+                    .append(TextUtils.mutable(PlayerNameCallback.getName(source.getServer(), updatedBy)).formatted(Formatting.AQUA)
                         .styled(MessageUtils.simpleHoverText(updatedBy.toString())))
                     .append("\n     at ")
                     .append(Text.literal(results.getTimestamp("updatedAt").toString()).formatted(Formatting.GRAY));

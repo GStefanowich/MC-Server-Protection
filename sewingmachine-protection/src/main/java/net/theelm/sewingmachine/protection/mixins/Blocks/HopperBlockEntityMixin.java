@@ -23,10 +23,10 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.mixins.Blocks;
+package net.theelm.sewingmachine.protection.mixins.Blocks;
 
-import net.theelm.sewingmachine.enums.ClaimPermissions;
-import net.theelm.sewingmachine.utilities.BlockUtils;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntityType;
 import net.minecraft.block.entity.Hopper;
@@ -41,7 +41,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(HopperBlockEntity.class)
+@Mixin(value = HopperBlockEntity.class, priority = 10000)
 public abstract class HopperBlockEntityMixin extends LootableContainerBlockEntity implements Hopper {
     
     protected HopperBlockEntityMixin(BlockEntityType<?> blockEntityType, BlockPos blockPos, BlockState blockState) {
@@ -51,7 +51,7 @@ public abstract class HopperBlockEntityMixin extends LootableContainerBlockEntit
     @Inject(at = @At("HEAD"), method = "extract", cancellable = true)
     private static void onExtract(World world, Hopper hopper, CallbackInfoReturnable<Boolean> callback) {
         BlockPos pos = BlockPos.ofFloored(hopper.getHopperX(), hopper.getHopperY(), hopper.getHopperZ());
-        if ((world != null) && (!BlockUtils.canBlockModifyBlock(world, pos.up(), pos, ClaimPermissions.STORAGE)))
+        if ((world != null) && (!ClaimChunkUtils.canBlockModifyBlock(world, pos.up(), pos, ClaimPermissions.STORAGE)))
             callback.setReturnValue(false);
     }
     
@@ -59,7 +59,7 @@ public abstract class HopperBlockEntityMixin extends LootableContainerBlockEntit
     private static void onGetOutput(World world, BlockPos pos, BlockState state, CallbackInfoReturnable<Inventory> callback) {
         if (world != null) {
             Direction direction = state.get(net.minecraft.block.HopperBlock.FACING);
-            if (!BlockUtils.canBlockModifyBlock(world, pos.offset(direction), pos, ClaimPermissions.STORAGE))
+            if (!ClaimChunkUtils.canBlockModifyBlock(world, pos.offset(direction), pos, ClaimPermissions.STORAGE))
                 callback.setReturnValue(null);
         }
     }

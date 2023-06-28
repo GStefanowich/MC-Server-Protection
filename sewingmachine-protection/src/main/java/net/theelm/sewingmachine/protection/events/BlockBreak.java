@@ -30,7 +30,7 @@ import net.minecraft.entity.mob.EndermanEntity;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
 import net.theelm.sewingmachine.interfaces.ConstructableEntity;

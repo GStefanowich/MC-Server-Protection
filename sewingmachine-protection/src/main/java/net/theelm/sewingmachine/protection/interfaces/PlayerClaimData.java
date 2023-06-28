@@ -23,22 +23,17 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.chat.interfaces;
+package net.theelm.sewingmachine.protection.interfaces;
 
-import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.theelm.sewingmachine.chat.enums.ChatRooms;
-import net.theelm.sewingmachine.utilities.CasingUtils;
-import org.jetbrains.annotations.NotNull;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 
 /**
- * Created on Dec 20 2021 at 7:34 PM.
- * By greg in SewingMachineMod
+ * Created on Jun 27 2023 at 10:43 PM.
+ * By greg in sewingmachine
  */
-@FunctionalInterface
-public interface ChatFunction {
-    Text parseVar(@NotNull ServerCommandSource source, @NotNull ChatRooms room, @NotNull Text chatMessage, @NotNull CasingUtils.Casing casing);
-    default boolean canBeParsed(ServerCommandSource source) {
-        return true;
-    }
+public interface PlayerClaimData {
+    /**
+     * @return Get the Players claim information
+     */
+    ClaimantPlayer getClaim();
 }

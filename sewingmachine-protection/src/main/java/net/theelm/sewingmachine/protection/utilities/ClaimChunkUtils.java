@@ -40,7 +40,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.interfaces.Claim;
@@ -66,6 +66,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -81,18 +82,15 @@ public final class ClaimChunkUtils {
         // If claims are disabled
         if (player != null && player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS))
             return true;
-
+        
         // Check if player can do action in chunk
         return ClaimChunkUtils.canPlayerDoInChunk(perm, EntityUtils.getUUID(player), chunk, blockPos);
     }
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable UUID playerId, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
-        if (!SewConfig.get(SewCoreConfig.DO_CLAIMS))
-            return true;
-
         // Return false (Chunks should never BE null, but this is our catch)
         if ( chunk == null )
             return false;
-
+        
         // Check if player can do action in chunk
         return ((IClaimedChunk) chunk).canPlayerDo(blockPos, playerId, perm);
     }
@@ -217,10 +215,10 @@ public final class ClaimChunkUtils {
      * @param target The destination to teleport to
      * @return If the player is a high enough rank to teleport to the target
      */
-    public static boolean canPlayerWarpTo(@NotNull MinecraftServer server, @NotNull PlayerEntity player, @NotNull UUID target) {
+    public static boolean canPlayerWarpTo(@NotNull PlayerEntity player, @NotNull UUID target) {
         if ((!SewConfig.get(SewCoreConfig.DO_CLAIMS)) || (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator())))
             return SewConfig.get(SewCoreConfig.COMMAND_WARP_TPA);
-        return ClaimChunkUtils.canPlayerWarpTo(server, player.getUuid(), target);
+        return ClaimChunkUtils.canPlayerWarpTo(Objects.requireNonNull(player.getServer()), player.getUuid(), target);
     }
     
     /**
@@ -239,6 +237,23 @@ public final class ClaimChunkUtils {
         
         // Return the test if the user can perform the action
         return permReq.canPerform(userRank);
+    }
+    
+    /**
+     * Simple check of permissions based on the owners of two positions
+     * @param world The world to test the permissions in
+     * @param protectedPos The position that is being interacted with ()
+     * @param sourcePos The position doing the interacting (A piston, player, etc)
+     * @param permission The permission to test
+     * @return Whether sourcePos is allowed to do something to protectedPos
+     */
+    public static boolean canBlockModifyBlock(@NotNull World world, @NotNull BlockPos protectedPos, @NotNull BlockPos sourcePos, @Nullable ClaimPermissions permission) {
+        // Get chunks
+        WorldChunk protectedChunk = world.getWorldChunk(protectedPos);
+        WorldChunk sourceChunk = world.getWorldChunk(sourcePos);
+        
+        // Check that first chunk owner can modify the next chunk
+        return ((IClaimedChunk) protectedChunk).canPlayerDo(protectedPos, ((IClaimedChunk) sourceChunk).getOwnerId(sourcePos), permission);
     }
     
     public static boolean isSetting(@NotNull ClaimSettings setting, @NotNull WorldView world, @NotNull BlockPos blockPos) {
@@ -312,7 +327,7 @@ public final class ClaimChunkUtils {
         
         return true;
     }
-
+    
     /*
      * Get data about where the player is
      */
@@ -324,7 +339,7 @@ public final class ClaimChunkUtils {
     public static boolean isPlayerWithinSpawn(@NotNull final ServerPlayerEntity player) {
         // If player is in creative/spectator, or is within Spawn
         return (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
-            || CoreMod.SPAWN_ID.equals(ClaimChunkUtils.getPlayerLocation( player ));
+            || CoreMod.SPAWN_ID.equals(ClaimChunkUtils.getPlayerLocation(player));
     }
     
     public static MutableText getPlayerWorldWilderness(@NotNull final PlayerEntity player) {
@@ -339,38 +354,6 @@ public final class ClaimChunkUtils {
         return Optional.ofNullable(((IClaimedChunk)world.getChunk( pos )).getOwnerId(pos));
     }
     
-    /*public static boolean lightChunk(WorldChunk chunk) {
-        ChunkPos pos = chunk.getPos();
-        
-        // For X
-        for (int x = 0; x < 16; x++) {
-            int xPos = x + pos.getStartX();
-            
-            // For Z
-            for (int z = 0; z < 16; z++) {
-                int zPos = z + pos.getStartZ();
-                
-                // For Y
-                for (int y = chunk.getHeight(); y > 0; y--) {
-                    BlockPos lightPos = new BlockPos(xPos, y, zPos);
-                    BlockState state = chunk.getBlockState(lightPos);
-                    Block block = state.getBlock();
-                    
-                    // Only if is an AIR Block
-                    if (!(block instanceof AirBlock))
-                        continue;
-                    
-                    // TODO: Update the light level
-                    *//*int lvl = lighting.get(LightType.BLOCK).getLightLevel(lightPos);
-                    if (lvl > 0)
-                        System.out.println(MessageUtils.blockPosToString(lightPos) + ": " + lvl);*//*
-                }
-            }
-        }
-        
-        return true;
-    }*/
-
     /*
      * Chunk claim classes
      */

@@ -23,11 +23,8 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.mixins.Entities;
+package net.theelm.sewingmachine.protection.mixins.Entities;
 
-import net.theelm.sewingmachine.enums.ClaimPermissions;
-import net.theelm.sewingmachine.enums.ClaimSettings;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -36,6 +33,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldView;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.enums.ClaimSettings;
+import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -47,7 +47,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * Created on Aug 16 2021 at 12:30 AM.
  * By greg in SewingMachineMod
  */
-@Mixin(LightningEntity.class)
+@Mixin(value = LightningEntity.class, priority = 10000)
 public abstract class LightningEntityMixin extends Entity {
     @Nullable @Shadow
     private ServerPlayerEntity channeler;

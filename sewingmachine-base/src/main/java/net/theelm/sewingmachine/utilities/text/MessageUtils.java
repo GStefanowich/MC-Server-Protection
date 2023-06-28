@@ -32,10 +32,7 @@ import net.minecraft.registry.RegistryKeys;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.enums.ChatRooms;
 import net.theelm.sewingmachine.interfaces.PlayerData;
-import net.theelm.sewingmachine.protections.claiming.ClaimantPlayer;
-import net.theelm.sewingmachine.protections.claiming.ClaimantTown;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
@@ -178,35 +175,6 @@ public final class MessageUtils {
         );
     }
     
-    // Send a translation blob to a Town
-    public static void sendToTown(@NotNull final ClaimantTown town, @NotNull Collection<ServerPlayerEntity> tags, @NotNull final String translationKey, final Object... objects) {
-        final MinecraftServer server = ServerCore.get();
-        MessageUtils.sendSystem(
-            server.getPlayerManager().getPlayerList().stream().filter((player) -> {
-                ClaimantPlayer claimant = ((PlayerData) player).getClaim();
-                return (claimant != null) && (claimant.getTown() != null) && town.getId().equals(claimant.getTown().getId());
-            }),
-            translationKey,
-            objects
-        );
-    }
-    public static boolean sendToTown(@NotNull final ClaimantTown town, @NotNull Collection<ServerPlayerEntity> tags, @NotNull final Text text) {
-        final MinecraftServer server = ServerCore.get();
-        
-        // Log to the server
-        server.sendMessage(text);
-        
-        // Send to the players
-        MessageUtils.sendChat(
-            server.getPlayerManager().getPlayerList().stream().filter((player) -> {
-                ClaimantPlayer claimant = ((PlayerData) player).getClaim();
-                return (claimant != null) && (claimant.getTown() != null) && town.getId().equals(claimant.getTown().getId());
-            }),
-            text
-        );
-        return false;
-    }
-    
     // Send a translation blob to OPs
     public static void sendToOps(final String translationKey, final Object... objects) {
         MessageUtils.sendToOps( 1, translationKey, objects );
@@ -241,12 +209,12 @@ public final class MessageUtils {
     }
     
     // Send a translation blob to a stream of players
-    private static void sendSystem(@NotNull final Stream<ServerPlayerEntity> players, final String translationKey, final Object... objects) {
+    public static void sendSystem(@NotNull final Stream<ServerPlayerEntity> players, final String translationKey, final Object... objects) {
         players.forEach((player) -> player.sendMessage(
             TranslatableServerSide.text(player, translationKey, objects).formatted(Formatting.YELLOW)
         ));
     }
-    private static void sendChat(@NotNull final Stream<ServerPlayerEntity> players, final Text text) {
+    public static void sendChat(@NotNull final Stream<ServerPlayerEntity> players, final Text text) {
         players.forEach((player) -> player.sendMessage(text));
     }
     

@@ -41,7 +41,6 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
-import net.theelm.sewingmachine.interfaces.PlayerChat;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;

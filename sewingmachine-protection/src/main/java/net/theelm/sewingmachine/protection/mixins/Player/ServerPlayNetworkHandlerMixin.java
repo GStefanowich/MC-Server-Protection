@@ -26,6 +26,7 @@
 package net.theelm.sewingmachine.protection.mixins.Player;
 
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.c2s.play.PlayerMoveC2SPacket;
 import net.minecraft.network.packet.c2s.play.VehicleMoveC2SPacket;
 import net.minecraft.server.MinecraftServer;
@@ -42,7 +43,9 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
+import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.protection.interfaces.PlayerMovement;
@@ -64,7 +67,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.UUID;
 
 @Mixin(ServerPlayNetworkHandler.class)
-public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement {
+public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement, PlayerClaimData {
     @Shadow @Final private MinecraftServer server;
     @Shadow public ServerPlayerEntity player;
     
@@ -115,7 +118,7 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement {
             }
         }*/
     }
-
+    
     @Override
     public void showPlayerNewLocation(@NotNull final PlayerEntity player, @Nullable final Chunk local) {
         BlockPos playerPos = player.getBlockPos();
@@ -128,24 +131,24 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement {
                         .append(TranslatableServerSide.text(player, "claim.chunk.pvp"))
                         .append("]")
                 );
-
+            
             // If the player is in the wilderness
             //CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, null);
             ((PlayerTravel)player).updateLocation();
             TitleUtils.showPlayerAlert(player, Formatting.GREEN, popupText);
-
+            
         } else {
             //CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, locationOwner);
             PlayerVisitor visitor = ((PlayerTravel) player).updateLocation(locationOwner);
             IClaimedChunk claimedChunk = (IClaimedChunk) local;
             MutableText popupText = Text.literal("Entering ")
                 .formatted(Formatting.WHITE);
-
+            
             ClaimantPlayer owner = ((ClaimsAccessor)this.server).getClaimManager()
                 .getPlayerClaim(locationOwner);
-
+            
             owner.addVisitor(visitor);
-
+            
             try {
                 // If player is in spawn protection
                 if (locationOwner.equals(CoreMod.SPAWN_ID)) {
@@ -200,5 +203,23 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement {
                 }
             }
         }
+    }
+    
+    /*
+     * Claims
+     */
+    private ClaimantPlayer playerClaimData = null;
+    
+    @Override
+    public ClaimantPlayer getClaim() {
+        return this.playerClaimData;
+    }
+    
+    // On connect
+    @Inject(at = @At("RETURN"), method = "<init>")
+    public void onPlayerConnect(MinecraftServer server, ClientConnection client, ServerPlayerEntity player, CallbackInfo callback) {
+        // Initialize user claims from database
+        this.playerClaimData = ((ClaimsAccessor)this.server).getClaimManager()
+            .getPlayerClaim(player);
     }
 }

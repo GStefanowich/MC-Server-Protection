@@ -25,8 +25,8 @@
 
 package net.theelm.sewingmachine.base.mixins.Player.Interaction;
 
-import net.minecraft.entity.damage.DamageSources;
-import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
+import net.minecraft.server.world.ServerWorld;
+import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.minecraft.block.BarrelBlock;
 import net.minecraft.block.Block;
@@ -61,18 +61,6 @@ public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
         super(entityType, world);
     }
     
-    @Override
-    public boolean handleAttack(Entity entity) {
-        if (entity instanceof PlayerEntity player) {
-            DamageSources damageSources = this.getDamageSources();
-            ActionResult result = DamageEntityCallback.EVENT.invoker()
-                .interact(this, this.getEntityWorld(), damageSources.playerAttack(player));
-            if (result != ActionResult.PASS)
-                return result == ActionResult.FAIL;
-        }
-        return super.handleAttack(entity);
-    }
-    
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     public void onPlayerInteract(@NotNull final PlayerEntity player, @NotNull final Hand hand, final @NotNull CallbackInfoReturnable<ActionResult> callback) {
         ItemFrameEntity itemFrame = (ItemFrameEntity)(AbstractDecorationEntity) this;
@@ -98,7 +86,7 @@ public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
                     return;
                 }
                 
-                Inventory chestInventory = InventoryUtils.getInventoryOf(this.world, containerPos);
+                Inventory chestInventory = InventoryUtils.getInventoryOf(this.getWorld(), containerPos);
                 if ((chestInventory != null) && (!itemStack.getItem().equals(Items.AIR))) {
                     // The amount the player wants to take
                     int putStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
@@ -109,8 +97,11 @@ public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
             }
         }
         
+        boolean canBreak = BlockBreakCallback.EVENT.invoker()
+            .canDestroy(player, (ServerWorld) this.getWorld(), Hand.MAIN_HAND, this.getBlockPos(), null, null);
+        
         // If player should be able to interact with the item frame
-        if (!ChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos()))
+        if (!canBreak)
             callback.setReturnValue(ActionResult.SUCCESS);
     }
     
@@ -120,8 +111,11 @@ public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
         if (!(attacker instanceof PlayerEntity player))
             return;
         
+        boolean canBreak = BlockBreakCallback.EVENT.invoker()
+            .canDestroy(player, (ServerWorld) this.getWorld(), Hand.MAIN_HAND, this.getBlockPos(), null, null);
+        
         // If player should be able to interact with the item frame
-        if (!ChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos()))
+        if (!canBreak)
             callback.setReturnValue(false);
     }
     

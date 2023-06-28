@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.protection.interfaces;
 
-import net.theelm.sewingmachine.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import org.jetbrains.annotations.NotNull;

@@ -27,8 +27,12 @@ package net.theelm.sewingmachine.protection;
 
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.events.ClaimUpdateCallback;
+import net.theelm.sewingmachine.events.MessageDeployer;
+import net.theelm.sewingmachine.events.RegionManageCallback;
+import net.theelm.sewingmachine.events.RegionUpdateCallback;
+import net.theelm.sewingmachine.events.PlayerCanTeleport;
 import net.theelm.sewingmachine.events.RegionNameCallback;
 import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
 import net.theelm.sewingmachine.interfaces.BlockInteractionCallback;
@@ -36,17 +40,23 @@ import net.theelm.sewingmachine.interfaces.BlockPlaceCallback;
 import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
 import net.theelm.sewingmachine.interfaces.ItemUseCallback;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
+import net.theelm.sewingmachine.interfaces.variables.EntityVariableFunction;
+import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.protection.events.BlockBreak;
 import net.theelm.sewingmachine.protection.events.BlockInteraction;
 import net.theelm.sewingmachine.protection.events.EntityAttack;
 import net.theelm.sewingmachine.protection.events.ItemPlace;
 import net.theelm.sewingmachine.protection.events.ItemUse;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.interfaces.PlayerMovement;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.MessageClaimUtils;
+import net.theelm.sewingmachine.utilities.EntityVariables;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 
 import java.util.UUID;
 
@@ -64,9 +74,10 @@ public class ServerCore implements DedicatedServerModInitializer, SewPlugin {
         ItemPlace.register(BlockPlaceCallback.EVENT);
         ItemUse.register(ItemUseCallback.EVENT);
         
-        ClaimUpdateCallback.EVENT.register((owner, refresh) -> {
+        // Create a callback for when details about who owns an area is updated
+        RegionUpdateCallback.EVENT.register((owner, refresh) -> {
             // Update the name in the claim cache
-            ClaimantPlayer claim = ((PlayerTravel) owner).getClaim();
+            ClaimantPlayer claim = ((PlayerClaimData) owner).getClaim();
             
             // Update claim details
             if (refresh) {
@@ -79,8 +90,31 @@ public class ServerCore implements DedicatedServerModInitializer, SewPlugin {
                 movement.showPlayerNewLocation(player, player.getWorld().getWorldChunk(player.getBlockPos()));
             });
         });
+        
+        // Create a handler for claiming regions
+        RegionManageCallback.HANDLER.register((world, player, region, claimed) -> {
+            if (claimed) {
+                if (!ClaimChunkUtils.canPlayerClaimSlices(world, region))
+                    return false;
+                
+                ClaimChunkUtils.claimSlices(world, player, region);
+                return true;
+            }
+            
+            ClaimChunkUtils.unclaimSlices(world, region);
+            return true;
+        });
+        
+        // Create a callback for getting a players whereabouts
         RegionNameCallback.EVENT.register((world, pos, entity, nameOnly, strict) -> {
             IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(pos);
+            
+            // If the chunk is a Town, return the Town
+            ClaimantTown town = chunk.getTown();
+            if (town != null)
+                return town.getName();
+            
+            // If the position is unowned, return Wilderness
             UUID owner = chunk.getOwnerId(pos);
             if (owner == null) {
                 if (strict && entity instanceof PlayerEntity player)
@@ -98,6 +132,30 @@ public class ServerCore implements DedicatedServerModInitializer, SewPlugin {
             return Text.literal("")
                 .append(name)
                 .append("'s claimed area");
+        });
+        
+        // Allow teleporting to warps and other locations if the player is within Spawn
+        PlayerCanTeleport.TEST.register((server, player, uuid) -> ClaimChunkUtils.isPlayerWithinSpawn((ServerPlayerEntity) player));
+        
+        // Get town name
+        EntityVariables.add("town", (EntityVariableFunction)(source, entity, casing) -> {
+            ClaimantTown town = null;
+            if (entity instanceof ServerPlayerEntity player) {
+                ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
+                if (claim != null)
+                    town = claim.getTown();
+            }
+            return town == null ? TextUtils.literal() : town.getName();
+        });
+        
+        MessageDeployer.EVENT.register((room, player, tags, message) -> {
+            // Message to the players town
+            if (room instanceof Enum<?> e && "TOWN".equals(e.name())) {
+                ClaimantPlayer claimantPlayer = ((PlayerClaimData) player).getClaim();
+                return MessageClaimUtils.sendToTown(claimantPlayer.getTown(), tags, message);
+            }
+            
+            return false;
         });
     }
 }

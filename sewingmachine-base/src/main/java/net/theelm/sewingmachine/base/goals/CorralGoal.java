@@ -1,4 +1,4 @@
-package net.theelm.sewingmachine.goals;
+package net.theelm.sewingmachine.base.goals;
 
 import net.minecraft.entity.ai.goal.Goal;
 

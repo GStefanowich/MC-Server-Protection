@@ -35,7 +35,10 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.Difficulty;
 import net.minecraft.world.SaveProperties;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.interfaces.variables.ServerVariableFunction;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -163,5 +166,15 @@ public class ServerVariables {
     
     public static @NotNull Set<Map.Entry<String, MotdFunction>> entrySet() {
         return ServerVariables.VARIABLES.entrySet();
+    }
+    public static @Nullable MotdFunction get(@NotNull String key) {
+        return ServerVariables.VARIABLES.get(key);
+    }
+    public static void add(@NotNull String key, @NotNull MotdFunction function) {
+        // Add the new Server Variable
+        ServerVariables.VARIABLES.put(key, function);
+        
+        // Copy Non-Entity variable to Entity variable
+        EntityVariables.add(key, (ServerVariableFunction)(server, casing) -> TextUtils.literal(function.parseVar(server), casing));
     }
 }

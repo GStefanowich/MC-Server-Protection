@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.World;
 
-import net.theelm.sewingmachine.objects.SawDamage;
+import net.theelm.sewingmachine.base.interfaces.CustomDamageSources;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.StonecutterBlock;
@@ -44,7 +44,8 @@ public abstract class StonecutterBlockMixin extends Block {
     @Override
     public void onEntityCollision(BlockState blockState, World world, BlockPos blockPos, Entity entity) {
         if (entity instanceof LivingEntity) {
-            entity.damage(SawDamage.SAW_BLADE, 1.0F);
+            CustomDamageSources sources = (CustomDamageSources) world.getDamageSources();
+            entity.damage(sources.stonecutter(), 1.0F);
         }
         
         super.onEntityCollision(blockState, world, blockPos, entity);

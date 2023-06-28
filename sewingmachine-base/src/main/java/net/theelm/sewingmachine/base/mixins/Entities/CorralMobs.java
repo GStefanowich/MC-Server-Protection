@@ -26,7 +26,7 @@
 package net.theelm.sewingmachine.base.mixins.Entities;
 
 import net.minecraft.entity.passive.AbstractHorseEntity;
-import net.theelm.sewingmachine.goals.AvoidRainGoal;
+import net.theelm.sewingmachine.base.goals.AvoidRainGoal;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.CatEntity;
@@ -53,7 +53,7 @@ public abstract class CorralMobs extends PassiveEntity {
     
     @Inject(at = @At("TAIL"), method = "initGoals")
     public void createGoals(CallbackInfo callback) {
-        this.goalSelector.add((((PassiveEntity)this) instanceof WolfEntity ? 8 : 0 ), new AvoidRainGoal( this ));
+        this.goalSelector.add((((PassiveEntity)this) instanceof WolfEntity ? 8 : 0 ), new AvoidRainGoal(this));
         //this.goalSelector.add( #, new CorralGoal( this ));
     }
     

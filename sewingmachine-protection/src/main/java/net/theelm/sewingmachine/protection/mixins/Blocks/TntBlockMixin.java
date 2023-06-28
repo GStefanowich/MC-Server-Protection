@@ -23,10 +23,11 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.mixins.Blocks;
+package net.theelm.sewingmachine.protection.mixins.Blocks;
 
-import net.theelm.sewingmachine.enums.ClaimPermissions;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.utilities.ChunkUtils;
 import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
@@ -48,7 +49,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * Created on Aug 29 2021 at 2:30 PM.
  * By greg in SewingMachineMod
  */
-@Mixin(TntBlock.class)
+@Mixin(value = TntBlock.class, priority = 10000)
 public abstract class TntBlockMixin extends Block {
     public TntBlockMixin(AbstractBlock.Settings settings) {
         super(settings);
@@ -60,7 +61,7 @@ public abstract class TntBlockMixin extends Block {
         if (burning) {
             WorldChunk chunk = world.getWorldChunk(hit.getBlockPos());
             if (((IClaimedChunk)chunk).getOwnerId() != null) {
-                boolean allow = instance.getOwner() instanceof ServerPlayerEntity && ChunkUtils.canPlayerDoInChunk(
+                boolean allow = instance.getOwner() instanceof ServerPlayerEntity && ClaimChunkUtils.canPlayerDoInChunk(
                     ClaimPermissions.BLOCKS,
                     (ServerPlayerEntity)instance.getOwner(),
                     chunk,

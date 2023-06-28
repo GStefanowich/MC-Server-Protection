@@ -31,10 +31,10 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.interfaces.MotdFunction;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
-import net.theelm.sewingmachine.utilities.PlayerNameUtils;
 import net.theelm.sewingmachine.utilities.ServerVariables;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import net.minecraft.server.MinecraftServer;
@@ -143,7 +143,7 @@ public abstract class MinecraftServerMixin {
         
         for (int i = 0; i < profiles.size(); i++) {
             GameProfile profile = profiles.get(i);
-            String name = PlayerNameUtils.fetchPlayerNick((MinecraftServer)(Object) this, profile.getId())
+            String name = PlayerNameCallback.getName((MinecraftServer)(Object) this, profile.getId())
                 .getString();
             
             // If the player has any rank

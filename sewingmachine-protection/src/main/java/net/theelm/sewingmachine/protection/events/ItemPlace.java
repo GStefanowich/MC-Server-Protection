@@ -28,6 +28,7 @@ package net.theelm.sewingmachine.protection.events;
 import net.fabricmc.fabric.api.event.Event;
 import net.theelm.sewingmachine.interfaces.BlockPlaceCallback;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ItemUseUtils;
 import net.theelm.sewingmachine.utilities.ItemUtils;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -49,7 +50,7 @@ public final class ItemPlace {
     }
     
     private static @NotNull ActionResult blockPlace(final ServerPlayerEntity player, final World world, final BlockPos blockPos, final Direction direction, final ItemStack stack) {
-        if (!ClaimChunkUtils.canPlayerDoInChunk(ItemUtils.getPermission(stack), player, blockPos.offset( direction ) ))
+        if (!ClaimChunkUtils.canPlayerDoInChunk(ItemUseUtils.getPermission(stack), player, blockPos.offset( direction ) ))
             return ActionResult.FAIL;
         return ActionResult.PASS;
     }

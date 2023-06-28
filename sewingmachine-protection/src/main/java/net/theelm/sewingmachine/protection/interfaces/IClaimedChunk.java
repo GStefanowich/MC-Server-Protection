@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.protection.interfaces;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.exceptions.TranslationKeyException;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;

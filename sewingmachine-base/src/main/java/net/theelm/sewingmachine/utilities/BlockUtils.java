@@ -27,8 +27,6 @@ package net.theelm.sewingmachine.utilities;
 
 import com.mojang.datafixers.util.Either;
 import net.minecraft.registry.tag.BlockTags;
-import net.theelm.sewingmachine.enums.ClaimPermissions;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -51,7 +49,6 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.RaycastContext;
 import net.minecraft.world.World;
-import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -147,23 +144,6 @@ public final class BlockUtils {
                 world.setBlockState(pos, state.with(CampfireBlock.LIT, false));
             }
         });
-    }
-    
-    /**
-     * Simple check of permissions based on the owners of two positions
-     * @param world The world to test the permissions in
-     * @param protectedPos The position that is being interacted with ()
-     * @param sourcePos The position doing the interacting (A piston, player, etc)
-     * @param permission The permission to test
-     * @return Whether sourcePos is allowed to do something to protectedPos
-     */
-    public static boolean canBlockModifyBlock(@NotNull World world, @NotNull BlockPos protectedPos, @NotNull BlockPos sourcePos, @Nullable ClaimPermissions permission) {
-        // Get chunks
-        WorldChunk protectedChunk = world.getWorldChunk(protectedPos);
-        WorldChunk sourceChunk = world.getWorldChunk(sourcePos);
-        
-        // Check that first chunk owner can modify the next chunk
-        return ((IClaimedChunk) protectedChunk).canPlayerDo(protectedPos, ((IClaimedChunk) sourceChunk).getOwnerId(sourcePos), permission);
     }
     
     /**

@@ -27,7 +27,7 @@ package net.theelm.sewingmachine.base.mixins.Entities;
 
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.goals.EatMyceliumGoal;
+import net.theelm.sewingmachine.base.goals.EatMyceliumGoal;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.AnimalEntity;
 import net.minecraft.entity.passive.CowEntity;

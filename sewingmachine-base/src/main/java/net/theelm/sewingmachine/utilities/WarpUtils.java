@@ -36,13 +36,14 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.PlayerCanTeleport;
+import net.theelm.sewingmachine.events.RegionManageCallback;
+import net.theelm.sewingmachine.events.RegionNameCallback;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
-import net.theelm.sewingmachine.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.interfaces.LogicalWorld;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.objects.MaskSet;
 import net.theelm.sewingmachine.protections.BlockRange;
-import net.theelm.sewingmachine.protections.claiming.ClaimantTown;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
@@ -237,12 +238,9 @@ public final class WarpUtils {
         return this.claimAndBuild(runnable, false);
     }
     public boolean claimAndBuild(@NotNull final Runnable runnable, final boolean dropBlocks) {
-        // Get the area of blocks to claim
-        if (!ChunkUtils.canPlayerClaimSlices(this.world, this.region))
+        // Get the area of blocks to claim and claim it
+        if (!RegionManageCallback.tryClaim(this.world, CoreMod.SPAWN_ID, this.region))
             return false;
-        
-        // Claim the defined slices in the name of Spawn
-        ChunkUtils.claimSlices(this.world, CoreMod.SPAWN_ID, this.region);
         
         return this.build(runnable, dropBlocks);
     }
@@ -554,11 +552,10 @@ public final class WarpUtils {
             MinecraftServer server = entity.getServer();
             if (server != null) {
                 ServerWorld world = server.getWorld(warp.world);
-                if (world != null) {
-                    ClaimantTown town = ((IClaimedChunk)world.getChunk(warp.warpPos)).getTown();
-                    if (town != null)
-                        townName = town.getName();
-                }
+                
+                if (world != null)
+                    townName = RegionNameCallback.EVENT.invoker()
+                        .getName(world, warp.warpPos, null, true, false);
             }
             
             TitleUtils.showPlayerTitle(player, townName, Text.literal(warp.name).formatted(Formatting.AQUA));
@@ -739,7 +736,7 @@ public final class WarpUtils {
     private static CompletableFuture<Suggestions> buildSuggestions(@NotNull MinecraftServer server, @NotNull UUID warpOwner, @Nullable UUID untrusted, @NotNull Map<String, Warp> warps, @NotNull SuggestionsBuilder builder) {
         String remainder = builder.getRemaining().toLowerCase(Locale.ROOT);
         
-        boolean canViewCoordinates = untrusted != null && (warpOwner.equals(untrusted) || ChunkUtils.canPlayerWarpTo(server, untrusted, warpOwner));
+        boolean canViewCoordinates = untrusted != null && (warpOwner.equals(untrusted) || PlayerCanTeleport.canTeleport(server, untrusted, warpOwner));
         for (Map.Entry<String, Warp> iterator : warps.entrySet()) {
             String name = iterator.getKey();
             if (name.contains(" "))

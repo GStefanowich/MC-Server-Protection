@@ -38,6 +38,6 @@ public abstract class ItemStackMixin {
     @Inject(at = @At("RETURN"), method = "getRepairCost", cancellable = true)
     public void onGetCost(CallbackInfoReturnable<Integer> callback) {
         if (SewConfig.get(SewCoreConfig.ANVIL_DISABLE_COST_REPAIR))
-            callback.setReturnValue( 0 );
+            callback.setReturnValue(0);
     }
 }

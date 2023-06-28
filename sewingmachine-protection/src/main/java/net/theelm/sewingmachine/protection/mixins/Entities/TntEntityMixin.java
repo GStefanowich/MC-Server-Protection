@@ -41,7 +41,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.UUID;
 
-@Mixin(TntEntity.class)
+@Mixin(value = TntEntity.class, priority = 10000)
 public abstract class TntEntityMixin extends Entity implements OwnableEntity {
     private UUID entityOwner = null;
     @Nullable @Shadow

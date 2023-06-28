@@ -46,7 +46,7 @@ import net.theelm.sewingmachine.commands.arguments.ArgumentSuggestions;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.Permissions;
-import net.theelm.sewingmachine.events.ClaimUpdateCallback;
+import net.theelm.sewingmachine.events.RegionUpdateCallback;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
@@ -193,7 +193,7 @@ public final class NickNameCommand extends SewCommand {
         player.sendMessage(notifyMessage.formatted(Formatting.YELLOW), false);
         
         // Notify region change of name
-        ClaimUpdateCallback.EVENT.invoker()
+        RegionUpdateCallback.EVENT.invoker()
             .update(player, true);
         
         // Send update to the player list

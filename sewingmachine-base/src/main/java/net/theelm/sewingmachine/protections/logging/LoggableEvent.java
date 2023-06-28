@@ -37,7 +37,7 @@ public abstract class LoggableEvent {
     public LoggableEvent(@Nullable Entity actionSource) {
         // Set the source of the change
         this.source = actionSource;
-        this.world = (actionSource == null ? null : actionSource.world);
+        this.world = (actionSource == null ? null : actionSource.getWorld());
     }
     
     public final Entity getSource() {

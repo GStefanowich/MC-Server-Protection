@@ -31,6 +31,7 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.DragonLoot;
+import net.theelm.sewingmachine.events.RegionManageCallback;
 import net.theelm.sewingmachine.interfaces.BossLootableContainer;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.theelm.sewingmachine.utilities.BossLootRewards;
@@ -321,7 +322,7 @@ public abstract class EnderDragonFightMixin {
             blockEntity.readNbt(chestTag);
         }
         
-        ChunkUtils.claimSlices(world, CoreMod.SPAWN_ID, BlockRange.of(pos));
+        RegionManageCallback.tryClaim(world, CoreMod.SPAWN_ID, BlockRange.of(pos));
     }
     private static boolean isLootRewardContainer(@NotNull ServerWorld world, @NotNull BlockPos pos) {
         BlockEntity blockEntity = world.getBlockEntity(pos);

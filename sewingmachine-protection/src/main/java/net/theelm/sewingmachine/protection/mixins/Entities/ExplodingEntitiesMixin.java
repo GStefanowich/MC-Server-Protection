@@ -49,7 +49,7 @@ import org.spongepowered.asm.mixin.Mixin;
  * WitherEntity - Wither mob
  * ExplosiveProjectileEntity - Wither projects
  */
-@Mixin({TntEntity.class, CreeperEntity.class, WitherEntity.class, ExplosiveProjectileEntity.class})
+@Mixin(value = {TntEntity.class, CreeperEntity.class, WitherEntity.class, ExplosiveProjectileEntity.class}, priority = 10000)
 public abstract class ExplodingEntitiesMixin extends Entity {
     public ExplodingEntitiesMixin(EntityType<?> entityType_1, World world_1) {
         super(entityType_1, world_1);

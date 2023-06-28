@@ -33,8 +33,6 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
-import net.theelm.sewingmachine.objects.ticking.ClaimCache;
-import net.theelm.sewingmachine.protections.claiming.ClaimantPlayer;
 import net.minecraft.command.CommandSource;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -53,6 +51,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 public final class CommandUtils {
+    private CommandUtils() {}
     
     public static @NotNull CompletableFuture<Suggestions> getOnlineNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) {
         PlayerManager manager = context.getSource().getServer().getPlayerManager();
@@ -77,49 +76,6 @@ public final class CommandUtils {
             builder
         );
     }
-    public static @NotNull CompletableFuture<Suggestions> getFriendPlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
-        ServerCommandSource source = context.getSource();
-        MinecraftServer server = source.getServer();
-        ServerPlayerEntity player = source.getPlayer();
-        
-        // Get only a list of friends
-        Set<String> userNames = new HashSet<>(CommandUtils.getFriendNames(server, player));
-        
-        // Add all users if using Search
-        if (!builder.getRemaining().isEmpty())
-            userNames.addAll(CommandUtils.getFriendWhitelistedNames(server, player));
-        
-        return CommandSource.suggestMatching(
-            userNames,
-            builder
-        );
-    }
-    
-    public static @NotNull CompletableFuture<Suggestions> getAllTowns(@NotNull CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
-        ServerCommandSource source = context.getSource();
-        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
-            .getClaimManager();
-        
-        Set<String> townNames = new HashSet<>();
-        
-        claimCache.getTownCaches()
-            .forEach(town -> townNames.add(town.getName().getString()));
-        
-        return CommandSource.suggestMatching(
-            townNames,
-            builder
-        );
-    }
-    
-    public static boolean playerIsInTown(@NotNull ServerCommandSource serverCommandSource) {
-        Entity source = serverCommandSource.getEntity();
-        if (!( source instanceof ServerPlayerEntity ))
-            return false;
-        
-        ServerPlayerEntity player = (ServerPlayerEntity) source;
-        ClaimantPlayer claim;
-        return (((claim = ((PlayerData)player).getClaim()) != null) && (claim.getTown() != null));
-    }
     
     public static @NotNull List<String> getOnlineNames(@NotNull final MinecraftServer server) {
         PlayerManager playerManager = server.getPlayerManager();
@@ -128,27 +84,6 @@ public final class CommandUtils {
     public static @NotNull List<String> getWhitelistedNames(@NotNull final MinecraftServer server) {
         PlayerManager playerManager = server.getPlayerManager();
         return Arrays.asList(playerManager.getWhitelistedNames());
-    }
-    public static @NotNull List<String> getFriendWhitelistedNames(@NotNull final MinecraftServer server, @NotNull final ServerPlayerEntity player) {
-        ClaimantPlayer claimant = ((ClaimsAccessor)server).getClaimManager()
-            .getPlayerClaim(player);
-        PlayerManager playerManager = server.getPlayerManager();
-        
-        return playerManager.getWhitelist().values().stream()
-            .map(entry -> (WhitelistedPlayer)entry)
-            .filter(claimant::isFriend)
-            .map(WhitelistedPlayer::getName)
-            .toList();
-    }
-    public static @NotNull List<String> getFriendNames(@NotNull final MinecraftServer server, @NotNull final ServerPlayerEntity player) {
-        ClaimantPlayer claimant = ((ClaimsAccessor)server).getClaimManager()
-            .getPlayerClaim(player);
-        PlayerManager playerManager = server.getPlayerManager();
-        
-        return playerManager.getPlayerList().stream()
-            .filter(claimant::isFriend)
-            .map(PlayerEntity::getEntityName)
-            .toList();
     }
     
     public static @NotNull <S> Command<S> command(@NotNull Command<S> command) {

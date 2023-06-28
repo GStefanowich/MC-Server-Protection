@@ -26,7 +26,7 @@
 package net.theelm.sewingmachine.protection.mixins.World;
 
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.exceptions.TranslationKeyException;
@@ -34,7 +34,6 @@ import net.theelm.sewingmachine.protection.interfaces.Claim;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
-import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils.ClaimSlice;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;

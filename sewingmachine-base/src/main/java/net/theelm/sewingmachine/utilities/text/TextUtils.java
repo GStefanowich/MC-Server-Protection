@@ -91,6 +91,13 @@ public final class TextUtils {
         return Text.literal(d + "");
     }
     
+    public static @NotNull MutableText mutable(@Nullable Text text) {
+        if (text instanceof MutableText mutable)
+            return mutable;
+        return TextUtils.literal()
+            .append(text);
+    }
+    
     public static @NotNull String legacyConvert(@NotNull Text text) {
         StringBuilder out = new StringBuilder();
         Formatting formatting = null;

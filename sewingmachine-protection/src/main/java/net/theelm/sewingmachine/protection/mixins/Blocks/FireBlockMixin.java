@@ -23,10 +23,11 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.mixins.Blocks;
+package net.theelm.sewingmachine.protection.mixins.Blocks;
 
-import net.theelm.sewingmachine.enums.ClaimSettings;
-import net.theelm.sewingmachine.utilities.ChunkUtils;
+import net.minecraft.util.math.random.Random;
+import net.theelm.sewingmachine.protection.enums.ClaimSettings;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.minecraft.block.AbstractFireBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.FireBlock;
@@ -40,13 +41,11 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import java.util.Random;
-
 /**
  * Created on Aug 16 2021 at 12:18 AM.
  * By greg in SewingMachineMod
  */
-@Mixin(FireBlock.class)
+@Mixin(value = FireBlock.class, priority = 10000)
 public abstract class FireBlockMixin extends AbstractFireBlock {
     public FireBlockMixin(Settings settings, float damage) {
         super(settings, damage);
@@ -60,14 +59,14 @@ public abstract class FireBlockMixin extends AbstractFireBlock {
     
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/block/FireBlock.getSpreadChance(Lnet/minecraft/block/BlockState;)I"), method = "trySpreadingFire")
     public int getFireSpreadChance(@NotNull FireBlock block, @NotNull BlockState state, @NotNull World world, @NotNull BlockPos pos, int spreadFactor, @NotNull Random rand, int currentAge) {
-        if (!ChunkUtils.isSetting(ClaimSettings.FIRE_SPREAD, world, pos))
+        if (!ClaimChunkUtils.isSetting(ClaimSettings.FIRE_SPREAD, world, pos))
             return 0;
         return this.getSpreadChance(state);
     }
     
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/block/FireBlock.getBurnChance(Lnet/minecraft/world/WorldView;Lnet/minecraft/util/math/BlockPos;)I"), method = "scheduledTick")
     public int getIgniteChance(@NotNull FireBlock block, @NotNull WorldView view, BlockPos pos, BlockState tickState, ServerWorld tickWorld, BlockPos tickPos, Random random) {
-        if (!ChunkUtils.isSetting(ClaimSettings.FIRE_SPREAD, view, pos))
+        if (!ClaimChunkUtils.isSetting(ClaimSettings.FIRE_SPREAD, view, pos))
             return 0;
         return this.getBurnChance(view, pos);
     }
