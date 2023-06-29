@@ -2,7 +2,8 @@ plugins {
 	id 'java-library'
 	id 'idea'
 	id 'maven-publish'
-	id 'fabric-loom' version '1.2.7' apply false
+	id 'fabric-loom' version '1.2.7'
+	id 'com.github.johnrengelman.shadow' version '7.1.0'
 }
 
 version = project.version
@@ -13,26 +14,43 @@ allprojects {
 	
 	apply plugin: 'java-library'
 	apply plugin: 'fabric-loom'
+	apply plugin: 'com.github.johnrengelman.shadow'
 	
-	tasks.withType(JavaCompile).configureEach {
-		it.options.release = 17
+	tasks.withType(JavaCompile) {
+		options.release = 17
+		options.encoding = "UTF-8"
+	}
+	
+	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
+	// if it is present.
+	// If you remove this task, sources will not be generated.
+	task sourcesJar(type: Jar, dependsOn: classes) {
+		archiveClassifier.set('sources')
+		from sourceSets.main.allSource
 	}
 	
 	java {
 		// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
 		// if it is present.
 		// If you remove this line, sources will not be generated.
-		withSourcesJar()
+		java.withSourcesJar()
 	}
 	
-	sourceSets {
-
-	}
-
 	allprojects.each { p ->
 		loom.mods.register(p.name) {
 			sourceSet p.sourceSets.main
-			//sourceSet p.sourceSets.client
+		}
+	}
+	
+	processResources {
+		inputs.property 'version', version
+		
+		afterEvaluate {
+			from(sourceSets.main.resources.srcDirs) {
+				include 'fabric.mod.json'
+				expand 'version': version
+				duplicatesStrategy DuplicatesStrategy.INCLUDE
+			}
 		}
 	}
 	
@@ -47,21 +65,8 @@ allprojects {
 		
 		implementation 'com.intellij:annotations:+@jar'
 		
-		logger.info(project.name)
 		if (project.name != "sewingmachine-base") {
-			implementation project(':sewingmachine-base')
-		}
-		
-		/*shadow group: 'org.xerial', name: 'sqlite-jdbc', version: '3.28.0'
-		shadow group: 'mysql', name: 'mysql-connector-java', version: '8.0.15'
-		shadow group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: 'v1.7.0'*/
-	}
-	
-	tasks.withType(ProcessResources).configureEach {
-		inputs.property "version", project.version
-		
-		filesMatching("fabric.mod.json") {
-			expand "version": project.version
+			implementation project(path: ':sewingmachine-base', configuration: "namedElements")
 		}
 	}
 	
@@ -70,7 +75,11 @@ allprojects {
 		reproducibleFileOrder = true
 	}
 	
-	tasks.register('generateSources') {
+	/*tasks.register('generateSources') {
 		group = "fabric"
-	}
+	}*/
+	
+	/*remapJar {
+		archiveFileName = "${project.name}-${project.mod_version}_mc-${project.minecraft_version}.jar"
+	}*/
 }
