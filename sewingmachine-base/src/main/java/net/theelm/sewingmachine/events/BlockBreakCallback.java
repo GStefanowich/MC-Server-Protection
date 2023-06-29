@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.events;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
@@ -45,8 +45,9 @@ import net.theelm.sewingmachine.utilities.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@FunctionalInterface
 public interface BlockBreakCallback {
-    Event<BlockBreakCallback> EVENT = EventFactory.createArrayBacked(BlockBreakCallback.class, (listeners) -> (entity, world, hand, pos, direction, action) -> {
+    Event<BlockBreakCallback> TEST = EventFactory.createArrayBacked(BlockBreakCallback.class, (listeners) -> (entity, world, hand, pos, direction, action) -> {
         ActionResult result = ActionResult.PASS;
         
         for (BlockBreakCallback event : listeners) {
@@ -63,9 +64,10 @@ public interface BlockBreakCallback {
         return result;
     });
     
-    ActionResult destroy(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos blockPos, @Nullable Direction direction, @Nullable Action action);
-    default boolean canDestroy(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos blockPos, @Nullable Direction direction, @Nullable Action action) {
-        return this.destroy(entity, world, hand, blockPos, direction, action) != ActionResult.FAIL;
+    ActionResult destroy(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos pos, @Nullable Direction direction, @Nullable Action action);
+    static boolean canDestroy(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos pos, @Nullable Direction direction, @Nullable Action action) {
+        return BlockBreakCallback.TEST.invoker()
+            .destroy(entity, world, hand, pos, direction, action) != ActionResult.FAIL;
     }
     
     /**

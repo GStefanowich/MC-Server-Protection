@@ -48,6 +48,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,28 +71,6 @@ public final class SewConfig extends SewConfigContainer {
     
     private final List<Runnable> reloadFunctions = new ArrayList<>();
     private final Map<String, SewConfig> configModules = new ConcurrentHashMap<>();
-    
-    static {
-        File config = null;
-        try {
-            config = SewConfig.getConfigFile();
-            
-            /*
-             * Read the existing config
-             */
-            JsonElement loaded = SewConfig.INSTANCE.reload(config);
-            
-            /*
-             * Save any new values
-             */
-            SewConfig.saveToFile(config, loaded);
-            
-        } catch (IOException e) {
-            CoreMod.logError( e );
-        }
-    
-        SewConfig.INSTANCE.fileExists = ((config != null) && config.exists());
-    }
     
     public static boolean preExisting() {
         return SewConfig.INSTANCE.fileExists;
@@ -121,7 +101,42 @@ public final class SewConfig extends SewConfigContainer {
         return config;
     }
     public static void addConfigClass(@NotNull Class<?> klass) {
+        Field[] fields = klass.getDeclaredFields();
+        try {
+            for (Field field : fields) {
+                if (!Modifier.isStatic(field.getModifiers()))
+                    continue;
+                if (field.get(null) instanceof ConfigOption<?> option)
+                    SewConfig.addConfig(option);
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    /**
+     * After all modules have called {@code addConfigClass} load the config from the disk
+     */
+    public static void firstInitialize() {
+        File config = null;
+        try {
+            config = SewConfig.getConfigFile();
+            
+            /*
+             * Read the existing config
+             */
+            JsonElement loaded = SewConfig.INSTANCE.reload(config);
+            
+            /*
+             * Save any new values
+             */
+            SewConfig.saveToFile(config, loaded);
+            
+        } catch (IOException e) {
+            CoreMod.logError( e );
+        }
         
+        SewConfig.INSTANCE.fileExists = ((config != null) && config.exists());
     }
     
     public static <T> void set( @NotNull ConfigOption<T> config, JsonElement value ) {

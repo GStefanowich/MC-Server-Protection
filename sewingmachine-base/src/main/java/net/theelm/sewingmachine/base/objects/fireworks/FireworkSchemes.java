@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.objects.fireworks;
+package net.theelm.sewingmachine.base.objects.fireworks;
 
 import com.google.common.collect.ImmutableList;
 import net.minecraft.util.math.random.Random;

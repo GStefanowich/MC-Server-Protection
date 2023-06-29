@@ -50,9 +50,9 @@ public class Whisper {
      */
     @Overwrite
     private static void execute(ServerCommandSource source, Collection<ServerPlayerEntity> targets, SignedMessage message) {
-        for (ServerPlayerEntity target : targets) {
+        /*for (ServerPlayerEntity target : targets) {
             MessageUtils.sendAsWhisper(source, target, ChatRoomUtilities.formatPlayerMessage(source, ChatRooms.WHISPER, message));
-        }
+        }*/
     }
     
 }

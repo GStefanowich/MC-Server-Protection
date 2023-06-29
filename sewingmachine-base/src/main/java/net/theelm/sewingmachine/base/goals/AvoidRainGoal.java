@@ -31,10 +31,9 @@ import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
+import net.minecraft.util.math.random.Random;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.Random;
 
 public class AvoidRainGoal extends Goal {
     // Mob information
@@ -48,7 +47,7 @@ public class AvoidRainGoal extends Goal {
     
     public AvoidRainGoal(PathAwareEntity mob) {
         this.mob = mob;
-        this.world = mob.world;
+        this.world = mob.getWorld();
     }
     
     @Override
@@ -61,7 +60,7 @@ public class AvoidRainGoal extends Goal {
             return false;
         Box box = this.mob.getBoundingBox();
         // If mob isn't visible to the sky
-        if (!this.world.isSkyVisible(new BlockPos(this.mob.getX(), box.minY, this.mob.getZ())))
+        if (!this.world.isSkyVisible(BlockPos.ofFloored(this.mob.getX(), box.minY, this.mob.getZ())))
             return false;
         // Don't ALWAYS do it (Save the CPU!)
         if (this.mob.getRandom().nextInt(120) != 0)
@@ -90,7 +89,7 @@ public class AvoidRainGoal extends Goal {
     private Vec3d locateCover() {
         Random rand = this.mob.getRandom();
         Box box = this.mob.getBoundingBox();
-        BlockPos blockPos = new BlockPos(this.mob.getX(), box.minY, this.mob.getZ());
+        BlockPos blockPos = BlockPos.ofFloored(this.mob.getX(), box.minY, this.mob.getZ());
         
         for( int i = 0; i < 10; ++i ) {
             BlockPos goalPos = blockPos.add( rand.nextInt(20) - 10, rand.nextInt(6) - 3, rand.nextInt(20) - 10 );

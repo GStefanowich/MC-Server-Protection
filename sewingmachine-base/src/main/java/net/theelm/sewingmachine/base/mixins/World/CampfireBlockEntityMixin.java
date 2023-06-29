@@ -57,7 +57,7 @@ public abstract class CampfireBlockEntityMixin extends BlockEntity implements Cl
             boolean isLit = blockState.get(CampfireBlock.LIT);
             
             // If RAINING, currently LIT, is in a raining BIOME, and VISIBLE TO SKY
-            if (world.isRaining() && isLit && (world.getBiome(pos).value().getPrecipitation() == Biome.Precipitation.RAIN) && world.isSkyVisible(pos)) {
+            if (world.isRaining() && isLit && (world.getBiome(pos).value().getPrecipitation(pos) == Biome.Precipitation.RAIN) && world.isSkyVisible(pos)) {
                 world.setBlockState(pos, blockState.with(CampfireBlock.LIT, false));
                 world.playSound(null, pos, SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.BLOCKS, 1.0f, 1.0f);
             }

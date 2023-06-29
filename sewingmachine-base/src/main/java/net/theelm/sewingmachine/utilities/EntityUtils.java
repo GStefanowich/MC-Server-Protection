@@ -33,6 +33,7 @@ import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.events.CommandPermissionCallback;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.interfaces.SpawnerMob;
 import net.theelm.sewingmachine.base.mixins.Server.ServerWorldAccessor;
@@ -107,10 +108,10 @@ public final class EntityUtils {
      * @return If the 'entity' is granted access
      */
     public static boolean canEntityTakeDeathChest(@Nullable Entity entity, @NotNull UUID deathChestUUID) {
-        return (entity instanceof PlayerEntity player)
+        return (entity instanceof ServerPlayerEntity player)
             && (player.getUuid().equals(deathChestUUID)
                 || player.hasPermissionLevel(OpLevels.KICK_BAN_OP)
-                || RankUtils.hasPermission(player, Permissions.INTERACT_OTHER_DEATHCHEST));
+                || CommandPermissionCallback.EVENT.invoker().hasPermission(player, Permissions.INTERACT_OTHER_DEATHCHEST));
     }
     
     /*

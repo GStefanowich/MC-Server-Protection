@@ -45,7 +45,7 @@ import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
-import net.theelm.sewingmachine.objects.ShopStats;
+import net.theelm.sewingmachine.base.objects.ShopStats;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
@@ -78,7 +78,7 @@ public final class SignShopBuy extends ShopSign.BuyTradeSell {
         // Parse the owner of the sign
         signBuilder.textParseOwner(signBuilder.getLines()[3], creator);
         
-        this.printCompletedSign(creator, signBuilder, SewConfig.get(SewCoreConfig.SERVER_SALES_TAX));
+        this.printCompletedSign(creator, signBuilder);
         return this.renderSign(signBuilder);
     }
     

@@ -146,15 +146,7 @@ public abstract class MinecraftServerMixin {
             String name = PlayerNameCallback.getName((MinecraftServer)(Object) this, profile.getId())
                 .getString();
             
-            // If the player has any rank
-            for (PlayerRank rank : RankUtils.getPlayerRanks(profile)) {
-                Text display;
-                if ((display = rank.getDisplay()) != null) {
-                    name += " [" + TextUtils.legacyConvert(display) + "]";
-                    break;
-                }
-            }
-            
+            // Update the value with a new profile
             profiles.set(i, new GameProfile(
                 profile.getId(),
                 name

@@ -41,7 +41,7 @@ import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
-import net.theelm.sewingmachine.objects.PlayerBackpack;
+import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
@@ -129,7 +129,7 @@ public final class SignBackpack extends ShopSign {
             ));
             
             player.sendMessage(Text.literal("Backpack size is now ").formatted(Formatting.YELLOW)
-                .append(Text.literal(FormattingUtils.format( sign.getShopItemCount() )).formatted(Formatting.AQUA))
+                .append(Text.literal(FormattingUtils.format(sign.getShopItemCount())).formatted(Formatting.AQUA))
             );
             
             // Log the transaction

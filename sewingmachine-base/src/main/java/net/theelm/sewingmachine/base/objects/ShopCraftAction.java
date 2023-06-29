@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.objects;
+package net.theelm.sewingmachine.base.objects;
 
 import net.minecraft.registry.Registries;
 import net.theelm.sewingmachine.interfaces.ShopSignData;

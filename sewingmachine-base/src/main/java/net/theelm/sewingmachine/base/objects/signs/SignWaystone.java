@@ -39,7 +39,7 @@ import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerBalanceCallback;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
-import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
+import net.theelm.sewingmachine.events.BlockBreakCallback;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
@@ -107,7 +107,7 @@ public final class SignWaystone extends ShopSign {
         if (
             DimensionUtils.isOutOfBuildLimitVertically(world, signPos)
                 || DimensionUtils.isWithinProtectedZone(world, signPos)
-                || !BlockBreakCallback.EVENT.invoker().canDestroy(player, world, Hand.MAIN_HAND, signPos, null, null)
+                || !BlockBreakCallback.canDestroy(player, world, Hand.MAIN_HAND, signPos, null, null)
         ) return Either.left(Text.literal("Can't build that here"));
         
         final String warpName = sign.getSignLine(1)

@@ -85,9 +85,6 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement, P
     
     @Override
     public void movedPlayer(@NotNull final ServerPlayerEntity player) {
-        if (!SewConfig.get(SewCoreConfig.DO_CLAIMS))
-            return;
-        
         World world = player.getEntityWorld();
         BlockPos blockPos = player.getBlockPos();
         

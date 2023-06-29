@@ -40,7 +40,7 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.events.PlayerCanTeleport;
+import net.theelm.sewingmachine.events.PlayerTeleportCallback;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
@@ -310,7 +310,7 @@ public final class TeleportsCommand extends SewCommand {
         final PlayerManager manager = server.getPlayerManager();
         
         // Check if player is within spawn
-        if (!PlayerCanTeleport.canTeleport(server, porter))
+        if (!PlayerTeleportCallback.canTeleport(server, porter))
             throw TeleportsCommand.PLAYER_NOT_IN_SPAWN.create(porter);
         
         // If the player to teleport to does not have a warp
@@ -321,7 +321,7 @@ public final class TeleportsCommand extends SewCommand {
         ServerPlayerEntity targetPlayer = manager.getPlayer(target.getId());
         
         // Accept the teleport automatically
-        if ( PlayerCanTeleport.canTeleport(server, porter, target.getId()) ) {
+        if ( PlayerTeleportCallback.canTeleport(server, porter, target.getId()) ) {
             WarpUtils.teleportEntityAndAttached(porter, warp);
             
             TeleportsCommand.feedback(porter, target, warp);
@@ -401,7 +401,7 @@ public final class TeleportsCommand extends SewCommand {
         if ((( warpTo = CoreMod.PLAYER_WARP_INVITES.get(porter) ) == null) || (!target.getUuid().equals(warpTo.getLeft())) )
             throw TARGET_NOT_REQUESTING.create(target);
         
-        if (!PlayerCanTeleport.canTeleport(source.getServer(), porter)) {
+        if (!PlayerTeleportCallback.canTeleport(source.getServer(), porter)) {
             porter.sendMessage(Text.literal("Your warp could not be completed, you must be within spawn to warp.").formatted(Formatting.RED));
             throw TARGET_NOT_IN_SPAWN.create(target);
         }

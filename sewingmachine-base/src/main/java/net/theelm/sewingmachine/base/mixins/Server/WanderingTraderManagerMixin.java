@@ -31,7 +31,7 @@ import net.minecraft.util.math.random.Random;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.objects.WanderingTraderProfileCollection;
+import net.theelm.sewingmachine.base.objects.WanderingTraderProfileCollection;
 import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.minecraft.entity.EntityType;

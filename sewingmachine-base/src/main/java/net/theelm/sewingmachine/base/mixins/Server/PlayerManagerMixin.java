@@ -30,7 +30,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.PlayerManager;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.objects.WanderingTraderProfileCollection;
+import net.theelm.sewingmachine.base.objects.WanderingTraderProfileCollection;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.TeamUtils;

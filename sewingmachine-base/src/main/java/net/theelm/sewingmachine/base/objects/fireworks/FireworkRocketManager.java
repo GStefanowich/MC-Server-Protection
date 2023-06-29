@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.objects.fireworks;
+package net.theelm.sewingmachine.base.objects.fireworks;
 
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.world.spawner.Spawner;

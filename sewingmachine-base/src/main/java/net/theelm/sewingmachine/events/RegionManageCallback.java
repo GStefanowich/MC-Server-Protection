@@ -50,14 +50,18 @@ public interface RegionManageCallback {
         }
     );
     
-    boolean tryUpdate(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockRange region, boolean claimed);
+    boolean tryUpdate(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockRange region, @Nullable Boolean claimed);
     
     static boolean tryClaim(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockRange region) {
         return RegionManageCallback.HANDLER.invoker()
-            .tryUpdate(world, player, region, true);
+            .tryUpdate(world, player, region, Boolean.TRUE);
     }
     static boolean tryUnclaim(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockRange region) {
         return RegionManageCallback.HANDLER.invoker()
-            .tryUpdate(world, player, region, false);
+            .tryUpdate(world, player, region, Boolean.FALSE);
+    }
+    static boolean canClaim(@NotNull ServerWorld world, @Nullable UUID player, @NotNull BlockRange region) {
+        return RegionManageCallback.HANDLER.invoker()
+            .tryUpdate(world, player, region, null);
     }
 }

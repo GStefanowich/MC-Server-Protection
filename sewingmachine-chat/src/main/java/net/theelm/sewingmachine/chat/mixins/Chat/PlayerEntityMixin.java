@@ -27,12 +27,14 @@ package net.theelm.sewingmachine.chat.mixins.Chat;
 
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.chat.interfaces.Nicknamable;
+import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -69,8 +71,9 @@ public abstract class PlayerEntityMixin extends LivingEntity implements Nicknama
     @Override
     public void setPlayerNickname(@Nullable Text nickname) {
         this.playerNickname = nickname;
-        if (this.healthBar != null)
-            this.healthBar.setName(Text.literal("Player ").append(this.getDisplayName()).formatted(Formatting.WHITE));
+        ServerBossBar healthBar = ((PlayerData) this).getHealthBar();
+        if (healthBar != null)
+            healthBar.setName(Text.literal("Player ").append(this.getDisplayName()).formatted(Formatting.WHITE));
     }
     @Nullable @Override
     public Text getPlayerNickname() {

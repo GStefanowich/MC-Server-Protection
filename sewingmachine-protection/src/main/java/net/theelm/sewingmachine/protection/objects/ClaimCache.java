@@ -151,7 +151,7 @@ public final class ClaimCache implements TickingAction {
         ClaimantTown town;
         
         // If claims are disabled
-        if ((!SewConfig.get(SewCoreConfig.DO_CLAIMS)) || (townId == null))
+        if (townId == null)
             return null;
         
         try {

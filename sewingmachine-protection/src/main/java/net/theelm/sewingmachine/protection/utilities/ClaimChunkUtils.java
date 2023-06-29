@@ -216,7 +216,7 @@ public final class ClaimChunkUtils {
      * @return If the player is a high enough rank to teleport to the target
      */
     public static boolean canPlayerWarpTo(@NotNull PlayerEntity player, @NotNull UUID target) {
-        if ((!SewConfig.get(SewCoreConfig.DO_CLAIMS)) || (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator())))
+        if (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
             return SewConfig.get(SewCoreConfig.COMMAND_WARP_TPA);
         return ClaimChunkUtils.canPlayerWarpTo(Objects.requireNonNull(player.getServer()), player.getUuid(), target);
     }

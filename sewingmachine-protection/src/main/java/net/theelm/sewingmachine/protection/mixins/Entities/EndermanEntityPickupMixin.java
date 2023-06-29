@@ -29,7 +29,7 @@ import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.random.Random;
-import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
+import net.theelm.sewingmachine.events.BlockBreakCallback;
 import net.theelm.sewingmachine.interfaces.EndermanGoal;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.ai.goal.Goal;
@@ -42,10 +42,6 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.RaycastContext;
-import net.minecraft.world.World;
-import net.minecraft.world.chunk.WorldChunk;
-import net.theelm.sewingmachine.protection.enums.ClaimSettings;
-import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -83,12 +79,8 @@ public abstract class EndermanEntityPickupMixin extends Goal implements Enderman
         
         // If the block is able to be held my endermen
         if (blockState.isIn(BlockTags.ENDERMAN_HOLDABLE) && bool) {
-            // Get the chunk permissions
-            boolean grief = BlockBreakCallback.EVENT.invoker()
-                .canDestroy(this.enderman, world, Hand.MAIN_HAND, blockPos, null, null);
-            
             // Check if enderman griefing is allowed (Invert because FALSE == NOT ALLOWED)
-            if (!grief) {
+            if (!BlockBreakCallback.canDestroy(this.enderman, world, Hand.MAIN_HAND, blockPos, null, null)) {
                 this.sadEnderman();
                 return;
             }

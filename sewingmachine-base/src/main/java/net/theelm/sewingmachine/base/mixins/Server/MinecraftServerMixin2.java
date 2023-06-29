@@ -86,20 +86,6 @@ public abstract class MinecraftServerMixin2 extends ReentrantThreadExecutor<Serv
     }
     
     /**
-     * Save claim information when the server saves
-     */
-    @Inject(at = @At("RETURN"), method = "save")
-    public void save(boolean silent, boolean boolean_2, boolean boolean_3, @NotNull CallbackInfoReturnable<Boolean> callback) {
-        if (callback.getReturnValue()) {
-            ClaimCache claims = ((ClaimsAccessor)this).getClaimManager();
-            
-            if (!silent) CoreMod.logInfo("Saving claim data");
-            claims.getCaches()
-                .forEach(Claimant::save);
-        }
-    }
-    
-    /**
      * Override what world is loaded when the server first starts
      */
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/MinecraftServer.getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "prepareStartRegion")

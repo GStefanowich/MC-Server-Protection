@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.blocks.entities;
 import com.google.common.base.Suppliers;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.objects.PlayerBookPropertyDelegate;
+import net.theelm.sewingmachine.base.objects.PlayerBookPropertyDelegate;
 import net.theelm.sewingmachine.utilities.GuideUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.LecternBlock;

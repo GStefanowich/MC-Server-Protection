@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.interfaces;
 
-import net.theelm.sewingmachine.objects.PlayerBackpack;
+import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import org.jetbrains.annotations.Nullable;
 
 public interface BackpackCarrier {

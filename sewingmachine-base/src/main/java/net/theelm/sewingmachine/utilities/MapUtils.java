@@ -34,7 +34,6 @@ import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.Optional;
 import java.util.Queue;
@@ -54,7 +53,7 @@ public final class MapUtils {
         // When the API is made available
         BlueMapAPI.onEnable((api) -> {
             CoreMod.logInfo("BlueMap Integration detected");
-
+            
             Consumer<BlueMapAPI> consumer;
             while ((consumer = MapUtils.RUN.poll()) != null)
                 consumer.accept(api);

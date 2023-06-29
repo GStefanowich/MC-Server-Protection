@@ -590,8 +590,10 @@ public final class StatsCommand extends SewCommand {
         PlayerManager players = server.getPlayerManager();
         ServerPlayerEntity player = source.getPlayer();
         
+        throw new UnsupportedOperationException();
+        
         // The chatroom to send the message in
-        ChatRooms room = ((PlayerChat)player).getChatRoom();
+        /*ChatRooms room = ((PlayerChat)player).getChatRoom();
         
         // Create a chat message
         Text chatText = MessageUtils.formatPlayerMessage(player, room, text);
@@ -599,7 +601,7 @@ public final class StatsCommand extends SewCommand {
         // Send the new chat message to the currently selected chat room
         MessageUtils.sendTo(room, player, chatText);
         
-        return Command.SINGLE_SUCCESS;
+        return Command.SINGLE_SUCCESS;*/
     }
     
     private EntityType<?> getEntityType(@NotNull CommandContext<ServerCommandSource> context, @NotNull String key) throws CommandSyntaxException {

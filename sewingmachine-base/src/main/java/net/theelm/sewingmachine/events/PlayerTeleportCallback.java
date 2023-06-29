@@ -42,9 +42,9 @@ import java.util.UUID;
  * By greg in sewingmachine
  */
 @FunctionalInterface
-public interface PlayerCanTeleport {
-    Event<PlayerCanTeleport> TEST = EventFactory.createArrayBacked(PlayerCanTeleport.class, (listeners) -> (server, player, target) -> {
-        for (PlayerCanTeleport callback : listeners) {
+public interface PlayerTeleportCallback {
+    Event<PlayerTeleportCallback> TEST = EventFactory.createArrayBacked(PlayerTeleportCallback.class, (listeners) -> (server, player, target) -> {
+        for (PlayerTeleportCallback callback : listeners) {
             Boolean allowed = callback.canTeleportTo(server, player, target);
             if (allowed != null)
                 return allowed;
@@ -57,17 +57,17 @@ public interface PlayerCanTeleport {
     @Nullable Boolean canTeleportTo(@NotNull MinecraftServer server, @NotNull PlayerEntity player, @Nullable UUID uuid);
     
     static boolean canTeleport(@NotNull MinecraftServer server, @NotNull PlayerEntity player) {
-        return PlayerCanTeleport.TEST.invoker()
+        return PlayerTeleportCallback.TEST.invoker()
             .canTeleportTo(server, player, null) == Boolean.TRUE;
     }
     static boolean canTeleport(@NotNull MinecraftServer server, @NotNull PlayerEntity player, @Nullable UUID target) {
-        return PlayerCanTeleport.TEST.invoker()
+        return PlayerTeleportCallback.TEST.invoker()
             .canTeleportTo(server, player, target) == Boolean.TRUE;
     }
     static boolean canTeleport(@NotNull MinecraftServer server, @NotNull UUID player, @Nullable UUID target) {
         PlayerManager manager = server.getPlayerManager();
         ServerPlayerEntity entity = manager.getPlayer(player);
         return entity != null
-            && PlayerCanTeleport.canTeleport(server, entity, target);
+            && PlayerTeleportCallback.canTeleport(server, entity, target);
     }
 }

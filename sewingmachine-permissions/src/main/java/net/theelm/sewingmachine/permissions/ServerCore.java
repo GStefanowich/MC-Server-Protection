@@ -25,10 +25,23 @@
 
 package net.theelm.sewingmachine.permissions;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import com.mojang.brigadier.tree.CommandNode;
 import net.fabricmc.api.DedicatedServerModInitializer;
+import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.server.command.CommandManager;
+import net.minecraft.server.command.ServerCommandSource;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
+import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.events.CommandPermissionCallback;
+import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.permissions.utilities.RankUtils;
+import net.theelm.sewingmachine.utilities.CommandUtils;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Created on Jun 09 2023 at 1:42 AM.
@@ -38,5 +51,37 @@ public final class ServerCore implements DedicatedServerModInitializer, SewPlugi
     @Override
     public void onInitializeServer() {
         CommandPermissionCallback.EVENT.register((player, scope) -> RankUtils.hasPermission(player, scope));
+    }
+    
+    @Override
+    public void updatePrimaryCommand(@NotNull ArgumentBuilder<ServerCommandSource, ?> builder, @NotNull CommandRegistryAccess access) {
+        CommandNode<ServerCommandSource> node = CommandUtils.getLiteral("reload", builder);
+        if (node != null) {
+            node.addChild(CommandManager.literal("permissions")
+                .requires(CommandPredicate.isEnabled(SewCoreConfig.HANDLE_PERMISSIONS))
+                .executes((context) -> {
+                    boolean success = RankUtils.reload();
+                    ServerCommandSource source = context.getSource();
+                    
+                    if (!success)
+                        source.sendFeedback(
+                            () -> Text.literal("Failed to reload permissions, see console for errors").formatted(Formatting.RED),
+                            true
+                        );
+                    else {
+                        RankUtils.clearRanks();
+                        CommandUtils.resendTree(source.getServer());
+                        
+                        source.sendFeedback(
+                            () -> Text.literal("Permissions file has been reloaded").formatted(Formatting.GREEN),
+                            true
+                        );
+                    }
+                    
+                    return success ? Command.SINGLE_SUCCESS : -1;
+                })
+                .build()
+            );
+        }
     }
 }

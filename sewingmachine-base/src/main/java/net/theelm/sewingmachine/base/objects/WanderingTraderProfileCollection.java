@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.objects;
+package net.theelm.sewingmachine.base.objects;
 
 import com.mojang.authlib.GameProfile;
 import net.theelm.sewingmachine.utilities.EntityUtils;

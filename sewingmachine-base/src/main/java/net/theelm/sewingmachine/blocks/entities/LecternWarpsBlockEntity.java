@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.blocks.entities;
 import net.minecraft.registry.RegistryKeys;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.TeleportsCommand;
-import net.theelm.sewingmachine.objects.PlayerBookPropertyDelegate;
+import net.theelm.sewingmachine.base.objects.PlayerBookPropertyDelegate;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
@@ -44,7 +44,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.screen.LecternScreenHandler;
 import net.minecraft.screen.NamedScreenHandlerFactory;
@@ -80,7 +79,7 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
     }
     
     public void onCreated() {
-        LecternBlock.setHasBook(this.world, this.pos, this.getCachedState(), true);
+        LecternBlock.setHasBook(null, this.getWorld(), this.getPos(), this.getCachedState(), true);
     }
     
     public boolean canPlayerUse(@Nullable PlayerEntity player) {
@@ -184,7 +183,7 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
                 page = new WrittenBookBuilder();
                 page.addString("It seems you don't have any warps :(");
                 
-                pages.add(NbtString.of(page.toString()));
+                pages.add(page.toNbtString());
                 
             } else for (WarpUtils.Warp warp : this.warps) {
                 page = new WrittenBookBuilder();
@@ -193,7 +192,7 @@ public class LecternWarpsBlockEntity extends BlockEntity implements NamedScreenH
                     warp.getWorld(LecternWarpsBlockEntity.this.world),
                     warp
                 );
-                pages.add(NbtString.of(page.toString()));
+                pages.add(page.toNbtString());
             }
         }
         

@@ -37,6 +37,8 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.ContainerAccessCallback;
+import net.theelm.sewingmachine.events.TaxCollection;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
@@ -47,6 +49,7 @@ import net.theelm.sewingmachine.utilities.text.StyleApplicator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Iterator;
 import java.util.Objects;
 
 /**
@@ -146,52 +149,50 @@ public abstract class ShopSign {
             if (!( creator.isCreative() || ((container = InventoryUtils.getAttachedChest(signBuilder)) != null)))
                 throw new ShopBuilderException("Could not find storage for sign.");
             
-            if (container != null && !ChunkUtils.canPlayerLootChestsInChunk(creator, container.getPos()))
+            if (container != null && !ContainerAccessCallback.canAccess(creator, container.getPos()))
                 throw new ShopBuilderException("Missing permission to access that container.");
         }
         
-        protected int printCompletedSign(@NotNull final ServerPlayerEntity player, @NotNull final ShopSignBuilder signBuilder, final int serverTaxPerc) {
-            int returnVal = signBuilder.getShopItemPrice();
+        protected void printCompletedSign(@NotNull final ServerPlayerEntity player, @NotNull final ShopSignBuilder signBuilder) {
+            Income value = new Income(player, signBuilder.getShopItemPrice());
             MutableText output = Text.literal("Created new shop for ").formatted(Formatting.YELLOW)
                 .append(MessageUtils.formatNumber(signBuilder.getShopItemCount()))
                 .append(" ")
                 .append(MessageUtils.formatObject(signBuilder.getShopItem()));
             
-            // Try getting the located town
-            ServerWorld world = player.getServerWorld();
-            ClaimantTown town = ((IClaimedChunk)world.getChunk(signBuilder.getSign().getPos()))
-                .getTown();
-            int townTaxVal = (town == null ? 0 : signBuilder.getShopItemPrice() * (town.getTaxRate() / 100));
-            int serverTaxVal = signBuilder.getShopItemPrice() * (serverTaxPerc / 100);
+            TaxCollection.EVENT.invoker()
+                .collect(value, player.getServerWorld(), signBuilder.getSign().getPos());
             
-            if (serverTaxVal > 0) {
-                output.append("\n| Server tax is ")
-                    .append(MessageUtils.formatNumber(serverTaxPerc))
-                    .append("% ($")
-                    .append(MessageUtils.formatNumber(serverTaxVal))
-                    .append(")");
-                returnVal -= serverTaxVal;
-            } else if (serverTaxPerc > 0) {
-                output.append("\n| Server taxes do not apply.");
+            Iterator<Tax> taxes = value.getTaxes()
+                .iterator();
+            
+            while (taxes.hasNext()) {
+                Tax tax = taxes.next();
+                Text name = Text.literal(tax.name().getString())
+                    .formatted(Formatting.AQUA);
+                
+                if (tax.value() > 0) {
+                    output.append("\n| ")
+                        .append(name)
+                        .append(" taxes are ")
+                        .append(MessageUtils.formatNumber(tax.percent()))
+                        .append("% ($")
+                        .append(MessageUtils.formatNumber(tax.value()))
+                        .append(")");
+                } else if (tax.percent() > 0) {
+                    output.append("\n| ")
+                        .append(name)
+                        .append(" taxes do not apply.");
+                }
             }
             
-            if (townTaxVal > 0) {
-                output.append("\n| Server tax is ")
-                    .append(MessageUtils.formatNumber(0))
-                    .append("% ($")
-                    .append(MessageUtils.formatNumber(townTaxVal))
-                    .append(")");
-                returnVal -= townTaxVal;
-            } else if (serverTaxVal > 0) {
-                output.append("\n| Town taxes do not apply.");
-            }
+            boolean taxed = value.getValue() != value.getValueAfterTaxes();
             
             output.append("\n| Recipient gets $")
-                .append(MessageUtils.formatNumber(returnVal))
-                .append((serverTaxVal > 0 || townTaxVal > 0) ? " after taxes." : ".");
+                .append(MessageUtils.formatNumber(value.getValueAfterTaxes()))
+                .append(taxed ? " after taxes." : ".");
             
             player.sendMessage(output, false);
-            return returnVal;
         }
         
         @Override

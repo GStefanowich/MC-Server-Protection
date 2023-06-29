@@ -25,23 +25,52 @@
 
 package net.theelm.sewingmachine.base.objects;
 
-import net.minecraft.entity.damage.DamageType;
-import net.minecraft.registry.entry.RegistryEntry;
-import net.theelm.sewingmachine.utilities.text.TextUtils;
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.entity.damage.DamageSource;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.math.MathHelper;
+import org.jetbrains.annotations.NotNull;
 
-public class SawDamage extends DamageSource {
-    public SawDamage(RegistryEntry<DamageType> type) {
-        super(type);
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+/**
+ * Created on Jun 28 2023 at 11:07 PM.
+ * By greg in sewingmachine
+ */
+public final class Income {
+    private final @NotNull ServerPlayerEntity player;
+    private final int value;
+    private final @NotNull List<Tax> taxes = new ArrayList<>();
+    
+    private int untaxed;
+    
+    public Income(@NotNull ServerPlayerEntity player, int value) {
+        this.player = player;
+        this.value = value;
+        this.untaxed = value;
     }
     
-    @Override
-    public Text getDeathMessage(LivingEntity livingEntity) {
-        return TextUtils.literal()
-            .append(livingEntity.getDisplayName())
-            .append(" is now resting in pieces.");
+    public void addTax(Text name, int percentage) {
+        int clamp = MathHelper.clamp(percentage, 0, 100);
+        float f = (float) clamp / 100;
+        int amount = MathHelper.clamp(Math.round(f * this.untaxed), 0, this.untaxed);
+        
+        // Add the tax to the list
+        this.untaxed -= amount;
+        this.taxes.add(new Tax(name, amount, clamp));
+    }
+    public @NotNull Collection<Tax> getTaxes() {
+        return this.taxes;
+    }
+    public @NotNull ServerPlayerEntity getPlayer() {
+        return this.player;
     }
     
+    public int getValue() {
+        return this.value;
+    }
+    public int getValueAfterTaxes() {
+        return this.untaxed;
+    }
 }

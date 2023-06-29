@@ -42,7 +42,7 @@ public class EatMyceliumGoal extends Goal {
     
     public EatMyceliumGoal(MobEntity mobEntity) {
         this.mob = mobEntity;
-        this.world = mobEntity.world;
+        this.world = mobEntity.getWorld();
         this.setControls(EnumSet.of(Control.MOVE, Control.LOOK, Control.JUMP));
     }
     

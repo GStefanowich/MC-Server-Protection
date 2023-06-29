@@ -26,10 +26,13 @@
 package net.theelm.sewingmachine.utilities;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
+import com.mojang.brigadier.tree.CommandNode;
+import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
@@ -45,7 +48,9 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
@@ -99,6 +104,30 @@ public final class CommandUtils {
         return source.getServer() instanceof DedicatedServer;
     }
     
+    public static void resendTree(@NotNull MinecraftServer server) {
+        PlayerManager playerManager = server.getPlayerManager();
+        
+        // Resend the player the command tree
+        for (ServerPlayerEntity player : playerManager.getPlayerList())
+            playerManager.sendCommandTree(player);
+    }
+
+    public static CommandNode<ServerCommandSource> getLiteral(String literal, ArgumentBuilder<ServerCommandSource, ?> builder) {
+        Iterator<CommandNode<ServerCommandSource>> iterator = builder.getArguments()
+            .iterator();
+        
+        while (iterator.hasNext()) {
+            if (
+                iterator.next() instanceof LiteralCommandNode<ServerCommandSource> node
+                && Objects.equals(node.getLiteral(), literal)
+            ) {
+                return node;
+            }
+        }
+        
+        return null;
+    }
+
     private static class CommandExceptionable<S> implements Command<S> {
         private final @NotNull Command<S> command;
         private final @NotNull Consumer<Exception> handler;

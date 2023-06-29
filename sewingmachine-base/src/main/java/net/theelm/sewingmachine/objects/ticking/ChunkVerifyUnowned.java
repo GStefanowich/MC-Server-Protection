@@ -25,11 +25,14 @@
 
 package net.theelm.sewingmachine.objects.ticking;
 
+import net.minecraft.server.world.ServerWorld;
+import net.theelm.sewingmachine.events.RegionManageCallback;
 import net.theelm.sewingmachine.interfaces.TickableContext;
 import net.theelm.sewingmachine.interfaces.TickingAction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import net.theelm.sewingmachine.protections.BlockRange;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayDeque;
@@ -69,11 +72,8 @@ public class ChunkVerifyUnowned implements TickingAction {
             return true;
         World world = tickable.getWorld();
         
-        // Create the chunk position
-        WorldChunk worldChunk = world.getWorldChunk(check);
-        
         // If the chunk is claimed
-        this.success = ((IClaimedChunk) worldChunk).getOwnerId() == null;
+        this.success = RegionManageCallback.canClaim((ServerWorld) world, null, BlockRange.of(check));
         return !this.success || this.checks.isEmpty();
     }
 }

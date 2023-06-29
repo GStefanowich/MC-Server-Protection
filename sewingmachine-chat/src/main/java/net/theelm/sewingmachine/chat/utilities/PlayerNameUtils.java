@@ -76,9 +76,6 @@ public final class PlayerNameUtils {
             player
         ));
     }
-    public static @NotNull MutableText getPlayerRawName(@NotNull PlayerEntity player) {
-        return Text.literal(player.getDisplayName().getString());
-    }
     private static @NotNull MutableText applyPlayerNameStyle(@NotNull MutableText text, @NotNull ServerPlayerEntity player) {
         final String name = player.getGameProfile().getName();
         

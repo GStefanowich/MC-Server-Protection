@@ -43,6 +43,7 @@ import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.Permissions;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
@@ -61,8 +62,6 @@ import net.minecraft.entity.Entity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -77,69 +76,76 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
 public final class ModCommands extends SewCommand {
+    private final @NotNull List<SewPlugin> plugins;
+    
+    public ModCommands(@NotNull List<SewPlugin> plugins) {
+        this.plugins = plugins;
+    }
+    
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess access) {
-        ServerCore.register(dispatcher, CoreMod.MOD_ID, (builder) -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.ADMIN_CLAIM_SHOPS))
-            .then(CommandManager.literal("reload")
-                .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ALL_PERMISSIONS))
-                .then(CommandManager.literal("config")
-                    .requires(CommandPredicate.isEnabled(SewCoreConfig.HOT_RELOADING))
-                    .executes(this::reloadConfig)
-                )
-                .then(CommandManager.literal("permissions")
-                    .requires(CommandPredicate.isEnabled(SewCoreConfig.HANDLE_PERMISSIONS))
-                    .executes(this::reloadPermissions)
-                )
-            )
-            .then(CommandManager.literal("shops")
-                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.ADMIN_CLAIM_SHOPS))
-                .then(CommandManager.literal("change")
-                    .then(CommandManager.literal("item")
-                        .then(CommandManager.literal("hand")
-                            .executes(this::shopSignChangeItemToHand)
-                        )
-                        .then(CommandManager.literal("inventory")
-                            .executes(this::shopSignChangeItemToContainer)
-                        )
-                        .then(CommandManager.argument("item", ItemStackArgumentType.itemStack(access))
-                            .executes(this::shopSignChangeItem)
-                        )
+        ServerCore.register(dispatcher, CoreMod.MOD_ID, (builder) -> {
+            builder.requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.ADMIN_CLAIM_SHOPS))
+                .then(CommandManager.literal("reload")
+                    .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ALL_PERMISSIONS))
+                    .then(CommandManager.literal("config")
+                        .requires(CommandPredicate.isEnabled(SewCoreConfig.HOT_RELOADING))
+                        .executes(this::reloadConfig)
                     )
-                    .then(CommandManager.literal("owner")
-                        .then(CommandManager.argument("owner", GameProfileArgumentType.gameProfile())
-                            .suggests(CommandUtils::getAllPlayerNames)
-                            .executes(this::shopSignChangeOwner)
+                )
+                .then(CommandManager.literal("shops")
+                    .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.ADMIN_CLAIM_SHOPS))
+                    .then(CommandManager.literal("change")
+                        .then(CommandManager.literal("item")
+                            .then(CommandManager.literal("hand")
+                                .executes(this::shopSignChangeItemToHand)
+                            )
+                            .then(CommandManager.literal("inventory")
+                                .executes(this::shopSignChangeItemToContainer)
+                            )
+                            .then(CommandManager.argument("item", ItemStackArgumentType.itemStack(access))
+                                .executes(this::shopSignChangeItem)
+                            )
                         )
-                    )
-                    .then(CommandManager.literal("trader")
-                        .then(CommandManager.literal("source")
-                            .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
-                                .executes(this::shopSignChangeSoundSourceLocation)
+                        .then(CommandManager.literal("owner")
+                            .then(CommandManager.argument("owner", GameProfileArgumentType.gameProfile())
+                                .suggests(CommandUtils::getAllPlayerNames)
+                                .executes(this::shopSignChangeOwner)
+                            )
+                        )
+                        .then(CommandManager.literal("trader")
+                            .then(CommandManager.literal("source")
+                                .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())
+                                    .executes(this::shopSignChangeSoundSourceLocation)
+                                )
                             )
                         )
                     )
                 )
-            )
-            .then(CommandManager.literal("guides")
-                .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
-                .then(CommandManager.argument("book", StringArgumentType.string())
-                    .suggests(((context, suggestionsBuilder) -> CommandSource.suggestMatching(GuideUtils.getBooks(), suggestionsBuilder)))
-                    .then(CommandManager.literal("give")
-                        .then(CommandManager.argument("target", EntityArgumentType.players())
-                            .executes(this::givePlayersGuideBook)
+                .then(CommandManager.literal("guides")
+                    .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
+                    .then(CommandManager.argument("book", StringArgumentType.string())
+                        .suggests(((context, suggestionsBuilder) -> CommandSource.suggestMatching(GuideUtils.getBooks(), suggestionsBuilder)))
+                        .then(CommandManager.literal("give")
+                            .then(CommandManager.argument("target", EntityArgumentType.players())
+                                .executes(this::givePlayersGuideBook)
+                            )
+                        )
+                        .then(CommandManager.literal("set")
+                            .executes(this::setLecternGuide)
                         )
                     )
-                    .then(CommandManager.literal("set")
-                        .executes(this::setLecternGuide)
-                    )
-                )
-                .executes(this::unsetLecternGuide)
-            )
+                    .executes(this::unsetLecternGuide)
+                );
+                
+                for (SewPlugin plugin : this.plugins)
+                    plugin.updatePrimaryCommand(builder, access);
+            }
         );
     }
     
@@ -154,7 +160,7 @@ public final class ModCommands extends SewCommand {
             );
             
             // Re-send the command-tree to all players
-            this.reloadCommandTree(source.getServer(), false);
+            CommandUtils.resendTree(source.getServer());
             
             return Command.SINGLE_SUCCESS;
         } catch (IOException e) {
@@ -165,38 +171,6 @@ public final class ModCommands extends SewCommand {
             CoreMod.logError( e );
             return -1;
         }
-    }
-    
-    private int reloadPermissions(@NotNull CommandContext<ServerCommandSource> context) {
-        boolean success = RankUtils.reload();
-        ServerCommandSource source = context.getSource();
-        
-        if (!success)
-            source.sendFeedback(
-                () -> Text.literal("Failed to reload permissions, see console for errors").formatted(Formatting.RED),
-                true
-            );
-        else{
-            this.reloadCommandTree(source.getServer(), true);
-            source.sendFeedback(
-                () -> Text.literal("Permissions file has been reloaded").formatted(Formatting.GREEN),
-                true
-            );
-        }
-        
-        return success ? Command.SINGLE_SUCCESS : -1;
-    }
-    
-    private void reloadCommandTree(@NotNull MinecraftServer server, boolean reloadPermissions) {
-        PlayerManager playerManager = server.getPlayerManager();
-        
-        // Clear permissions
-        if (reloadPermissions)
-            RankUtils.clearRanks();
-        
-        // Resend the player the command tree
-        for (ServerPlayerEntity player : playerManager.getPlayerList())
-            playerManager.sendCommandTree(player);
     }
     
     private int shopSignChangeOwner(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -273,7 +247,7 @@ public final class ModCommands extends SewCommand {
     }
     private int shopSignChangeItem(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ItemStackArgument item = ItemStackArgumentType.getItemStackArgument(context, "item");
-        return ModCommands.shopSignChangeItem(context, item.createStack(1, false));
+        return this.shopSignChangeItem(context, item.createStack(1, false));
     }
     private int shopSignChangeItem(@NotNull CommandContext<ServerCommandSource> context, @NotNull ItemStack stack) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();

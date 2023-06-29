@@ -25,9 +25,12 @@
 
 package net.theelm.sewingmachine.base.mixins.World;
 
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.mixins.Interfaces.ItemEntityAccessor;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.base.mixins.Interfaces.PowderBlockAccessor;
+import net.theelm.sewingmachine.events.ContainerAccessCallback;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -64,6 +67,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @Mixin(LeveledCauldronBlock.class)
@@ -84,13 +88,10 @@ public abstract class LeveledCauldronBlockMixin extends Block {
         
         ItemStack colliderStack = colliderEntity.getStack();
         
-        UUID owner = colliderEntity.getThrower();
-        if (owner == null)
-            return;
-        
-        PlayerEntity thrower = world.getPlayerByUuid(owner);
-        if (!ChunkUtils.canPlayerLootChestsInChunk(thrower, blockPos))
-            return;
+        if (colliderEntity.getOwner() instanceof ServerPlayerEntity thrower) {
+            if (!ContainerAccessCallback.canAccess(thrower, blockPos))
+                return;
+        } else return;
         
         // If not a spawner, return
         if (colliderStack.getItem() == Items.SPAWNER && waterLevel >= 3) {// Get person throwing the ingredients
@@ -101,7 +102,9 @@ public abstract class LeveledCauldronBlockMixin extends Block {
             // Search for the emerald block
             List<ItemEntity> list = world.getEntitiesByType(EntityType.ITEM, new Box(blockPos), e -> true);
             for (ItemEntity item : list) {
-                if ((item.getThrower() == null) || (!item.getThrower().equals(owner)))
+                UUID itemThrower = ((ItemEntityAccessor) item).getThrower();
+                
+                if ((itemThrower == null) || (!Objects.equals(thrower.getUuid(), itemThrower)))
                     continue;
                 
                 binderStack = item.getStack();

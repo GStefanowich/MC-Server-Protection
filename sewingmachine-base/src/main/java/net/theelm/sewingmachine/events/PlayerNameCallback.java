@@ -32,8 +32,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.UserCache;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -63,7 +65,7 @@ public interface PlayerNameCallback {
             Text display = this.getDisplayName(player);
             if (display != null)
                 return display;
-
+            
             return player.getName();
         }
         
@@ -78,5 +80,35 @@ public interface PlayerNameCallback {
     static @NotNull Text getName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
         return PlayerNameCallback.INSTANCE.invoker()
             .getDisplayName(server, uuid);
+    }
+    
+    /**
+     * Get the name (or nickname) of the {@code player}
+     * @param player The player we want the name of
+     * @return The players name (or nickname)
+     */
+    static @NotNull Text getName(@NotNull PlayerEntity player) {
+        Text name = PlayerNameCallback.INSTANCE.invoker()
+            .getDisplayName(player);
+        return name == null ? player.getName() : name;
+    }
+    
+    /**
+     * Get the name of the player without any special color formatting
+     * @param server The minecraft server
+     * @param uuid The player we want the name of
+     * @return The players name
+     */
+    static @NotNull MutableText getPlainName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
+        return Text.literal(PlayerNameCallback.getName(server, uuid).getString());
+    }
+    
+    /**
+     * Get the name of the {@code player} without any special color formatting
+     * @param player The player we want the name of
+     * @return The players name
+     */
+    static @NotNull MutableText getPlainName(@NotNull PlayerEntity player) {
+        return Text.literal(PlayerNameCallback.getName(player).getString());
     }
 }

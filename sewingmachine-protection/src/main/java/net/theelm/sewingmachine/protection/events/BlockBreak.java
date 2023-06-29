@@ -32,7 +32,7 @@ import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
-import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
+import net.theelm.sewingmachine.events.BlockBreakCallback;
 import net.theelm.sewingmachine.interfaces.ConstructableEntity;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.OwnableEntity;
@@ -241,7 +241,7 @@ public final class BlockBreak {
             Entity owner = explosiveProjectile.getOwner();
             if (owner != null) {
                 // Everybodys favorite gameshow: Recursion!
-                return BlockBreakCallback.EVENT.invoker().destroy(
+                return BlockBreakCallback.TEST.invoker().destroy(
                     owner,
                     world,
                     hand,

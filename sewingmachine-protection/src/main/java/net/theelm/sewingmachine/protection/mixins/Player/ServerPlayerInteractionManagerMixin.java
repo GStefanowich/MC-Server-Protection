@@ -45,8 +45,8 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
-import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
-import net.theelm.sewingmachine.interfaces.BlockInteractionCallback;
+import net.theelm.sewingmachine.events.BlockBreakCallback;
+import net.theelm.sewingmachine.events.BlockInteractionCallback;
 import net.theelm.sewingmachine.interfaces.ItemUseCallback;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
@@ -68,9 +68,7 @@ public abstract class ServerPlayerInteractionManagerMixin {
     
     @Inject(at = @At("HEAD"), method = "processBlockBreakingAction", cancellable = true)
     private void onBlockBreakChange(BlockPos pos, PlayerActionC2SPacket.Action action, Direction direction, int worldHeight, int sequence, CallbackInfo callback) {
-        boolean result = BlockBreakCallback.EVENT.invoker()
-            .canDestroy(this.player, this.world, this.player.preferredHand, pos, direction, action);
-        if ( result ) {
+        if ( !BlockBreakCallback.canDestroy(this.player, this.world, this.player.preferredHand, pos, direction, action) ) {
             // Send the player a failed notice
             this.world.setBlockBreakingInfo(this.player.getId(), pos, -1);
             this.method_41250(pos, true, sequence, "may not interact");

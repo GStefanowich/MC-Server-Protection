@@ -23,48 +23,37 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.utilities;
+package net.theelm.sewingmachine.events;
 
-import net.minecraft.entity.LivingEntity;
-import net.minecraft.server.MinecraftServer;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.entity.Entity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
-import net.theelm.sewingmachine.events.PlayerNameCallback;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
-public final class SleepUtils {
-    
-    public static void entityBedToggle(@NotNull final LivingEntity entity, final boolean isInBed) {
-        if (!( entity instanceof ServerPlayerEntity player))
-            return;
+@FunctionalInterface
+public interface ContainerAccessCallback {
+    Event<ContainerAccessCallback> TEST = EventFactory.createArrayBacked(ContainerAccessCallback.class, (listeners) -> (entity, world, pos) -> {
+        ActionResult result = ActionResult.PASS;
         
-        ServerWorld world = player.getServerWorld();
-        
-        // Only announce if there is more than 1 player around
-        if ( world.getPlayers().size() > 1 ) {
-            TitleUtils.showPlayerAlert(world,
-                PlayerNameCallback.getPlainName(player).formatted(Formatting.AQUA),
-                Text.literal(isInBed ? " is now in bed" : " left their bed.")
-            );
+        for (ContainerAccessCallback event : listeners) {
+            result = event.access(entity, world, pos);
+            if (result != ActionResult.PASS)
+                break;
         }
-    }
+        
+        return result;
+    });
     
-    public static @NotNull String timeFromMillis(long millis) {
-        if (millis >= 23000)
-            return "sunrise";
-        if (millis >= 18000)
-            return "midnight";
-        if (millis >= 13000)
-            return "night";
-        if (millis >= 12000)
-            return "sunset";
-        if (millis >= 6000)
-            return "noon";
-        if (millis >= 1000)
-            return "day";
-        return "morning";
+    ActionResult access(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull BlockPos pos);
+    static boolean canAccess(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull BlockPos pos) {
+        return ContainerAccessCallback.TEST.invoker()
+            .access(entity, world, pos) != ActionResult.FAIL;
     }
-    
+    static boolean canAccess(@NotNull ServerPlayerEntity player, @NotNull BlockPos pos) {
+        return ContainerAccessCallback.canAccess(player, player.getServerWorld(), pos);
+    }
 }

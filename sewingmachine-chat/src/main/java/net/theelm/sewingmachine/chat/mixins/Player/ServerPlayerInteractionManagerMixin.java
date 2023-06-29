@@ -32,6 +32,7 @@ import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
 import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.events.CommandPermissionCallback;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -78,7 +79,7 @@ public class ServerPlayerInteractionManagerMixin implements PlayerChat {
     }
     @Override
     public boolean isMuted() {
-        return this.isGlobalMuted && (!RankUtils.hasPermission(this.player, Permissions.CHAT_COMMAND_MUTE_EXEMPT));
+        return this.isGlobalMuted && (!CommandPermissionCallback.EVENT.invoker().hasPermission(this.player, Permissions.CHAT_COMMAND_MUTE_EXEMPT));
     }
     @Override
     public boolean isMuted(@NotNull GameProfile player) {

@@ -29,6 +29,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import org.apache.commons.lang3.StringUtils;
@@ -40,14 +41,14 @@ import org.jetbrains.annotations.Nullable;
  * By greg in SewingMachineMod
  */
 public final class WrittenBookBuilder {
-    private final @NotNull JsonArray pages = new JsonArray();
+    private final @NotNull JsonArray components = new JsonArray();
     private @NotNull JsonObject last = WrittenBookBuilder.blankBookComponent();
     public WrittenBookBuilder() {
         this.add(this.last);
     }
     
     private WrittenBookBuilder add(@NotNull JsonObject obj) {
-        this.pages.add(obj);
+        this.components.add(obj);
         this.last = obj;
         return this;
     }
@@ -92,7 +93,11 @@ public final class WrittenBookBuilder {
     
     @Override
     public String toString() {
-        return this.pages.toString();
+        return this.components.toString();
+    }
+    
+    public @NotNull NbtString toNbtString() {
+        return NbtString.of(this.toString());
     }
     
     public static @NotNull JsonObject blankBookComponent() {

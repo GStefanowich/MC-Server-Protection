@@ -38,6 +38,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
@@ -113,11 +114,10 @@ public final class SignShopFree extends ShopSign.BuyTradeSell {
             if (!InventoryUtils.chestToPlayer(player, signPos, chestInventory, player.getInventory(), sign::itemMatchPredicate, sign.getShopItemCount(), true ))
                 return Either.left(Text.literal("Chest is out of " + sign.getShopItemDisplay() + "."));
             
-            ClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
-            ClaimantPlayer permissions = claimCache.getPlayerClaim(sign.getShopOwner());
+            Text name = PlayerNameCallback.getName(server, sign.getShopOwner());
             
             // Log the event
-            CoreMod.logInfo(player.getName().getString() + " got " + FormattingUtils.format( sign.getShopItemCount() ) + " " + sign.getShopItemDisplay() + " from " + permissions.getName().getString());
+            CoreMod.logInfo(player.getName().getString() + " got " + FormattingUtils.format(sign.getShopItemCount()) + " " + sign.getShopItemDisplay() + " from " + name.getString());
             
             return Either.right(Boolean.TRUE);
         }

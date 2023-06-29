@@ -28,13 +28,13 @@ package net.theelm.sewingmachine.protection.claims;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.ClaimTag;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
-import net.theelm.sewingmachine.utilities.PlayerNameUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -43,6 +43,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.world.chunk.Chunk;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -119,7 +120,7 @@ public final class ClaimantPlayer extends Claimant {
         return FormattingUtils.deepCopy(this.name);
     }
     public @NotNull MutableText updateName() {
-        return PlayerNameUtils.fetchPlayerNick(this.claimCache.getServer(), this.getId());
+        return TextUtils.mutable(PlayerNameCallback.getName(this.claimCache.getServer(), this.getId()));
     }
     
     /* Send Messages */

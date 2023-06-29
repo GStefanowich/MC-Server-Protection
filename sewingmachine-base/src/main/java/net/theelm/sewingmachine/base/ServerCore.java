@@ -26,9 +26,11 @@
 package net.theelm.sewingmachine.base;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.registry.RegistryKey;
+import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.signs.SignBackpack;
 import net.theelm.sewingmachine.base.objects.signs.SignBalance;
@@ -48,7 +50,6 @@ import net.theelm.sewingmachine.commands.HeadCommand;
 import net.theelm.sewingmachine.commands.HoldingCommand;
 import net.theelm.sewingmachine.commands.LoggingCommand;
 import net.theelm.sewingmachine.commands.MiscCommands;
-import net.theelm.sewingmachine.commands.ModCommands;
 import net.theelm.sewingmachine.commands.ModsCommand;
 import net.theelm.sewingmachine.commands.MoneyCommand;
 import net.theelm.sewingmachine.commands.PlayerSpawnCommand;
@@ -67,12 +68,12 @@ import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.ConfigPredicate;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.TaxCollection;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.DevUtils;
 import net.theelm.sewingmachine.utilities.MapUtils;
 import net.fabricmc.api.DedicatedServerModInitializer;
-import net.minecraft.SharedConstants;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
@@ -89,6 +90,7 @@ import net.theelm.sewingmachine.utilities.ShopSigns;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.mysql.cj.jdbc.MysqlDataSource;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Locale;
@@ -105,9 +107,8 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     public void onInitializeServer() {
         super.initialize();
         
-        if ( DevUtils.isDebugging() )
-            SharedConstants.isDevelopment = true;
-        
+        Object t = new MysqlDataSource();
+        System.out.println(t.getClass());
         MapUtils.init();
         
         CoreMod.logInfo("Initializing Database.");
@@ -122,12 +123,12 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
                 // Start the logger
                 EventLogger.start();
             } else {
-                CoreMod.logInfo( "Skipping Database Initialization (Unused)" );
+                CoreMod.logInfo("Skipping Database Initialization (Unused)");
             }
         } catch (SQLException e) {
-            CoreMod.logInfo( "Error executing MySQL Database setup." );
+            CoreMod.logInfo("Error executing MySQL Database setup.");
             
-            throw new RuntimeException( "Could not connect to database server.", e );
+            throw new RuntimeException("Could not connect to database server.", e);
         }
         
         // Update the mod version in config
@@ -143,6 +144,23 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             ShopSigns.add(SignShopSell::new);
             ShopSigns.add(SignWarp::new);
             ShopSigns.add(SignWaystone::new);
+            
+            // Register the server tax
+            TaxCollection.EVENT.register((income, world, pos) -> {
+                Integer tax = SewConfig.get(SewCoreConfig.SERVER_SALES_TAX);
+                if (tax != null)
+                    income.addTax(Text.literal("Spawn"), tax);
+            });
+            
+UUID uuid = null;
+MinecraftServer server = null;
+
+server.getPlayerManager()
+    .getPlayer(uuid)
+    .getName();
+server.getUserCache()
+    .getByUuid(uuid).get()
+    .getName();
             
             // Alert the mod presence
             CoreMod.logInfo("Finished loading.");
@@ -169,7 +187,6 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             new HoldingCommand(),
             new LoggingCommand(),
             new MiscCommands(),
-            new ModCommands(),
             new ModsCommand(),
             new MoneyCommand(),
             new PlayerSpawnCommand(),
@@ -205,10 +222,10 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         return SewConfig.get(SewCoreConfig.DEFAULT_WORLD);
     }
     
-    public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final Consumer<LiteralArgumentBuilder<ServerCommandSource>> consumer) {
+    public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final Consumer<ArgumentBuilder<ServerCommandSource, ?>> consumer) {
         return ServerCore.register(dispatcher, command, command, consumer);
     }
-    public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final String descriptive, @NotNull final Consumer<LiteralArgumentBuilder<ServerCommandSource>> consumer) {
+    public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final String descriptive, @NotNull final Consumer<ArgumentBuilder<ServerCommandSource, ?>> consumer) {
         final String display = command.toLowerCase(Locale.ROOT);
         
         // Build the literal using the name

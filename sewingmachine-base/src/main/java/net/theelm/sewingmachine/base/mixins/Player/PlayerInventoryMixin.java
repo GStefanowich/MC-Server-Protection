@@ -26,7 +26,7 @@
 package net.theelm.sewingmachine.base.mixins.Player;
 
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
-import net.theelm.sewingmachine.objects.PlayerBackpack;
+import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;

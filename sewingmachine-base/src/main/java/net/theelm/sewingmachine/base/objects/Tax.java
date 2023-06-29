@@ -23,24 +23,29 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.base.objects;
 
-import com.mojang.brigadier.builder.ArgumentBuilder;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.server.command.ServerCommandSource;
-import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Optional;
-
 /**
- * Created on Jun 08 2023 at 7:56 PM.
+ * Created on Jun 28 2023 at 11:11 PM.
  * By greg in sewingmachine
  */
-public interface SewPlugin {
-    default @NotNull Optional<Class<?>> getConfigClass() {
-        return Optional.empty();
+public record Tax(
+    @NotNull Text name,
+    int value,
+    int percent
+) {
+    public @NotNull Text name() {
+        return this.name;
     }
-    default @NotNull SewCommand[] getCommands() { return new SewCommand[0]; }
-    default void updatePrimaryCommand(@NotNull ArgumentBuilder<ServerCommandSource, ?> builder, @NotNull CommandRegistryAccess access) {}
+    
+    public int value() {
+        return this.value;
+    }
+    
+    public int percent() {
+        return this.percent;
+    }
 }

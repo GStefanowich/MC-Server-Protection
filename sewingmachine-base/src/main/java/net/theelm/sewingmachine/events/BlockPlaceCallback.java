@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.events;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
@@ -33,6 +33,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 
 public interface BlockPlaceCallback {
     Event<BlockPlaceCallback> EVENT = EventFactory.createArrayBacked( BlockPlaceCallback.class, (listeners) -> (player, world, blockPos, direction, itemStack) -> {
@@ -45,5 +46,5 @@ public interface BlockPlaceCallback {
         return ActionResult.PASS;
     });
     
-    ActionResult interact(ServerPlayerEntity player, World world, BlockPos blockPos, Direction direction, ItemStack itemStack);
+    ActionResult interact(@NotNull ServerPlayerEntity player, @NotNull World world, @NotNull BlockPos blockPos, @NotNull Direction direction, @NotNull ItemStack itemStack);
 }

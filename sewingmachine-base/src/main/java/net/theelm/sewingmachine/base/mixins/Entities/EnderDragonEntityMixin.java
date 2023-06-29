@@ -25,14 +25,13 @@
 
 package net.theelm.sewingmachine.base.mixins.Entities;
 
-import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
+import net.theelm.sewingmachine.events.BlockBreakCallback;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.entity.mob.MobEntity;
 import net.minecraft.entity.mob.Monster;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -71,8 +70,7 @@ public abstract class EnderDragonEntityMixin extends MobEntity implements Monste
     public boolean breakBlocks(@NotNull World world, @NotNull BlockPos pos, boolean move) {
         BlockState blockState = world.getBlockState(pos);
         if (!blockState.isAir() && world instanceof ServerWorld serverWorld) {
-            boolean result = BlockBreakCallback.EVENT.invoker()
-                .canDestroy(this, serverWorld, Hand.MAIN_HAND, pos, null, null);
+            boolean result = BlockBreakCallback.canDestroy(this, serverWorld, Hand.MAIN_HAND, pos, null, null);
             if (!result)
                 return false;
         }

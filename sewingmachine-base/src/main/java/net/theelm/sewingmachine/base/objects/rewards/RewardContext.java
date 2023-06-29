@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.objects.rewards;
+package net.theelm.sewingmachine.base.objects.rewards;
 
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;

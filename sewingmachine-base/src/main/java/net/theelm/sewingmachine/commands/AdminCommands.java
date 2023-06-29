@@ -137,7 +137,7 @@ public final class AdminCommands extends SewCommand {
         ServerCommandSource source = context.getSource();
         Collection<ServerPlayerEntity> players = EntityArgumentType.getPlayers(context, "target");
         if (players.size() <= 0)
-            throw PLAYERS_NOT_FOUND_EXCEPTION.create( source );
+            throw PLAYERS_NOT_FOUND_EXCEPTION.create(source);
         return this.toggleFlying(source, players.stream());
     }
     private int toggleFlying(@NotNull ServerCommandSource source, @NotNull Stream<ServerPlayerEntity> players) {

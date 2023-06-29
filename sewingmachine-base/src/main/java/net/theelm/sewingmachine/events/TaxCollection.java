@@ -23,24 +23,21 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.events;
 
-import com.mojang.brigadier.builder.ArgumentBuilder;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.server.command.ServerCommandSource;
-import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.math.BlockPos;
+import net.theelm.sewingmachine.base.objects.Income;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Optional;
-
-/**
- * Created on Jun 08 2023 at 7:56 PM.
- * By greg in sewingmachine
- */
-public interface SewPlugin {
-    default @NotNull Optional<Class<?>> getConfigClass() {
-        return Optional.empty();
-    }
-    default @NotNull SewCommand[] getCommands() { return new SewCommand[0]; }
-    default void updatePrimaryCommand(@NotNull ArgumentBuilder<ServerCommandSource, ?> builder, @NotNull CommandRegistryAccess access) {}
+@FunctionalInterface
+public interface TaxCollection {
+    Event<TaxCollection> EVENT = EventFactory.createArrayBacked(TaxCollection.class, (collectors) -> (income, world, pos) -> {
+        for (TaxCollection collector : collectors)
+            collector.collect(income, world, pos);
+    });
+    
+    void collect(@NotNull Income income, @NotNull ServerWorld world, @NotNull BlockPos pos);
 }

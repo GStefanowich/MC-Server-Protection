@@ -31,7 +31,7 @@ import net.minecraft.entity.damage.DamageType;
 import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.Registry;
 import net.theelm.sewingmachine.base.interfaces.CustomDamageSources;
-import net.theelm.sewingmachine.objects.SawDamage;
+import net.theelm.sewingmachine.base.objects.SawDamage;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

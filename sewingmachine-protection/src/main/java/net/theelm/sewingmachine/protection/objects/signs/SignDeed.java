@@ -143,7 +143,7 @@ public final class SignDeed extends ShopSign {
     @Override
     public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
         // If shops disabled
-        if (!(SewConfig.get(SewCoreConfig.DO_MONEY) && SewConfig.get(SewCoreConfig.DO_CLAIMS)))
+        if (!SewConfig.get(SewCoreConfig.DO_MONEY))
             return Either.right(Boolean.TRUE);
         
         if ((sign.getFirstPos() == null) || (sign.getSecondPos() == null))
@@ -154,7 +154,6 @@ public final class SignDeed extends ShopSign {
     
     @Override
     public boolean isEnabled() {
-        return SewConfig.get(SewCoreConfig.DO_MONEY)
-            && SewConfig.get(SewCoreConfig.DO_CLAIMS);
+        return SewConfig.get(SewCoreConfig.DO_MONEY);
     }
 }

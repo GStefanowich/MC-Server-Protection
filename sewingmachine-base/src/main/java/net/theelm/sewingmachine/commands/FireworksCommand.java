@@ -36,7 +36,7 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
-import net.theelm.sewingmachine.objects.fireworks.FireworkSchemes;
+import net.theelm.sewingmachine.base.objects.fireworks.FireworkSchemes;
 import net.theelm.sewingmachine.utilities.IntUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.projectile.FireworkRocketEntity;

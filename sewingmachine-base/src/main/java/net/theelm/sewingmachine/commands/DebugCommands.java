@@ -36,7 +36,7 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.DragonLoot;
 import net.theelm.sewingmachine.base.mixins.Server.ServerWorldAccessor;
-import net.theelm.sewingmachine.objects.rewards.WeightedReward;
+import net.theelm.sewingmachine.base.objects.rewards.WeightedReward;
 import net.theelm.sewingmachine.utilities.BossLootRewards;
 import net.theelm.sewingmachine.utilities.EffectUtils;
 import net.minecraft.command.argument.EntityArgumentType;

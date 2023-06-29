@@ -53,7 +53,7 @@ public final class WhitelistTree implements Comparable<WhitelistTree> {
     private final @NotNull WhitelistedPlayer player;
     private UUID invitedBy;
     
-    private WhitelistTree(@NotNull WhitelistedPlayer player) {
+    public WhitelistTree(@NotNull WhitelistedPlayer player) {
         this.player = player;
         this.invitedBy = player.getInvitedBy();
     }

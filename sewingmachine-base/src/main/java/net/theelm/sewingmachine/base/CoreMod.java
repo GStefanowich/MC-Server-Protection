@@ -37,10 +37,11 @@ import net.theelm.sewingmachine.MySQL.MySQLite;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.blocks.entities.LecternGuideBlockEntity;
 import net.theelm.sewingmachine.blocks.entities.LecternWarpsBlockEntity;
+import net.theelm.sewingmachine.commands.ModCommands;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
-import net.theelm.sewingmachine.objects.ShopStats;
+import net.theelm.sewingmachine.base.objects.ShopStats;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.DevUtils;
 import net.fabricmc.api.EnvType;
@@ -121,8 +122,10 @@ public abstract class CoreMod {
         List<SewCommand> commands = new ArrayList<>();
         List<SewPlugin> plugins = this.getPlugins();
         
+        commands.add(new ModCommands(plugins));
+        
         for (SewPlugin plugin : plugins) {
-            System.out.println(plugin.getClass());
+            CoreMod.logInfo("Sew Plugin: " + plugin.getClass());
             
             // Add the configs of any plugin
             plugin.getConfigClass()
@@ -131,12 +134,16 @@ public abstract class CoreMod {
             commands.addAll(List.of(plugin.getCommands()));
         }
         
+        SewConfig.firstInitialize();
+        
         // Register the server commands
         if (commands.isEmpty())
             CoreMod.logInfo("No commands to register.");
         else {
             CommandRegistrationCallback.EVENT.register((dispatcher, registry, environment) -> {
                 CoreMod.logInfo("Registering our " + commands.size() + " commands.");
+                
+                // Register commands from plugins
                 for (SewCommand command : commands)
                     if (command != null)
                         command.register(dispatcher, registry);
@@ -158,9 +165,6 @@ public abstract class CoreMod {
         else type = "both";
         
         List<SewPlugin> plugins = new ArrayList<>();
-        if (this instanceof SewPlugin plugin)
-            plugins.add(plugin);
-        
         plugins.addAll(fabric.getEntrypoints(type, SewPlugin.class));
         
         return plugins;

@@ -26,7 +26,8 @@
 package net.theelm.sewingmachine.base.mixins.Player.Interaction;
 
 import net.minecraft.server.world.ServerWorld;
-import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
+import net.theelm.sewingmachine.events.BlockBreakCallback;
+import net.theelm.sewingmachine.events.ContainerAccessCallback;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.minecraft.block.BarrelBlock;
 import net.minecraft.block.Block;
@@ -81,7 +82,7 @@ public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
             // If the block behind the item frame is a storage
             if ( containerBlock instanceof ChestBlock || containerBlock instanceof BarrelBlock ) {
                 // Check chunk permissions
-                if (!ChunkUtils.canPlayerLootChestsInChunk(player, containerPos)) {
+                if (!ContainerAccessCallback.canAccess((ServerPlayerEntity) player, containerPos)) {
                     callback.setReturnValue(ActionResult.SUCCESS);
                     return;
                 }
@@ -97,11 +98,8 @@ public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
             }
         }
         
-        boolean canBreak = BlockBreakCallback.EVENT.invoker()
-            .canDestroy(player, (ServerWorld) this.getWorld(), Hand.MAIN_HAND, this.getBlockPos(), null, null);
-        
         // If player should be able to interact with the item frame
-        if (!canBreak)
+        if (!BlockBreakCallback.canDestroy(player, (ServerWorld) this.getWorld(), Hand.MAIN_HAND, this.getBlockPos(), null, null))
             callback.setReturnValue(ActionResult.SUCCESS);
     }
     
@@ -111,11 +109,8 @@ public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
         if (!(attacker instanceof PlayerEntity player))
             return;
         
-        boolean canBreak = BlockBreakCallback.EVENT.invoker()
-            .canDestroy(player, (ServerWorld) this.getWorld(), Hand.MAIN_HAND, this.getBlockPos(), null, null);
-        
         // If player should be able to interact with the item frame
-        if (!canBreak)
+        if (!BlockBreakCallback.canDestroy(player, (ServerWorld) this.getWorld(), Hand.MAIN_HAND, this.getBlockPos(), null, null))
             callback.setReturnValue(false);
     }
     

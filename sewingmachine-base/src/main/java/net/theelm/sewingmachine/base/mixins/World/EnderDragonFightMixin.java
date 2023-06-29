@@ -57,6 +57,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.gen.feature.EndPortalFeature;
 import org.jetbrains.annotations.NotNull;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -135,7 +136,9 @@ public abstract class EnderDragonFightMixin {
     /*
      * Methods
      */
-    
+
+    @Shadow @Final private BlockPos origin;
+
     @Inject(at = @At("HEAD"), method = "tick", cancellable = true)
     public void spawnStateChange(CallbackInfo callback) {
         int players = this.bossBar.getPlayers().size();
@@ -259,7 +262,7 @@ public abstract class EnderDragonFightMixin {
             this.seenPlayers.clear();
         
         if (giveLootReward)
-            EnderDragonFightMixin.generateLootRewardContainer(this.world);
+            this.generateLootRewardContainer(this.world);
     }
     
     @Inject(at = @At("TAIL"), method = "updatePlayers")
@@ -306,11 +309,11 @@ public abstract class EnderDragonFightMixin {
         }
     }
     
-    private static void generateLootRewardContainer(@NotNull ServerWorld world) {
-        EnderDragonFightMixin.generateLootRewardContainer(world, world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, EndPortalFeature.ORIGIN));
+    private void generateLootRewardContainer(@NotNull ServerWorld world) {
+        this.generateLootRewardContainer(world, world.getTopPosition(Heightmap.Type.MOTION_BLOCKING, EndPortalFeature.offsetOrigin(this.origin)));
     }
-    private static void generateLootRewardContainer(@NotNull ServerWorld world, @NotNull BlockPos pos) {
-        if (EnderDragonFightMixin.isLootRewardContainer(world, pos.down()))
+    private void generateLootRewardContainer(@NotNull ServerWorld world, @NotNull BlockPos pos) {
+        if (this.isLootRewardContainer(world, pos.down()))
             return;
         
         world.setBlockState(pos, Blocks.BLACK_SHULKER_BOX.getDefaultState());
@@ -324,7 +327,7 @@ public abstract class EnderDragonFightMixin {
         
         RegionManageCallback.tryClaim(world, CoreMod.SPAWN_ID, BlockRange.of(pos));
     }
-    private static boolean isLootRewardContainer(@NotNull ServerWorld world, @NotNull BlockPos pos) {
+    private boolean isLootRewardContainer(@NotNull ServerWorld world, @NotNull BlockPos pos) {
         BlockEntity blockEntity = world.getBlockEntity(pos);
         return blockEntity instanceof ShulkerBoxBlockEntity
             && ((BossLootableContainer)blockEntity).getBossLootIdentifier() != null;

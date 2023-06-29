@@ -220,7 +220,7 @@ public final class LoggingCommand extends SewCommand {
                 return Text.literal("\n" + results.getRow() + ". ")
                     .append(Text.literal( add ? "+ " : "- " ).append(Text.translatable(blockTranslation)).formatted( add ? Formatting.GREEN: Formatting.RED ))
                     .append(" by ")
-                    .append(PlayerNameUtils.fetchPlayerName(source.getServer(), updatedBy).formatted(Formatting.AQUA).styled(hoverEvent))
+                    .append(PlayerNameCallback.getPlainName(source.getServer(), updatedBy).formatted(Formatting.AQUA).styled(hoverEvent))
                     .append("\n     at ")
                     .append(MessageUtils.xyzToText(new BlockPos(results.getInt("blockX"), results.getInt("blockY"), results.getInt("blockZ"))).formatted(Formatting.GRAY))
                     .append("\n     at ")

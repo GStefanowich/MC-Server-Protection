@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.protection.mixins.Entities;
 
-import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
+import net.theelm.sewingmachine.events.BlockBreakCallback;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -58,7 +58,7 @@ public abstract class ExplodingEntitiesMixin extends Entity {
     @Override
     public boolean canExplosionDestroyBlock(Explosion explosion, BlockView world, BlockPos blockPos, @NotNull BlockState blockState, float damage) {
         if ((!blockState.isAir()) && (world instanceof ServerWorld serverWorld)) {
-            ActionResult result = BlockBreakCallback.EVENT.invoker()
+            ActionResult result = BlockBreakCallback.TEST.invoker()
                 .destroy(this, serverWorld, Hand.MAIN_HAND, blockPos, null, null);
             if (result != ActionResult.PASS)
                 return (result == ActionResult.SUCCESS);

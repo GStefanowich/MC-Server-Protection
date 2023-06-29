@@ -1,8 +1,8 @@
 package net.theelm.sewingmachine.utilities;
 
 import net.theelm.sewingmachine.objects.LootInventory;
-import net.theelm.sewingmachine.objects.rewards.RewardContext;
-import net.theelm.sewingmachine.objects.rewards.WeightedReward;
+import net.theelm.sewingmachine.base.objects.rewards.RewardContext;
+import net.theelm.sewingmachine.base.objects.rewards.WeightedReward;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.player.PlayerEntity;

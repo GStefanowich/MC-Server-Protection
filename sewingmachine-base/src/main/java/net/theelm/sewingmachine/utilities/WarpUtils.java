@@ -36,7 +36,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.events.PlayerCanTeleport;
+import net.theelm.sewingmachine.events.PlayerTeleportCallback;
 import net.theelm.sewingmachine.events.RegionManageCallback;
 import net.theelm.sewingmachine.events.RegionNameCallback;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
@@ -736,7 +736,7 @@ public final class WarpUtils {
     private static CompletableFuture<Suggestions> buildSuggestions(@NotNull MinecraftServer server, @NotNull UUID warpOwner, @Nullable UUID untrusted, @NotNull Map<String, Warp> warps, @NotNull SuggestionsBuilder builder) {
         String remainder = builder.getRemaining().toLowerCase(Locale.ROOT);
         
-        boolean canViewCoordinates = untrusted != null && (warpOwner.equals(untrusted) || PlayerCanTeleport.canTeleport(server, untrusted, warpOwner));
+        boolean canViewCoordinates = untrusted != null && (warpOwner.equals(untrusted) || PlayerTeleportCallback.canTeleport(server, untrusted, warpOwner));
         for (Map.Entry<String, Warp> iterator : warps.entrySet()) {
             String name = iterator.getKey();
             if (name.contains(" "))

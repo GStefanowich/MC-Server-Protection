@@ -29,7 +29,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.random.Random;
-import net.theelm.sewingmachine.interfaces.BlockBreakCallback;
+import net.theelm.sewingmachine.events.BlockBreakCallback;
 import net.theelm.sewingmachine.interfaces.EndermanGoal;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.ai.goal.Goal;
@@ -70,12 +70,8 @@ public abstract class EndermanEntityPlaceMixin extends Goal implements EndermanG
         BlockState carriedBlock = this.enderman.getCarriedBlock();
         
         if (carriedBlock != null && this.canPlaceOn(world, blockPositionPlace, carriedBlock, blockStatePlace, blockStateGround, blockPositionGround)) {
-            // Get the chunk permissions
-            boolean grief = BlockBreakCallback.EVENT.invoker()
-                .canDestroy(this.enderman, world, Hand.MAIN_HAND, blockPositionPlace, null, null);
-            
             // Check if enderman griefing is allowed (Invert because FALSE == NOT ALLOWED)
-            if (!grief) {
+            if (!BlockBreakCallback.canDestroy(this.enderman, world, Hand.MAIN_HAND, blockPositionPlace, null, null)) {
                 this.sadEnderman();
                 return;
             }

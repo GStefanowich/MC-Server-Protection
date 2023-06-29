@@ -42,13 +42,12 @@ import net.theelm.sewingmachine.chat.config.SewChatConfig;
 import net.theelm.sewingmachine.chat.utilities.ChatRoomUtilities;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
-import net.theelm.sewingmachine.commands.ClaimCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.events.CommandPermissionCallback;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.utilities.CommandUtils;
-import net.theelm.sewingmachine.utilities.RankUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,11 +58,11 @@ public final class ChatroomCommands {
     private ChatroomCommands() {}
     
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
-        ServerCore.register(dispatcher, "t", "Town Chat", builder -> builder
+        /*ServerCore.register(dispatcher, "t", "Town Chat", builder -> builder
             .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY).and(ClaimCommand::sourceInTown))
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
             .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
-        );
+        );*/
         
         ServerCore.register(dispatcher, "g", "Global Chat", builder -> builder
             .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY))
@@ -78,11 +77,11 @@ public final class ChatroomCommands {
         );
         
         ServerCore.register(dispatcher, "Chat", builder -> builder
-            .then(CommandManager.literal("town")
+            /*.then(CommandManager.literal("town")
                 .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY).and(ClaimCommand::sourceInTown))
                 .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
                 .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
-            )
+            )*/
             .then(CommandManager.literal("global")
                 .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY))
                 .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
@@ -181,7 +180,7 @@ public final class ChatroomCommands {
         ServerPlayerEntity target = EntityArgumentType.getPlayer(context, "player");
         PlayerChat chatter = (PlayerChat) target;
         
-        if (RankUtils.hasPermission(target, Permissions.CHAT_COMMAND_MUTE_EXEMPT) || target.hasPermissionLevel(1))
+        if (CommandPermissionCallback.EVENT.invoker().hasPermission(target, Permissions.CHAT_COMMAND_MUTE_EXEMPT) || target.hasPermissionLevel(1))
             throw MUTE_EXEMPT.create();
         else {
             source.sendFeedback(

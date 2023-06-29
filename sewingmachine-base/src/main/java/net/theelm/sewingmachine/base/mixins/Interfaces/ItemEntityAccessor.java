@@ -23,24 +23,20 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.base.mixins.Interfaces;
 
-import com.mojang.brigadier.builder.ArgumentBuilder;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.server.command.ServerCommandSource;
-import net.theelm.sewingmachine.commands.abstraction.SewCommand;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.entity.ItemEntity;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-import java.util.Optional;
+import java.util.UUID;
 
 /**
- * Created on Jun 08 2023 at 7:56 PM.
+ * Created on Jun 28 2023 at 9:48 PM.
  * By greg in sewingmachine
  */
-public interface SewPlugin {
-    default @NotNull Optional<Class<?>> getConfigClass() {
-        return Optional.empty();
-    }
-    default @NotNull SewCommand[] getCommands() { return new SewCommand[0]; }
-    default void updatePrimaryCommand(@NotNull ArgumentBuilder<ServerCommandSource, ?> builder, @NotNull CommandRegistryAccess access) {}
+@Mixin(ItemEntity.class)
+public interface ItemEntityAccessor {
+    @Accessor("thrower")
+    UUID getThrower();
 }
