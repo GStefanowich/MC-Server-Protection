@@ -9,11 +9,11 @@ pluginManagement {
     }
 }
 
-rootProject.name = "sewingmachine";
+rootProject.name = 'sewingmachine'
 
-include 'sewingmachine-base';
-include 'sewingmachine-chat';
-include 'sewingmachine-deathchests';
-include 'sewingmachine-protection';
-include 'sewingmachine-permissions'
-
+include ':sewingmachine-base'
+include ':sewingmachine-chat'
+include ':sewingmachine-deathchests'
+include ':sewingmachine-protection'
+include ':sewingmachine-permissions'
+include ':sewingmachine-custom'
