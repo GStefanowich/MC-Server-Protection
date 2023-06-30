@@ -1,27 +1,7 @@
-plugins {
-    id 'com.github.johnrengelman.shadow' version '7.1.0'
-}
-
 archivesBaseName = "sewingmachine-base"
 
-repositories {
-    maven { url 'https://jitpack.io' }
-}
-
-apply plugin: 'com.github.johnrengelman.shadow'
-
-String bluemapVersion = "v2.5.1"
-
-dependencies {
-    // Bluemap API
-    shadow implementation(group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: bluemapVersion)
-    
-    shadow implementation(group: 'mysql', name: 'mysql-connector-java', version: '8.0.15')
-}
-
-jar {
-    from "LICENSE"
-    archiveClassifier.set('dev')
+/*jar {
+    archiveClassifier.set('all')
     
     from {
         configurations.runtimeClasspath.collect {
@@ -35,10 +15,10 @@ jar {
 
 shadowJar {
     configurations = [project.configurations.shadow]
-    archiveClassifier.set('dev')
+    archiveClassifier.set('all')
 }
 
 remapJar {
     dependsOn shadowJar
     inputFile = tasks.shadowJar.archiveFile
-}
+}*/

@@ -1,8 +1,8 @@
 {
 	"schemaVersion": 1,
-	"id": "sewing-machine",
+	"id": "sewing-machine-base",
 	"version": "${version}",
-	"name": "Sewing Machine",
+	"name": "Sewing Machine Base",
 	"description": "A mod for sewing your worlds chunks together. Provides chunk claiming and other server utilities.",
 	"authors": [
 		"TheElm"
@@ -26,7 +26,7 @@
 		]
 	},
 	"mixins": [
-		"sewingmachine.mixins.json"
+		"sewingmachine-base.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.14.21",

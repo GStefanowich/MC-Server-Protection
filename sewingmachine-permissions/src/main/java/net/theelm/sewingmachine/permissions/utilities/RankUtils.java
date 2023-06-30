@@ -34,7 +34,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.theelm.sewingmachine.base.CoreMod;
@@ -79,7 +78,7 @@ public final class RankUtils {
                 .append(Text.literal(inherits == null ? "*" : inherits).formatted(Formatting.AQUA));
             builder.suggest(name.equals("*") ? TextUtils.quoteWrap(name) : name, tooltip);
         }
-
+        
         return builder.buildFuture();
     }
     

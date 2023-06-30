@@ -6,6 +6,14 @@ plugins {
 	id 'com.github.johnrengelman.shadow' version '7.1.0'
 }
 
+String bluemapVersion = "v2.5.1"
+
+repositories {
+	maven { url 'https://jitpack.io' }
+}
+
+gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS
+
 version = project.version
 logger.lifecycle("Building the project.")
 
@@ -33,7 +41,7 @@ allprojects {
 		// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
 		// if it is present.
 		// If you remove this line, sources will not be generated.
-		java.withSourcesJar()
+		withSourcesJar()
 	}
 	
 	allprojects.each { p ->
@@ -64,22 +72,66 @@ allprojects {
 		modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 		
 		implementation 'com.intellij:annotations:+@jar'
-		
-		if (project.name != "sewingmachine-base") {
-			implementation project(path: ':sewingmachine-base', configuration: "namedElements")
-		}
 	}
 	
 	tasks.withType(AbstractArchiveTask).configureEach {
 		preserveFileTimestamps = false
 		reproducibleFileOrder = true
 	}
+}
+
+// Run subproject tasks when running the main task
+subprojects.each {
+	jar.dependsOn("${it.path}:jar")
+	remapJar.dependsOn("${it.path}:remapJar")
+	compileJava.dependsOn("${it.path}:compileJava")
+}
+
+// All subprojects should depend on the '-base' project
+subprojects {
+	if (project.name == "sewingmachine-base") {
+		repositories {
+			maven { url 'https://jitpack.io' }
+		}
+	}
 	
-	/*tasks.register('generateSources') {
-		group = "fabric"
+	dependencies {
+		if (project.name != "sewingmachine-base") {
+			// modimplementation will break this
+			implementation project(path: ':sewingmachine-base', configuration: 'namedElements')
+		} else {
+			// Bluemap API
+			compileOnly(group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: bluemapVersion)
+			
+			compileOnly(group: 'mysql', name: 'mysql-connector-java', version: '8.0.15')
+		}
+	}
+	
+	// Set the name for the subproject jar
+	remapJar {
+		archiveFileName = "${project.name} ${project.mod_version} mc-${project.minecraft_version}.jar"
+	}
+}
+
+// Main 'sewing-machine' should depend on all subprojects (package jars)
+dependencies {
+	subprojects.each {
+		implementation project(path: it.path, configuration: 'namedElements')
+	}
+	
+	// Bluemap API
+	compileOnly(group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: bluemapVersion)
+	
+	compileOnly(group: 'mysql', name: 'mysql-connector-java', version: '8.0.15')
+}
+
+remapJar {
+	/*afterEvaluate {
+		subprojects.each {
+			nestedJars.from project("${it.path}").tasks.getByName("remapJar")
+		}
 	}*/
 	
-	/*remapJar {
-		archiveFileName = "${project.name}-${project.mod_version}_mc-${project.minecraft_version}.jar"
-	}*/
+	//addNestedDependencies = true
+	archiveFileName = "${project.name}-${project.mod_version}_mc-${project.minecraft_version}.jar"
 }

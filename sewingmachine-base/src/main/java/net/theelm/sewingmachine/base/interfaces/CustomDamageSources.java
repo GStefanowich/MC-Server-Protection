@@ -36,7 +36,7 @@ import net.minecraft.util.Identifier;
  * By greg in sewingmachine
  */
 public interface CustomDamageSources {
-    RegistryKey<DamageType> SAW_BLADE = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("stone_cutter"));
+    RegistryKey<DamageType> SAW_BLADE = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("sewing-machine", "stone_cutter"));
     
     DamageSource stonecutter();
 }

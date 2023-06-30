@@ -31,6 +31,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.events.ContainerAccessCallback;
 import net.theelm.sewingmachine.events.MessageDeployer;
 import net.theelm.sewingmachine.events.RegionManageCallback;
@@ -46,6 +47,7 @@ import net.theelm.sewingmachine.interfaces.ItemUseCallback;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.interfaces.variables.EntityVariableFunction;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
+import net.theelm.sewingmachine.protection.commands.ClaimCommand;
 import net.theelm.sewingmachine.protection.events.BlockBreak;
 import net.theelm.sewingmachine.protection.events.BlockInteraction;
 import net.theelm.sewingmachine.protection.events.EntityAttack;
@@ -63,6 +65,7 @@ import net.theelm.sewingmachine.protection.utilities.MessageClaimUtils;
 import net.theelm.sewingmachine.utilities.EntityVariables;
 import net.theelm.sewingmachine.utilities.ShopSigns;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.UUID;
 
@@ -187,5 +190,12 @@ public class ServerCore implements DedicatedServerModInitializer, SewPlugin {
         
         ShopSigns.add(SignDeed::new);
         ShopSigns.add(SignPlots::new);
+    }
+    
+    @Override
+    public @NotNull SewCommand[] getCommands() {
+        return new SewCommand[] {
+            new ClaimCommand()
+        };
     }
 }

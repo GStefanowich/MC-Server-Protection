@@ -63,7 +63,7 @@ public abstract class PlayerManagerMixin {
      * Prevent players from joining the server if an update is running
      */
     @Inject(at = @At("RETURN"), method = "onPlayerConnect")
-    public void onPlayerConnect(ClientConnection connection, ServerPlayerEntity player, CallbackInfo callback) {
+    public void afterOnPlayerConnect(ClientConnection connection, ServerPlayerEntity player, CallbackInfo callback) {
         TeamUtils.applyTeams(player);
         
         // Get the world that the wandering trader spawns in
@@ -78,7 +78,7 @@ public abstract class PlayerManagerMixin {
     }
     
     @Inject(at = @At("HEAD"), method = "setMainWorld", cancellable = true)
-    public void onSetMainWorld(ServerWorld world, CallbackInfo callback) {
+    public void beforeSetMainWorld(ServerWorld world, CallbackInfo callback) {
         if (!SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_WORLD_BORDER))
             return;
         DimensionUtils.addWorldBorderListener(world);
@@ -86,7 +86,7 @@ public abstract class PlayerManagerMixin {
     }
     
     @Inject(at = @At("TAIL"), method = "sendWorldInfo")
-    public void onSendWorldInfo(@NotNull ServerPlayerEntity player, ServerWorld world, CallbackInfo callback) {
+    public void afterSendWorldInfo(@NotNull ServerPlayerEntity player, ServerWorld world, CallbackInfo callback) {
         if (player.networkHandler != null) {
             // Send all of the players abilities when world changed
             player.sendAbilitiesUpdate();
@@ -126,8 +126,8 @@ public abstract class PlayerManagerMixin {
      * @param player The player
      * @return Return the default world
      */
-    @Redirect(at = @At(value = "FIELD", target = "net/minecraft/world/World.OVERWORLD:Lnet/minecraft/util/registry/RegistryKey;"), method = "onPlayerConnect")
-    public RegistryKey<World> onPlayerConnect(@NotNull ClientConnection connection, @NotNull ServerPlayerEntity player) {
+    @Redirect(at = @At(value = "FIELD", target = "Lnet/minecraft/world/World;OVERWORLD:Lnet/minecraft/registry/RegistryKey;"), method = "onPlayerConnect")
+    public RegistryKey<World> getStartingDefaultWorld(@NotNull ClientConnection connection, @NotNull ServerPlayerEntity player) {
         return SewConfig.get(SewCoreConfig.DEFAULT_WORLD);
     }
     

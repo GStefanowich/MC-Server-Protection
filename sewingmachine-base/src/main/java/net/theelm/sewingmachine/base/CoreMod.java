@@ -165,7 +165,10 @@ public abstract class CoreMod {
         else type = "both";
         
         List<SewPlugin> plugins = new ArrayList<>();
-        plugins.addAll(fabric.getEntrypoints(type, SewPlugin.class));
+        for (Object entry : fabric.getEntrypoints(type, Object.class)) {
+            if (entry instanceof SewPlugin plugin)
+                plugins.add(plugin);
+        }
         
         return plugins;
     }

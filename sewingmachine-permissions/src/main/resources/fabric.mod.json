@@ -22,7 +22,7 @@
 		"server": []
 	},
 	"mixins": [
-		"sewingmachine.mixins.json"
+		"sewingmachine-permissions.mixins.json"
 	],
 	"depends": {
 		"fabricloader": ">=0.14.21",

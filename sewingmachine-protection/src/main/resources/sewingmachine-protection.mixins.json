@@ -1,0 +1,56 @@
+{
+	"required": true,
+	"package": "net.theelm.sewingmachine.protection.mixins",
+	"compatibilityLevel": "JAVA_16",
+	"mixins": [
+	],
+	"server": [
+		"Blocks.FireBlockMixin",
+		"Blocks.HopperBlockEntityMixin",
+		"Blocks.PistonBlockMixin",
+		"Blocks.TntBlockMixin",
+		
+		"Entities.AnimalInteract",
+		"Entities.ArmorStandEntityMixin",
+		"Entities.EndermanEntityPickupMixin",
+		"Entities.EndermanEntityPlaceMixin",
+		
+		"Entities.EntityMixin",
+		"Entities.ExplodingEntitiesMixin",
+		"Entities.ItemEntityMixin",
+		"Entities.ItemFrameEntityMixin",
+		"Entities.LightningEntityMixin",
+		"Entities.PhantomSpawnerMixin",
+		"Entities.TntEntityMixin",
+		"Entities.VillagerEntityMixin",
+		
+		"Interfaces.LightningAccessor",
+		
+		"Items.UsableItemsMixin",
+		
+		"Player.Interaction.FarmlandBlockMixin",
+		"Player.Interaction.HorseEntityMixin",
+		"Player.Interaction.LeashKnotEntityMixin",
+		"Player.Interaction.MinecartEntityMixin",
+		"Player.Interaction.MobEntityMixin",
+		"Player.Interaction.PaintingEntityMixin",
+		"Player.Interaction.StorageMinecartEntityMixin",
+		
+		"Player.ServerPlayerEntityMixin",
+		"Player.ServerPlayerInteractionManagerMixin",
+		"Player.ServerPlayNetworkHandlerMixin",
+		
+		"Server.MinecraftDedicatedServerMixin",
+		"Server.MinecraftServerMixin",
+		
+		"World.ChunkMixin",
+		"World.ChunkSerializerMixin",
+		"World.FlowableFluidMixin",
+		"World.RaidManagerMixin",
+		"World.ServerWorldMixin",
+		"World.WorldChunkMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

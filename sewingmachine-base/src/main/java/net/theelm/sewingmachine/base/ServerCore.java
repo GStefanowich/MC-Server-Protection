@@ -29,6 +29,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import net.minecraft.entity.damage.DamageSources;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
@@ -107,9 +108,10 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
     public void onInitializeServer() {
         super.initialize();
         
+        MapUtils.init();
+        
         Object t = new MysqlDataSource();
         System.out.println(t.getClass());
-        MapUtils.init();
         
         CoreMod.logInfo("Initializing Database.");
         try {
@@ -151,16 +153,6 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
                 if (tax != null)
                     income.addTax(Text.literal("Spawn"), tax);
             });
-            
-UUID uuid = null;
-MinecraftServer server = null;
-
-server.getPlayerManager()
-    .getPlayer(uuid)
-    .getName();
-server.getUserCache()
-    .getByUuid(uuid).get()
-    .getName();
             
             // Alert the mod presence
             CoreMod.logInfo("Finished loading.");

@@ -1,0 +1,93 @@
+{
+	"required": true,
+	"package": "net.theelm.sewingmachine.base.mixins",
+	"compatibilityLevel": "JAVA_16",
+	"mixins": [
+	],
+	"server": [
+		"Blocks.BeehiveBlockMixin",
+		"Blocks.LecternBlockMixin",
+		"Blocks.ShulkerBoxBlockEntityMixin",
+		"Blocks.ShulkerBoxBlockMixin",
+		
+		"Commands.BanCommandMixin",
+		"Commands.KickCommandMixin",
+		"Commands.PardonCommandMixin",
+		"Commands.StopCommandMixin",
+		"Commands.TimeCommandMixin",
+		"Commands.WorldBorderCommandMixin",
+		
+		"Entities.Decorative.CatEntityMixin",
+		"Entities.Decorative.WolfEntityMixin",
+		
+		"Entities.AnimalEntityMixin",
+		"Entities.ArrowEntityMixin",
+		"Entities.CorralMobs",
+		"Entities.CowEntityMixin",
+		"Entities.EndCrystalEntityMixin",
+		"Entities.EnderDragonEntityMixin",
+		"Entities.EntityMixin",
+		"Entities.LimitedSkeletons",
+		"Entities.LivingEntityMixin",
+		"Entities.MobEntityMixin",
+		"Entities.PotionEntityMixin",
+		"Entities.StriderEntityMixin",
+		"Entities.Tracking",
+		"Entities.TridentEntityMixin",
+		"Entities.VillagerEntityMixin",
+		"Entities.WanderingTraderEntityMixin",
+		"Entities.WitherEntityMixin",
+		"Entities.WolfEntityMixin",
+		
+		"Interfaces.InteractionManagerAccessor",
+		"Interfaces.ItemEntityAccessor",
+		"Interfaces.PowderBlockAccessor",
+		"Interfaces.WhitelistAccessor",
+		
+		"Items.EnderEyeItemMixin",
+		"Items.ItemStackMixin",
+		"Items.SpawnEggItemMixin",
+		
+		"Player.Interaction.ArmorStandEntityMixin",
+		"Player.Interaction.ItemFrameEntityMixin",
+		"Player.Interaction.SignBlockEntityMixin",
+		
+		"Player.PlayerEntityMixin",
+		"Player.PlayerInventoryMixin",
+		"Player.ServerPlayerEntityMixin",
+		"Player.ServerPlayNetworkHandlerMixin",
+		
+		"Server.DamageSourcesMixin",
+		"Server.DamageTrackerMixin",
+		"Server.DamageTypesMixin",
+		"Server.DimensionTypeMixin",
+		"Server.EntityTrackerMixin",
+		"Server.MinecraftServerMixin",
+		"Server.MinecraftServerMixin2",
+		"Server.PlayerListEntryMixin",
+		"Server.PlayerManagerMixin",
+		"Server.ServerWorldAccessor",
+		"Server.WanderingTraderManagerMixin",
+		"Server.WhitelistEntryMixin",
+		"Server.WritableBookItemMixin",
+
+		"Ui.AnvilScreenHandlerMixin",
+		"Ui.SmithingScreenHandlerMixin",
+		
+		"World.BlockMixin",
+		"World.BubbleColumnBlockMixin",
+		"World.CampfireBlockEntityMixin",
+		"World.EnderDragonFightMixin",
+		"World.ExperienceOrbEntityMixin",
+		"World.FlowableFluidMixin",
+		"World.ItemEntityMixin",
+		"World.LeveledCauldronBlockMixin",
+		"World.ServerWorldMixin",
+		"World.SpawnerBlockMixin",
+		"World.StonecutterBlockMixin",
+		"World.TheNetherBiomeCreatorMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}
