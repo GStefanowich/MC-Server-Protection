@@ -106,8 +106,12 @@ public final class ShopSignBuilder implements ShopSignData {
     }
     @Override
     public boolean setSign(@NotNull SignText text) {
-        return this.getSign()
-            .setText(text, true);
+        SignBlockEntity sign = this.getSign();
+        if (sign.setText(text, true)) {
+            sign.setWaxed(true);
+            return true;
+        }
+        return false;
     }
     
     @Override

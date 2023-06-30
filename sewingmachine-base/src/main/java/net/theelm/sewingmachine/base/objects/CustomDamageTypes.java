@@ -23,36 +23,17 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.mixins.Server;
+package net.theelm.sewingmachine.base.objects;
 
-import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.damage.DamageSources;
 import net.minecraft.entity.damage.DamageType;
-import net.minecraft.registry.DynamicRegistryManager;
-import net.minecraft.registry.Registry;
-import net.theelm.sewingmachine.base.interfaces.CustomDamageSources;
-import net.theelm.sewingmachine.base.objects.CustomDamageTypes;
-import net.theelm.sewingmachine.base.objects.SawDamage;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
+import net.minecraft.util.Identifier;
 
-@Mixin(DamageSources.class)
-public abstract class DamageSourcesMixin implements CustomDamageSources {
-    @Shadow @Final public Registry<DamageType> registry;
-    
-    private DamageSource stonecutter;
-    
-    @Inject(at = @At("RETURN"), method = "<init>")
-    public void onInit(DynamicRegistryManager registryManager, CallbackInfo ci) {
-        this.stonecutter = new SawDamage(this.registry.entryOf(CustomDamageTypes.SAW_BLADE));
-    }
-    
-    @Override
-    public DamageSource stonecutter() {
-        return this.stonecutter;
-    }
+/**
+ * Created on Jun 30 2023 at 3:15 AM.
+ * By greg in sewingmachine
+ */
+public final class CustomDamageTypes {
+    public static final RegistryKey<DamageType> SAW_BLADE = RegistryKey.of(RegistryKeys.DAMAGE_TYPE, new Identifier("sewing-machine", "stone_cutter"));
 }

@@ -5,6 +5,13 @@
 	"mixins": [
 	],
 	"server": [
+		"Chat.PlayerEntityMixin",
+		"Chat.ServerPlayerEntityMixin",
+		
+		"Commands.Me",
+		"Commands.Whisper",
+		
+		"Player.ServerPlayerInteractionManagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

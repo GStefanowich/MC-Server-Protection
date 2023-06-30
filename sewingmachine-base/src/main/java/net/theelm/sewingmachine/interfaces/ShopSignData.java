@@ -111,7 +111,7 @@ public interface ShopSignData {
             render[i + 1] = i >= text.length ? Text.literal("") : text[i];
         }
         
-        return this.setSign(new SignText(text, text, DyeColor.BLACK, false));
+        return this.setSign(new SignText(render, render, DyeColor.BLACK, false));
     }
     
     void setShopOwner(@Nullable UUID uuid);

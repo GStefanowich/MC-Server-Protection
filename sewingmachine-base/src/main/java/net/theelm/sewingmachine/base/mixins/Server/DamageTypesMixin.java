@@ -35,6 +35,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.interfaces.CustomDamageSources;
+import net.theelm.sewingmachine.base.objects.CustomDamageTypes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -44,6 +45,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public interface DamageTypesMixin {
     @Inject(at = @At("TAIL"), method = "bootstrap")
     private static void bootstrap(Registerable<DamageType> registerable, CallbackInfo callback) {
-        registerable.register(CustomDamageSources.SAW_BLADE, new DamageType("stoneCutter", DamageScaling.NEVER, 0.1f, DamageEffects.HURT, DeathMessageType.DEFAULT));
+        registerable.register(CustomDamageTypes.SAW_BLADE, new DamageType("stoneCutter", DamageScaling.NEVER, 0.1f, DamageEffects.HURT, DeathMessageType.DEFAULT));
     }
 }

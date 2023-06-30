@@ -69,7 +69,8 @@ public abstract class MinecraftServerMixin {
     @Shadow public abstract boolean shouldEnforceSecureProfile();
     @Shadow protected abstract ServerMetadata.Players createMetadataPlayers();
     @Shadow @Final private Random random;
-    
+
+    @Shadow @Nullable private String motd;
     private final List<byte[]> base64 = new ArrayList<>();
     private final List<String> motds = new ArrayList<>();
     
@@ -119,7 +120,7 @@ public abstract class MinecraftServerMixin {
     
     private @Nullable Text getCustomMotd() {
         // Get MOTDs and if empty, cancel
-        if (this.motds.size() >= 0) {
+        if (!this.motds.isEmpty()) {
             // Cycle the MOTD every 10 seconds
             int i = this.motds.size() == 1 ? 0 : (int) ((System.currentTimeMillis() / 10000) % this.motds.size());
             int clamp = Integer.min(this.motds.size() - 1, i);
@@ -131,7 +132,8 @@ public abstract class MinecraftServerMixin {
                 return FormattingUtils.visitVariables(raw, this::descriptionReplaceVariables);
         }
         
-        return null;
+        // Fallback to the default assigned from the server properties
+        return Text.of(this.motd);
     }
     
     @Inject(at = @At("RETURN"), method = "createMetadataPlayers")
