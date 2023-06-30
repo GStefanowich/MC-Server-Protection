@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.mixins.Entities;
+package net.theelm.sewingmachine.deathchests.mixins.Entities;
 
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EntityType;

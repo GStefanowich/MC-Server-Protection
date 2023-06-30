@@ -1,0 +1,12 @@
+{
+	"required": true,
+	"package": "net.theelm.sewingmachine.deathchests.mixins",
+	"compatibilityLevel": "JAVA_16",
+	"mixins": [
+	],
+	"server": [
+	],
+	"injectors": {
+		"defaultRequire": 1
+	}
+}

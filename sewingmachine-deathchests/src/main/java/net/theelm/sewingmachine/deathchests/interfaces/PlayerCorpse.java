@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.deathchests.interfaces;
 
 import net.minecraft.nbt.NbtList;
 import java.util.UUID;
