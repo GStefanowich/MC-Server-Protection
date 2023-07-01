@@ -29,10 +29,13 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.ArgumentBuilder;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
-import net.minecraft.entity.damage.DamageSources;
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.objects.BalanceUpdateHandler;
+import net.theelm.sewingmachine.base.objects.SewBasePackets;
 import net.theelm.sewingmachine.base.objects.signs.SignBackpack;
 import net.theelm.sewingmachine.base.objects.signs.SignBalance;
 import net.theelm.sewingmachine.base.objects.signs.SignGuide;
@@ -41,6 +44,7 @@ import net.theelm.sewingmachine.base.objects.signs.SignShopFree;
 import net.theelm.sewingmachine.base.objects.signs.SignShopSell;
 import net.theelm.sewingmachine.base.objects.signs.SignWarp;
 import net.theelm.sewingmachine.base.objects.signs.SignWaystone;
+import net.theelm.sewingmachine.base.packages.PlayerBackpackC2SPacket;
 import net.theelm.sewingmachine.commands.AdminCommands;
 import net.theelm.sewingmachine.commands.BackpackCommand;
 import net.theelm.sewingmachine.commands.DateCommand;
@@ -69,12 +73,14 @@ import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.ConfigPredicate;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.BlockInteractionCallback;
+import net.theelm.sewingmachine.events.PlayerBalanceCallback;
 import net.theelm.sewingmachine.events.TaxCollection;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
+import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.DevUtils;
 import net.theelm.sewingmachine.utilities.MapUtils;
-import net.fabricmc.api.DedicatedServerModInitializer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
@@ -91,7 +97,6 @@ import net.theelm.sewingmachine.utilities.ShopSigns;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.mysql.cj.jdbc.MysqlDataSource;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Locale;
@@ -100,18 +105,15 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Consumer;
 
-public final class ServerCore extends CoreMod implements DedicatedServerModInitializer, SewPlugin {
+public final class ServerCore extends CoreMod implements ModInitializer, SewPlugin {
     /*
      * Mod initializer
      */
     @Override
-    public void onInitializeServer() {
+    public void onInitialize() {
         super.initialize();
         
         MapUtils.init();
-        
-        Object t = new MysqlDataSource();
-        System.out.println(t.getClass());
         
         CoreMod.logInfo("Initializing Database.");
         try {
@@ -147,12 +149,21 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
             ShopSigns.add(SignWarp::new);
             ShopSigns.add(SignWaystone::new);
             
+            // Register shop signs
+            BlockInteractionCallback.EVENT.register(ShopSignData::onSignInteract);
+            
             // Register the server tax
             TaxCollection.EVENT.register((income, world, pos) -> {
                 Integer tax = SewConfig.get(SewCoreConfig.SERVER_SALES_TAX);
                 if (tax != null)
                     income.addTax(Text.literal("Spawn"), tax);
             });
+            
+            // Implement our money handler
+            PlayerBalanceCallback.EVENT.register(new BalanceUpdateHandler());
+            
+            // Register the packet receiver for opening the backpack
+            ServerPlayNetworking.registerGlobalReceiver(SewBasePackets.BACKPACK_OPEN, new PlayerBackpackC2SPacket());
             
             // Alert the mod presence
             CoreMod.logInfo("Finished loading.");

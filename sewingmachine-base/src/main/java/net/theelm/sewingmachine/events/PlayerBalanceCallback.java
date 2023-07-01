@@ -30,6 +30,8 @@ import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.entity.player.PlayerEntity;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.UUID;
+
 /**
  * Event for changing the balance of a player
  */
@@ -62,7 +64,18 @@ public interface PlayerBalanceCallback {
      * @param consume Whether to actually update the balance or not
      * @return When {@code consume} is TRUE, if the balance has been updated. If {@code consume} is FALSE, if the player has the balance necessary
      */
-    Boolean update(@NotNull PlayerEntity player, int amount, boolean consume);
+    Boolean update(@NotNull UUID player, int amount, boolean consume);
+    
+    /**
+     * Update (determinant by {@code consume}) a players balance by an amount
+     * @param player The player that holds the balance
+     * @param amount The amount to change the balance by
+     * @param consume Whether to actually update the balance or not
+     * @return When {@code consume} is TRUE, if the balance has been updated. If {@code consume} is FALSE, if the player has the balance necessary
+     */
+    default Boolean updatePlayer(@NotNull PlayerEntity player, int amount, boolean consume) {
+        return this.update(player.getUuid(), amount, consume);
+    }
     
     /**
      * Test if the player has a balance without taking from it
@@ -70,8 +83,20 @@ public interface PlayerBalanceCallback {
      * @param amount The amount to check if the player has
      * @return If the player balance is at least that amount
      */
-    default boolean hasBalance(@NotNull PlayerEntity player, int amount) {
-        return this.update(player, amount, false) == Boolean.TRUE;
+    static boolean hasBalance(@NotNull UUID player, int amount) {
+        return PlayerBalanceCallback.EVENT.invoker()
+            .update(player, amount, false) == Boolean.TRUE;
+    }
+    
+    /**
+     * Test if the player has a balance without taking from it
+     * @param player The player balance to check
+     * @param amount The amount to check if the player has
+     * @return If the player balance is at least that amount
+     */
+    static boolean hasBalance(@NotNull PlayerEntity player, int amount) {
+        return PlayerBalanceCallback.EVENT.invoker()
+            .updatePlayer(player, amount, false) == Boolean.TRUE;
     }
     
     /**
@@ -79,8 +104,19 @@ public interface PlayerBalanceCallback {
      * @param player The player balance to check
      * @param amount The amount to give to the player
      */
-    default void give(@NotNull PlayerEntity player, int amount) {
-        this.update(player, -amount, true);
+    static void give(@NotNull UUID player, int amount) {
+        PlayerBalanceCallback.EVENT.invoker()
+            .update(player, -amount, true);
+    }
+    
+    /**
+     * Give money to a player
+     * @param player The player balance to check
+     * @param amount The amount to give to the player
+     */
+    static void give(@NotNull PlayerEntity player, int amount) {
+        PlayerBalanceCallback.EVENT.invoker()
+            .updatePlayer(player, -amount, true);
     }
     
     /**
@@ -88,7 +124,18 @@ public interface PlayerBalanceCallback {
      * @param player The player balance to check
      * @param amount The amount to take from the player
      */
-    default void take(@NotNull PlayerEntity player, int amount) {
-        this.update(player, amount, true);
+    static void take(@NotNull UUID player, int amount) {
+        PlayerBalanceCallback.EVENT.invoker()
+            .update(player, amount, true);
+    }
+    
+    /**
+     * Take money from a player
+     * @param player The player balance to check
+     * @param amount The amount to take from the player
+     */
+    static void take(@NotNull PlayerEntity player, int amount) {
+        PlayerBalanceCallback.EVENT.invoker()
+            .updatePlayer(player, amount, true);
     }
 }

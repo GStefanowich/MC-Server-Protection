@@ -3,8 +3,6 @@
 	"package": "net.theelm.sewingmachine.base.mixins",
 	"compatibilityLevel": "JAVA_16",
 	"mixins": [
-	],
-	"server": [
 		"Blocks.BeehiveBlockMixin",
 		"Blocks.LecternBlockMixin",
 		"Blocks.ShulkerBoxBlockEntityMixin",

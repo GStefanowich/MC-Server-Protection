@@ -1,4 +1,6 @@
 {
+  "key.sewingmachine.backpack": "Open Backpack",
+  
   "chat.change.town": "Switched to Town chat.",
   "chat.change.global": "Switched to Global chat.",
   "chat.change.local": "Switched to Local chat.",

@@ -83,6 +83,9 @@ public final class BlockInteraction {
         
         // Interactions with doors
         event.register(BlockInteraction::interactDoors);
+        
+        // Interactions with everything else
+        event.register(BlockInteraction::blockInteract);
     }
     
     private static ActionResult interactSwitches(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
@@ -156,29 +159,6 @@ public final class BlockInteraction {
         final BlockEntity blockEntity = world.getBlockEntity(blockPos);
         
         final Lazy<WorldChunk> claimedChunkInfo = new Lazy<>(() -> player.getEntityWorld().getWorldChunk(blockPos));
-        
-        // Check if the block interacted with is a sign (For shop signs)
-        if ( blockEntity instanceof ShopSignData shopSign && blockEntity instanceof SignBlockEntity) {
-            ShopSign shopSignType;
-            
-            // Interact with the sign
-            if ((shopSign.getShopOwner() != null) && ((shopSignType = shopSign.getShopType()) != null)) {
-                shopSignType.onInteract(world.getServer(), player, blockPos, shopSign)
-                    // Literal Text (Error)
-                    .ifLeft((text) -> {
-                        shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.NEUTRAL);
-                        TitleUtils.showPlayerAlert(player, Formatting.RED, text);
-                    })
-                    // Boolean if success/fail
-                    .ifRight((bool) -> {
-                        if (!bool)
-                            shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.NEUTRAL);
-                        else if (shopSign.getSoundSourcePosition() != null && world.random.nextInt(12) == 0)
-                            shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_YES, SoundCategory.NEUTRAL);
-                    });
-                return ActionResult.SUCCESS;
-            }
-        }
         
         // If the block is something that can be accessed (Like a chest)
         if ( (!player.shouldCancelInteraction() || (!(itemStack.getItem() instanceof BlockItem || itemStack.getItem() instanceof BucketItem))) ) {

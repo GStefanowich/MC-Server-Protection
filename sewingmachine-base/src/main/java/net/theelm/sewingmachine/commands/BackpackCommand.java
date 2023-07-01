@@ -33,6 +33,7 @@ import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.utilities.BackpackUtils;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
@@ -40,17 +41,13 @@ import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.minecraft.command.argument.ItemStackArgumentType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.Item;
-import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.OptionalInt;
 
@@ -105,16 +102,9 @@ public final class BackpackCommand extends SewCommand {
             throw PLAYERS_NO_BACKPACK.create(player);
         
         // Open the backpack screen on the client
-        OptionalInt i = player.openHandledScreen(new SimpleNamedScreenHandlerFactory(this::openBackpack, backpack.getName()));
+        OptionalInt i = player.openHandledScreen(new SimpleNamedScreenHandlerFactory(BackpackUtils::openBackpack, backpack.getName()));
         
         // Success!
         return i.isPresent() ? Command.SINGLE_SUCCESS : 0;
-    }
-    
-    private @Nullable ScreenHandler openBackpack(int i, @NotNull PlayerInventory inventory, @NotNull PlayerEntity player) {
-        PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
-        if (backpack == null)
-            return null;
-        return backpack.createContainer(i, inventory);
     }
 }

@@ -703,11 +703,11 @@ public final class WarpUtils {
             }
         }
     }
-    private static void teleportPoof(@NotNull final Entity entity, boolean departing) {
+    public static void teleportPoof(@NotNull final Entity entity, boolean departing) {
         if (!entity.isSpectator())
             WarpUtils.teleportPoof(entity.getEntityWorld(), entity.getBlockPos(), entity.getPos(), departing);
     }
-    private static void teleportPoof(@Nullable final World world, @NotNull final BlockPos blockPos, boolean departing) {
+    public static void teleportPoof(@Nullable final World world, @NotNull final BlockPos blockPos, boolean departing) {
         WarpUtils.teleportPoof(world, blockPos, Vec3d.ofBottomCenter(blockPos), departing);
     }
     private static void teleportPoof(@Nullable final World world, @NotNull final BlockPos blockPos, final Vec3d swirlPos, boolean departing) {

@@ -23,14 +23,15 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.utilities;
+package net.theelm.sewingmachine.deathchests.utilities;
 
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
-import net.theelm.sewingmachine.interfaces.PlayerCorpse;
+import net.theelm.sewingmachine.deathchests.interfaces.PlayerCorpse;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
+import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;

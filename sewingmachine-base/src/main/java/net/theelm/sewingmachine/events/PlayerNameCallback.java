@@ -35,10 +35,12 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.UserCache;
+import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -59,6 +61,10 @@ public interface PlayerNameCallback {
     @Nullable Text getDisplayName(PlayerEntity player);
     
     default @NotNull Text getDisplayName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
+        // Blank UUID is always Spawn/Server
+        if (Objects.equals(CoreMod.SPAWN_ID, uuid))
+            return Text.literal("Spawn");
+        
         PlayerManager manager = server.getPlayerManager();
         ServerPlayerEntity player = manager.getPlayer(uuid);
         if (player != null) {

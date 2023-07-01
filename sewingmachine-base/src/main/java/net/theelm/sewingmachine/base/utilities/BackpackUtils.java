@@ -23,40 +23,27 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.utilities;
+package net.theelm.sewingmachine.base.utilities;
 
-import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.objects.ShopSign;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.screen.ScreenHandler;
+import net.theelm.sewingmachine.base.objects.PlayerBackpack;
+import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Map;
-import java.util.TreeMap;
-import java.util.function.Supplier;
-
 /**
- * Created on Jun 28 2023 at 12:06 AM.
+ * Created on Jul 01 2023 at 12:44 AM.
  * By greg in sewingmachine
  */
-public final class ShopSigns {
-    private static final @NotNull Map<String, ShopSign> SIGNS = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+public final class BackpackUtils {
+    private BackpackUtils() {}
     
-    private ShopSigns() {}
-    
-    public static @Nullable ShopSign getFromText(@NotNull Text text) {
-        String str = text.getString();
-        if ( str.startsWith( "[" ) && str.endsWith( "]" ) )
-            str = str.substring(1, str.length() - 1).toUpperCase();
-        return ShopSigns.get(str);
-    }
-    public static @Nullable ShopSign get(@NotNull String key) {
-        return ShopSigns.SIGNS.get(key);
-    }
-    public static void add(@NotNull String key, @NotNull ShopSign instance) {
-        ShopSigns.SIGNS.put(key, instance);
-    }
-    public static void add(@NotNull Supplier<ShopSign> provider) {
-        ShopSign instance = provider.get();
-        ShopSigns.add(instance.name, instance);
+    public static @Nullable ScreenHandler openBackpack(int i, @NotNull PlayerInventory inventory, @NotNull PlayerEntity player) {
+        PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
+        if (backpack == null)
+            return null;
+        return backpack.createContainer(i, inventory);
     }
 }

@@ -130,12 +130,10 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement, P
                 );
             
             // If the player is in the wilderness
-            //CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, null);
             ((PlayerTravel)player).updateLocation();
             TitleUtils.showPlayerAlert(player, Formatting.GREEN, popupText);
             
         } else {
-            //CoreMod.PLAYER_LOCATIONS.put((ServerPlayerEntity) player, locationOwner);
             PlayerVisitor visitor = ((PlayerTravel) player).updateLocation(locationOwner);
             IClaimedChunk claimedChunk = (IClaimedChunk) local;
             MutableText popupText = Text.literal("Entering ")
@@ -154,7 +152,7 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement, P
                     );
                     return;
                 }
-
+                
                 String landName = "homestead";
                 ClaimantTown town;
                 if ((town = claimedChunk.getTown()) != null) {

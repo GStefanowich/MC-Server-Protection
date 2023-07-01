@@ -122,14 +122,12 @@ public final class SignWaystone extends ShopSign {
         
         int cost = SewConfig.get(SewCoreConfig.WARP_WAYSTONE_COST);
         
-        PlayerBalanceCallback bank = PlayerBalanceCallback.EVENT.invoker();
-        
-        if (!bank.hasBalance(player, cost))
+        if (!PlayerBalanceCallback.hasBalance(player, cost))
             return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
         
         WarpUtils warp = new WarpUtils(warpName, player, player.getServerWorld(),signPos.down());
         if (!warp.claimAndBuild(() -> {
-            bank.take(player, cost);
+            PlayerBalanceCallback.take(player, cost);
 
             warp.save(warp.getSafeTeleportPos(), player);
         })) {

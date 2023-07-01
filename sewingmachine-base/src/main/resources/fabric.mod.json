@@ -21,7 +21,7 @@
 		"client": [
 			"net.theelm.sewingmachine.base.ClientCore"
 		],
-		"server": [
+		"main": [
 			"net.theelm.sewingmachine.base.ServerCore"
 		]
 	},

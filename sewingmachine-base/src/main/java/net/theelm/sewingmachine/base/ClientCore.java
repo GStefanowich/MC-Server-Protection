@@ -26,20 +26,35 @@
 package net.theelm.sewingmachine.base;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.server.MinecraftServer;
+import net.theelm.sewingmachine.base.objects.SewBasePackets;
+import net.theelm.sewingmachine.utilities.KeybindUtils;
+import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
 
 public final class ClientCore extends CoreMod implements ClientModInitializer {
+    private static final KeyBinding backpackKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+        "key.sewingmachine.backpack",
+        InputUtil.Type.KEYSYM,
+        InputUtil.GLFW_KEY_B,
+        KeyBinding.INVENTORY_CATEGORY
+    ));
     
     /*
      * Mod initializer
      */
     @Override
     public void onInitializeClient() {
-        super.initialize();
+        KeybindUtils.register(backpackKey, client -> {
+            if (client.currentScreen == null)
+                NetworkingUtils.send(client, SewBasePackets.BACKPACK_OPEN);
+        });
     }
     
     @NotNull
@@ -53,5 +68,4 @@ public final class ClientCore extends CoreMod implements ClientModInitializer {
     public static MinecraftServer getServer() {
         return Objects.requireNonNull(ClientCore.get().getServer());
     }
-    
 }

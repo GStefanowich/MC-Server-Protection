@@ -26,12 +26,23 @@
 package net.theelm.sewingmachine.interfaces;
 
 import com.mojang.authlib.GameProfile;
+import net.minecraft.block.Block;
+import net.minecraft.block.BlockState;
+import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.SignText;
+import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralTextContent;
+import net.minecraft.util.ActionResult;
 import net.minecraft.util.DyeColor;
+import net.minecraft.util.Hand;
+import net.minecraft.util.hit.BlockHitResult;
+import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.objects.ShopSign;import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
+import net.theelm.sewingmachine.base.objects.ShopSign;
+import net.theelm.sewingmachine.utilities.DevUtils;
+import net.theelm.sewingmachine.utilities.TitleUtils;
+import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.StyleApplicator;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
@@ -275,5 +286,37 @@ public interface ShopSignData {
             EnchantmentHelper.set(enchantments, stack);
         
         return stack;
+    }
+    
+    static ActionResult onSignInteract(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
+        BlockPos blockPos = blockHitResult.getBlockPos();
+        final BlockEntity blockEntity = world.getBlockEntity(blockPos);
+        
+        // Check if the block interacted with is a sign (For shop signs)
+        if (blockEntity instanceof ShopSignData shopSign && blockEntity instanceof SignBlockEntity) {
+            ShopSign shopSignType;
+            
+            // Interact with the sign
+            if ((shopSign.getShopOwner() != null) && ((shopSignType = shopSign.getShopType()) != null)) {
+                shopSignType.onInteract(world.getServer(), player, blockPos, shopSign)
+                    // Literal Text (Error)
+                    .ifLeft((text) -> {
+                        shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.NEUTRAL);
+                        TitleUtils.showPlayerAlert(player, Formatting.RED, text);
+                    })
+                    // Boolean if success/fail
+                    .ifRight((bool) -> {
+                        if (!bool)
+                            shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_NO, SoundCategory.NEUTRAL);
+                        else if (shopSign.getSoundSourcePosition() != null && world.random.nextInt(12) == 0)
+                            shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_YES, SoundCategory.NEUTRAL);
+                    });
+                return ActionResult.SUCCESS;
+            } else if (DevUtils.isDebugging()) {
+                CoreMod.logInfo("[DEBUG] Interacted with non-shop sign");
+            }
+        }
+        
+        return ActionResult.PASS;
     }
 }

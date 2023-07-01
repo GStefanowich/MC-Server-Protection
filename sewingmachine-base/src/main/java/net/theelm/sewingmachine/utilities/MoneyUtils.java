@@ -47,11 +47,11 @@ public final class MoneyUtils {
     public static int getPlayerMoney(@NotNull UUID playerId) throws NbtNotFoundException {
         // Check if player is online
         ServerPlayerEntity player;
-        if ((player = EntityUtils.getPlayer( playerId )) != null)
+        if ((player = EntityUtils.getPlayer(playerId)) != null)
             return MoneyUtils.getPlayerMoney( player );
         
         // If not online
-        NbtCompound tag = NbtUtils.readOfflinePlayerData( playerId );
+        NbtCompound tag = NbtUtils.readOfflinePlayerData(playerId);
         
         // Get the balance from the NBT tag
         return tag.getInt( MoneyHolder.SAVE_KEY );
@@ -95,14 +95,14 @@ public final class MoneyUtils {
     public static boolean givePlayerMoney(@NotNull UUID playerId, int amount) throws NbtNotFoundException {
         // Check if player is online
         ServerPlayerEntity player;
-        if ((player = EntityUtils.getPlayer( playerId )) != null)
-            return MoneyUtils.givePlayerMoney( player, amount );
+        if ((player = EntityUtils.getPlayer(playerId)) != null)
+            return MoneyUtils.givePlayerMoney(player, amount);
         
         // If not online
         double updateTo = 0;
-        NbtCompound nbt = NbtUtils.readOfflinePlayerData( playerId );
+        NbtCompound nbt = NbtUtils.readOfflinePlayerData(playerId);
         int balance = nbt.getInt( MoneyHolder.SAVE_KEY );
-        if (((updateTo = (double)(balance + amount))) > Integer.MAX_VALUE)
+        if (((updateTo = balance + amount)) > Integer.MAX_VALUE)
             return false;
         
         // If balance is unchanged, don't attempt saving
@@ -110,10 +110,10 @@ public final class MoneyUtils {
             return true;
         
         // Change the NBT tag
-        nbt.putInt( MoneyHolder.SAVE_KEY, (int)updateTo );
+        nbt.putInt(MoneyHolder.SAVE_KEY, (int)updateTo);
         
         // Save the data
-        return NbtUtils.writeOfflinePlayerData( playerId, nbt );
+        return NbtUtils.writeOfflinePlayerData(playerId, nbt);
     }
     public static boolean givePlayerMoney(@NotNull PlayerEntity player, int amount) {
         DataTracker playerDataTracker = player.getDataTracker();

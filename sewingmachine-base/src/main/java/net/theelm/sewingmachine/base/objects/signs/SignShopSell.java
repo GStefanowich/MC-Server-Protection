@@ -39,6 +39,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.PlayerBalanceCallback;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
@@ -131,71 +132,53 @@ public final class SignShopSell extends ShopSign.BuyTradeSell {
                     return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
             }
             
-            /*
-             * Transfer the items from chest to player
-             */
-            try {
-                // Take shop keepers money
-                if (!(sign.isInfinite() || MoneyUtils.takePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice())))
-                    return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
+            // Take shop keepers money
+            if (!(sign.isInfinite() || PlayerBalanceCallback.hasBalance(sign.getShopOwner(), sign.getShopItemPrice())))
+                return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
+            
+            // Put players item into chest
+            if (!InventoryUtils.playerToChest(player, signPos, player.getInventory(), chestInventory, sign::itemMatchPredicate, sign.getShopItemCount(), true)) {
+                boolean crafted = false;
                 
-                // Put players item into chest
-                if (!InventoryUtils.playerToChest(player, signPos, player.getInventory(), chestInventory, sign::itemMatchPredicate, sign.getShopItemCount(), true)) {
-                    boolean crafted = false;
-
-                    List<? extends Recipe<?>> recipes = sign.getShopItemRecipes();
-                    if (sign.isInfinite() && recipes != null) {
-                        for (Recipe recipe : recipes) {
-                            ShopCraftAction craft = new ShopCraftAction(recipe, sign, signPos, chestInventory);
-
-                            if (craft.craft(player)) {
-                                crafted = true;
-                                break;
-                            }
+                List<? extends Recipe<?>> recipes = sign.getShopItemRecipes();
+                if (sign.isInfinite() && recipes != null) {
+                    for (Recipe recipe : recipes) {
+                        ShopCraftAction craft = new ShopCraftAction(recipe, sign, signPos, chestInventory);
+                        
+                        if (craft.craft(player)) {
+                            crafted = true;
+                            break;
                         }
-                    }
-
-                    if (!crafted) {
-                        // Refund the shopkeeper
-                        if (!sign.isInfinite())
-                            MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
-
-                        // Error message
-                        return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
                     }
                 }
                 
-                // Give player money for item
-                MoneyUtils.givePlayerMoney(player, sign.getShopItemPrice());
-                
-                // Get shop owner
-                Text name = TextUtils.mutable(PlayerNameCallback.getName(server, sign.getShopOwner()))
-                    .formatted(Formatting.AQUA);
-                
-                // Tell the player
-                TitleUtils.showPlayerAlert(
-                    player,
-                    Formatting.YELLOW,
-                    Text.literal("You sold "),
-                    Text.literal(FormattingUtils.format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
-                    Text.translatable(sign.getShopItemTranslationKey()).formatted(Formatting.AQUA),
-                    Text.literal(" to "),
-                    name
-                );
-                
-                // Log the event
-                CoreMod.logInfo(player.getName().getString() + " sold " + FormattingUtils.format(sign.getShopItemCount()) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format(sign.getShopItemPrice()) + " to " + name.getString());
-                player.increaseStat(ShopStats.SHOP_TYPE_SOLD.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
-                
-                return Either.right(Boolean.TRUE);
-                
-            } catch ( NbtNotFoundException e ) {
-                CoreMod.logError("Failed to give " + sign.getShopItemPrice() + " money to \"" + sign.getShopOwner() + "\" (Maybe they haven't joined the server?).");
-                // If a database problem occurs
-                return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
-            } catch ( NotEnoughMoneyException e ) {
-                return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
+                if (!crafted)
+                    return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
             }
+            
+            // Give player money for item
+            PlayerBalanceCallback.give(player, sign.getShopItemPrice());
+            
+            // Get shop owner
+            Text name = TextUtils.mutable(PlayerNameCallback.getName(server, sign.getShopOwner()))
+                .formatted(Formatting.AQUA);
+            
+            // Tell the player
+            TitleUtils.showPlayerAlert(
+                player,
+                Formatting.YELLOW,
+                Text.literal("You sold "),
+                Text.literal(FormattingUtils.format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
+                Text.translatable(sign.getShopItemTranslationKey()).formatted(Formatting.AQUA),
+                Text.literal(" to "),
+                name
+            );
+            
+            // Log the event
+            CoreMod.logInfo(player.getName().getString() + " sold " + FormattingUtils.format(sign.getShopItemCount()) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format(sign.getShopItemPrice()) + " to " + name.getString());
+            player.increaseStat(ShopStats.SHOP_TYPE_SOLD.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
+            
+            return Either.right(Boolean.TRUE);
         }
         return Either.right(Boolean.FALSE);
     }

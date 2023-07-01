@@ -27,7 +27,12 @@ package net.theelm.sewingmachine.base;
 
 import com.mojang.brigadier.Message;
 import com.mojang.datafixers.util.Either;
+import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.api.DedicatedServerModInitializer;
+import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.loader.api.entrypoint.EntrypointContainer;
+import net.fabricmc.loader.api.metadata.ModOrigin;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.theelm.sewingmachine.MySQL.MySQLConnection;
@@ -157,15 +162,19 @@ public abstract class CoreMod {
     
     private @NotNull List<SewPlugin> getPlugins() {
         FabricLoader fabric = CoreMod.getFabric();
-        String type;
+        String environment = fabric.getEnvironmentType()
+            .name()
+            .toLowerCase();
+        Class type;
+        
         if (fabric.getEnvironmentType() == EnvType.CLIENT)
-            type = "client";
+            type = ClientModInitializer.class;
         else if (fabric.getEnvironmentType() == EnvType.SERVER)
-            type = "server";
-        else type = "both";
+            type = DedicatedServerModInitializer.class;
+        else type = ModInitializer.class;
         
         List<SewPlugin> plugins = new ArrayList<>();
-        for (Object entry : fabric.getEntrypoints(type, Object.class)) {
+        for (Object entry : fabric.getEntrypoints(environment, type)) {
             if (entry instanceof SewPlugin plugin)
                 plugins.add(plugin);
         }

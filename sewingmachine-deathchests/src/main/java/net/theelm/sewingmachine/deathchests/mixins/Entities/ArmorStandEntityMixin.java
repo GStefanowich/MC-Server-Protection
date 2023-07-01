@@ -47,7 +47,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
-import net.theelm.sewingmachine.interfaces.PlayerCorpse;
+import net.theelm.sewingmachine.deathchests.interfaces.PlayerCorpse;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;

@@ -3,8 +3,8 @@
 	"package": "net.theelm.sewingmachine.deathchests.mixins",
 	"compatibilityLevel": "JAVA_16",
 	"mixins": [
-	],
-	"server": [
+		"Entities.ArmorStandEntityMixin",
+		"Player.PlayerEntityMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -23,17 +23,23 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.utilities;
 
-import net.minecraft.nbt.NbtList;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.minecraft.client.option.KeyBinding;
+import org.jetbrains.annotations.NotNull;
 
-import java.util.UUID;
-
-public interface PlayerCorpse {
+/**
+ * Created on Jul 01 2023 at 1:00 AM.
+ * By greg in sewingmachine
+ */
+public final class KeybindUtils {
+    private KeybindUtils() {}
     
-    default void setCorpseData(UUID owner, NbtList inventory) {
-        this.setCorpseData(owner, inventory, new NbtList());
+    public static void register(@NotNull KeyBinding binding, @NotNull ClientTickEvents.EndTick event) {
+        ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            while (binding.wasPressed())
+                event.onEndTick(client);
+        });
     }
-    void setCorpseData(UUID owner, NbtList inventory, NbtList backpack);
-    
 }

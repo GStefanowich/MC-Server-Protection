@@ -40,6 +40,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.PlayerBalanceCallback;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
@@ -133,55 +134,40 @@ public final class SignShopBuy extends ShopSign.BuyTradeSell {
                     return Either.left(TranslatableServerSide.text(player, "shop.error.stock_chest", sign.getShopItemDisplay()));
             }
             
-            try {
-                // Take the players money
-                if (!MoneyUtils.takePlayerMoney(player, sign.getShopItemPrice()))
-                    return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
-                
-                // Give item to player from chest
-                if (!InventoryUtils.chestToPlayer(player, signPos, chestInventory, player.getInventory(), sign::itemMatchPredicate, sign.getShopItemCount(), true, sign::createItemStack)) {
-                    // Refund the player
-                    MoneyUtils.givePlayerMoney(player, sign.getShopItemPrice());
-
-                    // Error message
-                    return Either.left(TranslatableServerSide.text(player, "shop.error.stock_chest", sign.getShopItemDisplay()));
-                }
-                
-                player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
-                
-                // Give the shop keeper money
-                if (!sign.isInfinite()) {
-                    try {
-                        MoneyUtils.givePlayerMoney(sign.getShopOwner(), sign.getShopItemPrice());
-                    } catch (NbtNotFoundException e) {
-                        CoreMod.logError("Failed to give " + sign.getShopItemPrice() + " money to \"" + sign.getShopOwner() + "\" (Maybe they haven't joined the server?).");
-                    }
-                }
-                
-                // Get the shop owner
-                Text name = TextUtils.mutable(PlayerNameCallback.getName(server, sign.getShopOwner()))
-                    .formatted(Formatting.AQUA);
-                
-                // Tell the player
-                TitleUtils.showPlayerAlert(
-                    player,
-                    Formatting.YELLOW,
-                    Text.literal("You bought "),
-                    Text.literal(FormattingUtils.format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
-                    Text.translatable(sign.getShopItemTranslationKey()).formatted(Formatting.AQUA),
-                    Text.literal(" from "),
-                    name
-                );
-                
-                // Log the event
-                CoreMod.logInfo(player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format( sign.getShopItemPrice() ) + " from " + name.getString() );
-                player.increaseStat(ShopStats.SHOP_TYPE_BOUGHT.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
-                
-                return Either.right(Boolean.TRUE);
-                
-            } catch (NotEnoughMoneyException e) {
+            // Take the players money
+            if (!PlayerBalanceCallback.hasBalance(player, sign.getShopItemPrice()))
                 return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
-            }
+            
+            // Give item to player from chest
+            if (!InventoryUtils.chestToPlayer(player, signPos, chestInventory, player.getInventory(), sign::itemMatchPredicate, sign.getShopItemCount(), true, sign::createItemStack))
+                return Either.left(TranslatableServerSide.text(player, "shop.error.stock_chest", sign.getShopItemDisplay()));
+            
+            player.playSound( SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f );
+            
+            // Give the shop keeper money
+            if (!sign.isInfinite())
+                PlayerBalanceCallback.give(sign.getShopOwner(), sign.getShopItemPrice());
+            
+            // Get the shop owner
+            Text name = TextUtils.mutable(PlayerNameCallback.getName(server, sign.getShopOwner()))
+                .formatted(Formatting.AQUA);
+            
+            // Tell the player
+            TitleUtils.showPlayerAlert(
+                player,
+                Formatting.YELLOW,
+                Text.literal("You bought "),
+                Text.literal(FormattingUtils.format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
+                Text.translatable(sign.getShopItemTranslationKey()).formatted(Formatting.AQUA),
+                Text.literal(" from "),
+                name
+            );
+            
+            // Log the event
+            CoreMod.logInfo(player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format( sign.getShopItemPrice() ) + " from " + name.getString() );
+            player.increaseStat(ShopStats.SHOP_TYPE_BOUGHT.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
+            
+            return Either.right(Boolean.TRUE);
         }
         return Either.right( false );
     }

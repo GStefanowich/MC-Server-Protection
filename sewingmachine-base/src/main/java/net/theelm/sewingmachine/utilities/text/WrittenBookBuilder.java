@@ -29,6 +29,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonPrimitive;
+import net.minecraft.item.WrittenBookItem;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
@@ -59,7 +60,10 @@ public final class WrittenBookBuilder {
         return this.add(WrittenBookBuilder.stringBookComponent(text, formatting));
     }
     public WrittenBookBuilder addString(@NotNull Text text) {
-        return this.add(WrittenBookBuilder.stringBookComponent(text.getString()));
+        JsonElement jsonTree = Text.Serializer.toJsonTree(text);
+        if (jsonTree instanceof JsonObject object)
+            return this.add(object);
+        return this;
     }
     public WrittenBookBuilder addString(@NotNull Text text, @Nullable Formatting... formatting) {
         return this.add(WrittenBookBuilder.stringBookComponent(text.getString(), formatting));

@@ -82,7 +82,13 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
      */
     
     @Shadow public abstract SignText getFrontText();
-    
+    @Shadow private boolean waxed;
+
+    @Shadow protected abstract boolean setFrontText(SignText frontText);
+
+    @Shadow protected abstract SignText parseLines(SignText signText);
+
+    @Shadow private SignText frontText;
     // Shop Owner (Necessary to be a shop sign)
     private @Nullable UUID shopSign_Owner = null;
     private @Nullable ShopSign shopSign_Type = null;
@@ -137,14 +143,11 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     }
     @Override
     public boolean setSign(@NotNull SignText text) {
-        SignBlockEntity sign = ((SignBlockEntity)(BlockEntity) this);
-        
-        // Make the sign not editable
-        sign.setWaxed(true);
-        
-        return sign.setText(text, true);
+        // Set the text directly on the property (When loading)
+        this.frontText = this.parseLines(text);
+        return true;
     }
-
+    
     @Override
     public boolean setItem(@NotNull ItemStack stack) {
         this.shopSign_item = Registries.ITEM.getId(stack.getItem());
@@ -331,14 +334,15 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     
     @Inject(at = @At("RETURN"), method = "readNbt")
     public void onNbtRead(@NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
-        String type = this.getFrontText()
-            .getMessage(0, false)
-            .getString();
+        Text type = this.getFrontText()
+            .getMessage(0, false);
         
         // Shop signs
-        if ((this.shopSign_Type = ShopSigns.get(type)) != null) {
+        if ((this.shopSign_Type = ShopSigns.getFromText(type)) != null) {
             NbtUtils.tryGet(tag, NbtGet.UUID, "shop_owner", (uuid) -> {
+                this.waxed = true;
                 String signItem = "";
+                
                 try {
                     // Get the ITEM for the shop
                     if (tag.contains("shop_item_mod", NbtElement.STRING_TYPE) && tag.contains("shop_item_name", NbtElement.STRING_TYPE)) {
