@@ -163,7 +163,7 @@ public final class GuideUtils {
     }
     private static JsonObject readBooksFile() throws JsonSyntaxException {
         // Get file locations
-        File confDir = CoreMod.getConfDir();
+        File confDir = Sew.getConfDir();
         File bookDat = new File(confDir, "books.json");
         
         // If the directory doesn't exist, return empty

@@ -23,17 +23,15 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.objects;
+package net.theelm.sewingmachine.protection.interfaces;
 
-import net.minecraft.text.Text;
+import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Created on Jun 28 2023 at 11:11 PM.
+ * Created on Jul 01 2023 at 2:06 PM.
  * By greg in sewingmachine
  */
-public record Tax(
-    @NotNull Text name,
-    int value,
-    int percent
-) {}
+public interface ClientMiner {
+    void stopMining(@NotNull BlockPos pos);
+}

@@ -40,6 +40,7 @@ import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
 import net.minecraft.item.Item;
 import net.minecraft.util.Identifier;
+import net.theelm.sewingmachine.utilities.Sew;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -201,7 +202,7 @@ public final class SewConfig extends SewConfigContainer {
      */
     private static @NotNull File getConfigFile() throws IOException {
         // Load from the folder
-        final File dir = CoreMod.getConfDir();
+        final File dir = Sew.getConfDir();
         final File config = new File(dir, "config.json");
         
         if (!config.exists()) {

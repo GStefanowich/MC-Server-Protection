@@ -26,6 +26,7 @@
 package net.theelm.sewingmachine.MySQL;
 
 import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.utilities.Sew;
 
 import java.io.File;
 import java.sql.Connection;
@@ -53,7 +54,7 @@ public class MySQLite implements MySQLHost {
          */
         
         try {
-            final File dir = CoreMod.getConfDir();
+            final File dir = Sew.getConfDir();
             final File jdbc = new File( dir.getAbsolutePath(), "sqlite.db" );
             
             System.out.println( "A.1" );

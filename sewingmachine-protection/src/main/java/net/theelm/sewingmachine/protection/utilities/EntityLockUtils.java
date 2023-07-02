@@ -56,6 +56,7 @@ import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.JukeboxBlockEntity;
 import net.minecraft.block.entity.LockableContainerBlockEntity;
 import net.minecraft.entity.Entity;
+import net.minecraft.entity.Tameable;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.mob.PiglinEntity;
 import net.minecraft.entity.passive.CatEntity;
@@ -85,6 +86,7 @@ import net.minecraft.entity.passive.TurtleEntity;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.entity.passive.WolfEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.entity.vehicle.ChestMinecartEntity;
 import net.minecraft.entity.vehicle.FurnaceMinecartEntity;
 import net.minecraft.entity.vehicle.HopperMinecartEntity;
@@ -101,6 +103,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
+import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
@@ -119,10 +122,10 @@ public final class EntityLockUtils {
     /*
      * Get Entity Sounds
      */
-    public static SoundEvent getLockSound(@NotNull Block block) {
+    public static @NotNull SoundEvent getLockSound(@NotNull Block block) {
         return EntityLockUtils.getLockSound(block, null, null);
     }
-    public static SoundEvent getLockSound(@NotNull Block block, @Nullable BlockState blockState, @Nullable BlockEntity blockEntity) {
+    public static @NotNull SoundEvent getLockSound(@NotNull Block block, @Nullable BlockState blockState, @Nullable BlockEntity blockEntity) {
         if (blockEntity != null) {
             if ( blockEntity instanceof BeehiveBlockEntity hive) {
                 if (!hive.hasNoBees())
@@ -152,14 +155,16 @@ public final class EntityLockUtils {
             return SoundEvents.BLOCK_BEEHIVE_DRIP;
         return EntityLockUtils.getDefaultLockSound();
     }
-    public static @Nullable SoundEvent getLockSound(Entity entity) {
+    public static @NotNull SoundEvent getLockSound(Entity entity) {
         // Locked blocks
         if (entity instanceof MinecartEntity || entity instanceof HopperMinecartEntity || entity instanceof FurnaceMinecartEntity)
             return SoundEvents.BLOCK_IRON_DOOR_OPEN;
         if (entity instanceof TntMinecartEntity)
             return SoundEvents.ENTITY_PARROT_IMITATE_CREEPER;
-        if (entity instanceof ChestMinecartEntity || entity instanceof ArmorStandEntity)
+        if (entity instanceof ChestMinecartEntity)
             return EntityLockUtils.getDefaultLockSound();
+        if (entity instanceof ArmorStandEntity || entity instanceof BoatEntity)
+            return SoundEvents.BLOCK_FENCE_GATE_CLOSE;
         // Protective mobs
         if (entity instanceof WolfEntity)
             return SoundEvents.ENTITY_WOLF_GROWL;
@@ -219,7 +224,7 @@ public final class EntityLockUtils {
         // Nether
         if (entity instanceof PiglinEntity)
             return SoundEvents.ENTITY_PIGLIN_AMBIENT;
-        return null;
+        return EntityLockUtils.getDefaultLockSound();
     }
     
     /*
@@ -295,17 +300,29 @@ public final class EntityLockUtils {
         source.playSound(EntityLockUtils.getLockSound(source), 1, 1);
         
         if (player != null) {
-            WorldChunk chunk = source.getWorld()
-                .getWorldChunk(source.getBlockPos());
+            Text owner;
+            if (source instanceof Tameable tameable && tameable.getOwnerUuid() != null) {
+                owner = ((ClaimsAccessor)player.getServer()).getClaimManager()
+                    .getPlayerClaim(tameable.getOwnerUuid())
+                    .getName();
+            } else {
+                WorldChunk chunk = source.getWorld()
+                    .getWorldChunk(source.getBlockPos());
+                if (chunk != null)
+                    owner = ((IClaimedChunk) chunk).getOwnerName(player, source.getBlockPos());
+                else
+                    owner = Text.literal("unknown player")
+                        .formatted(Formatting.LIGHT_PURPLE);
+            }
             
             // Display that this item can't be opened
             TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
                 EntityLockUtils.getLockedName(source),
-                (chunk == null ? Text.literal("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, source.getBlockPos()))
+                owner
             ));
         }
     }
-
+    
     /**
      * Jiggle the lock on a block
      * @param source The block that holds the lock

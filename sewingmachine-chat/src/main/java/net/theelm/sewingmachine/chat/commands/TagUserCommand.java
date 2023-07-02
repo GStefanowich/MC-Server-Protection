@@ -30,6 +30,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
@@ -40,6 +41,8 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
 import net.theelm.sewingmachine.chat.utilities.ChatRoomUtilities;
+import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
@@ -48,33 +51,32 @@ import java.util.Collections;
  * Created on Mar 18 2021 at 1:07 PM.
  * By greg in SewingMachineMod
  */
-public final class TagUserCommand {
-    private TagUserCommand() {}
-
-    public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
-        ServerCore.register(dispatcher, "@", "tag user", builder -> builder
+public final class TagUserCommand extends SewCommand {
+    @Override
+    public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
+        CommandUtils.register(dispatcher, "@", "tag user", builder -> builder
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .then(CommandManager.argument("message", StringArgumentType.greedyString())
-                    .executes(TagUserCommand::tagPlayerMessage)
+                    .executes(this::tagPlayerMessage)
                 )
-                .executes(TagUserCommand::tagPlayer)
+                .executes(this::tagPlayer)
             )
         );
     }
 
-    private static int tagPlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return TagUserCommand.sendTaggedMessage(
+    private int tagPlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return this.sendTaggedMessage(
             context,
             ""
         );
     }
-    private static int tagPlayerMessage(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return TagUserCommand.sendTaggedMessage(
+    private int tagPlayerMessage(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        return this.sendTaggedMessage(
             context,
             StringArgumentType.getString(context, "message")
         );
     }
-    private static int sendTaggedMessage(@NotNull CommandContext<ServerCommandSource> context, @NotNull String text) throws CommandSyntaxException {
+    private int sendTaggedMessage(@NotNull CommandContext<ServerCommandSource> context, @NotNull String text) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity from = source.getPlayer();
         ServerPlayerEntity to = EntityArgumentType.getPlayer(context, "player");

@@ -112,74 +112,75 @@ public final class SignShopSell extends ShopSign.BuyTradeSell {
         if (((sign.getShopItem()) == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null) || (sign.getShopItemDisplay() == null))
             return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
         
+        // Refuse to trade with own player
+        if (player.getUuid().equals(sign.getShopOwner()))
+            return Either.left(TranslatableServerSide.text(player, "shop.error.self_sell"));
+        
         // Check if the attached chest exists
-        if (sign.isInfinite() || ((chest = InventoryUtils.getAttachedChest( player.getEntityWorld(), signPos )) != null)) {
-            if (player.getUuid().equals(sign.getShopOwner()))
-                return Either.left(TranslatableServerSide.text(player, "shop.error.self_sell"));
+        if (!sign.isInfinite() && (chest = InventoryUtils.getAttachedChest(player.getEntityWorld(), signPos)) == null)
+            return Either.left(Text.literal("Failed to get attached chest"));
+        
+        /*
+         * Check if chest is valid
+         */
+        if (chest != null) {
+            chestInventory = InventoryUtils.getInventoryOf(player.getEntityWorld(), chest.getPos());
             
-            /*
-             * Check if chest is valid
-             */
-            if ((chest != null)) {
-                chestInventory = InventoryUtils.getInventoryOf(player.getEntityWorld(), chest.getPos());
-                
-                // If the chest is open
-                if (ChestBlockEntity.getPlayersLookingInChestCount(player.getEntityWorld(), chest.getPos()) > 0)
-                    return Either.left(TranslatableServerSide.text(player, "shop.error.chest_open"));
-                
-                // If player does not have any of item
-                if (InventoryUtils.getInventoryCount(player.getInventory(), sign::itemMatchPredicate) < sign.getShopItemCount())
-                    return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
-            }
+            // If the chest is open
+            if (ChestBlockEntity.getPlayersLookingInChestCount(player.getEntityWorld(), chest.getPos()) > 0)
+                return Either.left(TranslatableServerSide.text(player, "shop.error.chest_open"));
             
-            // Take shop keepers money
-            if (!(sign.isInfinite() || PlayerBalanceCallback.hasBalance(sign.getShopOwner(), sign.getShopItemPrice())))
-                return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
+            // If player does not have any of item
+            if (InventoryUtils.getInventoryCount(player.getInventory(), sign::itemMatchPredicate) < sign.getShopItemCount())
+                return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
+        }
+        
+        // Take shop keepers money
+        if (!(sign.isInfinite() || PlayerBalanceCallback.hasBalance(sign.getShopOwner(), sign.getShopItemPrice())))
+            return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
+        
+        // Put players item into chest
+        if (!InventoryUtils.playerToChest(player, signPos, player.getInventory(), chestInventory, sign::itemMatchPredicate, sign.getShopItemCount(), true)) {
+            boolean crafted = false;
             
-            // Put players item into chest
-            if (!InventoryUtils.playerToChest(player, signPos, player.getInventory(), chestInventory, sign::itemMatchPredicate, sign.getShopItemCount(), true)) {
-                boolean crafted = false;
-                
-                List<? extends Recipe<?>> recipes = sign.getShopItemRecipes();
-                if (sign.isInfinite() && recipes != null) {
-                    for (Recipe recipe : recipes) {
-                        ShopCraftAction craft = new ShopCraftAction(recipe, sign, signPos, chestInventory);
-                        
-                        if (craft.craft(player)) {
-                            crafted = true;
-                            break;
-                        }
+            List<? extends Recipe<?>> recipes = sign.getShopItemRecipes();
+            if (sign.isInfinite() && recipes != null) {
+                for (Recipe recipe : recipes) {
+                    ShopCraftAction craft = new ShopCraftAction(recipe, sign, signPos, chestInventory);
+                    
+                    if (craft.craft(player)) {
+                        crafted = true;
+                        break;
                     }
                 }
-                
-                if (!crafted)
-                    return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
             }
             
-            // Give player money for item
-            PlayerBalanceCallback.give(player, sign.getShopItemPrice());
-            
-            // Get shop owner
-            Text name = TextUtils.mutable(PlayerNameCallback.getName(server, sign.getShopOwner()))
-                .formatted(Formatting.AQUA);
-            
-            // Tell the player
-            TitleUtils.showPlayerAlert(
-                player,
-                Formatting.YELLOW,
-                Text.literal("You sold "),
-                Text.literal(FormattingUtils.format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
-                Text.translatable(sign.getShopItemTranslationKey()).formatted(Formatting.AQUA),
-                Text.literal(" to "),
-                name
-            );
-            
-            // Log the event
-            CoreMod.logInfo(player.getName().getString() + " sold " + FormattingUtils.format(sign.getShopItemCount()) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format(sign.getShopItemPrice()) + " to " + name.getString());
-            player.increaseStat(ShopStats.SHOP_TYPE_SOLD.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
-            
-            return Either.right(Boolean.TRUE);
+            if (!crafted)
+                return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
         }
-        return Either.right(Boolean.FALSE);
+        
+        // Give player money for item
+        PlayerBalanceCallback.give(player, sign.getShopItemPrice());
+        
+        // Get shop owner
+        Text name = TextUtils.mutable(PlayerNameCallback.getName(server, sign.getShopOwner()))
+            .formatted(Formatting.AQUA);
+        
+        // Tell the player
+        TitleUtils.showPlayerAlert(
+            player,
+            Formatting.YELLOW,
+            Text.literal("You sold "),
+            Text.literal(FormattingUtils.format( sign.getShopItemCount() ) + " ").formatted(Formatting.AQUA),
+            Text.translatable(sign.getShopItemTranslationKey()).formatted(Formatting.AQUA),
+            Text.literal(" to "),
+            name
+        );
+        
+        // Log the event
+        CoreMod.logInfo(player.getName().getString() + " sold " + FormattingUtils.format(sign.getShopItemCount()) + " " + sign.getShopItemIdentifier() + " for $" + FormattingUtils.format(sign.getShopItemPrice()) + " to " + name.getString());
+        player.increaseStat(ShopStats.SHOP_TYPE_SOLD.getOrCreateStat(sign.getShopItem()), sign.getShopItemCount());
+        
+        return Either.right(Boolean.TRUE);
     }
 }

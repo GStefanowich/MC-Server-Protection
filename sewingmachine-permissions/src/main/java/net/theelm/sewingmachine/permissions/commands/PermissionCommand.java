@@ -32,7 +32,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.Permissions;
@@ -42,13 +41,14 @@ import net.theelm.sewingmachine.permissions.objects.PlayerRank;
 import net.minecraft.command.CommandException;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class PermissionCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "permissions", builder -> builder
+        CommandUtils.register(dispatcher, "permissions", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             // Create a new Rank
             .then(CommandManager.literal("add")

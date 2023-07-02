@@ -29,12 +29,11 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.CommandRegistryAccess;
-import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
-import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.theelm.sewingmachine.utilities.CommandUtils;
+import net.theelm.sewingmachine.utilities.Sew;
 import net.theelm.sewingmachine.utilities.text.StyleApplicator;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ContactInformation;
@@ -58,7 +57,7 @@ import java.util.Optional;
 public final class ModsCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "Mods", (builder) -> builder
+        CommandUtils.register(dispatcher, "Mods", (builder) -> builder
             .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_MODS_LIST))
             .executes(this::getModList)
         );
@@ -66,7 +65,7 @@ public final class ModsCommand extends SewCommand {
     
     private int getModList(@NotNull CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
-        Collection<ModContainer> mods = CoreMod.getFabric()
+        Collection<ModContainer> mods = Sew.getFabric()
             .getAllMods();
         
         MutableText output = Text.literal("Server Mods:").formatted(Formatting.YELLOW);

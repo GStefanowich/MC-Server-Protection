@@ -76,7 +76,7 @@ import java.util.stream.Collectors;
 public class WaystoneCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "waystones", builder -> builder
+        CommandUtils.register(dispatcher, "waystones", builder -> builder
             .then(CommandManager.literal("set")
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                 .then(CommandManager.argument("player", EntityArgumentType.player())

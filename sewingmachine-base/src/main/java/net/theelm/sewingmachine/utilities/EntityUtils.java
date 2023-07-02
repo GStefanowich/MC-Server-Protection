@@ -117,7 +117,7 @@ public final class EntityUtils {
     /*
      * Get Shop Permissions
      */
-    public static boolean isValidShopContainer(BlockEntity block) {
+    public static boolean isValidShopContainer(@Nullable BlockEntity block) {
         return (block instanceof ChestBlockEntity || block instanceof BarrelBlockEntity) || (block instanceof ShulkerBoxBlockEntity);
     }
     public static @Nullable ShopSignData getAttachedShopSign(@NotNull World world, @NotNull BlockPos storagePos) {

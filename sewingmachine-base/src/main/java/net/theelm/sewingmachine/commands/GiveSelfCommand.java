@@ -31,7 +31,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
@@ -46,6 +45,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.MathHelper;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -55,7 +55,7 @@ import org.jetbrains.annotations.NotNull;
 public final class GiveSelfCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "I", "Give Self", builder -> builder
+        CommandUtils.register(dispatcher, "I", "Give Self", builder -> builder
             .then(CommandManager.argument("item", ItemStackArgumentType.itemStack(registry))
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
                 .then(CommandManager.argument("count", IntegerArgumentType.integer(1))

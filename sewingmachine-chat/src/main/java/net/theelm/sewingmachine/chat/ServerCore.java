@@ -25,8 +25,7 @@
 
 package net.theelm.sewingmachine.chat;
 
-import net.fabricmc.api.DedicatedServerModInitializer;
-import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
+import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.message.v1.ServerMessageDecoratorEvent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
@@ -39,26 +38,27 @@ import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.ChatMessageFunction;
 import net.theelm.sewingmachine.chat.objects.ChatDecorator;
 import net.theelm.sewingmachine.chat.utilities.PlayerNameUtils;
+import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.events.MessageDeployer;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
+import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.utilities.EntityVariables;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
 import java.util.UUID;
 
 /**
  * Created on Jul 17 2022 at 11:01 AM.
  * By greg in SewingMachineMod
  */
-public final class ServerCore extends CoreMod implements DedicatedServerModInitializer {
+public final class ServerCore extends CoreMod implements ModInitializer, SewPlugin {
     @Override
-    public void onInitializeServer() {
+    public void onInitialize() {
         ServerMessageDecoratorEvent.EVENT.register(ServerMessageDecoratorEvent.CONTENT_PHASE, new ChatDecorator());
-
+        
         PlayerNameCallback.INSTANCE.register(new PlayerNameCallback() {
             @Override
             public @Nullable Text getDisplayName(PlayerEntity player) {
@@ -98,5 +98,14 @@ public final class ServerCore extends CoreMod implements DedicatedServerModIniti
         
         // Get the chat message
         EntityVariables.add("message", (ChatMessageFunction)(room, message, casing) -> message);
+    }
+
+    @Override
+    public @NotNull SewCommand[] getCommands() {
+        return new SewCommand[] {
+            new ChatroomCommands(),
+            new NickNameCommand(),
+            new TagUserCommand()
+        };
     }
 }

@@ -41,6 +41,7 @@ import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.permissions.PermissionNode;
 import net.theelm.sewingmachine.permissions.objects.PlayerRank;
+import net.theelm.sewingmachine.utilities.Sew;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -242,7 +243,7 @@ public final class RankUtils {
     }
     private static @NotNull JsonObject fileLoad() throws FileNotFoundException {
         File ranksFile = new File(
-            CoreMod.getConfDir(),
+            Sew.getConfDir(),
             "permissions.json"
         );
 

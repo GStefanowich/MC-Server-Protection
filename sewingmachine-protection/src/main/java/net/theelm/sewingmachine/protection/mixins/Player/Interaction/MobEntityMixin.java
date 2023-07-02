@@ -35,6 +35,7 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.network.packet.s2c.play.EntityAttachS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
@@ -102,30 +103,7 @@ public abstract class MobEntityMixin extends LivingEntity {
         else {
             result = ActionResult.CONSUME;
             
-            Text owner;
-            if ( this.getOwnerUuid() != null ) {
-                // Get the name of the HORSES OWNER
-                owner = ((ClaimsAccessor)this.getServer()).getClaimManager()
-                    .getPlayerClaim(this.getOwnerUuid())
-                    .getName();
-            } else {
-                // Get the name of the CHUNK OWNER
-                WorldChunk chunk = this.getEntityWorld().getWorldChunk(this.getBlockPos());
-                if ( chunk != null )
-                    owner = ((IClaimedChunk) chunk).getOwnerName(player, this.getBlockPos());
-                else
-                    owner = Text.literal( "unknown player" )
-                        .formatted(Formatting.LIGHT_PURPLE);
-            }
-            
-            // Horse makes an angry sound at the player
-            this.playSound(EntityLockUtils.getLockSound(this),0.5f, 1f);
-            
-            // Display that this item can't be opened
-            TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
-                EntityLockUtils.getLockedName(this),
-                owner
-            ));
+            EntityLockUtils.playLockSoundFromSource(this, player);
             
             // Make sure the client knows that they are not leashing
             if (player instanceof ServerPlayerEntity && stack.getItem() == Items.LEAD) {

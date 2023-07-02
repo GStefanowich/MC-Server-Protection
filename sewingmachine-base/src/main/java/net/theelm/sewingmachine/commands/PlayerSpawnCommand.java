@@ -31,9 +31,9 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.minecraft.block.BedBlock;
 import net.minecraft.command.argument.BlockPosArgumentType;
@@ -59,7 +59,7 @@ public final class PlayerSpawnCommand extends SewCommand {
         /*
          * Move the players spawn
          */
-        ServerCore.register(dispatcher, PlayerSpawnCommand.COMMAND_NAME, builder -> builder
+        CommandUtils.register(dispatcher, PlayerSpawnCommand.COMMAND_NAME, builder -> builder
             .then(CommandManager.argument("bed_position", BlockPosArgumentType.blockPos() )
                 .executes(this::moveSpawn)
             )

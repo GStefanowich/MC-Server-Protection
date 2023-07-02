@@ -27,6 +27,7 @@ package net.theelm.sewingmachine.events;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
@@ -38,6 +39,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.packets.CancelMinePacket;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protections.logging.BlockEvent;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
@@ -98,10 +100,16 @@ public interface BlockBreakCallback {
      */
     private static void onFailure(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace) {
         BlockState blockState = world.getBlockState(blockPos);
-        if (entity instanceof ServerPlayerEntity player && EntityUtils.hasClientBlockData(blockState)) {
-            BlockEntity blockEntity = world.getBlockEntity(blockPos);
-            if (blockEntity != null)
-                player.networkHandler.sendPacket(blockEntity.toUpdatePacket());
+        if (entity instanceof ServerPlayerEntity player) {
+            // Send a packet to stop mining
+            ServerPlayNetworking.send(player, new CancelMinePacket(blockPos));
+            
+            // Resend the current entity state
+            if (EntityUtils.hasClientBlockData(blockState)) {
+                BlockEntity blockEntity = world.getBlockEntity(blockPos);
+                if (blockEntity != null)
+                    player.networkHandler.sendPacket(blockEntity.toUpdatePacket());
+            }
         }
     }
     

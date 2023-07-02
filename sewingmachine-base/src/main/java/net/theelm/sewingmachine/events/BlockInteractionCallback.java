@@ -33,6 +33,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -41,9 +42,13 @@ public interface BlockInteractionCallback {
         for (BlockInteractionCallback event : listeners) {
             ActionResult result = event.interact(player, world, hand, itemStack, blockHitResult);
             if (result != ActionResult.PASS) {
-                // If the result is a failure resend the player inventory to fix any lost counts
-                if (result == ActionResult.FAIL)
+                if (result == ActionResult.FAIL) {
+                    // If the result is a failure resend the player inventory to fix any lost counts
                     EntityUtils.resendInventory(player);
+                    
+                    // Resend the information of the neighboring blocks (Fix ghost blocks, multi-block structures [eg; doors], etc)
+                    BlockUtils.updateNeighboringBlockStates(player, world, blockHitResult.getBlockPos());
+                }
                 
                 // Return the result of the interaction
                 return result;

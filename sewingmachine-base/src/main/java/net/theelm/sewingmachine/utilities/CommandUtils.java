@@ -26,14 +26,21 @@
 package net.theelm.sewingmachine.utilities;
 
 import com.mojang.brigadier.Command;
+import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+import net.minecraft.server.command.CommandManager;
 import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.base.ServerCore;
+import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.config.ConfigPredicate;
+import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
 import net.minecraft.command.CommandSource;
@@ -50,6 +57,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -57,6 +65,41 @@ import java.util.function.Consumer;
 
 public final class CommandUtils {
     private CommandUtils() {}
+    
+    public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final Consumer<ArgumentBuilder<ServerCommandSource, ?>> consumer) {
+        return CommandUtils.register(dispatcher, command, command, consumer);
+    }
+    public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final String descriptive, @NotNull final Consumer<ArgumentBuilder<ServerCommandSource, ?>> consumer) {
+        final String display = command.toLowerCase(Locale.ROOT);
+        
+        // Build the literal using the name
+        LiteralArgumentBuilder<ServerCommandSource> builder = CommandManager.literal(command.toLowerCase().replace(" ", "-"));
+        
+        // Apply the builder
+        consumer.accept(builder);
+        
+        // Build the node
+        LiteralCommandNode<ServerCommandSource> node = builder.build();
+        String info = (descriptive.isEmpty() || descriptive.equalsIgnoreCase(command) ? "/" + display : descriptive.toLowerCase(Locale.ROOT) + " [/" + display + "]") + " command";
+        
+        // Check if hot-reloading the config is disabled (If it is we don't want to register the commands)
+        if (!SewConfig.get(SewCoreConfig.HOT_RELOADING)) {
+            // If the command isn't allowed, don't register it
+            if (node.getRequirement() instanceof ConfigPredicate configPredicate && configPredicate.isDisabled()) {
+                CoreMod.logDebug("- Skipping registering " + info);
+                return node;
+            }
+        }
+        
+        // Register the command with the dispatcher
+        dispatcher.getRoot()
+            .addChild(node);
+        
+        // Log the command registration
+        CoreMod.logDebug("- Registered " + info);
+        
+        return node;
+    }
     
     public static @NotNull CompletableFuture<Suggestions> getOnlineNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) {
         PlayerManager manager = context.getSource().getServer().getPlayerManager();

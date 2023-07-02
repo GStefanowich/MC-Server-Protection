@@ -27,7 +27,6 @@ package net.theelm.sewingmachine.permissions;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.builder.ArgumentBuilder;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.tree.CommandNode;
 import net.fabricmc.api.DedicatedServerModInitializer;
 import net.minecraft.command.CommandRegistryAccess;

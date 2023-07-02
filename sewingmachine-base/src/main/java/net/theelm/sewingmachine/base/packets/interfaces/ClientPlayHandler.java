@@ -23,17 +23,14 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.objects;
+package net.theelm.sewingmachine.base.packets.interfaces;
 
-import net.minecraft.text.Text;
-import org.jetbrains.annotations.NotNull;
+import net.fabricmc.fabric.api.networking.v1.FabricPacket;
+import net.fabricmc.fabric.api.networking.v1.PacketSender;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayNetworkHandler;
 
-/**
- * Created on Jun 28 2023 at 11:11 PM.
- * By greg in sewingmachine
- */
-public record Tax(
-    @NotNull Text name,
-    int value,
-    int percent
-) {}
+@FunctionalInterface
+public interface ClientPlayHandler<T extends FabricPacket> {
+    void receive(MinecraftClient client, ClientPlayNetworkHandler network, T packet, PacketSender sender);
+}

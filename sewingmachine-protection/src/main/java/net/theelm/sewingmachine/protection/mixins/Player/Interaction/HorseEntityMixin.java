@@ -27,6 +27,7 @@ package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.AbstractHorseEntity;
+import net.minecraft.sound.SoundEvent;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
@@ -68,32 +69,8 @@ public abstract class HorseEntityMixin extends AbstractHorseEntity {
         if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
             return;
         
-        Text owner;
-        
-        if ( this.getOwnerUuid() != null ) {
-            // Get the name of the HORSES OWNER
-            owner = ((ClaimsAccessor)this.getServer()).getClaimManager()
-                .getPlayerClaim(this.getOwnerUuid())
-                .getName();
-        } else {
-            // Get the name of the CHUNK OWNER
-            WorldChunk chunk = this.getWorld()
-                .getWorldChunk( this.getBlockPos() );
-            if ( chunk != null )
-                owner = ((IClaimedChunk) chunk).getOwnerName( player, this.getBlockPos() );
-            else
-                owner = Text.literal( "unknown player" )
-                    .formatted(Formatting.LIGHT_PURPLE);
-        }
-        
         // Horse makes an angry sound at the player
-        this.playSound(EntityLockUtils.getLockSound( this ),0.5f, 1f);
-        
-        // Display that this item can't be ridden
-        TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text( player, "claim.block.locked",
-            EntityLockUtils.getLockedName(this),
-            owner
-        ));
+        EntityLockUtils.playLockSoundFromSource(this, player);
         
         // Disallow
         callback.setReturnValue(ActionResult.FAIL);

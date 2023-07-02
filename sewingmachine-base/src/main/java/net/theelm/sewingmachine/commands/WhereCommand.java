@@ -30,22 +30,17 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
-import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
-import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.Permissions;
 import net.theelm.sewingmachine.events.RegionNameCallback;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
@@ -57,7 +52,7 @@ public final class WhereCommand extends SewCommand {
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, WhereCommand.NAME, builder -> builder
+        CommandUtils.register(dispatcher, WhereCommand.NAME, builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.LOCATE_PLAYERS))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .executes(this::locatePlayer)

@@ -33,7 +33,6 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
@@ -55,7 +54,7 @@ import java.util.Base64;
 public class HeadCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "skull", builder -> builder
+        CommandUtils.register(dispatcher, "skull", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.literal("player")
                 .then(CommandManager.argument("player", StringArgumentType.word())

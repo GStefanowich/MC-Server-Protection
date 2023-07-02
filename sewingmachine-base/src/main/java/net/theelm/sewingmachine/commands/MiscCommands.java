@@ -45,6 +45,7 @@ import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.interfaces.LogicalWorld;
 import net.theelm.sewingmachine.objects.ticking.Carver;
 import net.theelm.sewingmachine.utilities.BlockUtils;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.Entity;
@@ -61,7 +62,7 @@ public final class MiscCommands extends SewCommand {
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "shrug", builder -> builder
+        CommandUtils.register(dispatcher, "shrug", builder -> builder
             .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_SHRUG))
             .then(CommandManager.argument("message", MessageArgumentType.message())
                 .executes(this::shrugMessage)
@@ -69,7 +70,7 @@ public final class MiscCommands extends SewCommand {
             .executes(this::shrug)
         );
         
-        ServerCore.register(dispatcher, "tableflip", builder -> builder
+        CommandUtils.register(dispatcher, "tableflip", builder -> builder
             .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_TABLEFLIP))
             .then(CommandManager.argument("message", MessageArgumentType.message())
                 .executes(this::flipMessage)
@@ -77,21 +78,21 @@ public final class MiscCommands extends SewCommand {
             .executes(this::flip)
         );
         
-        ServerCore.register(dispatcher, "lightning", builder -> builder
+        CommandUtils.register(dispatcher, "lightning", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("target", EntityArgumentType.entities())
                 .executes(this::hitTargetsWithLightning)
             )
         );
         
-        ServerCore.register(dispatcher, "extinguish", builder -> builder
+        CommandUtils.register(dispatcher, "extinguish", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("target", EntityArgumentType.entities())
                 .executes(this::extinguishTargets)
             )
         );
         
-        ServerCore.register(dispatcher, "destroy", builder -> builder
+        CommandUtils.register(dispatcher, "destroy", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.literal("chunk")
                 .executes(this::destroyEntireChunk)

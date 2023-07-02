@@ -26,13 +26,8 @@
 package net.theelm.sewingmachine.base;
 
 import com.mojang.brigadier.Message;
-import com.mojang.datafixers.util.Either;
-import net.fabricmc.api.ClientModInitializer;
-import net.fabricmc.api.DedicatedServerModInitializer;
-import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.loader.api.entrypoint.EntrypointContainer;
-import net.fabricmc.loader.api.metadata.ModOrigin;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.theelm.sewingmachine.MySQL.MySQLConnection;
@@ -49,28 +44,24 @@ import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.base.objects.ShopStats;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.DevUtils;
-import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntityType;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
-import net.minecraft.util.Identifier;
 import net.minecraft.util.Pair;
 import net.minecraft.util.Util;
 
+import net.theelm.sewingmachine.utilities.Sew;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -108,13 +99,6 @@ public abstract class CoreMod {
             }
         }
         return CoreMod.MySQL;
-    }
-    
-    /*
-     * Mod Assets
-     */
-    public static @NotNull Identifier modIdentifier(@NotNull String key) {
-        return new Identifier(CoreMod.MOD_ID + ":" + key);
     }
     
     public void initialize() {
@@ -156,27 +140,29 @@ public abstract class CoreMod {
         }
         
         // Register our block entities for use
-        CoreMod.GUIDE_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("guide_lectern"), FabricBlockEntityTypeBuilder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
-        CoreMod.WARPS_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, CoreMod.modIdentifier("warps_lectern"), FabricBlockEntityTypeBuilder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
+        CoreMod.GUIDE_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Sew.modIdentifier("guide_lectern"), FabricBlockEntityTypeBuilder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
+        CoreMod.WARPS_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Sew.modIdentifier("warps_lectern"), FabricBlockEntityTypeBuilder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
     }
     
     private @NotNull List<SewPlugin> getPlugins() {
-        FabricLoader fabric = CoreMod.getFabric();
-        String environment = fabric.getEnvironmentType()
-            .name()
-            .toLowerCase();
-        Class type;
+        FabricLoader fabric = Sew.getFabric();
+        List<String> environments = new ArrayList<>();
         
-        if (fabric.getEnvironmentType() == EnvType.CLIENT)
-            type = ClientModInitializer.class;
-        else if (fabric.getEnvironmentType() == EnvType.SERVER)
-            type = DedicatedServerModInitializer.class;
-        else type = ModInitializer.class;
+        environments.add("main");
+        environments.add(fabric.getEnvironmentType()
+            .name()
+            .toLowerCase());
         
         List<SewPlugin> plugins = new ArrayList<>();
-        for (Object entry : fabric.getEntrypoints(environment, type)) {
-            if (entry instanceof SewPlugin plugin)
-                plugins.add(plugin);
+        for (String environment : environments) {
+            for (EntrypointContainer<Object> entry : fabric.getEntrypointContainers(environment, Object.class)) {
+                ModContainer container = entry.getProvider();
+                ModMetadata metadata = container.getMetadata();
+                if (
+                    metadata.getId().startsWith("sewing-machine-")
+                    && entry.getEntrypoint() instanceof SewPlugin plugin
+                ) plugins.add(plugin);
+            }
         }
         
         return plugins;
@@ -185,38 +171,16 @@ public abstract class CoreMod {
     /*
      * Fabric Elements
      */
-    public static Either<MinecraftServer, MinecraftClient> getGameInstance() {
-        Object instance = getFabric().getGameInstance();
-        if (instance instanceof MinecraftServer server)
-            return Either.left(server);
-        if (instance instanceof MinecraftClient client)
-            return Either.right(client);
-        throw new RuntimeException("Could not access game instance.");
-    }
     public static @NotNull FabricLoader getFabric() {
         return FabricLoader.getInstance();
     }
-    public static @NotNull ModContainer getMod() {
-        return CoreMod.getFabric()
-            .getModContainer(CoreMod.MOD_ID)
-            .orElseThrow(RuntimeException::new);
-    }
     public static @NotNull ModMetadata getModMetaData() {
-        return CoreMod.getMod().getMetadata();
+        return Sew.getMod(CoreMod.MOD_ID).getMetadata();
     }
     public static @NotNull String getModVersion() {
         return CoreMod.getModMetaData().getVersion().getFriendlyString();
     }
-    public static boolean isClient() {
-        return CoreMod.getFabric().getEnvironmentType() == EnvType.CLIENT;
-    }
-    public static boolean isServer() {
-        return CoreMod.getFabric().getEnvironmentType() == EnvType.SERVER;
-    }
     
-    /*
-     * Configurations
-     */
     protected static boolean initDB() throws SQLException {
         ArrayList<String> tables = new ArrayList<>();
         ArrayList<String> alters = new ArrayList<>();
@@ -253,16 +217,6 @@ public abstract class CoreMod {
         }
         
         return !tables.isEmpty();
-    }
-    public static @NotNull File getConfDir() throws RuntimeException {
-        // Get the directory
-        final File config = CoreMod.getFabric().getConfigDirectory();
-        final File dir = new File(config, CoreMod.MOD_ID);
-        // Make sure the directory exists
-        if (!(dir.exists() || dir.mkdirs()))
-            throw new RuntimeException("Error accessing the config");
-        // Return the directory
-        return dir;
     }
     
     /*

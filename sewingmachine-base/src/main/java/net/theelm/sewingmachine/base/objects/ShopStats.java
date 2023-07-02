@@ -30,6 +30,7 @@ import net.minecraft.registry.Registry;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.minecraft.item.Item;
 import net.minecraft.stat.StatType;
+import net.theelm.sewingmachine.utilities.Sew;
 import org.jetbrains.annotations.NotNull;
 
 public final class ShopStats {
@@ -40,7 +41,7 @@ public final class ShopStats {
     //public static final Identifier SHOP_MONEY_SPENT = ShopStats.registerWith(ShopStats.SHOP_TYPE_MONEY, "sew:spent", StatFormatter.DEFAULT);
     
     private static @NotNull StatType<Item> registerItem(@NotNull String key) {
-        return Registry.register(Registries.STAT_TYPE, CoreMod.modIdentifier(key), new StatType<>(Registries.ITEM));
+        return Registry.register(Registries.STAT_TYPE, Sew.modIdentifier(key), new StatType<>(Registries.ITEM));
     }
     
     public static void init() {}

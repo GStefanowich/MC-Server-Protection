@@ -30,11 +30,11 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.RegistryEntryArgumentType;
 import net.minecraft.registry.RegistryKeys;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.command.suggestion.SuggestionProviders;
 import net.minecraft.item.ItemStack;
@@ -46,14 +46,13 @@ import net.minecraft.nbt.NbtString;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.NotNull;
 
 public final class SpawnerCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "spawner", builder -> builder
+        CommandUtils.register(dispatcher, "spawner", builder -> builder
             .requires(CommandPredicate.isEnabled(SewCoreConfig.SILK_TOUCH_SPAWNERS).and(OpLevels.CHEATING))
             .then(CommandManager.argument("type", RegistryEntryArgumentType.registryEntry(registry, RegistryKeys.ENTITY_TYPE))
                 .suggests(SuggestionProviders.SUMMONABLE_ENTITIES)

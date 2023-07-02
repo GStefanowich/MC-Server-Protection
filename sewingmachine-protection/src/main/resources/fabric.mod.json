@@ -18,8 +18,10 @@
 
 	"environment": "*",
 	"entrypoints": {
-		"client": [],
-		"server": [
+		"client": [
+			"net.theelm.sewingmachine.protection.ClientCore"
+		],
+		"main": [
 			"net.theelm.sewingmachine.protection.ServerCore"
 		]
 	},

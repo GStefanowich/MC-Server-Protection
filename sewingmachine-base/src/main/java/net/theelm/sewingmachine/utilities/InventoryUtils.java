@@ -103,8 +103,8 @@ public final class InventoryUtils {
         checkPositions.add(signPos.offset(Direction.DOWN, 1));
         
         // Add the blockPos BEHIND the sign
-        BlockState signBlockState = world.getBlockState( signPos );
-        if ( signBlockState.getBlock() instanceof WallSignBlock) {
+        BlockState signBlockState = world.getBlockState(signPos);
+        if ( signBlockState.getBlock() instanceof WallSignBlock ) {
             Direction signFacing = signBlockState.get(HorizontalFacingBlock.FACING).getOpposite();
             checkPositions.add(signPos.offset(signFacing, 1));
         }

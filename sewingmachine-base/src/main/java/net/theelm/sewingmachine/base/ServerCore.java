@@ -25,17 +25,14 @@
 
 package net.theelm.sewingmachine.base;
 
-import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.builder.ArgumentBuilder;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.registry.RegistryKey;
+import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.BalanceUpdateHandler;
-import net.theelm.sewingmachine.base.objects.SewBasePackets;
+import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.theelm.sewingmachine.base.objects.signs.SignBackpack;
 import net.theelm.sewingmachine.base.objects.signs.SignBalance;
 import net.theelm.sewingmachine.base.objects.signs.SignGuide;
@@ -44,7 +41,8 @@ import net.theelm.sewingmachine.base.objects.signs.SignShopFree;
 import net.theelm.sewingmachine.base.objects.signs.SignShopSell;
 import net.theelm.sewingmachine.base.objects.signs.SignWarp;
 import net.theelm.sewingmachine.base.objects.signs.SignWaystone;
-import net.theelm.sewingmachine.base.packages.PlayerBackpackC2SPacket;
+import net.theelm.sewingmachine.base.packets.PlayerBackpackPacket;
+import net.theelm.sewingmachine.base.utilities.BackpackUtils;
 import net.theelm.sewingmachine.commands.AdminCommands;
 import net.theelm.sewingmachine.commands.BackpackCommand;
 import net.theelm.sewingmachine.commands.DateCommand;
@@ -71,11 +69,11 @@ import net.theelm.sewingmachine.commands.WhitelistTreeCommand;
 import net.theelm.sewingmachine.commands.WorldCommand;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.ConfigOption;
-import net.theelm.sewingmachine.config.ConfigPredicate;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.BlockInteractionCallback;
 import net.theelm.sewingmachine.events.PlayerBalanceCallback;
 import net.theelm.sewingmachine.events.TaxCollection;
+import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
@@ -84,8 +82,6 @@ import net.theelm.sewingmachine.utilities.MapUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.command.CommandManager;
-import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.dedicated.MinecraftDedicatedServer;
 import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -93,17 +89,16 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
+import net.theelm.sewingmachine.utilities.Sew;
 import net.theelm.sewingmachine.utilities.ShopSigns;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Consumer;
 
 public final class ServerCore extends CoreMod implements ModInitializer, SewPlugin {
     /*
@@ -163,7 +158,15 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
             PlayerBalanceCallback.EVENT.register(new BalanceUpdateHandler());
             
             // Register the packet receiver for opening the backpack
-            ServerPlayNetworking.registerGlobalReceiver(SewBasePackets.BACKPACK_OPEN, new PlayerBackpackC2SPacket());
+            ServerPlayNetworking.registerGlobalReceiver(PlayerBackpackPacket.TYPE, (packet, player, responseSender) -> {
+                // Check if the player has a backpack
+                PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
+                if (backpack == null)
+                    return;
+                
+                // Open the backpack screen on the client
+                player.openHandledScreen(new SimpleNamedScreenHandlerFactory(BackpackUtils::openBackpack, backpack.getName()));
+            });
             
             // Alert the mod presence
             CoreMod.logInfo("Finished loading.");
@@ -210,7 +213,7 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
     }
     
     public static @NotNull MinecraftServer get() {
-        return CoreMod.getGameInstance()
+        return Sew.getGameInstance()
             .left()
             .orElseGet(ClientCore::getServer);
     }
@@ -223,41 +226,6 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
     
     public static @NotNull RegistryKey<World> defaultWorldKey() {
         return SewConfig.get(SewCoreConfig.DEFAULT_WORLD);
-    }
-    
-    public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final Consumer<ArgumentBuilder<ServerCommandSource, ?>> consumer) {
-        return ServerCore.register(dispatcher, command, command, consumer);
-    }
-    public static LiteralCommandNode<ServerCommandSource> register(@NotNull final CommandDispatcher<ServerCommandSource> dispatcher, @NotNull final String command, @NotNull final String descriptive, @NotNull final Consumer<ArgumentBuilder<ServerCommandSource, ?>> consumer) {
-        final String display = command.toLowerCase(Locale.ROOT);
-        
-        // Build the literal using the name
-        LiteralArgumentBuilder<ServerCommandSource> builder = CommandManager.literal(command.toLowerCase().replace(" ", "-"));
-        
-        // Apply the builder
-        consumer.accept(builder);
-        
-        // Build the node
-        LiteralCommandNode<ServerCommandSource> node = builder.build();
-        String info = (descriptive.isEmpty() || descriptive.equalsIgnoreCase(command) ? "/" + display : descriptive.toLowerCase(Locale.ROOT) + " [/" + display + "]") + " command";
-        
-        // Check if hot-reloading the config is disabled (If it is we don't want to register the commands)
-        if (!SewConfig.get(SewCoreConfig.HOT_RELOADING)) {
-            // If the command isn't allowed, don't register it
-            if (node.getRequirement() instanceof ConfigPredicate configPredicate && configPredicate.isDisabled()) {
-                CoreMod.logDebug("- Skipping registering " + info);
-                return node;
-            }
-        }
-        
-        // Register the command with the dispatcher
-        dispatcher.getRoot()
-            .addChild(node);
-        
-        // Log the command registration
-        CoreMod.logDebug("- Registered " + info);
-        
-        return node;
     }
     
     public static @NotNull BlockPos getSpawn(@NotNull World world) {

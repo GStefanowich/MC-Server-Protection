@@ -23,10 +23,11 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.packages;
+package net.theelm.sewingmachine.base.packets;
 
+import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.server.MinecraftServer;
@@ -35,22 +36,26 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.theelm.sewingmachine.base.utilities.BackpackUtils;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
+import net.theelm.sewingmachine.utilities.Sew;
 
 /**
  * Created on Jul 01 2023 at 12:29 AM.
  * By greg in sewingmachine
  */
-public class PlayerBackpackC2SPacket implements ServerPlayNetworking.PlayChannelHandler {
+public record PlayerBackpackPacket() implements FabricPacket {
+    public static final PacketType<PlayerBackpackPacket> TYPE = PacketType.create(Sew.modIdentifier("open_backpack"), PlayerBackpackPacket::new);
+    
+    public PlayerBackpackPacket(PacketByteBuf buf) {
+        this();
+    }
+
     @Override
-    public void receive(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler handler, PacketByteBuf buf, PacketSender responseSender) {
-        System.out.println("We received the request to open the backpack");
+    public void write(PacketByteBuf buf) {
         
-        // Check if the player has a backpack
-        PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
-        if (backpack == null)
-            return;
-        
-        // Open the backpack screen on the client
-        player.openHandledScreen(new SimpleNamedScreenHandlerFactory(BackpackUtils::openBackpack, backpack.getName()));
+    }
+
+    @Override
+    public PacketType<?> getType() {
+        return PlayerBackpackPacket.TYPE;
     }
 }

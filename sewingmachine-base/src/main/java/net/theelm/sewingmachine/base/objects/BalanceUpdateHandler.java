@@ -43,10 +43,16 @@ public final class BalanceUpdateHandler implements PlayerBalanceCallback {
     @Override
     public Boolean update(@NotNull UUID player, int amount, boolean consume) {
         try {
-            if (amount > 0)
-                return MoneyUtils.givePlayerMoney(player, amount);
-            else
-                return MoneyUtils.takePlayerMoney(player, -amount);
+            if (!consume)
+                return MoneyUtils.getPlayerMoney(player) - amount > 0;
+            if (amount > 0) {
+                try {
+                    return MoneyUtils.takePlayerMoney(player, amount);
+                } catch (NotEnoughMoneyException exception) {
+                    return Boolean.FALSE;
+                }
+            }
+            else return MoneyUtils.givePlayerMoney(player, -amount);
         } catch (NbtNotFoundException exception) {
             int adjusted = Math.abs(amount);
             String error;
@@ -57,19 +63,20 @@ public final class BalanceUpdateHandler implements PlayerBalanceCallback {
             
             CoreMod.logError(error + " (Maybe they haven't joined the server?).");
             return Boolean.FALSE;
-        } catch (NotEnoughMoneyException exception) {
-            return Boolean.FALSE;
         }
     }
     
     @Override
     public Boolean updatePlayer(@NotNull PlayerEntity player, int amount, boolean consume) {
-        if (amount > 0)
-            return MoneyUtils.givePlayerMoney(player, amount);
-        try {
-            return MoneyUtils.takePlayerMoney(player, -amount);
-        } catch (NotEnoughMoneyException e) {
-            return Boolean.FALSE;
+        if (!consume)
+            return MoneyUtils.getPlayerMoney(player) - amount > 0;
+        if (amount > 0) {
+            try {
+                return MoneyUtils.takePlayerMoney(player, amount);
+            } catch (NotEnoughMoneyException e) {
+                return Boolean.FALSE;
+            }
         }
+        return MoneyUtils.givePlayerMoney(player, -amount);
     }
 }

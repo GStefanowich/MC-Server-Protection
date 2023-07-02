@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 
+import net.minecraft.util.ActionResult;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
@@ -47,7 +48,7 @@ public abstract class MinecartEntityMixin extends AbstractMinecartEntity {
     }
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
-    private void tryMinecartEnter(PlayerEntity player, Hand hand, CallbackInfoReturnable<Boolean> callback) {
+    private void tryMinecartEnter(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         // Player is in creative
         if ((player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
             return;
@@ -60,7 +61,7 @@ public abstract class MinecartEntityMixin extends AbstractMinecartEntity {
         EntityLockUtils.playLockSoundFromSource(this, player);
         
         // Cancel the event
-        callback.setReturnValue(false);
+        callback.setReturnValue(ActionResult.FAIL);
     }
     
 }

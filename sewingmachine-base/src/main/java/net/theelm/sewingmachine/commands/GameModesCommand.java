@@ -30,7 +30,6 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.Permissions;
@@ -41,12 +40,13 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.world.GameMode;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import org.jetbrains.annotations.NotNull;
 
 public final class GameModesCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "gms", builder -> builder
+        CommandUtils.register(dispatcher, "gms", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SURVIVAL))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SURVIVAL.onOther()))
@@ -55,7 +55,7 @@ public final class GameModesCommand extends SewCommand {
             .executes((context) -> this.setPlayerGameMode(context.getSource(), GameMode.SURVIVAL))
         );
         
-        ServerCore.register(dispatcher, "gmc", builder -> builder
+        CommandUtils.register(dispatcher, "gmc", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_CREATIVE))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_CREATIVE.onOther()))
@@ -64,7 +64,7 @@ public final class GameModesCommand extends SewCommand {
             .executes((context) -> this.setPlayerGameMode(context.getSource(), GameMode.CREATIVE))
         );
         
-        ServerCore.register(dispatcher, "gma", builder -> builder
+        CommandUtils.register(dispatcher, "gma", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_ADVENTURE))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_ADVENTURE.onOther()))
@@ -73,7 +73,7 @@ public final class GameModesCommand extends SewCommand {
             .executes((context) -> this.setPlayerGameMode(context.getSource(), GameMode.ADVENTURE))
         );
         
-        ServerCore.register(dispatcher, "gmsp", builder -> builder
+        CommandUtils.register(dispatcher, "gmsp", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SPECTATOR))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SPECTATOR.onOther()))

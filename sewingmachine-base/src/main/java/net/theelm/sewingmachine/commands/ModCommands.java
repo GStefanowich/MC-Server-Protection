@@ -35,7 +35,6 @@ import com.mojang.datafixers.util.Either;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.blocks.entities.LecternGuideBlockEntity;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
@@ -89,7 +88,7 @@ public final class ModCommands extends SewCommand {
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess access) {
-        ServerCore.register(dispatcher, CoreMod.MOD_ID, (builder) -> {
+        CommandUtils.register(dispatcher, CoreMod.MOD_ID, (builder) -> {
             builder.requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.ADMIN_CLAIM_SHOPS))
                 .then(CommandManager.literal("reload")
                     .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ALL_PERMISSIONS))

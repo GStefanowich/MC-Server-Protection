@@ -31,9 +31,10 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.server.MinecraftServer;
-import net.theelm.sewingmachine.base.objects.SewBasePackets;
+import net.theelm.sewingmachine.base.packets.PlayerBackpackPacket;
 import net.theelm.sewingmachine.utilities.KeybindUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
+import net.theelm.sewingmachine.utilities.Sew;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
@@ -53,13 +54,13 @@ public final class ClientCore extends CoreMod implements ClientModInitializer {
     public void onInitializeClient() {
         KeybindUtils.register(backpackKey, client -> {
             if (client.currentScreen == null)
-                NetworkingUtils.send(client, SewBasePackets.BACKPACK_OPEN);
+                NetworkingUtils.send(client, new PlayerBackpackPacket());
         });
     }
     
     @NotNull
     public static MinecraftClient get() {
-        return CoreMod.getGameInstance()
+        return Sew.getGameInstance()
             .right()
             .orElseThrow(() -> new RuntimeException("Called Client object from illegal position."));
     }

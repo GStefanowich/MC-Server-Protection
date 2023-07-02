@@ -31,13 +31,12 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.theelm.sewingmachine.utilities.BlockUtils;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.argument.BlockPosArgumentType;
@@ -47,7 +46,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Util;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
@@ -58,7 +56,7 @@ public final class RulerCommand extends SewCommand {
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "ruler", builder -> builder
+        CommandUtils.register(dispatcher, "ruler", builder -> builder
             .then(CommandManager.argument("test", BlockPosArgumentType.blockPos()))
             .executes(this::ruler)
         );

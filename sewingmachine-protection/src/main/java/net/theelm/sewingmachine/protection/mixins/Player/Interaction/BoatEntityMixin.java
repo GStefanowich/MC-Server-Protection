@@ -23,17 +23,32 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.objects;
+package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 
-import net.minecraft.text.Text;
-import org.jetbrains.annotations.NotNull;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityType;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.vehicle.BoatEntity;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.Hand;
+import net.minecraft.world.World;
+import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Created on Jun 28 2023 at 11:11 PM.
- * By greg in sewingmachine
- */
-public record Tax(
-    @NotNull Text name,
-    int value,
-    int percent
-) {}
+@Mixin(BoatEntity.class)
+public abstract class BoatEntityMixin extends Entity {
+    public BoatEntityMixin(EntityType<?> type, World world) {
+        super(type, world);
+    }
+    
+    @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
+    private void onCanAddPassenger(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
+        // Make an angry sound at the player
+        EntityLockUtils.playLockSoundFromSource(this, player);
+        
+        callback.setReturnValue(ActionResult.FAIL);
+    }
+}

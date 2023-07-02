@@ -26,7 +26,15 @@
 package net.theelm.sewingmachine.utilities;
 
 import com.mojang.datafixers.util.Either;
+import net.minecraft.block.BedBlock;
+import net.minecraft.block.DoorBlock;
+import net.minecraft.block.HorizontalFacingBlock;
+import net.minecraft.block.TallPlantBlock;
+import net.minecraft.block.enums.BedPart;
+import net.minecraft.block.enums.DoubleBlockHalf;
+import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
 import net.minecraft.registry.tag.BlockTags;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -232,6 +240,31 @@ public final class BlockUtils {
             if (direction.getOffsetY() != 0 && direction.getOffsetX() == x && direction.getOffsetZ() == z)
                 return direction;
         return null;
+    }
+    
+    public static void updateNeighboringBlockStates(@NotNull ServerPlayerEntity player, @NotNull World world, @NotNull BlockPos blockPos) {
+        final BlockState blockState = world.getBlockState(blockPos);
+        final Block block = blockState.getBlock();
+        BlockPos part = null;
+        
+        if ( block instanceof BedBlock) {
+            Direction facing = blockState.get(HorizontalFacingBlock.FACING);
+            BedPart bedPart = blockState.get(BedBlock.PART);
+            part = blockPos.offset(bedPart == BedPart.HEAD ? facing.getOpposite() : facing);
+        } else if ( block instanceof HorizontalFacingBlock ) {
+            Direction facing = blockState.get(HorizontalFacingBlock.FACING);
+            part = blockPos.offset(facing.getOpposite());
+        } else if ( block instanceof TallPlantBlock) {
+            DoubleBlockHalf half = blockState.get(TallPlantBlock.HALF);
+            part = blockPos.offset(half == DoubleBlockHalf.LOWER ? Direction.UP : Direction.DOWN);
+        } else if ( block instanceof DoorBlock) {
+            DoubleBlockHalf half = blockState.get(DoorBlock.HALF);
+            part = half == DoubleBlockHalf.LOWER ? blockPos.up() : blockPos.down();
+        }
+        
+        if (part != null)
+            player.networkHandler.sendPacket(new BlockUpdateS2CPacket(world, part));
+        player.networkHandler.sendPacket(new BlockUpdateS2CPacket(blockPos, blockState));
     }
     
     /**

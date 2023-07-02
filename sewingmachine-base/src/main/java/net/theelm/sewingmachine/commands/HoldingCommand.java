@@ -37,6 +37,7 @@ import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
@@ -61,7 +62,7 @@ public final class HoldingCommand extends SewCommand {
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         // Command to display the object the player is holding
         for (EquipmentSlot slot : EquipmentSlot.values()) {
-            ServerCore.register(dispatcher, slot.getName(), builder -> builder
+            CommandUtils.register(dispatcher, slot.getName(), builder -> builder
                 .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_EQUIPMENT))
                 .then(CommandManager.argument("message", StringArgumentType.greedyString())
                     .executes((source) -> this.handMessage(source, slot))

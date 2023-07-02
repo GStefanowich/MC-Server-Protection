@@ -90,7 +90,7 @@ public final class TeleportsCommand extends SewCommand {
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "spawn", builder -> builder
+        CommandUtils.register(dispatcher, "spawn", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("targets", EntityArgumentType.entities())
                 .executes((context) -> this.sendEntitiesToServerSpawn(context.getSource(), EntityArgumentType.getEntities(context, "targets")))
@@ -102,14 +102,14 @@ public final class TeleportsCommand extends SewCommand {
             })
         );
         
-        ServerCore.register(dispatcher, "tphere", builder -> builder
+        CommandUtils.register(dispatcher, "tphere", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("target", EntityArgumentType.entities())
                 .executes(this::tpHere)
             )
         );
         
-        ServerCore.register(dispatcher, "theend", "end teleport", builder -> builder
+        CommandUtils.register(dispatcher, "theend", "end teleport", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("targets", EntityArgumentType.entities())
                 .executes((context) -> this.sendEntitiesToEnd(context.getSource(), EntityArgumentType.getEntities(context, "targets")))
@@ -121,7 +121,7 @@ public final class TeleportsCommand extends SewCommand {
             })
         );
         
-        ServerCore.register(dispatcher, "tpa", builder -> builder
+        CommandUtils.register(dispatcher, "tpa", builder -> builder
             .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                 .suggests(CommandUtils::getAllPlayerNames)
@@ -134,7 +134,7 @@ public final class TeleportsCommand extends SewCommand {
             .executes(this::toPrimaryHomeCommand)
         );
         
-        ServerCore.register(dispatcher, "tpaccept", builder -> builder
+        CommandUtils.register(dispatcher, "tpaccept", builder -> builder
             .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(WarpUtils::hasWarp)
@@ -142,7 +142,7 @@ public final class TeleportsCommand extends SewCommand {
             )
         );
         
-        ServerCore.register(dispatcher, "tpdeny", builder -> builder
+        CommandUtils.register(dispatcher, "tpdeny", builder -> builder
             .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(WarpUtils::hasWarp)
@@ -150,7 +150,7 @@ public final class TeleportsCommand extends SewCommand {
             )
         );
         
-        ServerCore.register(dispatcher, "home", builder -> builder
+        CommandUtils.register(dispatcher, "home", builder -> builder
             .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("location", StringArgumentType.string())
                 .suggests(this::playerHomeNames)

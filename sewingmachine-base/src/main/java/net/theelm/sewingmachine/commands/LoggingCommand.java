@@ -75,7 +75,7 @@ public final class LoggingCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess access) {
         if (( SewConfig.any(SewCoreConfig.LOG_CHUNKS_CLAIMED, SewCoreConfig.LOG_CHUNKS_UNCLAIMED) ) && ( SewConfig.any(SewCoreConfig.LOG_BLOCKS_BREAKING, SewCoreConfig.LOG_BLOCKS_PLACING) )) {
-            ServerCore.register(dispatcher, "blocklog", builder -> builder
+            CommandUtils.register(dispatcher, "blocklog", builder -> builder
                 .requires(CommandPredicate.opLevel(SewCoreConfig.LOG_VIEW_OP_LEVEL))
                 .then(CommandManager.literal("pos")
                     .then(CommandManager.argument("dimension", DimensionArgumentType.dimension())

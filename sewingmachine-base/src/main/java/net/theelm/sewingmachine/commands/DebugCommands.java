@@ -32,12 +32,12 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.DragonLoot;
 import net.theelm.sewingmachine.base.mixins.Server.ServerWorldAccessor;
 import net.theelm.sewingmachine.base.objects.rewards.WeightedReward;
 import net.theelm.sewingmachine.utilities.BossLootRewards;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.EffectUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.ParticleEffectArgumentType;
@@ -60,7 +60,7 @@ import java.util.Optional;
 public class DebugCommands extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess access) {
-        ServerCore.register(dispatcher, "Teleport Particles", builder -> builder
+        CommandUtils.register(dispatcher, "Teleport Particles", builder -> builder
             .then(CommandManager.argument("particle", ParticleEffectArgumentType.particleEffect(access))
                 .then(CommandManager.argument("target", EntityArgumentType.entities())
                     .then(CommandManager.argument("count", IntegerArgumentType.integer(0, 100))
@@ -72,14 +72,14 @@ public class DebugCommands extends SewCommand {
             )
         );
         
-        ServerCore.register(dispatcher, "Tick Wandering Trader", builder -> builder
+        CommandUtils.register(dispatcher, "Tick Wandering Trader", builder -> builder
             .then(CommandManager.argument("force", BoolArgumentType.bool())
                 .executes(DebugCommands::forceTraderSpawn)
             )
             .executes(DebugCommands::forceTrader)
         );
         
-        ServerCore.register(dispatcher, "Dragon Loot", builder -> builder
+        CommandUtils.register(dispatcher, "Dragon Loot", builder -> builder
             .then(CommandManager.argument("amount", IntegerArgumentType.integer(1, 54))
                 .executes((context) -> giveLootAmount(
                     context.getSource(),

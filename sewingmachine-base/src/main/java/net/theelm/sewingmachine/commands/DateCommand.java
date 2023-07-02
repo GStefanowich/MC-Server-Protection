@@ -29,8 +29,8 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.CommandRegistryAccess;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
@@ -44,7 +44,7 @@ import org.jetbrains.annotations.NotNull;
 public final class DateCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "Date", builder -> builder
+        CommandUtils.register(dispatcher, "Date", builder -> builder
             .executes(DateCommand::displayDate)
         );
     }

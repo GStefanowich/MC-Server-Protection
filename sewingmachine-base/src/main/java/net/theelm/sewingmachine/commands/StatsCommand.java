@@ -37,10 +37,10 @@ import net.minecraft.command.argument.RegistryEntryArgumentType;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -82,7 +82,7 @@ public final class StatsCommand extends SewCommand {
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess access) {
-        ServerCore.register(dispatcher, "Stat", builder -> builder
+        CommandUtils.register(dispatcher, "Stat", builder -> builder
             .then(this.itemCommandTree(access, "killed",
                 this::getStatKilled,
                 this::incStatKilled,

@@ -32,12 +32,12 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.WarpUtils;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.command.argument.DimensionArgumentType;
@@ -69,7 +69,7 @@ public final class WorldCommand extends SewCommand {
             }
         });
         
-        ServerCore.register(dispatcher, "world", builder -> builder
+        CommandUtils.register(dispatcher, "world", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("world", DimensionArgumentType.dimension())
                 .then(CommandManager.literal("teleport")

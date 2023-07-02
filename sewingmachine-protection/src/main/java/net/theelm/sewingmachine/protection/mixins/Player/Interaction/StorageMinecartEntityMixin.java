@@ -38,6 +38,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+@Deprecated
 @Mixin(StorageMinecartEntity.class)
 public abstract class StorageMinecartEntityMixin extends AbstractMinecartEntity {
     public StorageMinecartEntityMixin(EntityType<?> entityType_1, World world_1) {

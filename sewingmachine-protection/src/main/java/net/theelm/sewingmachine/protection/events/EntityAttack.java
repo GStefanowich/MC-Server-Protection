@@ -86,7 +86,6 @@ public final class EntityAttack {
      */
     private static ActionResult attack(@NotNull final Entity target, @NotNull final World world, @NotNull final DamageSource source) {
         final Entity attacker = EntityAttack.getRootAttacker(source);
-        SoundEvent sound = null;
         
         // If self harm
         if (target == attacker)
@@ -169,9 +168,6 @@ public final class EntityAttack {
             }
             
             if (target instanceof LivingEntity)
-                sound = EntityLockUtils.getLockSound(target);
-            
-            if (sound != null)
                 target.playSound(EntityLockUtils.getLockSound(target), 0.5f, 1);
             
         } else if (attacker instanceof CreeperEntity) {

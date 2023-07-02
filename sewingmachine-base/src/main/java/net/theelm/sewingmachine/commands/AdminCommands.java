@@ -31,7 +31,6 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.ConfigOption;
@@ -40,6 +39,7 @@ import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.Permissions;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.DevUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -68,7 +68,7 @@ public final class AdminCommands extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         // Register the FLY command
-        ServerCore.register(dispatcher, AdminCommands.FLIGHT, (builder) -> builder
+        CommandUtils.register(dispatcher, AdminCommands.FLIGHT, (builder) -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FLY))
             .then(CommandManager.argument("target", EntityArgumentType.players())
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FLY.onOther()))
@@ -78,7 +78,7 @@ public final class AdminCommands extends SewCommand {
         );
         
         // Register the GOD command
-        ServerCore.register(dispatcher, AdminCommands.GOD, builder -> builder
+        CommandUtils.register(dispatcher, AdminCommands.GOD, builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GODMODE))
             .then(CommandManager.argument( "target", EntityArgumentType.players())
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GODMODE.onOther()))
@@ -88,7 +88,7 @@ public final class AdminCommands extends SewCommand {
         );
         
         // Register the HEAL command
-        ServerCore.register(dispatcher, AdminCommands.HEAL, builder -> builder
+        CommandUtils.register(dispatcher, AdminCommands.HEAL, builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_HEAL))
             .then(CommandManager.argument("target", EntityArgumentType.players())
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_HEAL.onOther()))
@@ -98,7 +98,7 @@ public final class AdminCommands extends SewCommand {
         );
         
         // Register the FEED command
-        ServerCore.register(dispatcher, AdminCommands.FEED, builder -> builder
+        CommandUtils.register(dispatcher, AdminCommands.FEED, builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FEED))
             .then(CommandManager.argument("target", EntityArgumentType.players())
                 .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FEED.onOther()))
@@ -108,14 +108,14 @@ public final class AdminCommands extends SewCommand {
         );
         
         // Register the HEAL command
-        ServerCore.register(dispatcher, AdminCommands.REPAIR, builder -> builder
+        CommandUtils.register(dispatcher, AdminCommands.REPAIR, builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_REPAIR))
             .executes(this::selfRepair)
         );
         
         // Create DEBUG commands
         if (DevUtils.isDebugging()) {
-            ServerCore.register(dispatcher, "Dragon Players", builder -> builder
+            CommandUtils.register(dispatcher, "Dragon Players", builder -> builder
                 .then(CommandManager.argument("count", IntegerArgumentType.integer( 0 ))
                     .executes((context) -> {
                         SewConfig.set(SewCoreConfig.DRAGON_PLAYERS, ConfigOption.convertToJSON(

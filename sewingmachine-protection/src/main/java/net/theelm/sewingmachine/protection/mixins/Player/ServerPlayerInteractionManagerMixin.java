@@ -25,38 +25,21 @@
 
 package net.theelm.sewingmachine.protection.mixins.Player;
 
-import net.minecraft.block.BedBlock;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.block.DoorBlock;
-import net.minecraft.block.HorizontalFacingBlock;
-import net.minecraft.block.TallPlantBlock;
-import net.minecraft.block.enums.BedPart;
-import net.minecraft.block.enums.DoubleBlockHalf;
-import net.minecraft.item.ItemStack;
 import net.minecraft.network.packet.c2s.play.PlayerActionC2SPacket;
-import net.minecraft.network.packet.s2c.play.BlockUpdateS2CPacket;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.Hand;
-import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
 import net.theelm.sewingmachine.events.BlockBreakCallback;
-import net.theelm.sewingmachine.events.BlockInteractionCallback;
-import net.theelm.sewingmachine.interfaces.ItemUseCallback;
-import org.jetbrains.annotations.NotNull;
+import net.theelm.sewingmachine.utilities.BlockUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(ServerPlayerInteractionManager.class)
+@Mixin(value = ServerPlayerInteractionManager.class, priority = 10000)
 public abstract class ServerPlayerInteractionManagerMixin {
     @Shadow
     private BlockPos miningPos;
@@ -74,7 +57,7 @@ public abstract class ServerPlayerInteractionManagerMixin {
             this.method_41250(pos, true, sequence, "may not interact");
             
             // Update the neighboring blocks on the client
-            this.updateNeighboringBlockStates(pos);
+            BlockUtils.updateNeighboringBlockStates(this.player, this.world, pos);
             
             // Update the players mining position
             // Must to set to prevent (Block Mismatch) messages
@@ -86,49 +69,5 @@ public abstract class ServerPlayerInteractionManagerMixin {
             // Cancel the rest of the event
             callback.cancel();
         }
-    }
-    
-    @Inject(at = @At("HEAD"), method = "interactItem", cancellable = true)
-    private void beforeItemInteract(@NotNull final ServerPlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
-        if (!player.getWorld().isClient) {
-            ActionResult result = ItemUseCallback.EVENT.invoker().use(player, world, hand, itemStack);
-            if (result != ActionResult.PASS)
-                callback.setReturnValue(result);
-        }
-    }
-    
-    @Inject(at = @At("HEAD"), method = "interactBlock", cancellable = true)
-    private void beforeBlockInteract(@NotNull final ServerPlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, final BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> callback) {
-        if (!player.getWorld().isClient) {
-            ActionResult result = BlockInteractionCallback.EVENT.invoker().interact(player, world, hand, itemStack, blockHitResult);
-            if (result != ActionResult.PASS) {
-                this.updateNeighboringBlockStates(blockHitResult.getBlockPos());
-                callback.setReturnValue(result);
-            }
-        }
-    }
-    
-    private void updateNeighboringBlockStates(BlockPos blockPos) {
-        final BlockState blockState = this.world.getBlockState(blockPos);
-        final Block block = blockState.getBlock();
-        BlockPos part = null;
-
-        if ( block instanceof BedBlock) {
-            Direction facing = blockState.get(HorizontalFacingBlock.FACING);
-            BedPart bedPart = blockState.get(BedBlock.PART);
-            part = blockPos.offset(bedPart == BedPart.HEAD ? facing.getOpposite() : facing);
-        } else if ( block instanceof HorizontalFacingBlock ) {
-            Direction facing = blockState.get(HorizontalFacingBlock.FACING);
-            part = blockPos.offset(facing.getOpposite());
-        } else if ( block instanceof TallPlantBlock) {
-            DoubleBlockHalf half = blockState.get(TallPlantBlock.HALF);
-            part = blockPos.offset(half == DoubleBlockHalf.LOWER ? Direction.UP : Direction.DOWN);
-        } else if ( block instanceof DoorBlock) {
-            DoubleBlockHalf half = blockState.get(DoorBlock.HALF);
-            part = half == DoubleBlockHalf.LOWER ? blockPos.up() : blockPos.down();
-        }
-
-        if (part != null) this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(this.world, part));
-        this.player.networkHandler.sendPacket(new BlockUpdateS2CPacket(blockPos, blockState));
     }
 }

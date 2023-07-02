@@ -32,11 +32,11 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.util.math.random.Random;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.base.objects.fireworks.FireworkSchemes;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.projectile.FireworkRocketEntity;
@@ -55,7 +55,7 @@ import org.jetbrains.annotations.NotNull;
 public final class FireworksCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "Fireworks", builder -> builder
+        CommandUtils.register(dispatcher, "Fireworks", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.literal("spawner")
                 .then(CommandManager.literal("add")

@@ -52,6 +52,7 @@ import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.chat.interfaces.Nicknamable;
 import net.theelm.sewingmachine.utilities.ColorUtils;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
@@ -61,13 +62,12 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.Color;
 
 public final class NickNameCommand extends SewCommand {
-    
     private static final ExceptionTranslatableServerSide NAME_TOO_LONG = TranslatableServerSide.exception("player.nick.too_long");
     private static final int NICK_MAX_LENGTH = 20;
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        ServerCore.register(dispatcher, "Nick", (builder) -> builder
+        CommandUtils.register(dispatcher, "Nick", (builder) -> builder
             .requires(CommandPredicate.isEnabled(SewChatConfig.DO_PLAYER_NICKS))
             .then(CommandManager.literal("reset")
                 .then(CommandManager.argument("target", EntityArgumentType.player())
@@ -98,7 +98,7 @@ public final class NickNameCommand extends SewCommand {
             )
         );
     }
-
+    
     private @Nullable String commandVerifyNick(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();

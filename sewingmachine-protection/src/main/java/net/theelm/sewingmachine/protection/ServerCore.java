@@ -25,10 +25,9 @@
 
 package net.theelm.sewingmachine.protection;
 
-import net.fabricmc.api.DedicatedServerModInitializer;
+import net.fabricmc.api.ModInitializer;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
@@ -73,9 +72,9 @@ import java.util.UUID;
  * Created on Jun 08 2023 at 11:58 PM.
  * By greg in sewingmachine
  */
-public class ServerCore implements DedicatedServerModInitializer, SewPlugin {
+public class ServerCore implements ModInitializer, SewPlugin {
     @Override
-    public void onInitializeServer() {
+    public void onInitialize() {
         // Create registry based listeners
         BlockBreak.register(BlockBreakCallback.TEST);
         BlockInteraction.register(BlockInteractionCallback.EVENT);

@@ -2,7 +2,7 @@
 	"required": true,
 	"package": "net.theelm.sewingmachine.protection.mixins",
 	"compatibilityLevel": "JAVA_16",
-	"server": [
+	"mixins": [
 		"Blocks.FireBlockMixin",
 		"Blocks.HopperBlockEntityMixin",
 		"Blocks.PistonBlockMixin",
@@ -26,13 +26,14 @@
 		
 		"Items.UsableItemsMixin",
 		
+		"Player.Interaction.BoatEntityMixin",
 		"Player.Interaction.FarmlandBlockMixin",
 		"Player.Interaction.HorseEntityMixin",
 		"Player.Interaction.LeashKnotEntityMixin",
 		"Player.Interaction.MinecartEntityMixin",
 		"Player.Interaction.MobEntityMixin",
 		"Player.Interaction.PaintingEntityMixin",
-		"Player.Interaction.StorageMinecartEntityMixin",
+		"Player.Interaction.VehicleInventoryMixin",
 		
 		"Player.ServerPlayerEntityMixin",
 		"Player.ServerPlayerInteractionManagerMixin",
@@ -47,6 +48,9 @@
 		"World.RaidManagerMixin",
 		"World.ServerWorldMixin",
 		"World.WorldChunkMixin"
+	],
+	"client": [
+		"Client.ClientPlayerInteractionManagerMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

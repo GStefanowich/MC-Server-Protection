@@ -3,8 +3,6 @@
 	"package": "net.theelm.sewingmachine.chat.mixins",
 	"compatibilityLevel": "JAVA_16",
 	"mixins": [
-	],
-	"server": [
 		"Chat.PlayerEntityMixin",
 		"Chat.ServerPlayerEntityMixin",
 		

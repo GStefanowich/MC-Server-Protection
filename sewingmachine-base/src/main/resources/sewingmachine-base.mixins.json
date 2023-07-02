@@ -53,6 +53,7 @@
 		"Player.PlayerEntityMixin",
 		"Player.PlayerInventoryMixin",
 		"Player.ServerPlayerEntityMixin",
+		"Player.ServerPlayerInteractionManager",
 		"Player.ServerPlayNetworkHandlerMixin",
 		
 		"Server.DamageSourcesMixin",

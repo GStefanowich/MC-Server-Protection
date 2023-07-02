@@ -21,7 +21,7 @@
 		"client": [
 			"net.theelm.sewingmachine.chat.ClientCore"
 		],
-		"server": [
+		"main": [
 			"net.theelm.sewingmachine.chat.ServerCore"
 		]
 	},

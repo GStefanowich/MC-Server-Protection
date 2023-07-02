@@ -67,7 +67,6 @@ import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
-import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.CommandClaimUtils;
@@ -147,7 +146,7 @@ public final class ClaimCommand extends SewCommand {
         /*
          * Admin Force commands
          */
-        ServerCore.register(dispatcher, "Chunk", builder -> builder
+        CommandUtils.register(dispatcher, "Chunk", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIMS).or(Permissions.ADMIN_CLAIM_TOWNS))
             .then(CommandManager.literal("set")
                 .then(CommandManager.literal("player")
@@ -167,7 +166,7 @@ public final class ClaimCommand extends SewCommand {
         /*
          * Claim Command
          */
-        LiteralCommandNode<ServerCommandSource> claim = ServerCore.register(dispatcher, "claim", builder -> builder
+        LiteralCommandNode<ServerCommandSource> claim = CommandUtils.register(dispatcher, "claim", builder -> builder
             // Claim a chunk radius
             .then(CommandManager.argument("radius", IntegerArgumentType.integer(1, 4))
                 .executes(this::claimChunkSelfRadius)
@@ -217,7 +216,7 @@ public final class ClaimCommand extends SewCommand {
         /*
          * Unclaim Command
          */
-        LiteralCommandNode<ServerCommandSource> unclaim = ServerCore.register(dispatcher, "unclaim", builder -> builder
+        LiteralCommandNode<ServerCommandSource> unclaim = CommandUtils.register(dispatcher, "unclaim", builder -> builder
             // Unclaim all chunks
             .then(CommandManager.literal("all")
                 .executes(this::unclaimAll)
@@ -243,7 +242,7 @@ public final class ClaimCommand extends SewCommand {
         /*
          * Friends Command
          */
-        LiteralCommandNode<ServerCommandSource> friends = ServerCore.register(dispatcher, "friends", builder -> builder
+        LiteralCommandNode<ServerCommandSource> friends = CommandUtils.register(dispatcher, "friends", builder -> builder
             // Whitelist a friend
             .then(CommandManager.literal("whitelist")
                 .requires(CommandPredicate.isEnabled(SewCoreConfig.FRIEND_WHITELIST))
@@ -302,7 +301,7 @@ public final class ClaimCommand extends SewCommand {
         /*
          * Register the town command
          */
-        LiteralCommandNode<ServerCommandSource> towns = ServerCore.register(dispatcher, "town", builder -> builder
+        LiteralCommandNode<ServerCommandSource> towns = CommandUtils.register(dispatcher, "town", builder -> builder
             .then(CommandManager.literal("new")
                 .requires(ClaimCommand::sourceNotMayor)
                 .then( CommandManager.argument("name", StringArgumentType.greedyString())
@@ -368,7 +367,7 @@ public final class ClaimCommand extends SewCommand {
          */
         
         // The main command
-        LiteralCommandNode<ServerCommandSource> protection = ServerCore.register(dispatcher, "protection", builder -> builder
+        LiteralCommandNode<ServerCommandSource> protection = CommandUtils.register(dispatcher, "protection", builder -> builder
             // Claim a chunk
             .then(claim)
             

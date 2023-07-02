@@ -40,6 +40,7 @@ public class DevUtils {
     }
     
     public static boolean isDebugging() {
-        return CoreMod.getFabric().isDevelopmentEnvironment();
+        return Sew.getFabric()
+            .isDevelopmentEnvironment();
     }
 }

@@ -34,7 +34,6 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.ConfigOption;
@@ -58,7 +57,6 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Util;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -75,7 +73,7 @@ public final class MoneyCommand extends SewCommand {
         /*
          * Player Pay
          */
-        LiteralCommandNode<ServerCommandSource> pay = ServerCore.register(dispatcher, "pay", builder -> builder
+        LiteralCommandNode<ServerCommandSource> pay = CommandUtils.register(dispatcher, "pay", builder -> builder
             .requires(CommandPredicate.isEnabled(SewCoreConfig.DO_MONEY))
             .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                 .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
@@ -88,7 +86,7 @@ public final class MoneyCommand extends SewCommand {
         /*
          * Player Money Management
          */
-        ServerCore.register(dispatcher, "money", builder -> builder
+        CommandUtils.register(dispatcher, "money", builder -> builder
             .requires(CommandPredicate.isEnabled(SewCoreConfig.DO_MONEY))
             // Admin GIVE money (Adds money)
             .then(CommandManager.literal("give")
@@ -165,7 +163,7 @@ public final class MoneyCommand extends SewCommand {
         
         try {
             // Give the player the money
-            if ( MoneyUtils.givePlayerMoney( target.getId(), amount ) ) {
+            if ( MoneyUtils.givePlayerMoney(target.getId(), amount) ) {
                 // Notify the command sender
                 op.sendFeedback(
                     () -> Text.literal("Gave ").formatted(Formatting.YELLOW)

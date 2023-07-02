@@ -23,17 +23,22 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.objects;
+package net.theelm.sewingmachine.protection;
 
-import net.minecraft.text.Text;
-import org.jetbrains.annotations.NotNull;
+import net.fabricmc.api.ClientModInitializer;
+import net.theelm.sewingmachine.base.packets.CancelMinePacket;
+import net.theelm.sewingmachine.protection.interfaces.ClientMiner;
+import net.theelm.sewingmachine.utilities.NetworkingUtils;
 
 /**
- * Created on Jun 28 2023 at 11:11 PM.
+ * Created on Jul 01 2023 at 3:14 PM.
  * By greg in sewingmachine
  */
-public record Tax(
-    @NotNull Text name,
-    int value,
-    int percent
-) {}
+public class ClientCore implements ClientModInitializer {
+    @Override
+    public void onInitializeClient() {
+        NetworkingUtils.clientReceiver(CancelMinePacket.TYPE, (client, network, packet, sender) -> {
+            ((ClientMiner) client).stopMining(packet.pos());
+        });
+    }
+}
