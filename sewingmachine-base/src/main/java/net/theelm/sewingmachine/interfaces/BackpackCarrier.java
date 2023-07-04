@@ -31,6 +31,6 @@ import org.jetbrains.annotations.Nullable;
 public interface BackpackCarrier {
     
     @Nullable PlayerBackpack getBackpack();
-    void setBackpack(@Nullable PlayerBackpack backpack);
+    void setBackpack(@Nullable PlayerBackpack backpack, boolean resend);
     
 }

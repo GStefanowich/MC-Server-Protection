@@ -25,6 +25,9 @@
 
 package net.theelm.sewingmachine.utilities;
 
+import me.lucko.fabric.api.permissions.v0.Permissions;
+import net.minecraft.entity.passive.AbstractHorseEntity;
+import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.util.math.random.Random;
@@ -32,8 +35,7 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
-import net.theelm.sewingmachine.events.CommandPermissionCallback;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.interfaces.SpawnerMob;
 import net.theelm.sewingmachine.base.mixins.Server.ServerWorldAccessor;
@@ -111,7 +113,7 @@ public final class EntityUtils {
         return (entity instanceof ServerPlayerEntity player)
             && (player.getUuid().equals(deathChestUUID)
                 || player.hasPermissionLevel(OpLevels.KICK_BAN_OP)
-                || CommandPermissionCallback.EVENT.invoker().hasPermission(player, Permissions.INTERACT_OTHER_DEATHCHEST));
+                || Permissions.check(player, PermissionNodes.INTERACT_OTHER_DEATHCHEST.getNode()));
     }
     
     /*
@@ -268,17 +270,14 @@ public final class EntityUtils {
         return entity.getUuid();
     }
     
-    /*
-     * Player methods
-     */
-    public static void resendInventory(@NotNull PlayerEntity player) {
-        if (player instanceof ServerPlayerEntity serverPlayer)
-            EntityUtils.resendInventory(serverPlayer);
-    }
-    public static void resendInventory(@NotNull ServerPlayerEntity player) {
-        //player.refreshScreenHandler(player.playerScreenHandler);
-        // TODO: Verify screen gets resent to player (Inventory refresh)
-        player.currentScreenHandler.syncState();
+    public static @Nullable UUID getOwner(@Nullable Entity entity) {
+        if (entity == null)
+            return null;
+        if (entity instanceof TameableEntity tameable)
+            return tameable.getOwnerUuid();
+        if (entity instanceof AbstractHorseEntity horse)
+            return horse.getOwnerUuid();
+        return null;
     }
     
     /*

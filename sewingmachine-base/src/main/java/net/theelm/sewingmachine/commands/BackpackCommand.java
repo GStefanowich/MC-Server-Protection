@@ -39,6 +39,7 @@ import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.theelm.sewingmachine.utilities.CommandUtils;
+import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.minecraft.command.argument.ItemStackArgumentType;
 import net.minecraft.item.Item;
@@ -96,15 +97,14 @@ public final class BackpackCommand extends SewCommand {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
         
+        // Open the backpack screen on the client
+        OptionalInt i = InventoryUtils.openBackpack(player);
+        
         // Check if the player has a backpack
-        PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
-        if (backpack == null)
+        if (!i.isPresent())
             throw PLAYERS_NO_BACKPACK.create(player);
         
-        // Open the backpack screen on the client
-        OptionalInt i = player.openHandledScreen(new SimpleNamedScreenHandlerFactory(BackpackUtils::openBackpack, backpack.getName()));
-        
         // Success!
-        return i.isPresent() ? Command.SINGLE_SUCCESS : 0;
+        return Command.SINGLE_SUCCESS;
     }
 }

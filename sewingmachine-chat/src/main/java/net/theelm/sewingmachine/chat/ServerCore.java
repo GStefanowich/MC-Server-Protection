@@ -26,7 +26,6 @@
 package net.theelm.sewingmachine.chat;
 
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.message.v1.ServerMessageDecoratorEvent;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -36,7 +35,6 @@ import net.theelm.sewingmachine.chat.commands.NickNameCommand;
 import net.theelm.sewingmachine.chat.commands.TagUserCommand;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.ChatMessageFunction;
-import net.theelm.sewingmachine.chat.objects.ChatDecorator;
 import net.theelm.sewingmachine.chat.utilities.PlayerNameUtils;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.events.MessageDeployer;
@@ -57,8 +55,6 @@ import java.util.UUID;
 public final class ServerCore extends CoreMod implements ModInitializer, SewPlugin {
     @Override
     public void onInitialize() {
-        ServerMessageDecoratorEvent.EVENT.register(ServerMessageDecoratorEvent.CONTENT_PHASE, new ChatDecorator());
-        
         PlayerNameCallback.INSTANCE.register(new PlayerNameCallback() {
             @Override
             public @Nullable Text getDisplayName(PlayerEntity player) {
@@ -99,7 +95,7 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
         // Get the chat message
         EntityVariables.add("message", (ChatMessageFunction)(room, message, casing) -> message);
     }
-
+    
     @Override
     public @NotNull SewCommand[] getCommands() {
         return new SewCommand[] {

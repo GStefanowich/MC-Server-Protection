@@ -53,7 +53,7 @@
 		"Player.PlayerEntityMixin",
 		"Player.PlayerInventoryMixin",
 		"Player.ServerPlayerEntityMixin",
-		"Player.ServerPlayerInteractionManager",
+		"Player.ServerPlayerInteractionManagerMixin",
 		"Player.ServerPlayNetworkHandlerMixin",
 		
 		"Server.DamageSourcesMixin",
@@ -85,6 +85,10 @@
 		"World.SpawnerBlockMixin",
 		"World.StonecutterBlockMixin",
 		"World.TheNetherBiomeCreatorMixin"
+	],
+	"client": [
+		"Client.MinecraftClientMixin",
+		"Screens.InventoryScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

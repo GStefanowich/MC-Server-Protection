@@ -29,23 +29,29 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.vehicle.VehicleInventory;
 import net.minecraft.util.ActionResult;
+import net.minecraft.world.World;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(VehicleInventory.class)
+@Mixin(value = VehicleInventory.class, priority = 10000)
 public interface VehicleInventoryMixin {
+    @Shadow World getWorld();
+
     @Inject(at = @At("HEAD"), method = "open", cancellable = true)
     default void onOpen(PlayerEntity player, CallbackInfoReturnable<ActionResult> callback) {
-        if (this instanceof Entity entity && !ClaimChunkUtils.canPlayerLootChestsInChunk(player, entity.getBlockPos())) {
-            // Play sound to player
-            EntityLockUtils.playLockSoundFromSource(entity, player);
-            
-            // Cancel the event
-            callback.setReturnValue(ActionResult.FAIL);
+        if (!this.getWorld().isClient()) {
+            if (this instanceof Entity entity && !ClaimChunkUtils.canPlayerLootChestsInChunk(player, entity.getBlockPos())) {
+                // Play sound to player
+                EntityLockUtils.playLockSoundFromSource(entity, player);
+
+                // Cancel the event
+                callback.setReturnValue(ActionResult.FAIL);
+            }
         }
     }
 }

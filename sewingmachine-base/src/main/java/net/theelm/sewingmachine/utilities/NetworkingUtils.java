@@ -38,9 +38,13 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
+import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.base.packets.SewHelloPacket;
 import net.theelm.sewingmachine.base.packets.interfaces.ClientPlayHandler;
 import net.theelm.sewingmachine.base.packets.interfaces.ServerPlayHandler;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.HashMap;
 
 /**
  * Created on Jul 01 2023 at 1:04 AM.
@@ -65,10 +69,27 @@ public final class NetworkingUtils {
     }
     
     public static void send(@NotNull MinecraftClient client, @NotNull Identifier identifier, @NotNull PacketByteBuf buf) {
-        ClientPlayNetworkHandler networkHandler = client.getNetworkHandler();
-        if (networkHandler == null)
+        ClientPlayNetworkHandler network = client.getNetworkHandler();
+        if (network == null) {
+            CoreMod.logDebug("Can't send packets, client isn't ready yet");
             return;
-        networkHandler.sendPacket(ClientPlayNetworking.createC2SPacket(identifier, buf));
+        }
+        NetworkingUtils.send(network, identifier, buf);
+    }
+    
+    public static <T extends FabricPacket> void send(@NotNull ClientPlayNetworkHandler network, @NotNull T packet) {
+        PacketByteBuf buf = PacketByteBufs.create();
+        packet.write(buf);
+        
+        NetworkingUtils.send(network,
+            packet.getType()
+                .getId(),
+            buf
+        );
+    }
+    
+    public static void send(@NotNull ClientPlayNetworkHandler network, @NotNull Identifier identifier, @NotNull PacketByteBuf buf) {
+        network.sendPacket(ClientPlayNetworking.createC2SPacket(identifier, buf));
     }
     
     public static <T extends FabricPacket> void clientReceiver(@NotNull PacketType<T> type, @NotNull ClientPlayHandler<T> handler) {
@@ -103,5 +124,9 @@ public final class NetworkingUtils {
                 });
             }
         });
+    }
+    
+    public static <T extends FabricPacket> void send(ServerPlayerEntity player, T packet) {
+        ServerPlayNetworking.send(player, packet);
     }
 }

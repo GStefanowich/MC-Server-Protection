@@ -45,7 +45,7 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Stream;
 
-public class Permissions {
+public class PermissionNodes {
     private static final Set<PermissionNode> PERMISSIONS = new HashSet<>();
     
     public static final @NotNull PermissionNode ALL_PERMISSIONS = addInflictable("*", "Access to all permissions.");
@@ -111,27 +111,27 @@ public class Permissions {
     
     private static @NotNull <T extends PermissionNode> T storePermission(@NotNull T permission) {
         // Store the permission in the Set
-        Permissions.PERMISSIONS.add(permission);
+        PermissionNodes.PERMISSIONS.add(permission);
         
         // Warn if the description is empty
         if (permission.getDescription().isEmpty()) CoreMod.logDebug("Permission \"" + permission.getNode() + "\"'s description is empty.");
         
         // Store the secondary permission in the Set
         if (permission instanceof OtherInflictableNode otherInflictableNode)
-            Permissions.storePermission(otherInflictableNode.onOther());
+            PermissionNodes.storePermission(otherInflictableNode.onOther());
         
         // Return the stored permission
         return permission;
     }
     public static @NotNull Stream<String> keys() {
-        return Permissions.PERMISSIONS.stream().map(PermissionNode::getNode).sorted();
+        return PermissionNodes.PERMISSIONS.stream().map(PermissionNode::getNode).sorted();
     }
     
     public static @NotNull CompletableFuture<Suggestions> getSuggestions(@NotNull SuggestionsBuilder builder) {
-        Permissions.PERMISSIONS.forEach(node -> builder.suggest(node.isWildcard() ? TextUtils.quoteWrap(node.getNode()) : node.getNode(), Text.literal(node.getDescription())));
+        PermissionNodes.PERMISSIONS.forEach(node -> builder.suggest(node.isWildcard() ? TextUtils.quoteWrap(node.getNode()) : node.getNode(), Text.literal(node.getDescription())));
         return builder.buildFuture();
     }
     public static @NotNull <S> CompletableFuture<Suggestions> suggestNodes(@NotNull CommandContext<S> context, @NotNull SuggestionsBuilder builder) {
-        return Permissions.getSuggestions(builder);
+        return PermissionNodes.getSuggestions(builder);
     }
 }

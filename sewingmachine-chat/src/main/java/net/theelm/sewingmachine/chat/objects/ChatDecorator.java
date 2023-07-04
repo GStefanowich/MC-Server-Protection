@@ -31,25 +31,24 @@ import net.minecraft.text.Text;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
 import net.theelm.sewingmachine.chat.utilities.ChatRoomUtilities;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.concurrent.CompletableFuture;
 
-/**
- * Created on Jun 08 2023 at 3:52 AM.
- * By greg in sewingmachine
- */
+@Deprecated(forRemoval = true)
 public final class ChatDecorator implements MessageDecorator {
     @Override
     public CompletableFuture<Text> decorate(@Nullable ServerPlayerEntity player, Text message) {
         // Parse the users message
-        String rawString = StringUtils.normalizeSpace(message.getString());
+        //String rawString = StringUtils.normalizeSpace(message.getString());
         
         // The chatroom to send the message in
-        ChatRooms room = ((PlayerChat) player).getChatRoom();
+        // ChatRooms room = ((PlayerChat) player).getChatRoom();
         
+        return CompletableFuture.completedFuture(TextUtils.mutable(message).append(" :)"));
         // Create a chat message
-        return CompletableFuture.completedFuture(ChatRoomUtilities.formatPlayerMessage(player, room, rawString));
+        //return CompletableFuture.completedFuture(ChatRoomUtilities.formatPlayerMessage(player, room, rawString));
     }
 }

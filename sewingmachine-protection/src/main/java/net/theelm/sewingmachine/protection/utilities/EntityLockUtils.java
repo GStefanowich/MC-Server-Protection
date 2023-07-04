@@ -105,11 +105,14 @@ import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 public final class EntityLockUtils {
     private EntityLockUtils() {}
@@ -301,9 +304,10 @@ public final class EntityLockUtils {
         
         if (player != null) {
             Text owner;
-            if (source instanceof Tameable tameable && tameable.getOwnerUuid() != null) {
+            UUID uuid = EntityUtils.getOwner(source);
+            if (uuid != null) {
                 owner = ((ClaimsAccessor)player.getServer()).getClaimManager()
-                    .getPlayerClaim(tameable.getOwnerUuid())
+                    .getPlayerClaim(uuid)
                     .getName();
             } else {
                 WorldChunk chunk = source.getWorld()

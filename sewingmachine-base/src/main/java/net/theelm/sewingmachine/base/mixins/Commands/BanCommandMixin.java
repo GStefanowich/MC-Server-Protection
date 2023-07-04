@@ -30,7 +30,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.command.argument.MessageArgumentType;
@@ -58,7 +58,7 @@ public class BanCommandMixin {
     @Overwrite
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("ban")
-            .requires(CommandPredicate.opLevel(OpLevels.KICK_BAN_OP).or(Permissions.VANILLA_COMMAND_BAN))
+            .requires(CommandPredicate.opLevel(OpLevels.KICK_BAN_OP).or(PermissionNodes.VANILLA_COMMAND_BAN))
             .then(CommandManager.argument("targets", GameProfileArgumentType.gameProfile())
                 .then(CommandManager.argument("reason", MessageArgumentType.message())
                     .executes((context) -> BanCommandMixin.ban(context.getSource(), GameProfileArgumentType.getProfileArgument(context, "targets"), MessageArgumentType.getMessage(context, "reason")))

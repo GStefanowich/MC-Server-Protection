@@ -44,6 +44,7 @@ import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protections.logging.BlockEvent;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.EntityUtils;
+import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -102,7 +103,7 @@ public interface BlockBreakCallback {
         BlockState blockState = world.getBlockState(blockPos);
         if (entity instanceof ServerPlayerEntity player) {
             // Send a packet to stop mining
-            ServerPlayNetworking.send(player, new CancelMinePacket(blockPos));
+            NetworkingUtils.send(player, new CancelMinePacket(blockPos));
             
             // Resend the current entity state
             if (EntityUtils.hasClientBlockData(blockState)) {

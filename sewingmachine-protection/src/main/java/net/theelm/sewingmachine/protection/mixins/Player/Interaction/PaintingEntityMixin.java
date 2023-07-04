@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.Mixin;
  * Created on Aug 18 2021 at 1:38 PM.
  * By greg in SewingMachineMod
  */
-@Mixin(PaintingEntity.class)
+@Mixin(value = PaintingEntity.class, priority = 10000)
 public abstract class PaintingEntityMixin extends AbstractDecorationEntity {
     protected PaintingEntityMixin(EntityType<? extends AbstractDecorationEntity> entityType, World world) {
         super(entityType, world);
@@ -46,6 +46,8 @@ public abstract class PaintingEntityMixin extends AbstractDecorationEntity {
     
     @Override
     public boolean damage(DamageSource source, float amount) {
+        if (this.getWorld().isClient())
+            return super.damage(source, amount);
         return (!(source.getAttacker() instanceof PlayerEntity player) || ClaimChunkUtils.canPlayerBreakInChunk(player, this.getBlockPos())) && super.damage(source, amount);
     }
 }

@@ -29,7 +29,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.GameProfileArgumentType;
@@ -54,7 +54,7 @@ public class PardonCommandMixin {
     @Overwrite
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("pardon")
-            .requires(CommandPredicate.opLevel(OpLevels.KICK_BAN_OP).or(Permissions.VANILLA_COMMAND_UNBAN))
+            .requires(CommandPredicate.opLevel(OpLevels.KICK_BAN_OP).or(PermissionNodes.VANILLA_COMMAND_UNBAN))
             .then(CommandManager.argument("targets", GameProfileArgumentType.gameProfile())
                 .suggests((context, suggestionsBuilder) -> CommandSource.suggestMatching(context.getSource().getServer().getPlayerManager().getUserBanList().getNames(), suggestionsBuilder))
                 .executes((context) -> PardonCommandMixin.pardon(context.getSource(), GameProfileArgumentType.getProfileArgument(context, "targets")))

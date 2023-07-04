@@ -25,6 +25,12 @@
 
 package net.theelm.sewingmachine.utilities;
 
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
+import net.theelm.sewingmachine.base.objects.PlayerBackpack;
+import net.theelm.sewingmachine.base.packets.PlayerBackpackDataPacket;
+import net.theelm.sewingmachine.base.utilities.BackpackUtils;
+import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -57,6 +63,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.OptionalInt;
 import java.util.function.Predicate;
 
 public final class InventoryUtils {
@@ -360,6 +367,33 @@ public final class InventoryUtils {
      */
     public static boolean isInvEmpty(@Nullable Inventory inventory) {
         return (inventory == null) || inventory.isEmpty();
+    }
+    
+    public static @NotNull OptionalInt openBackpack(@NotNull ServerPlayerEntity player) {
+        // Check if the player has a backpack
+        PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
+        if (backpack == null)
+            return OptionalInt.empty();
+        
+        // Open the backpack screen on the client
+        return player.openHandledScreen(new SimpleNamedScreenHandlerFactory(BackpackUtils::openBackpack, backpack.getName()));
+    }
+    
+    public static void resendInventory(@NotNull PlayerEntity player) {
+        if (player instanceof ServerPlayerEntity serverPlayer)
+            InventoryUtils.resendInventory(serverPlayer);
+    }
+    public static void resendInventory(@NotNull ServerPlayerEntity player) {
+        //player.refreshScreenHandler(player.playerScreenHandler);
+        // TODO: Verify screen gets resent to player (Inventory refresh)
+        player.currentScreenHandler.syncState();
+    }
+    
+    public static void resendBackpack(@NotNull ServerPlayerEntity player) {
+        if (ModUtils.hasModule(player, "base")) {
+            PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
+            NetworkingUtils.send(player, new PlayerBackpackDataPacket(backpack));
+        }
     }
     
     /*

@@ -45,7 +45,7 @@ import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.commands.arguments.ArgumentSuggestions;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.events.RegionUpdateCallback;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
@@ -83,12 +83,12 @@ public final class NickNameCommand extends SewCommand {
                 })
             )
             .then(CommandManager.argument("nick", StringArgumentType.string())
-                .requires(CommandPredicate.node(Permissions.PLAYER_NICKNAME))
+                .requires(CommandPredicate.node(PermissionNodes.PLAYER_NICKNAME))
                 .then(CommandManager.argument("color", StringArgumentType.string())
-                    .requires(CommandPredicate.node(Permissions.PLAYER_NICKNAME_COLOR))
+                    .requires(CommandPredicate.node(PermissionNodes.PLAYER_NICKNAME_COLOR))
                     .suggests(ArgumentSuggestions::suggestColors)
                     .then(CommandManager.argument("ends", StringArgumentType.string())
-                        .requires(CommandPredicate.node(Permissions.PLAYER_NICKNAME_COLOR_GRADIENT))
+                        .requires(CommandPredicate.node(PermissionNodes.PLAYER_NICKNAME_COLOR_GRADIENT))
                         .suggests(ArgumentSuggestions::suggestColors)
                         .executes(this::commandNickSetNamedColorRange)
                     )

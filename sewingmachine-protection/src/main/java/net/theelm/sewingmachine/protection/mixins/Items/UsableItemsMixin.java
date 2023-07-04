@@ -45,6 +45,7 @@ import net.minecraft.item.ShovelItem;
 import net.minecraft.item.WritableBookItem;
 import net.minecraft.item.WrittenBookItem;
 import net.minecraft.util.ActionResult;
+import net.theelm.sewingmachine.utilities.InventoryUtils;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -78,7 +79,7 @@ public abstract class UsableItemsMixin extends Item {
         if (player != null) {
             if (!ClaimChunkUtils.canPlayerDoInChunk(ItemUseUtils.getPermission(context.getStack()), player, context.getBlockPos())) {
                 // Update the inventory slot
-                EntityUtils.resendInventory(player);
+                InventoryUtils.resendInventory(player);
                 
                 // Set the return value
                 callback.setReturnValue(ActionResult.PASS);

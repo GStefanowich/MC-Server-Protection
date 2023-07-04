@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(FarmlandBlock.class)
+@Mixin(value = FarmlandBlock.class, priority = 10000)
 public abstract class FarmlandBlockMixin extends Block {
     public FarmlandBlockMixin(Settings block$Settings_1) {
         super(block$Settings_1);
@@ -47,17 +47,17 @@ public abstract class FarmlandBlockMixin extends Block {
     @Inject(at = @At("HEAD"), method = "onLandedUpon", cancellable = true)
     public void entityLandedUpon(final World world, final BlockState state, final BlockPos pos, final Entity entity, final float distance, final CallbackInfo callback) {
         // If entity isn't a player, don't worry about permission checking
-        if (!(entity instanceof ServerPlayerEntity player))
-            return;
+        if (!world.isClient() && entity instanceof ServerPlayerEntity player) {
+            // If player is allowed to break in the chunk
+            if (ClaimChunkUtils.canPlayerBreakInChunk(player, pos))
+                return;
+            
+            // Cancel the event
+            callback.cancel();
+            
+            // Call the super (For fall damage)
+            super.onLandedUpon(world, state, pos, entity, distance);
+        }
         
-        // If player is allowed to break in the chunk
-        if (ClaimChunkUtils.canPlayerBreakInChunk( player, pos ))
-            return;
-        
-        // Cancel the event
-        callback.cancel();
-        
-        // Call the super (For fall damage)
-        super.onLandedUpon(world, state, pos, entity, distance);
     }
 }

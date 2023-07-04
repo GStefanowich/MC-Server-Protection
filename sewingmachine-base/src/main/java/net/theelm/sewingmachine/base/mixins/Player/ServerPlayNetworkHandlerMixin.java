@@ -25,9 +25,9 @@
 
 package net.theelm.sewingmachine.base.mixins.Player;
 
-import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.events.NetworkHandlerCallback;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
@@ -75,9 +75,10 @@ public abstract class ServerPlayNetworkHandlerMixin implements ServerPlayPacketL
     
     // On connect
     @Inject(at = @At("RETURN"), method = "<init>")
-    public void onPlayerConnect(MinecraftServer server, ClientConnection client, ServerPlayerEntity player, CallbackInfo callback) {
-        // Set the players position as in the wilderness
-        CoreMod.PLAYER_LOCATIONS.put(player, null);
+    public void onPlayerConnect(MinecraftServer server, ClientConnection connection, ServerPlayerEntity player, CallbackInfo callback) {
+        // Send out the READY event
+        NetworkHandlerCallback.READY.invoker()
+            .ready(server, connection, player);
         
         // Check if server has been joined before
         if (((PlayerData) player).getFirstJoinAt() == null) {
@@ -86,7 +87,7 @@ public abstract class ServerPlayNetworkHandlerMixin implements ServerPlayPacketL
             
             // Give the player the starting amount
             if ( SewConfig.get(SewCoreConfig.DO_MONEY) && (startingMoney > 0))
-                MoneyUtils.givePlayerMoney( player, startingMoney );
+                MoneyUtils.givePlayerMoney(player, startingMoney);
             
             // Give the player the starting items
             for (Map.Entry<Item, Integer> item : SewConfig.get(SewCoreConfig.STARTING_ITEMS).entrySet()) {

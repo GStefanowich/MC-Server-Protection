@@ -23,39 +23,25 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.base.packets;
+package net.theelm.sewingmachine.base.objects.inventory;
 
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketSender;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
-import net.minecraft.network.PacketByteBuf;
-import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayNetworkHandler;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.theelm.sewingmachine.base.objects.PlayerBackpack;
-import net.theelm.sewingmachine.base.utilities.BackpackUtils;
+import net.minecraft.entity.player.PlayerInventory;
+import net.minecraft.inventory.Inventory;
+import net.minecraft.inventory.SimpleInventory;
+import net.minecraft.screen.GenericContainerScreenHandler;
+import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
-import net.theelm.sewingmachine.utilities.Sew;
 
 /**
- * Created on Jul 01 2023 at 12:29 AM.
+ * Created on Jul 03 2023 at 4:30 PM.
  * By greg in sewingmachine
  */
-public record PlayerBackpackPacket() implements FabricPacket {
-    public static final PacketType<PlayerBackpackPacket> TYPE = PacketType.create(Sew.modIdentifier("open_backpack"), PlayerBackpackPacket::new);
+public final class BackpackScreenHandler extends GenericContainerScreenHandler {
+    public BackpackScreenHandler(int syncId, PlayerInventory playerInventory, Inventory inventory, int rows) {
+        super(CoreMod.BACKPACK, syncId, playerInventory, inventory, rows);
+    }
     
-    public PlayerBackpackPacket(PacketByteBuf buf) {
-        this();
-    }
-
-    @Override
-    public void write(PacketByteBuf buf) {
-        
-    }
-
-    @Override
-    public PacketType<?> getType() {
-        return PlayerBackpackPacket.TYPE;
+    public BackpackScreenHandler(int syncId, PlayerInventory playerInventory) {
+        this(syncId, playerInventory, ((BackpackCarrier) playerInventory.player).getBackpack(), ((BackpackCarrier) playerInventory.player).getBackpack().getRows());
     }
 }

@@ -40,7 +40,7 @@ import net.theelm.sewingmachine.blocks.entities.LecternGuideBlockEntity;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
@@ -89,16 +89,16 @@ public final class ModCommands extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess access) {
         CommandUtils.register(dispatcher, CoreMod.MOD_ID, (builder) -> {
-            builder.requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.ADMIN_CLAIM_SHOPS))
+            builder.requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.ADMIN_CLAIM_SHOPS))
                 .then(CommandManager.literal("reload")
-                    .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ALL_PERMISSIONS))
+                    .requires(CommandPredicate.opLevel(OpLevels.STOP).or(PermissionNodes.ALL_PERMISSIONS))
                     .then(CommandManager.literal("config")
                         .requires(CommandPredicate.isEnabled(SewCoreConfig.HOT_RELOADING))
                         .executes(this::reloadConfig)
                     )
                 )
                 .then(CommandManager.literal("shops")
-                    .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.ADMIN_CLAIM_SHOPS))
+                    .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.ADMIN_CLAIM_SHOPS))
                     .then(CommandManager.literal("change")
                         .then(CommandManager.literal("item")
                             .then(CommandManager.literal("hand")

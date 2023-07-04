@@ -29,7 +29,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.MessageArgumentType;
@@ -58,7 +58,7 @@ public class KickCommandMixin {
     @Overwrite
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("kick")
-            .requires(CommandPredicate.opLevel(OpLevels.KICK_BAN_OP).or(Permissions.VANILLA_COMMAND_KICK))
+            .requires(CommandPredicate.opLevel(OpLevels.KICK_BAN_OP).or(PermissionNodes.VANILLA_COMMAND_KICK))
             .then(CommandManager.argument("targets", EntityArgumentType.players())
                 .then(CommandManager.argument("reason", MessageArgumentType.message())
                     .executes((sourceCommandContext) -> KickCommandMixin.execute(sourceCommandContext.getSource(), EntityArgumentType.getPlayers(sourceCommandContext, "targets"), MessageArgumentType.getMessage(sourceCommandContext, "reason")))

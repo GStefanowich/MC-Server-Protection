@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.base.objects;
 
+import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -36,7 +37,9 @@ import net.minecraft.nbt.NbtList;
 import net.minecraft.nbt.NbtString;
 import net.minecraft.registry.Registries;
 import net.minecraft.screen.GenericContainerScreenHandler;
+import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -45,9 +48,13 @@ import net.minecraft.util.crash.CrashException;
 import net.minecraft.util.crash.CrashReport;
 import net.minecraft.util.crash.CrashReportSection;
 import net.minecraft.util.math.MathHelper;
+import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.base.objects.inventory.BackpackScreenHandler;
+import net.theelm.sewingmachine.utilities.ModUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -247,6 +254,9 @@ public class PlayerBackpack extends SimpleInventory {
             ));
         }
     }
+    public void readPickupTags(@NotNull Collection<Identifier> listTag) {
+        this.autopickup.addAll(listTag);
+    }
     public @NotNull NbtList getPickupTags() {
         NbtList listTag = new NbtList();
         
@@ -257,6 +267,9 @@ public class PlayerBackpack extends SimpleInventory {
         }
         
         return listTag;
+    }
+    public @NotNull Collection<Identifier> getPickupIdentifiers() {
+        return this.autopickup;
     }
     
     public @NotNull PlayerEntity getPlayer() {
@@ -271,9 +284,15 @@ public class PlayerBackpack extends SimpleInventory {
         return Text.literal(this.player.getDisplayName().getString() + "'s Backpack");
     }
     
-    public @Nullable GenericContainerScreenHandler createContainer(int syncId, @NotNull PlayerInventory playerInventory) {
+    public @Nullable ScreenHandler createContainer(int syncId, @NotNull PlayerInventory playerInventory) {
         int slots = this.size();
-        ScreenHandlerType<?> type = PlayerBackpack.getSizeType(slots);
+        ScreenHandlerType<?> type;
+        
+        // If the player is using a modded client, we can use special formatting
+        if (ModUtils.hasModule(this.player, "base")) {
+            type = CoreMod.BACKPACK;
+        } else type = PlayerBackpack.getSizeType(slots);
+        
         return type == null ? null : new GenericContainerScreenHandler(type, syncId, playerInventory, this, slots / 9);
     }
     

@@ -49,6 +49,7 @@ import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
+import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import org.jetbrains.annotations.NotNull;
@@ -60,19 +61,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 
-@Mixin(MobEntity.class)
+@Mixin(value = MobEntity.class, priority = 10000)
 public abstract class MobEntityMixin extends LivingEntity {
     protected MobEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
         super(entityType, world);
-    }
-    
-    @Nullable
-    private UUID getOwnerUuid() {
-        if ( ((LivingEntity) this) instanceof TameableEntity tameableEntity )
-            return tameableEntity.getOwnerUuid();
-        if ( ((LivingEntity) this) instanceof AbstractHorseEntity horseBaseEntity )
-            return horseBaseEntity.getOwnerUuid();
-        return null;
     }
     
     /**
@@ -83,39 +75,42 @@ public abstract class MobEntityMixin extends LivingEntity {
      */
     @Inject(at = @At("HEAD"), method = "interactWithItem", cancellable = true)
     private void onAttachLeash(@NotNull final PlayerEntity player, @NotNull final Hand hand, @NotNull final CallbackInfoReturnable<ActionResult> callback) {
-        // If player is in creative mode, bypass permissions
-        if ((player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
-            return;
-        
-        // If player is the owner of the entity
-        if ((this.getOwnerUuid() != null) && (player.getUuid().equals(this.getOwnerUuid())))
-            return;
-        
-        // If player can interact with tameable
-        if (ClaimChunkUtils.canPlayerInteractFriendlies(player, this.getBlockPos()))
-            return;
-        
-        ActionResult result;
-        ItemStack stack = player.getStackInHand(hand);
-        
-        if (!(stack.getItem() == Items.LEAD || stack.getItem() == Items.NAME_TAG))
-            result = ActionResult.PASS;
-        else {
-            result = ActionResult.CONSUME;
+        if (!this.getWorld().isClient()) {
+            // If player is in creative mode, bypass permissions
+            if ((player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
+                return;
             
-            EntityLockUtils.playLockSoundFromSource(this, player);
+            // If player is the owner of the entity
+            UUID owner = EntityUtils.getOwner(this);
+            if ((owner != null) && (player.getUuid().equals(owner)))
+                return;
             
-            // Make sure the client knows that they are not leashing
-            if (player instanceof ServerPlayerEntity && stack.getItem() == Items.LEAD) {
-                EntityUtils.resendInventory(player);
+            // If player can interact with tameable
+            if (ClaimChunkUtils.canPlayerInteractFriendlies(player, this.getBlockPos()))
+                return;
+            
+            ActionResult result;
+            ItemStack stack = player.getStackInHand(hand);
+            
+            if (!(stack.getItem() == Items.LEAD || stack.getItem() == Items.NAME_TAG))
+                result = ActionResult.PASS;
+            else {
+                result = ActionResult.CONSUME;
                 
-                ((ServerPlayerEntity) player).networkHandler.sendPacket(
-                    new EntityAttachS2CPacket(this, null)
-                );
+                EntityLockUtils.playLockSoundFromSource(this, player);
+                
+                // Make sure the client knows that they are not leashing
+                if (player instanceof ServerPlayerEntity && stack.getItem() == Items.LEAD) {
+                    InventoryUtils.resendInventory(player);
+                    
+                    ((ServerPlayerEntity) player).networkHandler.sendPacket(
+                        new EntityAttachS2CPacket(this, null)
+                    );
+                }
             }
+            
+            // Decline allowing leading
+            callback.setReturnValue(result);
         }
-        
-        // Decline allowing leading
-        callback.setReturnValue(result);
     }
 }

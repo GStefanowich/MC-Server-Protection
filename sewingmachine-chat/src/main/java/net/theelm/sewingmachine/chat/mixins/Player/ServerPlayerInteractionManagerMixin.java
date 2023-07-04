@@ -27,12 +27,12 @@ package net.theelm.sewingmachine.chat.mixins.Player;
 
 
 import com.mojang.authlib.GameProfile;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
-import net.theelm.sewingmachine.enums.Permissions;
-import net.theelm.sewingmachine.events.CommandPermissionCallback;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -79,7 +79,7 @@ public class ServerPlayerInteractionManagerMixin implements PlayerChat {
     }
     @Override
     public boolean isMuted() {
-        return this.isGlobalMuted && (!CommandPermissionCallback.EVENT.invoker().hasPermission(this.player, Permissions.CHAT_COMMAND_MUTE_EXEMPT));
+        return this.isGlobalMuted && (!Permissions.check(this.player, PermissionNodes.CHAT_COMMAND_MUTE_EXEMPT.getNode()));
     }
     @Override
     public boolean isMuted(@NotNull GameProfile player) {

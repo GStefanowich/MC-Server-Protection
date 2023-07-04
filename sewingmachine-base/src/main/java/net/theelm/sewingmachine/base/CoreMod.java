@@ -30,11 +30,15 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.loader.api.entrypoint.EntrypointContainer;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
+import net.minecraft.resource.featuretoggle.FeatureFlags;
+import net.minecraft.resource.featuretoggle.FeatureSet;
+import net.minecraft.screen.ScreenHandlerType;
 import net.theelm.sewingmachine.MySQL.MySQLConnection;
 import net.theelm.sewingmachine.MySQL.MySQLHost;
 import net.theelm.sewingmachine.MySQL.MySQLStatement;
 import net.theelm.sewingmachine.MySQL.MySQLite;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.objects.inventory.BackpackScreenHandler;
 import net.theelm.sewingmachine.blocks.entities.LecternGuideBlockEntity;
 import net.theelm.sewingmachine.blocks.entities.LecternWarpsBlockEntity;
 import net.theelm.sewingmachine.commands.ModCommands;
@@ -65,27 +69,28 @@ import org.jetbrains.annotations.Nullable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.WeakHashMap;
 
 public abstract class CoreMod {
-    
     public static final String MOD_ID = "sewing-machine";
+    private static final String MOD_PREFIX = CoreMod.MOD_ID + "-";
     
     // Create ourselves a universal logger
     private static final Logger logger = LogManager.getLogger();
     
     // Mod memory cache for claims
-    @Deprecated
-    public static final Map<ServerPlayerEntity, UUID> PLAYER_LOCATIONS = Collections.synchronizedMap(new WeakHashMap<>()); // Reference of where players are
     public static final Map<ServerPlayerEntity, Pair<UUID, String>> PLAYER_WARP_INVITES = Collections.synchronizedMap(new WeakHashMap<>()); // Reference of warp invitations
     
     public static final @NotNull UUID SPAWN_ID = Util.NIL_UUID;    
     
-    public static BlockEntityType<LecternGuideBlockEntity> GUIDE_BLOCK_ENTITY;
-    public static BlockEntityType<LecternWarpsBlockEntity> WARPS_BLOCK_ENTITY;
+    public static final BlockEntityType<LecternGuideBlockEntity> GUIDE_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Sew.modIdentifier("guide_lectern"), FabricBlockEntityTypeBuilder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
+    public static final BlockEntityType<LecternWarpsBlockEntity> WARPS_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Sew.modIdentifier("warps_lectern"), FabricBlockEntityTypeBuilder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
+    
+    public static final ScreenHandlerType<BackpackScreenHandler> BACKPACK = Registry.register(Registries.SCREEN_HANDLER, Sew.modIdentifier("backpack"), new ScreenHandlerType<>(BackpackScreenHandler::new, FeatureFlags.VANILLA_FEATURES));
     
     // MySQL Host
     private static MySQLHost MySQL = null;
@@ -138,13 +143,60 @@ public abstract class CoreMod {
                         command.register(dispatcher, registry);
             });
         }
-        
-        // Register our block entities for use
-        CoreMod.GUIDE_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Sew.modIdentifier("guide_lectern"), FabricBlockEntityTypeBuilder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
-        CoreMod.WARPS_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Sew.modIdentifier("warps_lectern"), FabricBlockEntityTypeBuilder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
     }
     
-    private @NotNull List<SewPlugin> getPlugins() {
+    protected @NotNull List<SewPlugin> getPlugins() {
+        List<SewPlugin> plugins = new ArrayList<>();
+        for (EntrypointContainer<Object> entry : this.getEntryPoints()) {
+            ModContainer container = entry.getProvider();
+            ModMetadata metadata = container.getMetadata();
+            if (
+                metadata.getId().startsWith(CoreMod.MOD_PREFIX)
+                && entry.getEntrypoint() instanceof SewPlugin plugin
+            ) plugins.add(plugin);
+        }
+        
+        return plugins;
+    }
+    protected @NotNull List<ModMetadata> getPluginMetadata() {
+        List<ModMetadata> metadatas = new ArrayList<>();
+        for (EntrypointContainer<Object> entry : this.getEntryPoints()) {
+            ModContainer container = entry.getProvider();
+            ModMetadata metadata = container.getMetadata();
+            if (
+                metadata.getId().startsWith(CoreMod.MOD_PREFIX)
+                && entry.getEntrypoint() instanceof SewPlugin
+            ) metadatas.add(metadata);
+        }
+        
+        return metadatas;
+    }
+    protected @NotNull Map<String, String> matchPluginMetadata(@NotNull Map<String, String> modules) {
+        return this.matchPluginMetadata(modules, false);
+    }
+    protected @NotNull Map<String, String> matchPluginMetadata(@NotNull Map<String, String> modules, boolean trim) {
+        List<ModMetadata> metadatas = this.getPluginMetadata();
+        Map<String, String> match = new HashMap<>();
+        
+        // Iterate the modules that the client has
+        for (ModMetadata metadata : metadatas) {
+            String id = metadata.getId();
+            String compare = modules.get(id);
+            if (compare == null)
+                continue;
+            
+            if (trim && id.startsWith(CoreMod.MOD_PREFIX))
+                id = id.substring(CoreMod.MOD_PREFIX.length());
+            
+            String version = metadata.getVersion()
+                .getFriendlyString();
+            if (compare.equals(version))
+                match.put(id, version);
+        }
+        
+        return match;
+    }
+    private @NotNull List<EntrypointContainer<Object>> getEntryPoints() {
         FabricLoader fabric = Sew.getFabric();
         List<String> environments = new ArrayList<>();
         
@@ -153,19 +205,10 @@ public abstract class CoreMod {
             .name()
             .toLowerCase());
         
-        List<SewPlugin> plugins = new ArrayList<>();
-        for (String environment : environments) {
-            for (EntrypointContainer<Object> entry : fabric.getEntrypointContainers(environment, Object.class)) {
-                ModContainer container = entry.getProvider();
-                ModMetadata metadata = container.getMetadata();
-                if (
-                    metadata.getId().startsWith("sewing-machine-")
-                    && entry.getEntrypoint() instanceof SewPlugin plugin
-                ) plugins.add(plugin);
-            }
-        }
-        
-        return plugins;
+        List<EntrypointContainer<Object>> entries = new ArrayList<>();
+        for (String environment : environments)
+            entries.addAll(fabric.getEntrypointContainers(environment, Object.class));
+        return entries;
     }
     
     /*

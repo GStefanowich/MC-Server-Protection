@@ -49,19 +49,21 @@ public abstract class MinecartEntityMixin extends AbstractMinecartEntity {
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     private void tryMinecartEnter(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
-        // Player is in creative
-        if ((player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
-            return;
-        
-        // If player can enter Minecart
-        if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
-            return;
-        
-        // Player sound
-        EntityLockUtils.playLockSoundFromSource(this, player);
-        
-        // Cancel the event
-        callback.setReturnValue(ActionResult.FAIL);
+        if (!this.getWorld().isClient()) {
+            // Player is in creative
+            if ((player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
+                return;
+            
+            // If player can enter Minecart
+            if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
+                return;
+            
+            // Player sound
+            EntityLockUtils.playLockSoundFromSource(this, player);
+            
+            // Cancel the event
+            callback.setReturnValue(ActionResult.FAIL);
+        }
     }
     
 }

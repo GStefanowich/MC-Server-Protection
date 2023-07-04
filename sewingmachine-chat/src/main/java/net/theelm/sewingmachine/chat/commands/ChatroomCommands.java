@@ -30,6 +30,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.MessageArgumentType;
@@ -38,7 +39,6 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.chat.config.SewChatConfig;
 import net.theelm.sewingmachine.chat.utilities.ChatRoomUtilities;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
@@ -46,8 +46,7 @@ import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
-import net.theelm.sewingmachine.events.CommandPermissionCallback;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
@@ -63,13 +62,13 @@ public final class ChatroomCommands extends SewCommand {
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
             .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
         );*/
-
+        
         CommandUtils.register(dispatcher, "g", "Global Chat", builder -> builder
             .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY))
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
             .executes((context -> switchToChatRoom(context, ChatRooms.GLOBAL)))
         );
-
+        
         CommandUtils.register(dispatcher, "l", "Local Chat", builder -> builder
             .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY))
             .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
@@ -109,7 +108,7 @@ public final class ChatroomCommands extends SewCommand {
                     .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MUTE_OP)
                         .and(
                             CommandPredicate.opLevel(OpLevels.KICK_BAN_OP)
-                                .or(Permissions.CHAT_COMMAND_MUTE)
+                                .or(PermissionNodes.CHAT_COMMAND_MUTE)
                         )
                     )
                     .executes(this::opMute)
@@ -180,7 +179,7 @@ public final class ChatroomCommands extends SewCommand {
         ServerPlayerEntity target = EntityArgumentType.getPlayer(context, "player");
         PlayerChat chatter = (PlayerChat) target;
         
-        if (CommandPermissionCallback.EVENT.invoker().hasPermission(target, Permissions.CHAT_COMMAND_MUTE_EXEMPT) || target.hasPermissionLevel(1))
+        if (Permissions.check(target, PermissionNodes.CHAT_COMMAND_MUTE_EXEMPT.getNode()) || target.hasPermissionLevel(1))
             throw MUTE_EXEMPT.create();
         else {
             source.sendFeedback(
@@ -191,7 +190,7 @@ public final class ChatroomCommands extends SewCommand {
                 ).formatted(Formatting.GREEN),
                 false
             );
-
+            
             return Command.SINGLE_SUCCESS;
         }
 

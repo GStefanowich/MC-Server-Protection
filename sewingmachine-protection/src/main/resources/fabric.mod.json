@@ -29,6 +29,7 @@
 		"sewingmachine-protection.mixins.json"
 	],
 	"depends": {
+		"sewing-machine-base": "*",
 		"fabricloader": ">=0.14.21",
 		"fabric": "*"
 	},

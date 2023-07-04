@@ -36,7 +36,7 @@ import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.utilities.CommandUtils;
@@ -69,9 +69,9 @@ public final class AdminCommands extends SewCommand {
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         // Register the FLY command
         CommandUtils.register(dispatcher, AdminCommands.FLIGHT, (builder) -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FLY))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_FLY))
             .then(CommandManager.argument("target", EntityArgumentType.players())
-                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FLY.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_FLY.onOther()))
                 .executes(this::targetFlying)
             )
             .executes(this::selfFlying)
@@ -79,9 +79,9 @@ public final class AdminCommands extends SewCommand {
         
         // Register the GOD command
         CommandUtils.register(dispatcher, AdminCommands.GOD, builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GODMODE))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_GODMODE))
             .then(CommandManager.argument( "target", EntityArgumentType.players())
-                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GODMODE.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_GODMODE.onOther()))
                 .executes(this::targetGod)
             )
             .executes(this::selfGod)
@@ -89,9 +89,9 @@ public final class AdminCommands extends SewCommand {
         
         // Register the HEAL command
         CommandUtils.register(dispatcher, AdminCommands.HEAL, builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_HEAL))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_HEAL))
             .then(CommandManager.argument("target", EntityArgumentType.players())
-                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_HEAL.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_HEAL.onOther()))
                 .executes(this::targetHeal)
             )
             .executes(this::selfHeal)
@@ -99,9 +99,9 @@ public final class AdminCommands extends SewCommand {
         
         // Register the FEED command
         CommandUtils.register(dispatcher, AdminCommands.FEED, builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FEED))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_FEED))
             .then(CommandManager.argument("target", EntityArgumentType.players())
-                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_FEED.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_FEED.onOther()))
                 .executes(this::targetFeed)
             )
             .executes(this::selfFeed)
@@ -109,7 +109,7 @@ public final class AdminCommands extends SewCommand {
         
         // Register the HEAL command
         CommandUtils.register(dispatcher, AdminCommands.REPAIR, builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_REPAIR))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_REPAIR))
             .executes(this::selfRepair)
         );
         

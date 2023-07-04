@@ -27,7 +27,9 @@ package net.theelm.sewingmachine.protection;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.theelm.sewingmachine.base.packets.CancelMinePacket;
+import net.theelm.sewingmachine.events.TabRegisterEvent;
 import net.theelm.sewingmachine.protection.interfaces.ClientMiner;
+import net.theelm.sewingmachine.protection.inventory.ProtectionsTab;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 
 /**
@@ -40,5 +42,8 @@ public class ClientCore implements ClientModInitializer {
         NetworkingUtils.clientReceiver(CancelMinePacket.TYPE, (client, network, packet, sender) -> {
             ((ClientMiner) client).stopMining(packet.pos());
         });
+        
+        // Add the protections tab to the inventory
+        TabRegisterEvent.register(ProtectionsTab::new);
     }
 }

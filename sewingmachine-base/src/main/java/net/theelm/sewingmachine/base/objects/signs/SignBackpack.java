@@ -123,10 +123,10 @@ public final class SignBackpack extends ShopSign {
             if (!MoneyUtils.takePlayerMoney(player, sign.getShopItemPrice()))
                 return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
             
-            backpackCarrier.setBackpack(( backpack == null ?
+            backpackCarrier.setBackpack((backpack == null ?
                 new PlayerBackpack(player, newPackRows)
                 : new PlayerBackpack(backpack, newPackRows)
-            ));
+            ), true);
             
             player.sendMessage(Text.literal("Backpack size is now ").formatted(Formatting.YELLOW)
                 .append(Text.literal(FormattingUtils.format(sign.getShopItemCount())).formatted(Formatting.AQUA))

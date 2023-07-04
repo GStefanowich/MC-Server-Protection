@@ -25,9 +25,9 @@
 
 package net.theelm.sewingmachine.base.mixins.Player;
 
-
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
@@ -40,8 +40,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = net.minecraft.server.network.ServerPlayerInteractionManager.class, priority = 10000)
-public abstract class ServerPlayerInteractionManager {
+@Mixin(value = ServerPlayerInteractionManager.class, priority = 10000)
+public abstract class ServerPlayerInteractionManagerMixin {
     /**
      * Item interaction callback (Used to test attempts to consume items)
      * @param player

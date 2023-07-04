@@ -25,12 +25,12 @@
 
 package net.theelm.sewingmachine.interfaces;
 
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.ConfigPredicate;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.events.CommandPermissionCallback;
 import net.theelm.sewingmachine.permissions.PermissionNode;
 import net.minecraft.server.command.ServerCommandSource;
 import org.jetbrains.annotations.NotNull;
@@ -109,7 +109,7 @@ public interface CommandPredicate extends Predicate<ServerCommandSource> {
     }
     static @NotNull CommandPredicate node(@NotNull final PermissionNode permission) {
         return source -> source.getEntity() instanceof ServerPlayerEntity player
-            && CommandPermissionCallback.EVENT.invoker().hasPermission(player, permission);
+            && Permissions.check(player, permission.getNode());
     }
     static @NotNull CommandPredicate cast(CommandPredicate predicate) {
         return predicate;

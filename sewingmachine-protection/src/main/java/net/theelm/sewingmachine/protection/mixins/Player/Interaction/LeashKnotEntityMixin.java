@@ -26,6 +26,7 @@
 package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 
 import net.minecraft.text.Text;
+import net.minecraft.util.ActionResult;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
@@ -45,27 +46,29 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(LeashKnotEntity.class)
+@Mixin(value = LeashKnotEntity.class, priority = 10000)
 public abstract class LeashKnotEntityMixin extends AbstractDecorationEntity {
     protected LeashKnotEntityMixin(EntityType<? extends AbstractDecorationEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
     }
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
-    private void onInteract(PlayerEntity player, Hand hand, CallbackInfoReturnable<Boolean> callback) {
-        if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
-            return;
-        
-        WorldChunk chunk = this.getEntityWorld().getWorldChunk(this.getBlockPos());
-        
-        // Display that this leash can't be removed
-        TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
-            EntityLockUtils.getLockedName(this),
-            ( chunk == null ? Text.literal("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, this.getBlockPos()) )
-        ));
-        
-        this.playSound(SoundEvents.ENTITY_LEASH_KNOT_BREAK,0.5f, 1f );
-        callback.setReturnValue( false );
+    private void onInteract(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
+        if (!this.getWorld().isClient()) {
+            if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
+                return;
+            
+            WorldChunk chunk = this.getEntityWorld().getWorldChunk(this.getBlockPos());
+            
+            // Display that this leash can't be removed
+            TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
+                EntityLockUtils.getLockedName(this),
+                ( chunk == null ? Text.literal("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, this.getBlockPos()) )
+            ));
+            
+            this.playSound(SoundEvents.ENTITY_LEASH_KNOT_BREAK,0.5f, 1f );
+            callback.setReturnValue(ActionResult.FAIL);
+        }
     }
     
 }

@@ -32,7 +32,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -47,36 +47,36 @@ public final class GameModesCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, "gms", builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SURVIVAL))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_GAMEMODE_SURVIVAL))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SURVIVAL.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_GAMEMODE_SURVIVAL.onOther()))
                 .executes((context) -> this.setPlayerGameMode(context, GameMode.SURVIVAL))
             )
             .executes((context) -> this.setPlayerGameMode(context.getSource(), GameMode.SURVIVAL))
         );
         
         CommandUtils.register(dispatcher, "gmc", builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_CREATIVE))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_GAMEMODE_CREATIVE))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_CREATIVE.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_GAMEMODE_CREATIVE.onOther()))
                 .executes((context) -> this.setPlayerGameMode(context, GameMode.CREATIVE))
             )
             .executes((context) -> this.setPlayerGameMode(context.getSource(), GameMode.CREATIVE))
         );
         
         CommandUtils.register(dispatcher, "gma", builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_ADVENTURE))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_GAMEMODE_ADVENTURE))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_ADVENTURE.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_GAMEMODE_ADVENTURE.onOther()))
                 .executes((context) -> this.setPlayerGameMode(context, GameMode.ADVENTURE))
             )
             .executes((context) -> this.setPlayerGameMode(context.getSource(), GameMode.ADVENTURE))
         );
         
         CommandUtils.register(dispatcher, "gmsp", builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SPECTATOR))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_GAMEMODE_SPECTATOR))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.PLAYER_GAMEMODE_SPECTATOR.onOther()))
+                .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_GAMEMODE_SPECTATOR.onOther()))
                 .executes((context) -> this.setPlayerGameMode(context, GameMode.SPECTATOR))
             )
             .executes((context) -> this.setPlayerGameMode(context.getSource(), GameMode.SPECTATOR))

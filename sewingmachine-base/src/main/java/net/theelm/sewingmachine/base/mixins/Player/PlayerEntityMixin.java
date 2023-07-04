@@ -56,6 +56,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.interfaces.PvpEntity;
+import net.theelm.sewingmachine.utilities.InventoryUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -69,10 +70,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class PlayerEntityMixin extends LivingEntity implements MoneyHolder, BackpackCarrier, PvpEntity {
     // Backpack
     private PlayerBackpack backpack = null;
-    
-    // Player inventory
-    @Shadow public PlayerInventory inventory;
-    @Shadow protected abstract void vanishCursedItems();
     
     protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
@@ -227,8 +224,13 @@ public abstract class PlayerEntityMixin extends LivingEntity implements MoneyHol
         return this.backpack;
     }
     @Override
-    public void setBackpack(@Nullable PlayerBackpack backpack) {
+    public void setBackpack(@Nullable PlayerBackpack backpack, boolean resend) {
         this.backpack = backpack == null || backpack.getPlayer() == (LivingEntity)this ? backpack : new PlayerBackpack((PlayerEntity)(LivingEntity)this, backpack);
+        
+        if (resend && (LivingEntity)this instanceof ServerPlayerEntity player) {
+            // Resend the players backpack data afte respawning
+            InventoryUtils.resendBackpack(player);
+        }
     }
     @Inject(at = @At("TAIL"), method = "vanishCursedItems")
     public void onVanishCursedItems(CallbackInfo callback) {

@@ -46,7 +46,8 @@ import org.jetbrains.annotations.Nullable;
 public final class TitleUtils {
     
     public static void showPlayerAlert(@NotNull final PlayerEntity player, final Formatting formatting, final Text... text) {
-        TitleUtils.showPlayerAlert((ServerPlayerEntity) player, formatting, text );
+        if (player instanceof ServerPlayerEntity serverPlayer)
+            TitleUtils.showPlayerAlert(serverPlayer, formatting, text);
     }
     public static void showPlayerAlert(@NotNull final ServerPlayerEntity player, final Formatting formatting, final Text... text) {
         player.sendMessage(TitleUtils.combineTextChunks(formatting, text), true);

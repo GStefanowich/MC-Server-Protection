@@ -26,13 +26,13 @@
 package net.theelm.sewingmachine.base;
 
 import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.registry.RegistryKey;
-import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.BalanceUpdateHandler;
-import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.theelm.sewingmachine.base.objects.signs.SignBackpack;
 import net.theelm.sewingmachine.base.objects.signs.SignBalance;
 import net.theelm.sewingmachine.base.objects.signs.SignGuide;
@@ -41,8 +41,8 @@ import net.theelm.sewingmachine.base.objects.signs.SignShopFree;
 import net.theelm.sewingmachine.base.objects.signs.SignShopSell;
 import net.theelm.sewingmachine.base.objects.signs.SignWarp;
 import net.theelm.sewingmachine.base.objects.signs.SignWaystone;
-import net.theelm.sewingmachine.base.packets.PlayerBackpackPacket;
-import net.theelm.sewingmachine.base.utilities.BackpackUtils;
+import net.theelm.sewingmachine.base.packets.PlayerBackpackOpenPacket;
+import net.theelm.sewingmachine.base.packets.SewHelloPacket;
 import net.theelm.sewingmachine.commands.AdminCommands;
 import net.theelm.sewingmachine.commands.BackpackCommand;
 import net.theelm.sewingmachine.commands.DateCommand;
@@ -71,13 +71,15 @@ import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.BlockInteractionCallback;
+import net.theelm.sewingmachine.events.NetworkHandlerCallback;
 import net.theelm.sewingmachine.events.PlayerBalanceCallback;
 import net.theelm.sewingmachine.events.TaxCollection;
-import net.theelm.sewingmachine.interfaces.BackpackCarrier;
+import net.theelm.sewingmachine.interfaces.ModUser;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.DevUtils;
+import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.MapUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -89,6 +91,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
+import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import net.theelm.sewingmachine.utilities.Sew;
 import net.theelm.sewingmachine.utilities.ShopSigns;
 import org.jetbrains.annotations.NotNull;
@@ -96,6 +99,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -158,14 +163,29 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
             PlayerBalanceCallback.EVENT.register(new BalanceUpdateHandler());
             
             // Register the packet receiver for opening the backpack
-            ServerPlayNetworking.registerGlobalReceiver(PlayerBackpackPacket.TYPE, (packet, player, responseSender) -> {
-                // Check if the player has a backpack
-                PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
-                if (backpack == null)
-                    return;
+            ServerPlayNetworking.registerGlobalReceiver(PlayerBackpackOpenPacket.TYPE, (packet, player, responseSender) -> InventoryUtils.openBackpack(player));
+            
+            // Send the hello packet
+            NetworkHandlerCallback.READY.register((server, connection, player) -> {
+                Map<String, String> modules = new HashMap<>();
+                for (ModMetadata metadata : this.getPluginMetadata())
+                    modules.put(metadata.getId(), metadata.getVersion().getFriendlyString());
                 
-                // Open the backpack screen on the client
-                player.openHandledScreen(new SimpleNamedScreenHandlerFactory(BackpackUtils::openBackpack, backpack.getName()));
+                NetworkingUtils.send(player, new SewHelloPacket(modules));
+            });
+            
+            // When (if) the client sends the Hello packet back with the synced mods
+            NetworkingUtils.serverReceiver(SewHelloPacket.TYPE, (server, player, network, packet, sender) -> {
+                Map<String, String> modules = this.matchPluginMetadata(packet.modules(), true);
+                ((ModUser) player).setModded(modules.keySet());
+                
+                // Send the players backpack information
+                InventoryUtils.resendBackpack(player);
+            });
+            
+            // Resend the backpack
+            ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
+                InventoryUtils.resendBackpack(newPlayer);
             });
             
             // Alert the mod presence

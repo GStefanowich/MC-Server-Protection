@@ -28,7 +28,6 @@ package net.theelm.sewingmachine.commands.arguments;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
-import net.theelm.sewingmachine.enums.Permissions;
 import net.theelm.sewingmachine.utilities.ColorUtils;
 import net.theelm.sewingmachine.utilities.text.StyleApplicator;
 import net.minecraft.command.CommandSource;

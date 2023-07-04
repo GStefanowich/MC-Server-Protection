@@ -34,11 +34,13 @@ import net.theelm.sewingmachine.commands.PlayerSpawnCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.CompassDirections;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
+import net.theelm.sewingmachine.interfaces.ModUser;
 import net.theelm.sewingmachine.interfaces.MoneyHolder;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.interfaces.PlayerServerLanguage;
 import net.theelm.sewingmachine.utilities.EffectUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
+import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.SleepUtils;
 import net.theelm.sewingmachine.utilities.WarpUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
@@ -92,7 +94,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(ServerPlayerEntity.class)
-public abstract class ServerPlayerEntityMixin extends PlayerEntity implements PlayerData, PlayerServerLanguage {
+public abstract class ServerPlayerEntityMixin extends PlayerEntity implements PlayerData, ModUser, PlayerServerLanguage {
     @Shadow public ServerPlayNetworkHandler networkHandler;
     @Shadow private boolean notInAnyWorld;
     
@@ -114,6 +116,9 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
     
     // Warps
     private final @NotNull Map<String, WarpUtils.Warp> warps = new ConcurrentHashMap<>();
+    
+    // List of Sew Modules that the player has installed
+    private final @NotNull List<String> clientModules = new ArrayList<>();
     
     // Portal locations
     private BlockPos overworldPortal = null;
@@ -257,6 +262,20 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
     }
     
     /*
+     * Mods
+     */
+    
+    @Override
+    public void setModded(Collection<String> modules) {
+        this.clientModules.addAll(modules);
+    }
+    
+    @Override
+    public Collection<String> getModules() {
+        return this.clientModules;
+    }
+    
+    /*
      * Portal locations
      */
     
@@ -396,6 +415,9 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
     }
     @Inject(at = @At("TAIL"), method = "copyFrom")
     public void onCopyData(@NotNull ServerPlayerEntity player, boolean alive, CallbackInfo callback) {
+        // Copy the users modules
+        this.clientModules.addAll(((ModUser) player).getModules());
+        
         // Copy the players warp over
         this.warps.putAll(((PlayerData) player).getWarps());
         
@@ -414,8 +436,9 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
         this.setCompassDirection(((PlayerData) player).getCompass());
         
         // Copy the backpack inventory
-        ((BackpackCarrier)this).setBackpack(
-            ((BackpackCarrier)player).getBackpack()
+        ((BackpackCarrier) this).setBackpack(
+            ((BackpackCarrier)player).getBackpack(),
+            false // Don't resend here because the ClientPlayerEntity hasn't been updated yet on the client
         );
     }
     

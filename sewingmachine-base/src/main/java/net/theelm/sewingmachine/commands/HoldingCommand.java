@@ -27,12 +27,10 @@ package net.theelm.sewingmachine.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.MessageArgumentType;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
@@ -64,8 +62,8 @@ public final class HoldingCommand extends SewCommand {
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             CommandUtils.register(dispatcher, slot.getName(), builder -> builder
                 .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_EQUIPMENT))
-                .then(CommandManager.argument("message", StringArgumentType.greedyString())
-                    .executes((source) -> this.handMessage(source, slot))
+                .then(CommandManager.argument("message", MessageArgumentType.message())
+                    .executes((source) -> this.slotMessage(source, slot))
                 )
                 .executes((source) -> this.slot(source, slot))
             );
@@ -80,7 +78,7 @@ public final class HoldingCommand extends SewCommand {
             holding
         );
     }
-    private int handMessage(@NotNull CommandContext<ServerCommandSource> context, @NotNull EquipmentSlot slot) throws CommandSyntaxException {
+    private int slotMessage(@NotNull CommandContext<ServerCommandSource> context, @NotNull EquipmentSlot slot) throws CommandSyntaxException {
         Text holding = this.holding(context, slot);
         MessageArgumentType.getSignedMessage(context, "message", message -> {
             this.playerSendsMessageAndData(context.getSource(), message, holding);

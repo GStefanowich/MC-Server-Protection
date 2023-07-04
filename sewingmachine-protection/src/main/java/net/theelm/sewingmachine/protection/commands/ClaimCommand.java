@@ -48,7 +48,7 @@ import net.theelm.sewingmachine.commands.arguments.EnumArgumentType;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.events.RegionUpdateCallback;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
@@ -147,17 +147,17 @@ public final class ClaimCommand extends SewCommand {
          * Admin Force commands
          */
         CommandUtils.register(dispatcher, "Chunk", builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIMS).or(Permissions.ADMIN_CLAIM_TOWNS))
+            .requires(CommandPredicate.opLevel(OpLevels.STOP).or(PermissionNodes.ADMIN_CLAIMS).or(PermissionNodes.ADMIN_CLAIM_TOWNS))
             .then(CommandManager.literal("set")
                 .then(CommandManager.literal("player")
-                    .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIMS))
+                    .requires(CommandPredicate.opLevel(OpLevels.STOP).or(PermissionNodes.ADMIN_CLAIMS))
                     .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                         .suggests(CommandUtils::getAllPlayerNames)
                         .executes(this::rawSetChunkPlayer)
                     )
                 )
                 .then(CommandManager.literal("town")
-                    .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIM_TOWNS))
+                    .requires(CommandPredicate.opLevel(OpLevels.STOP).or(PermissionNodes.ADMIN_CLAIM_TOWNS))
                     .executes(this::rawSetChunkTown)
                 )
             )
@@ -342,7 +342,7 @@ public final class ClaimCommand extends SewCommand {
                 .executes(this::playerPartsTown)
             )
             .then(CommandManager.literal("set")
-                .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIM_TOWNS))
+                .requires(CommandPredicate.opLevel(OpLevels.STOP).or(PermissionNodes.ADMIN_CLAIM_TOWNS))
                 .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                     .suggests(CommandUtils::getAllPlayerNames)
                     .then(CommandManager.argument("town", StringArgumentType.greedyString())
@@ -352,7 +352,7 @@ public final class ClaimCommand extends SewCommand {
                 )
             )
             .then(CommandManager.literal("villagers")
-                .requires(CommandPredicate.opLevel(OpLevels.STOP).or(Permissions.ADMIN_CLAIM_TOWNS))
+                .requires(CommandPredicate.opLevel(OpLevels.STOP).or(PermissionNodes.ADMIN_CLAIM_TOWNS))
                 .then(CommandManager.argument("entities", EntityArgumentType.entities())
                     .then(CommandManager.argument("town", StringArgumentType.greedyString())
                         .suggests(CommandClaimUtils::getAllTowns)

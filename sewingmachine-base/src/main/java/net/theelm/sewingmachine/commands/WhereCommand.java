@@ -32,7 +32,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.events.RegionNameCallback;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.utilities.CommandUtils;
@@ -53,7 +53,7 @@ public final class WhereCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, WhereCommand.NAME, builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(Permissions.LOCATE_PLAYERS))
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.LOCATE_PLAYERS))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .executes(this::locatePlayer)
             )

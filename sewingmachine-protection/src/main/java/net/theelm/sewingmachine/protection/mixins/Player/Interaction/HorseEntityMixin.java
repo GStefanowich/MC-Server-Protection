@@ -49,7 +49,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(HorseEntity.class)
+@Mixin(value = HorseEntity.class, priority = 10000)
 public abstract class HorseEntityMixin extends AbstractHorseEntity {
     protected HorseEntityMixin(EntityType<? extends HorseEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
@@ -57,22 +57,24 @@ public abstract class HorseEntityMixin extends AbstractHorseEntity {
     
     @Inject(at = @At("HEAD"), method = "interactMob", cancellable = true)
     private void tryHorseMount(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
-        // If the player is in creative, allow
-        if ((player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
-            return;
-        
-        // If player owns the horse, allow
-        if (player.getUuid().equals(this.getOwnerUuid()))
-            return;
-        
-        // If riding is allowed, allow
-        if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
-            return;
-        
-        // Horse makes an angry sound at the player
-        EntityLockUtils.playLockSoundFromSource(this, player);
-        
-        // Disallow
-        callback.setReturnValue(ActionResult.FAIL);
+        if (!this.getWorld().isClient()) {
+            // If the player is in creative, allow
+            if ((player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
+                return;
+            
+            // If player owns the horse, allow
+            if (player.getUuid().equals(this.getOwnerUuid()))
+                return;
+            
+            // If riding is allowed, allow
+            if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
+                return;
+            
+            // Horse makes an angry sound at the player
+            EntityLockUtils.playLockSoundFromSource(this, player);
+            
+            // Disallow
+            callback.setReturnValue(ActionResult.FAIL);
+        }
     }
 }

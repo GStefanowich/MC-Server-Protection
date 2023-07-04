@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(BoatEntity.class)
+@Mixin(value = BoatEntity.class, priority = 10000)
 public abstract class BoatEntityMixin extends Entity {
     public BoatEntityMixin(EntityType<?> type, World world) {
         super(type, world);
@@ -46,9 +46,11 @@ public abstract class BoatEntityMixin extends Entity {
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     private void onCanAddPassenger(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
-        // Make an angry sound at the player
-        EntityLockUtils.playLockSoundFromSource(this, player);
-        
-        callback.setReturnValue(ActionResult.FAIL);
+        if (!this.getWorld().isClient()) {
+            // Make an angry sound at the player
+            EntityLockUtils.playLockSoundFromSource(this, player);
+            
+            callback.setReturnValue(ActionResult.FAIL);
+        }
     }
 }

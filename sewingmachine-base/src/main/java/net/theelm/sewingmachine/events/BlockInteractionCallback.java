@@ -35,6 +35,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
+import net.theelm.sewingmachine.utilities.InventoryUtils;
 import org.jetbrains.annotations.NotNull;
 
 public interface BlockInteractionCallback {
@@ -44,7 +45,7 @@ public interface BlockInteractionCallback {
             if (result != ActionResult.PASS) {
                 if (result == ActionResult.FAIL) {
                     // If the result is a failure resend the player inventory to fix any lost counts
-                    EntityUtils.resendInventory(player);
+                    InventoryUtils.resendInventory(player);
                     
                     // Resend the information of the neighboring blocks (Fix ghost blocks, multi-block structures [eg; doors], etc)
                     BlockUtils.updateNeighboringBlockStates(player, world, blockHitResult.getBlockPos());
