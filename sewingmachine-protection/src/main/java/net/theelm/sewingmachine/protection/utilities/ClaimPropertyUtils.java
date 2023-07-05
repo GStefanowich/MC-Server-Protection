@@ -25,7 +25,10 @@
 
 package net.theelm.sewingmachine.protection.utilities;
 
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
+import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.events.RegionUpdateCallback;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
@@ -33,10 +36,13 @@ import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
+import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
 import net.theelm.sewingmachine.utilities.ModUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.UUID;
 
 /**
  * Created on Jul 05 2023 at 4:05 AM.
@@ -69,5 +75,24 @@ public final class ClaimPropertyUtils {
         // Send a packet notifying the player of their change
         if (ModUtils.hasModule(player, "protection"))
             NetworkingUtils.send(player, new ClaimPermissionPacket(permission, rank));
+    }
+
+    public static void updateRank(@NotNull ServerPlayerEntity player, @NotNull UUID friend, @NotNull ClaimRanks rank) {
+        ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
+        
+        // Save the update to the claim
+        if (!claim.updateFriend(friend, rank))
+            return;
+        
+        // Send a packet notifying the player of their change
+        if (ModUtils.hasModule(player, "protection")) {
+            MinecraftServer server = player.getServer();
+            if (server != null) {
+                Text display = PlayerNameCallback.getPlainName(server, friend)
+                    .copyContentOnly();
+                
+                NetworkingUtils.send(player, new ClaimRankPacket(friend, display, rank));
+            }
+        }
     }
 }

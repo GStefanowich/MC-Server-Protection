@@ -15,11 +15,13 @@
 
 	"license": "MIT",
 	"icon": "assets/sewing-machine/icon.png",
-
+	
 	"environment": "*",
 	"entrypoints": {
 		"client": [],
-		"server": []
+		"main": [
+			"net.theelm.sewingmachine.deathchests.ServerCore"
+		]
 	},
 	"mixins": [
 		"sewingmachine-deathchests.mixins.json"

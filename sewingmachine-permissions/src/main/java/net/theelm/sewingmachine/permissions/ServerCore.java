@@ -35,21 +35,16 @@ import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
-import net.theelm.sewingmachine.events.CommandPermissionCallback;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.permissions.utilities.RankUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Created on Jun 09 2023 at 1:42 AM.
- * By greg in sewingmachine
- */
+@Deprecated(forRemoval = true)
 public final class ServerCore implements DedicatedServerModInitializer, SewPlugin {
     @Override
     public void onInitializeServer() {
-        CommandPermissionCallback.EVENT.register((player, scope) -> RankUtils.hasPermission(player, scope));
     }
     
     @Override

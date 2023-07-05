@@ -83,6 +83,11 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
     }
     
     @Override
+    public boolean hasClaim() {
+        return ((PlayerClaimData) this.networkHandler).hasClaim();
+    }
+    
+    @Override
     public @Nullable PlayerVisitor getLocation() {
         return this.visitor;
     }

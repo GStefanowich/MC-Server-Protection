@@ -50,5 +50,12 @@ public class ProtectionScreen extends SettingScreen {
             screen.parent = this;
             return screen;
         });
+        if (!this.client.isInSingleplayer() || this.client.isIntegratedServerRunning()) {
+            list.addScreenButton(Text.literal("Claim Ranks"), Text.literal("The permissions for other players"), () -> {
+                SettingScreen screen = new RankSettingsScreen();
+                screen.parent = this;
+                return screen;
+            });
+        }
     }
 }

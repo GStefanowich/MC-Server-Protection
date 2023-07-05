@@ -32,6 +32,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.events.BlockInteractionCallback;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
@@ -98,7 +99,7 @@ public final class BlockInteraction {
             return ActionResult.PASS;
         
         // If allowed to bypass permissions in creative mode
-        if (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
+        if (SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
             return ActionResult.SUCCESS;
         
         WorldChunk chunk = player.getEntityWorld()
@@ -116,7 +117,7 @@ public final class BlockInteraction {
             return ActionResult.PASS;
         
         // If allowed to bypass permissions in creative mode
-        if (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
+        if (SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
             return ActionResult.SUCCESS;
         
         WorldChunk chunk = player.getEntityWorld()

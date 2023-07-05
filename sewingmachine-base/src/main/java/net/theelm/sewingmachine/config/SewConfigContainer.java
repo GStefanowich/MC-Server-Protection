@@ -6,13 +6,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public abstract class SewConfigContainer {
+    // All config options
+    protected final List<ConfigBase<?>> configOptions = new ArrayList<>();
     
-    protected final List<ConfigBase> configOptions = new ArrayList<>();
+    // Config options that can be synced with the client
+    protected final List<ConfigBase<?>> syncedOptions = new ArrayList<>();
     
     protected JsonObject saveToJSON() {
         final JsonObject baseObject = new JsonObject();
         
-        for ( ConfigBase config : this.configOptions ) {
+        for ( ConfigBase<?> config : this.configOptions ) {
             JsonObject inner = baseObject;
             
             String[] path = config.getPath().split("\\.");

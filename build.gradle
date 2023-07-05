@@ -6,11 +6,8 @@ plugins {
 	id 'com.github.johnrengelman.shadow' version '7.1.0'
 }
 
-String bluemapVersion = "v2.5.1"
-
-repositories {
-	maven { url 'https://jitpack.io' }
-}
+String bluemapVersion = 'v2.5.1'
+String permsVersion = '0.2-SNAPSHOT'
 
 gradle.startParameter.showStacktrace = ShowStacktrace.ALWAYS
 
@@ -44,6 +41,18 @@ allprojects {
 		withSourcesJar()
 	}
 	
+	if (project.name == 'sewingmachine-base' || project.name == 'sewingmachine') {
+		repositories {
+			// Jitpack for Bluemap
+			maven { url 'https://jitpack.io' }
+		}
+	}
+	
+	repositories {
+		// for Fabric Permissions API
+		maven { url 'https://oss.sonatype.org/content/repositories/snapshots' }
+	}
+	
 	allprojects.each { p ->
 		loom.mods.register(p.name) {
 			sourceSet p.sourceSets.main
@@ -51,12 +60,12 @@ allprojects {
 	}
 	
 	processResources {
-		inputs.property 'version', version
+		inputs.property 'version', mod_version
 		
 		afterEvaluate {
 			from(sourceSets.main.resources.srcDirs) {
 				include 'fabric.mod.json'
-				expand 'version': version
+				expand 'version': mod_version
 				duplicatesStrategy DuplicatesStrategy.INCLUDE
 			}
 		}
@@ -68,10 +77,26 @@ allprojects {
 		mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
 		modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
 		
-		// Fabric API. Used for commands
+		// Fabric API modImplementation (Without including)
 		modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 		
+		// Permissions API modImplementation (include jar-in-jar)
+		include modImplementation(group: 'me.lucko', name: 'fabric-permissions-api', version: permsVersion)
+		
+		// Include IntelliJ annotations
 		implementation 'com.intellij:annotations:+@jar'
+		
+		// Include necessary dependencies in either BASE or the entire module
+		if (project.name == 'sewingmachine' || project.name == 'sewingmachine-base') {
+			// Bluemap API
+			include modImplementation(group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: bluemapVersion)
+			
+			// Include MySQL
+			compileOnly(group: 'mysql', name: 'mysql-connector-java', version: '8.0.15')
+		} else {
+			// modimplementation will break this
+			implementation project(path: ':sewingmachine-base', configuration: 'namedElements')
+		}
 	}
 	
 	tasks.withType(AbstractArchiveTask).configureEach {
@@ -89,24 +114,6 @@ subprojects.each {
 
 // All subprojects should depend on the '-base' project
 subprojects {
-	if (project.name == "sewingmachine-base") {
-		repositories {
-			maven { url 'https://jitpack.io' }
-		}
-	}
-	
-	dependencies {
-		if (project.name != "sewingmachine-base") {
-			// modimplementation will break this
-			implementation project(path: ':sewingmachine-base', configuration: 'namedElements')
-		} else {
-			// Bluemap API
-			compileOnly(group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: bluemapVersion)
-			
-			compileOnly(group: 'mysql', name: 'mysql-connector-java', version: '8.0.15')
-		}
-	}
-	
 	// Set the name for the subproject jar
 	remapJar {
 		archiveFileName = "${project.name} ${project.mod_version} mc-${project.minecraft_version}.jar"
@@ -118,11 +125,6 @@ dependencies {
 	subprojects.each {
 		implementation project(path: it.path, configuration: 'namedElements')
 	}
-	
-	// Bluemap API
-	compileOnly(group: 'com.github.BlueMap-Minecraft', name: 'BlueMapAPI', version: bluemapVersion)
-	
-	compileOnly(group: 'mysql', name: 'mysql-connector-java', version: '8.0.15')
 }
 
 remapJar {

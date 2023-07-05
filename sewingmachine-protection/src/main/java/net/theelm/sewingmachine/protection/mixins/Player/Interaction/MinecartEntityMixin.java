@@ -28,6 +28,7 @@ package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 import net.minecraft.util.ActionResult;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.minecraft.entity.EntityType;
@@ -51,7 +52,7 @@ public abstract class MinecartEntityMixin extends AbstractMinecartEntity {
     private void tryMinecartEnter(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         if (!this.getWorld().isClient()) {
             // Player is in creative
-            if ((player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
+            if ((player.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
                 return;
             
             // If player can enter Minecart

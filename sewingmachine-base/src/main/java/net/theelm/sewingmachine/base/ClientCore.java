@@ -36,6 +36,7 @@ import net.minecraft.server.MinecraftServer;
 import net.theelm.sewingmachine.base.objects.inventory.BackpackScreen;
 import net.theelm.sewingmachine.base.packets.PlayerBackpackDataPacket;
 import net.theelm.sewingmachine.base.packets.PlayerBackpackOpenPacket;
+import net.theelm.sewingmachine.base.packets.SewConfigPacket;
 import net.theelm.sewingmachine.base.packets.SewHelloPacket;
 import net.theelm.sewingmachine.events.TabRegisterEvent;
 import net.theelm.sewingmachine.base.objects.inventory.BackpackTab;
@@ -82,6 +83,9 @@ public final class ClientCore extends CoreMod implements ClientModInitializer {
             ((BackpackCarrier) client.player)
                 .setBackpack(packet.getBackpack(client.player), false /* Nothing here to transmit */);
         });
+        
+        // Set handler for receiving the Config
+        NetworkingUtils.clientReceiver(SewConfigPacket.TYPE, NetworkingUtils::empty);
         
         // Prefix tabs to make sure that they're first
         TabRegisterEvent.register(0, BackpackTab::new);

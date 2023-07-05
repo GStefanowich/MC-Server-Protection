@@ -23,12 +23,21 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.permissions.interfaces;
+package net.theelm.sewingmachine.annotations;
 
-import net.theelm.sewingmachine.permissions.objects.PlayerRank;
-import org.jetbrains.annotations.NotNull;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@Deprecated(forRemoval = true)
-public interface PlayerPermissions {
-    @NotNull PlayerRank[] getRanks();
+/**
+ * Public-marked ConfigOptions can be synced to the Client
+ * Should not be used for sensitive information like:
+ *  - DB info that would allow unauthorized access
+ *  - Information that would allow cheating or having some advantage
+ */
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Public {
 }
+

@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = PistonBlock.class, priority = 10000)
+@Mixin(value = PistonBlock.class, priority = 1)
 public abstract class PistonBlockMixin {
     @Inject(at = @At("RETURN"), method = "isMovable", cancellable = true)
     private static void isMovable(BlockState blockState, World world, BlockPos blockPos, Direction moveDir, boolean bl, Direction pistonDir, CallbackInfoReturnable<Boolean> callback) {

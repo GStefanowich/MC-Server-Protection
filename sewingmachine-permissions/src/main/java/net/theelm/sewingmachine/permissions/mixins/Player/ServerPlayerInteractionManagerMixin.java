@@ -37,6 +37,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
 @Mixin(ServerPlayerInteractionManager.class)
+@Deprecated(forRemoval = true)
 public abstract class ServerPlayerInteractionManagerMixin implements PlayerPermissions {
     @Shadow @Final protected ServerPlayerEntity player;
     

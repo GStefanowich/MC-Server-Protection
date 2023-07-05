@@ -116,9 +116,9 @@ public abstract class Claimant {
     public boolean updateFriend(@NotNull UUID player, @Nullable ClaimRanks rank) {
         boolean changed = false;
         if (rank == null) {
-            changed = (this.userRanks.remove( player ) != null);
+            changed = (this.userRanks.remove(player) != null);
         } else {
-            if (((!this.userRanks.containsKey(player)) || (!this.userRanks.get( player ).equals(rank)))) {
+            if (((!this.userRanks.containsKey(player)) || (!this.userRanks.get(player).equals(rank)))) {
                 this.userRanks.put(player, rank);
                 changed = true;
             }
@@ -129,7 +129,7 @@ public abstract class Claimant {
     public boolean updateFriend(@NotNull ServerPlayerEntity player, @Nullable ClaimRanks rank) {
         return this.updateFriend(player.getUuid(), rank);
     }
-    protected final Set<UUID> getFriends() {
+    public final Set<UUID> getFriends() {
         return this.userRanks.keySet();
     }
     

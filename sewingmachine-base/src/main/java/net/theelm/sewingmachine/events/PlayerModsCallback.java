@@ -23,12 +23,21 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.permissions.interfaces;
+package net.theelm.sewingmachine.events;
 
-import net.theelm.sewingmachine.permissions.objects.PlayerRank;
-import org.jetbrains.annotations.NotNull;
+import net.fabricmc.fabric.api.event.Event;
+import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.server.network.ServerPlayerEntity;
 
-@Deprecated(forRemoval = true)
-public interface PlayerPermissions {
-    @NotNull PlayerRank[] getRanks();
+/**
+ * Called after a player sends their SewModules
+ */
+@FunctionalInterface
+public interface PlayerModsCallback {
+    Event<PlayerModsCallback> EVENT = EventFactory.createArrayBacked(PlayerModsCallback.class, (listeners) -> (player) -> {
+        for (PlayerModsCallback callback : listeners)
+            callback.hasMods(player);
+    });
+    
+    void hasMods(ServerPlayerEntity player);
 }

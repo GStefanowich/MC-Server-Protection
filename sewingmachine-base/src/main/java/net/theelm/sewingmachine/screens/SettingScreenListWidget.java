@@ -78,12 +78,12 @@ public class SettingScreenListWidget extends EntryListWidget<SettingScreenListWi
         // Add the drawable
         return this.addClickable(builder);
     }
-    public void addScreenButton(@NotNull Text text, @NotNull Text tooltip, @NotNull Supplier<@NotNull Screen> supplier) {
+    public void addScreenButton(@NotNull Text text, @Nullable Text tooltip, @NotNull Supplier<@NotNull Screen> supplier) {
         this.addButton(text, tooltip, button -> {
             this.client.setScreen(supplier.get());
         });
     }
-    public @NotNull ClickableWidget addToggleButton(@NotNull Text text, @NotNull Text tooltip, boolean state, ToggleWidget.@NotNull Change onChange) {
+    public @NotNull ClickableWidget addToggleButton(@NotNull Text text, @Nullable Text tooltip, boolean state, ToggleWidget.@NotNull Change onChange) {
         ToggleWidget toggle = new ToggleWidget(state, onChange);
         ClickableWidget widget = this.addButton(text, tooltip, toggle);
         
@@ -92,13 +92,13 @@ public class SettingScreenListWidget extends EntryListWidget<SettingScreenListWi
 
         return widget;
     }
-    public <E extends Enum<E>> @NotNull ClickableWidget addCycleButton(@NotNull Class<E> clazz, @NotNull Text text, @NotNull Text tooltip, @NotNull E state, CycleWidget.@NotNull Change<E> onChange) {
+    public <E extends Enum<E>> @NotNull ClickableWidget addCycleButton(@NotNull Class<E> clazz, @NotNull Text text, @Nullable Text tooltip, @NotNull E state, CycleWidget.@NotNull Change<E> onChange) {
         CycleWidget cycle = new CycleWidget<>(clazz, state, onChange);
         ClickableWidget widget = this.addButton(text, tooltip, cycle);
-
+        
         // Run the init method
         cycle.init(widget);
-
+        
         return widget;
     }
     

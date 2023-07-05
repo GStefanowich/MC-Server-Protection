@@ -32,9 +32,14 @@ import com.google.gson.JsonNull;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonPrimitive;
+import com.google.gson.stream.JsonReader;
+import net.minecraft.network.PacketByteBuf;
 import net.minecraft.registry.Registries;
+import net.theelm.sewingmachine.annotations.Debug;
+import net.theelm.sewingmachine.annotations.Public;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.protections.logging.EventLogger.LoggingIntervals;
+import net.theelm.sewingmachine.utilities.DevUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
@@ -49,6 +54,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -63,6 +70,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 public final class SewConfig extends SewConfigContainer {
     private static final SewConfig INSTANCE = new SewConfig();
@@ -71,7 +79,6 @@ public final class SewConfig extends SewConfigContainer {
     private boolean fileExists;
     
     private final List<Runnable> reloadFunctions = new ArrayList<>();
-    private final Map<String, SewConfig> configModules = new ConcurrentHashMap<>();
     
     public static boolean preExisting() {
         return SewConfig.INSTANCE.fileExists;
@@ -89,16 +96,28 @@ public final class SewConfig extends SewConfigContainer {
         return this.loadFromJSON(SewConfig.loadFromFile(config));
     }
     
-    public static <T> ConfigOption<T> addConfig( ConfigOption<T> config ) {
+    public static <T> ConfigBase<T> addConfig(@NotNull ConfigBase<T> config, @Nullable Annotation[] annotations) {
         // Check for a non-empty path for saving
-        if (config.getPath().isEmpty()) throw new RuntimeException("Config Option path should not be empty");
+        if (config.getPath().isEmpty())
+            throw new RuntimeException("Config Option path should not be empty");
+        SewConfig instance = SewConfig.INSTANCE;
+        if (annotations != null) {
+            for (Annotation annotation : annotations) {
+                Class<? extends Annotation> type = annotation.annotationType();
+                
+                // Return the config without adding it to the array, because it's for dev only
+                if (type.equals(Debug.class) && !DevUtils.isDebugging())
+                    return config;
+                
+                // Public options can be synced with the client
+                if (type.equals(Public.class))
+                    instance.syncedOptions.add(config);
+            }
+        }
         
         // Store the config
-        SewConfig.INSTANCE.configOptions.add(config);
-        return config;
-    }
-    public static <T> ConfigArray<T> addConfig( ConfigArray<T> config ) {
-        SewConfig.INSTANCE.configOptions.add(config);
+        instance.configOptions.add(config);
+        
         return config;
     }
     public static void addConfigClass(@NotNull Class<?> klass) {
@@ -107,8 +126,8 @@ public final class SewConfig extends SewConfigContainer {
             for (Field field : fields) {
                 if (!Modifier.isStatic(field.getModifiers()))
                     continue;
-                if (field.get(null) instanceof ConfigOption<?> option)
-                    SewConfig.addConfig(option);
+                if (field.get(null) instanceof ConfigBase<?> option)
+                    SewConfig.addConfig(option, field.getDeclaredAnnotations());
             }
         } catch (IllegalAccessException e) {
             throw new RuntimeException(e);
@@ -140,20 +159,20 @@ public final class SewConfig extends SewConfigContainer {
         SewConfig.INSTANCE.fileExists = ((config != null) && config.exists());
     }
     
-    public static <T> void set( @NotNull ConfigOption<T> config, JsonElement value ) {
+    public static <T> void set(@NotNull ConfigOption<T> config, JsonElement value) {
         config.set(value);
     }
-    public static <T> void set( @NotNull ConfigOption<T> config, JsonElement value, boolean wasDefined ) {
+    public static <T> void set(@NotNull ConfigOption<T> config, JsonElement value, boolean wasDefined) {
         config.set(value, wasDefined);
     }
-    public static <T> void set( @NotNull ConfigOption<T> config, T value ) {
+    public static <T> void set(@NotNull ConfigOption<T> config, T value) {
         config.set(value);
     }
     
-    public static <T> T get( @NotNull ConfigOption<T> config ) {
+    public static <T> T get(@NotNull ConfigOption<T> config) {
         return config.get();
     }
-    public static <T> List<T> get( @NotNull ConfigArray<T> config ) {
+    public static <T> List<T> get(@NotNull ConfigArray<T> config) {
         return config.get();
     }
     public static <T> T get( @NotNull Supplier<T> supplier ) {
@@ -260,18 +279,38 @@ public final class SewConfig extends SewConfigContainer {
         
         return json;
     }
-    @Override
-    protected JsonObject saveToJSON() {
-        final JsonObject baseObject = super.saveToJSON();
+    
+    public static void writeToPacket(@NotNull PacketByteBuf buf) {
+        SewConfig config = SewConfig.INSTANCE;
+        buf.writeInt(config.syncedOptions.size());
+        for (ConfigBase<?> option : config.syncedOptions) {
+            buf.writeString(option.getPath());
+            buf.writeString(option.getElement().toString());
+        }
         
-        JsonObject modules = new JsonObject();
-        this.configModules.forEach((key, module) -> {
-            // Stuff goes here
-            modules.add(key, module.saveToJSON());
-        });
-        baseObject.add(SewConfig.MODULE_KEY, modules);
+        System.out.println("Writing config");
+    }
+    public static void readFromPacket(@NotNull PacketByteBuf buf) {
+        Map<String, ? extends ConfigBase<?>> config = SewConfig.INSTANCE.configOptions.stream()
+            .collect(Collectors.toMap(
+                a -> a.getPath(),
+                a -> a
+            ));
         
-        return baseObject;
+        int options = buf.readInt();
+        for (int i = 0; i < options; i++) {
+            // Get the option using the key
+            ConfigBase<?> option = config.get(buf.readString());
+            if (option == null)
+                continue;
+            
+            // Set the value of the option
+            JsonElement value = JsonParser.parseString(buf.readString());
+            if (value != null)
+                option.set(value);
+        }
+        
+        System.out.println("Reading config");
     }
     
     public static void afterReload(Runnable runnable) {

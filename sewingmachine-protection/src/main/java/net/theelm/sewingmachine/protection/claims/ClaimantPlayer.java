@@ -29,6 +29,7 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
@@ -112,6 +113,11 @@ public final class ClaimantPlayer extends Claimant {
             return ClaimRanks.OWNER;
         return super.getFriendRank(player);
     }
+    @Override
+    public boolean updateFriend(@NotNull UUID player, @Nullable ClaimRanks rank) {
+        return !player.equals(this.getId())
+            && super.updateFriend(player, rank);
+    }
     
     /* Nickname Override */
     @Override
@@ -140,17 +146,17 @@ public final class ClaimantPlayer extends Claimant {
         return setting.getDefault(this.getId());
     }
     public int getMaxChunkLimit() {
-        return this.additionalClaims + SewConfig.get(SewCoreConfig.PLAYER_CLAIMS_LIMIT);
+        return this.additionalClaims + SewConfig.get(SewProtectionConfig.PLAYER_CLAIMS_LIMIT);
     }
     public int increaseMaxChunkLimit(int by) {
         this.markDirty();
-        return (this.additionalClaims += by) + SewConfig.get(SewCoreConfig.PLAYER_CLAIMS_LIMIT);
+        return (this.additionalClaims += by) + SewConfig.get(SewProtectionConfig.PLAYER_CLAIMS_LIMIT);
     }
     public boolean canClaim(Chunk chunk) {
         // If chunk is already claimed, allow
         if (this.claimedChunks.contains(ClaimTag.of(chunk)))
             return true;
-        return (SewConfig.get(SewCoreConfig.PLAYER_CLAIMS_LIMIT) != 0) && (((this.getCount() + 1) <= this.getMaxChunkLimit()) || (SewConfig.get(SewCoreConfig.PLAYER_CLAIMS_LIMIT) <= 0));
+        return (SewConfig.get(SewProtectionConfig.PLAYER_CLAIMS_LIMIT) != 0) && (((this.getCount() + 1) <= this.getMaxChunkLimit()) || (SewConfig.get(SewProtectionConfig.PLAYER_CLAIMS_LIMIT) <= 0));
     }
     
     /* Nbt saving */

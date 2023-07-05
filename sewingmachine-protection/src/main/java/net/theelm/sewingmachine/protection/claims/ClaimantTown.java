@@ -30,6 +30,7 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
@@ -99,8 +100,8 @@ public final class ClaimantTown extends Claimant {
     
     public int getResidentCount() {
         return this.getFriends().size()
-            + (SewConfig.get(SewCoreConfig.TOWN_VILLAGERS_INCLUDE)
-                && SewConfig.get(SewCoreConfig.TOWN_VILLAGERS_VALUE) > 0 ? this.getVillagers().size() / SewConfig.get(SewCoreConfig.TOWN_VILLAGERS_VALUE) : 0);
+            + (SewConfig.get(SewProtectionConfig.TOWN_VILLAGERS_INCLUDE)
+                && SewConfig.get(SewProtectionConfig.TOWN_VILLAGERS_VALUE) > 0 ? this.getVillagers().size() / SewConfig.get(SewProtectionConfig.TOWN_VILLAGERS_VALUE) : 0);
     }
     
     @Override
@@ -145,7 +146,7 @@ public final class ClaimantTown extends Claimant {
     }
     @Override
     public boolean updateFriend(@NotNull final UUID player, @Nullable final ClaimRanks rank) {
-        if ( super.updateFriend( player, rank ) ) {
+        if ( super.updateFriend(player, rank) ) {
             if (this.claimCache instanceof ServerClaimCache claimCache) {
                 ClaimantPlayer claim = claimCache.getPlayerClaim(player);
                 claim.setTown(rank == null ? null : this);

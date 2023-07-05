@@ -35,6 +35,7 @@ import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import org.spongepowered.asm.mixin.Mixin;
@@ -42,7 +43,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = ArmorStandEntity.class, priority = 10000)
+@Mixin(value = ArmorStandEntity.class, priority = 1)
 public abstract class ArmorStandEntityMixin extends LivingEntity {
     protected ArmorStandEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
         super(entityType, world);
@@ -51,7 +52,7 @@ public abstract class ArmorStandEntityMixin extends LivingEntity {
     @Inject(at = @At("HEAD"), method = "interactAt", cancellable = true)
     public void onPlayerInteract(PlayerEntity player, Vec3d vec3d, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         // Ignore if CREATIVE bypasses claims
-        if (player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS))
+        if (player.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS))
             return;
         
         // Ignore if in SPECTATOR mode

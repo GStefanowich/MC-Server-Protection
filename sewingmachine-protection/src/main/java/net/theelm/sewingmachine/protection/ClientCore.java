@@ -30,11 +30,14 @@ import net.theelm.sewingmachine.base.packets.CancelMinePacket;
 import net.theelm.sewingmachine.events.TabRegisterEvent;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.interfaces.ClientMiner;
+import net.theelm.sewingmachine.protection.interfaces.NameCache;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.inventory.ProtectionsTab;
 import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
+import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 
 /**
  * Created on Jul 01 2023 at 3:14 PM.
@@ -55,6 +58,14 @@ public class ClientCore implements ClientModInitializer {
         NetworkingUtils.clientReceiver(ClaimPermissionPacket.TYPE, (client, network, packet, sender) -> {
             ClaimantPlayer claim = ((PlayerClaimData) client).getClaim();
             claim.updatePermission(packet.permission(), packet.rank());
+        });
+        
+        NetworkingUtils.clientReceiver(ClaimRankPacket.TYPE, (client, network, packet, sender) -> {
+            ClaimantPlayer claim = ((PlayerClaimData) client).getClaim();
+            ((NameCache) client).setPlayerName(packet.player(), packet.text());
+            
+            // Store the rank
+            claim.updateFriend(packet.player(), packet.rank());
         });
         
         // Add the protections tab to the inventory

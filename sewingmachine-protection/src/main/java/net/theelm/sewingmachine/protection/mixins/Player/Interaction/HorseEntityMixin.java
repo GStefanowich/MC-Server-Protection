@@ -30,6 +30,7 @@ import net.minecraft.entity.passive.AbstractHorseEntity;
 import net.minecraft.sound.SoundEvent;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
@@ -49,7 +50,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = HorseEntity.class, priority = 10000)
+@Mixin(value = HorseEntity.class, priority = 1)
 public abstract class HorseEntityMixin extends AbstractHorseEntity {
     protected HorseEntityMixin(EntityType<? extends HorseEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);
@@ -59,7 +60,7 @@ public abstract class HorseEntityMixin extends AbstractHorseEntity {
     private void tryHorseMount(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         if (!this.getWorld().isClient()) {
             // If the player is in creative, allow
-            if ((player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
+            if ((player.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
                 return;
             
             // If player owns the horse, allow

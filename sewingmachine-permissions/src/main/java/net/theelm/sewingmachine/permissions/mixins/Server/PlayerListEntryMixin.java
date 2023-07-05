@@ -41,6 +41,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(value = PlayerListS2CPacket.Entry.class, priority = 0)
+@Deprecated(forRemoval = true)
 public abstract class PlayerListEntryMixin {
     @Shadow @Final private GameProfile profile;
     

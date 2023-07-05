@@ -40,7 +40,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = ServerPlayerInteractionManager.class, priority = 10000)
+@Mixin(value = ServerPlayerInteractionManager.class, priority = 1)
 public abstract class ServerPlayerInteractionManagerMixin {
     /**
      * Item interaction callback (Used to test attempts to consume items)

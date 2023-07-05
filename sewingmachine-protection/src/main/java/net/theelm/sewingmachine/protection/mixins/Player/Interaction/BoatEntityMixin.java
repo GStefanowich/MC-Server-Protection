@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = BoatEntity.class, priority = 10000)
+@Mixin(value = BoatEntity.class, priority = 1)
 public abstract class BoatEntityMixin extends Entity {
     public BoatEntityMixin(EntityType<?> type, World world) {
         super(type, world);

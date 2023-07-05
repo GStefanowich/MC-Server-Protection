@@ -23,35 +23,34 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.packets;
+package net.theelm.sewingmachine.base.packets;
 
 import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.PacketByteBuf;
-import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
-import net.theelm.sewingmachine.protection.enums.ClaimRanks;
+import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.utilities.Sew;
 import org.jetbrains.annotations.NotNull;
 
 /**
- * Created on Jul 05 2023 at 3:53 AM.
+ * Created on Jul 05 2023 at 6:31 PM.
  * By greg in sewingmachine
  */
-public record ClaimPermissionPacket(ClaimPermissions permission, ClaimRanks rank) implements FabricPacket {
-    public static final PacketType<ClaimPermissionPacket> TYPE = PacketType.create(Sew.modIdentifier("claim_permission"), ClaimPermissionPacket::new);
+public record SewConfigPacket() implements FabricPacket {
+    public static final PacketType<SewConfigPacket> TYPE = PacketType.create(Sew.modIdentifier("config"), SewConfigPacket::new);
     
-    public ClaimPermissionPacket(@NotNull PacketByteBuf buf) {
-        this(buf.readEnumConstant(ClaimPermissions.class), buf.readNullable(reader -> reader.readEnumConstant(ClaimRanks.class)));
+    public SewConfigPacket(@NotNull PacketByteBuf buf) {
+        this();
+        SewConfig.readFromPacket(buf);
     }
     
     @Override
-    public void write(@NotNull PacketByteBuf buf) {
-        buf.writeEnumConstant(this.permission);
-        buf.writeNullable(this.rank, PacketByteBuf::writeEnumConstant);
+    public void write(PacketByteBuf buf) {
+        SewConfig.writeToPacket(buf);
     }
     
     @Override
     public PacketType<?> getType() {
-        return ClaimPermissionPacket.TYPE;
+        return SewConfigPacket.TYPE;
     }
 }

@@ -41,7 +41,7 @@ import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(targets = "net/minecraft/entity/mob/EndermanEntity$PlaceBlockGoal", priority = 10000)
+@Mixin(targets = "net/minecraft/entity/mob/EndermanEntity$PlaceBlockGoal", priority = 1)
 public abstract class EndermanEntityPlaceMixin extends Goal implements EndermanGoal {
     @Shadow
     private EndermanEntity enderman;

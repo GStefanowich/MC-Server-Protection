@@ -40,6 +40,7 @@ import net.minecraft.world.chunk.WorldChunk;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
@@ -80,7 +81,7 @@ public final class ClaimChunkUtils {
     }
     public static boolean canPlayerDoInChunk(@Nullable ClaimPermissions perm, @Nullable PlayerEntity player, @Nullable WorldChunk chunk, @NotNull BlockPos blockPos) {
         // If claims are disabled
-        if (player != null && player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS))
+        if (player != null && player.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS))
             return true;
         
         // Check if player can do action in chunk
@@ -216,7 +217,7 @@ public final class ClaimChunkUtils {
      * @return If the player is a high enough rank to teleport to the target
      */
     public static boolean canPlayerWarpTo(@NotNull PlayerEntity player, @NotNull UUID target) {
-        if (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
+        if (SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
             return SewConfig.get(SewCoreConfig.COMMAND_WARP_TPA);
         return ClaimChunkUtils.canPlayerWarpTo(Objects.requireNonNull(player.getServer()), player.getUuid(), target);
     }
@@ -338,7 +339,7 @@ public final class ClaimChunkUtils {
     }
     public static boolean isPlayerWithinSpawn(@NotNull final ServerPlayerEntity player) {
         // If player is in creative/spectator, or is within Spawn
-        return (SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
+        return (SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
             || CoreMod.SPAWN_ID.equals(ClaimChunkUtils.getPlayerLocation(player));
     }
     

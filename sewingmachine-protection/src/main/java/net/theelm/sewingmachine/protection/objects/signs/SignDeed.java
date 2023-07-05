@@ -40,6 +40,7 @@ import net.theelm.sewingmachine.exceptions.ShopBuilderException;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.theelm.sewingmachine.utilities.CasingUtils;
@@ -107,8 +108,8 @@ public final class SignDeed extends ShopSign {
                 ((PlayerData) creator).setRulerB(null);
                 
                 // Validate the minimum and maximum widths
-                int maxWidth = SewConfig.get(SewCoreConfig.MAXIMUM_REGION_WIDTH);
-                int minWidth = SewConfig.get(SewCoreConfig.MINIMUM_REGION_WIDTH);
+                int maxWidth = SewConfig.get(SewProtectionConfig.MAXIMUM_REGION_WIDTH);
+                int minWidth = SewConfig.get(SewProtectionConfig.MINIMUM_REGION_WIDTH);
                 
                 // Check the size of the region
                 if ((maxWidth > 0) && ((region.getNorthSouth() > maxWidth) || (region.getEastWest() > maxWidth)))

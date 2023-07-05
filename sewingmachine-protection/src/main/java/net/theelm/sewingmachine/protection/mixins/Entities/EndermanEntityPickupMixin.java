@@ -46,7 +46,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
-@Mixin(targets = "net/minecraft/entity/mob/EndermanEntity$PickUpBlockGoal", priority = 10000)
+@Mixin(targets = "net/minecraft/entity/mob/EndermanEntity$PickUpBlockGoal", priority = 1)
 public abstract class EndermanEntityPickupMixin extends Goal implements EndermanGoal {
     @Shadow @Final
     private EndermanEntity enderman;

@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = VehicleInventory.class, priority = 10000)
+@Mixin(value = VehicleInventory.class, priority = 1)
 public interface VehicleInventoryMixin {
     @Shadow World getWorld();
 

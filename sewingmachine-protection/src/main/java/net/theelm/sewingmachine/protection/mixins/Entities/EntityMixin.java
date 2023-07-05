@@ -43,7 +43,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = Entity.class, priority = 10000)
+@Mixin(value = Entity.class, priority = 1)
 public abstract class EntityMixin implements EntityLike {
     @Shadow public World world;
     @Shadow public abstract DamageSources getDamageSources();

@@ -65,7 +65,7 @@ import java.util.UUID;
  * Created on Jun 25 2023 at 7:58 PM.
  * By greg in sewingmachine
  */
-@Mixin(value = ArmorStandEntity.class, priority = 10000)
+@Mixin(value = ArmorStandEntity.class, priority = 1)
 public abstract class ArmorStandEntityMixin extends LivingEntity implements PlayerCorpse {
     private UUID corpsePlayerUUID = null;
     private NbtList corpsePlayerItems = null;

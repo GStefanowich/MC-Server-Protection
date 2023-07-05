@@ -46,7 +46,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = LeashKnotEntity.class, priority = 10000)
+@Mixin(value = LeashKnotEntity.class, priority = 1)
 public abstract class LeashKnotEntityMixin extends AbstractDecorationEntity {
     protected LeashKnotEntityMixin(EntityType<? extends AbstractDecorationEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);

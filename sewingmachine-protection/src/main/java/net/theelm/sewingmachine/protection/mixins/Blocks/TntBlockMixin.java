@@ -49,7 +49,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * Created on Aug 29 2021 at 2:30 PM.
  * By greg in SewingMachineMod
  */
-@Mixin(value = TntBlock.class, priority = 10000)
+@Mixin(value = TntBlock.class, priority = 1)
 public abstract class TntBlockMixin extends Block {
     public TntBlockMixin(AbstractBlock.Settings settings) {
         super(settings);

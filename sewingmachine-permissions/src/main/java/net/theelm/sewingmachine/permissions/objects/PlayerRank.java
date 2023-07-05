@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.permissions.objects;
 
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.permissions.utilities.RankUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.minecraft.text.Text;
@@ -36,6 +36,7 @@ import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+@Deprecated(forRemoval = true)
 public final class PlayerRank implements Comparable<PlayerRank> {
     
     private final @NotNull SortedSet<String> nodes = new TreeSet<>();
@@ -94,10 +95,10 @@ public final class PlayerRank implements Comparable<PlayerRank> {
         return contains;
     }
     public boolean isAdditive(String node) {
-        return this.hasNode("+" + Permissions.ALL_PERMISSIONS) || this.hasNode("+" + node);
+        return this.hasNode("+" + PermissionNodes.ALL_PERMISSIONS) || this.hasNode("+" + node);
     }
     public boolean isSubtractive(String node) {
-        return this.hasNode("-" + Permissions.ALL_PERMISSIONS) || this.hasNode("-" + node);
+        return this.hasNode("-" + PermissionNodes.ALL_PERMISSIONS) || this.hasNode("-" + node);
     }
     
     /*

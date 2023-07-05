@@ -23,35 +23,21 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.packets;
+package net.theelm.sewingmachine.protection.interfaces;
 
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
-import net.minecraft.network.PacketByteBuf;
-import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
-import net.theelm.sewingmachine.protection.enums.ClaimRanks;
-import net.theelm.sewingmachine.utilities.Sew;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 /**
- * Created on Jul 05 2023 at 3:53 AM.
- * By greg in sewingmachine
+ * Client-side cache for storing friend names for when needed
  */
-public record ClaimPermissionPacket(ClaimPermissions permission, ClaimRanks rank) implements FabricPacket {
-    public static final PacketType<ClaimPermissionPacket> TYPE = PacketType.create(Sew.modIdentifier("claim_permission"), ClaimPermissionPacket::new);
-    
-    public ClaimPermissionPacket(@NotNull PacketByteBuf buf) {
-        this(buf.readEnumConstant(ClaimPermissions.class), buf.readNullable(reader -> reader.readEnumConstant(ClaimRanks.class)));
-    }
-    
-    @Override
-    public void write(@NotNull PacketByteBuf buf) {
-        buf.writeEnumConstant(this.permission);
-        buf.writeNullable(this.rank, PacketByteBuf::writeEnumConstant);
-    }
-    
-    @Override
-    public PacketType<?> getType() {
-        return ClaimPermissionPacket.TYPE;
-    }
+@Environment(EnvType.CLIENT)
+public interface NameCache {
+    @Nullable Text getPlayerName(@NotNull UUID uuid);
+    void setPlayerName(@NotNull UUID uuid, @NotNull Text name);
 }

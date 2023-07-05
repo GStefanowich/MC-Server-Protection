@@ -26,10 +26,10 @@
 package net.theelm.sewingmachine.protection.enums;
 
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.BoolEnums;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.interfaces.Claim;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
@@ -43,21 +43,21 @@ import java.util.UUID;
 
 public enum ClaimSettings implements BoolEnums {
     // "False positives"
-    ENDERMAN_GRIEFING(SewCoreConfig.CLAIM_ALLOW_GRIEFING_ENDERMAN, "Allow Endermen to pickup blocks", false, true, false),
-    WEATHER_GRIEFING(SewCoreConfig.CLAIM_ALLOW_GRIEFING_WEATHER, "Allow weather to damage blocks", false, true, false),
-    CREEPER_GRIEFING(SewCoreConfig.CLAIM_ALLOW_GRIEFING_CREEPER, "Allow Creepers to destroy blocks", false, true, false),
-    GHAST_GRIEFING(SewCoreConfig.CLAIM_ALLOW_GRIEFING_GHAST, "Allow Ghasts to destroy blocks", false, true, false),
-    PLAYER_COMBAT(SewCoreConfig.CLAIM_ALLOW_PLAYER_COMBAT, "Allow Player vs Player", false, true, false) {
+    ENDERMAN_GRIEFING(SewProtectionConfig.CLAIM_ALLOW_GRIEFING_ENDERMAN, "Allow Endermen to pickup blocks", false, true, false),
+    WEATHER_GRIEFING(SewProtectionConfig.CLAIM_ALLOW_GRIEFING_WEATHER, "Allow weather to damage blocks", false, true, false),
+    CREEPER_GRIEFING(SewProtectionConfig.CLAIM_ALLOW_GRIEFING_CREEPER, "Allow Creepers to destroy blocks", false, true, false),
+    GHAST_GRIEFING(SewProtectionConfig.CLAIM_ALLOW_GRIEFING_GHAST, "Allow Ghasts to destroy blocks", false, true, false),
+    PLAYER_COMBAT(SewProtectionConfig.CLAIM_ALLOW_PLAYER_COMBAT, "Allow Player vs Player", false, true, false) {
         @Override
         public boolean hasSettingSet(@NotNull Claim claimant) {
             return this.hasSettingSet(claimant, true);
         }
     },
-    FIRE_SPREAD(SewCoreConfig.CLAIM_ALLOW_FIRE_SPREAD, "Allow fire to spread and destroy blocks", false, true, false),
+    FIRE_SPREAD(SewProtectionConfig.CLAIM_ALLOW_FIRE_SPREAD, "Allow fire to spread and destroy blocks", false, true, false),
     HURT_TAMED("Allow Players to harm Wolves, Cats and other tamed pets", false, false, false),
     
     // "True positives"
-    CROP_AUTOREPLANT(SewCoreConfig.CLAIM_ALLOW_CROP_AUTOREPLANT, "Automatically replant harvested crops", true, false, true);
+    CROP_AUTOREPLANT(SewProtectionConfig.CLAIM_ALLOW_CROP_AUTOREPLANT, "Automatically replant harvested crops", true, false, true);
     
     protected final @NotNull Text description;
     protected final @Nullable ConfigOption<Boolean> configOption;

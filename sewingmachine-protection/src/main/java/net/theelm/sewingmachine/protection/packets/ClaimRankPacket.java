@@ -28,30 +28,38 @@ package net.theelm.sewingmachine.protection.packets;
 import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.PacketByteBuf;
-import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
+import net.minecraft.text.Text;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.utilities.Sew;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.UUID;
 
 /**
- * Created on Jul 05 2023 at 3:53 AM.
+ * Created on Jul 05 2023 at 4:14 PM.
  * By greg in sewingmachine
  */
-public record ClaimPermissionPacket(ClaimPermissions permission, ClaimRanks rank) implements FabricPacket {
-    public static final PacketType<ClaimPermissionPacket> TYPE = PacketType.create(Sew.modIdentifier("claim_permission"), ClaimPermissionPacket::new);
+public record ClaimRankPacket(@NotNull UUID player, @Nullable Text text, @NotNull ClaimRanks rank) implements FabricPacket {
+    public static final PacketType<ClaimRankPacket> TYPE = PacketType.create(Sew.modIdentifier("claim_rank"), ClaimRankPacket::new);
     
-    public ClaimPermissionPacket(@NotNull PacketByteBuf buf) {
-        this(buf.readEnumConstant(ClaimPermissions.class), buf.readNullable(reader -> reader.readEnumConstant(ClaimRanks.class)));
+    public ClaimRankPacket(@NotNull UUID player, @NotNull ClaimRanks rank) {
+        this(player, null, rank);
+    }
+    public ClaimRankPacket(@NotNull PacketByteBuf buf) {
+        this(buf.readUuid(), buf.readText(), buf.readEnumConstant(ClaimRanks.class));
     }
     
     @Override
-    public void write(@NotNull PacketByteBuf buf) {
-        buf.writeEnumConstant(this.permission);
-        buf.writeNullable(this.rank, PacketByteBuf::writeEnumConstant);
+    public void write(PacketByteBuf buf) {
+        buf.writeUuid(this.player);
+        buf.writeText(this.text == null ? TextUtils.literal() : this.text);
+        buf.writeEnumConstant(this.rank);
     }
     
     @Override
     public PacketType<?> getType() {
-        return ClaimPermissionPacket.TYPE;
+        return ClaimRankPacket.TYPE;
     }
 }

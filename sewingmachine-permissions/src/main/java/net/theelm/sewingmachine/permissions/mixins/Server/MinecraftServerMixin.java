@@ -46,6 +46,7 @@ import java.util.List;
  * By greg in sewingmachine
  */
 @Mixin(value = MinecraftServer.class, priority = 0)
+@Deprecated(forRemoval = true)
 public class MinecraftServerMixin {
     @Inject(at = @At("RETURN"), method = "createMetadataPlayers")
     public void getCustomPlayers(@NotNull CallbackInfoReturnable<ServerMetadata.Players> callback) {

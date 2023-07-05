@@ -42,6 +42,7 @@ import net.theelm.sewingmachine.base.objects.signs.SignShopSell;
 import net.theelm.sewingmachine.base.objects.signs.SignWarp;
 import net.theelm.sewingmachine.base.objects.signs.SignWaystone;
 import net.theelm.sewingmachine.base.packets.PlayerBackpackOpenPacket;
+import net.theelm.sewingmachine.base.packets.SewConfigPacket;
 import net.theelm.sewingmachine.base.packets.SewHelloPacket;
 import net.theelm.sewingmachine.commands.AdminCommands;
 import net.theelm.sewingmachine.commands.BackpackCommand;
@@ -73,6 +74,7 @@ import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.BlockInteractionCallback;
 import net.theelm.sewingmachine.events.NetworkHandlerCallback;
 import net.theelm.sewingmachine.events.PlayerBalanceCallback;
+import net.theelm.sewingmachine.events.PlayerModsCallback;
 import net.theelm.sewingmachine.events.TaxCollection;
 import net.theelm.sewingmachine.interfaces.ModUser;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
@@ -179,14 +181,15 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
                 Map<String, String> modules = this.matchPluginMetadata(packet.modules(), true);
                 ((ModUser) player).setModded(modules.keySet());
                 
-                // Send the players backpack information
-                InventoryUtils.resendBackpack(player);
+                // Trigger events for receiving mod information
+                PlayerModsCallback.EVENT.invoker()
+                    .hasMods(player);
             });
             
             // Resend the backpack
-            ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
-                InventoryUtils.resendBackpack(newPlayer);
-            });
+            ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> InventoryUtils.resendBackpack(newPlayer));
+            PlayerModsCallback.EVENT.register(player -> InventoryUtils.resendBackpack(player));
+            PlayerModsCallback.EVENT.register(player -> NetworkingUtils.send(player, new SewConfigPacket()));
             
             // Alert the mod presence
             CoreMod.logInfo("Finished loading.");

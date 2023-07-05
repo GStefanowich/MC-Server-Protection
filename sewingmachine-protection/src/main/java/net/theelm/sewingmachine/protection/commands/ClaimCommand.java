@@ -39,13 +39,13 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.command.CommandRegistryAccess;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.MySQL.MySQLStatement;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.commands.TeleportsCommand;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.commands.arguments.EnumArgumentType;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.PermissionNodes;
@@ -113,7 +113,6 @@ import net.minecraft.world.chunk.WorldChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -174,15 +173,15 @@ public final class ClaimCommand extends SewCommand {
             )
             // Claim a region
             .then(CommandManager.literal("region")
-                .requires(CommandPredicate.opLevel(SewCoreConfig.CLAIM_OP_LEVEL_SPAWN).or(SewCoreConfig.CLAIM_OP_LEVEL_OTHER))
+                .requires(CommandPredicate.opLevel(SewProtectionConfig.CLAIM_OP_LEVEL_SPAWN).or(SewProtectionConfig.CLAIM_OP_LEVEL_OTHER))
                 .then(CommandManager.argument("from", BlockPosArgumentType.blockPos())
                     .then(CommandManager.argument("to", BlockPosArgumentType.blockPos())
                         .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
-                            .requires(CommandPredicate.opLevel(SewCoreConfig.CLAIM_OP_LEVEL_OTHER))
+                            .requires(CommandPredicate.opLevel(SewProtectionConfig.CLAIM_OP_LEVEL_OTHER))
                             .executes(this::claimRegionFor)
                         )
                         .then(CommandManager.literal("spawn")
-                            .requires(CommandPredicate.opLevel(SewCoreConfig.CLAIM_OP_LEVEL_SPAWN))
+                            .requires(CommandPredicate.opLevel(SewProtectionConfig.CLAIM_OP_LEVEL_SPAWN))
                             .executes(this::claimSpawnRegionAt)
                         )
                     )
@@ -191,7 +190,7 @@ public final class ClaimCommand extends SewCommand {
             // Claim chunk for another player
             .then(CommandManager.argument("target", GameProfileArgumentType.gameProfile())
                 .suggests(CommandUtils::getAllPlayerNames)
-                .requires(CommandPredicate.opLevel(SewCoreConfig.CLAIM_OP_LEVEL_OTHER))
+                .requires(CommandPredicate.opLevel(SewProtectionConfig.CLAIM_OP_LEVEL_OTHER))
                 .then(CommandManager.argument("radius", IntegerArgumentType.integer(1, 4))
                     .executes(this::claimChunkOtherRadius)
                 )
@@ -199,7 +198,7 @@ public final class ClaimCommand extends SewCommand {
             )
             // Claim chunk for the spawn
             .then(CommandManager.literal("spawn")
-                .requires(CommandPredicate.opLevel(SewCoreConfig.CLAIM_OP_LEVEL_SPAWN))
+                .requires(CommandPredicate.opLevel(SewProtectionConfig.CLAIM_OP_LEVEL_SPAWN))
                 .then(CommandManager.argument("radius", IntegerArgumentType.integer(1, 4))
                     .executes(this::claimChunkSpawnRadius)
                 )
@@ -224,7 +223,7 @@ public final class ClaimCommand extends SewCommand {
             )
             // Unclaim a region
             .then(CommandManager.literal("region")
-                .requires(CommandPredicate.opLevel(SewCoreConfig.CLAIM_OP_LEVEL_OTHER))
+                .requires(CommandPredicate.opLevel(SewProtectionConfig.CLAIM_OP_LEVEL_OTHER))
                 .then(CommandManager.argument("from", BlockPosArgumentType.blockPos())
                     .then(CommandManager.argument("to", BlockPosArgumentType.blockPos())
                         .executes(this::unclaimRegionAt)
@@ -233,7 +232,7 @@ public final class ClaimCommand extends SewCommand {
             )
             // Force remove a claim
             .then(CommandManager.literal("force")
-                .requires(CommandPredicate.opLevel(SewCoreConfig.CLAIM_OP_LEVEL_OTHER))
+                .requires(CommandPredicate.opLevel(SewProtectionConfig.CLAIM_OP_LEVEL_OTHER))
                 .executes(this::unclaimChunkOther)
             )
             // Unclaim current chunk
@@ -773,10 +772,10 @@ public final class ClaimCommand extends SewCommand {
         
         // Charge the player money
         try {
-            if ((SewConfig.get(SewCoreConfig.TOWN_FOUND_COST) > 0) && (!MoneyUtils.takePlayerMoney(founder, SewConfig.get(SewCoreConfig.TOWN_FOUND_COST))))
-                throw NOT_ENOUGH_MONEY.create(founder, "$" + FormattingUtils.format(SewConfig.get(SewCoreConfig.TOWN_FOUND_COST)));
+            if ((SewConfig.get(SewProtectionConfig.TOWN_FOUND_COST) > 0) && (!MoneyUtils.takePlayerMoney(founder, SewConfig.get(SewProtectionConfig.TOWN_FOUND_COST))))
+                throw NOT_ENOUGH_MONEY.create(founder, "$" + FormattingUtils.format(SewConfig.get(SewProtectionConfig.TOWN_FOUND_COST)));
         } catch (NotEnoughMoneyException e) {
-            throw NOT_ENOUGH_MONEY.create(founder, "$" + FormattingUtils.format(SewConfig.get(SewCoreConfig.TOWN_FOUND_COST)));
+            throw NOT_ENOUGH_MONEY.create(founder, "$" + FormattingUtils.format(SewConfig.get(SewProtectionConfig.TOWN_FOUND_COST)));
         }
         try {
             // Get town information
@@ -1072,8 +1071,7 @@ public final class ClaimCommand extends SewCommand {
             throw SELF_RANK_CHANGE.create(player);
         
         // Update our runtime
-        ((PlayerClaimData) player).getClaim()
-            .updateFriend(friend.getId(), rank);
+        ClaimPropertyUtils.updateRank(player, friend.getId(), rank);
         
         // Attempting to update the friend
         player.sendMessage(Text.literal("Player ").formatted(Formatting.WHITE)
@@ -1112,45 +1110,32 @@ public final class ClaimCommand extends SewCommand {
         
         // Player tries changing their own rank
         if (player.getUuid().equals(friend.getId()))
-            throw SELF_RANK_CHANGE.create( player );
+            throw SELF_RANK_CHANGE.create(player);
         
-        try ( MySQLStatement stmt = CoreMod.getSQL().prepare("DELETE FROM `chunk_Friends` WHERE `chunkOwner` = ? AND `chunkFriend` = ?;") ) {
-            
-            // Update database
-            stmt
-                .addPrepared( player.getUuid() )
-                .addPrepared( friend.getId() )
-                .executeUpdate();
-            
-            // Update our runtime
-            ((PlayerClaimData) player).getClaim()
-                .updateFriend( player.getUuid(), null );
-            
-            // Attempting to remove the friend
-            player.sendMessage( Text.literal("Player ").formatted(Formatting.WHITE)
-                .append( Text.literal(friend.getName()).formatted(Formatting.DARK_PURPLE) )
-                .append( Text.literal(" removed."))
+        // Update our runtime
+        ClaimPropertyUtils.updateRank(player, friend.getId(), null);
+        
+        // Attempting to remove the friend
+        player.sendMessage( Text.literal("Player ").formatted(Formatting.WHITE)
+            .append( Text.literal(friend.getName()).formatted(Formatting.DARK_PURPLE) )
+            .append( Text.literal(" removed."))
+        );
+        
+        // Play sound to player
+        player.playSound(SoundEvents.ENTITY_VILLAGER_DEATH, SoundCategory.MASTER, 0.5f, 1f );
+        
+        // Find the entity of the friend
+        ServerPlayerEntity friendEntity = context.getSource().getServer().getPlayerManager().getPlayer( friend.getId() );
+        
+        // If the friend is online
+        if ( friendEntity != null ) {
+            // Notify the friend
+            friendEntity.sendMessage(Text.literal("Player ").formatted(Formatting.WHITE)
+                .append(((MutableText)player.getName()).formatted(Formatting.DARK_PURPLE))
+                .append(Text.literal(" has removed you.")), false
             );
             
-            // Play sound to player
-            player.playSound(SoundEvents.ENTITY_VILLAGER_DEATH, SoundCategory.MASTER, 0.5f, 1f );
-            
-            // Find the entity of the friend
-            ServerPlayerEntity friendEntity = context.getSource().getServer().getPlayerManager().getPlayer( friend.getId() );
-            
-            // If the friend is online
-            if ( friendEntity != null ) {
-                // Notify the friend
-                friendEntity.sendMessage(Text.literal("Player ").formatted(Formatting.WHITE)
-                    .append(((MutableText)player.getName()).formatted(Formatting.DARK_PURPLE))
-                    .append(Text.literal(" has removed you.")), false
-                );
-                
-                friendEntity.playSound(SoundEvents.ENTITY_VILLAGER_DEATH, SoundCategory.MASTER, 0.5f, 1f);
-            }
-        } catch ( SQLException e ){
-            CoreMod.logError( e );
-            
+            friendEntity.playSound(SoundEvents.ENTITY_VILLAGER_DEATH, SoundCategory.MASTER, 0.5f, 1f);
         }
         
         // Return command success

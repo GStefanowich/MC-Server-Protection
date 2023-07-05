@@ -28,6 +28,7 @@ package net.theelm.sewingmachine.deathchests.utilities;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.deathchests.config.SewDeathConfig;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import net.theelm.sewingmachine.deathchests.interfaces.PlayerCorpse;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
@@ -73,7 +74,7 @@ public final class DeathChestUtils {
         BlockPos out;
         
         // Get the max Y (Spawn Height)
-        int maxY = SewConfig.get(SewCoreConfig.MAX_DEATH_ELEVATION);
+        int maxY = SewConfig.get(SewDeathConfig.MAX_DEATH_ELEVATION);
         if (maxY < 0)
             maxY = world.getDimension().height();
         
@@ -81,7 +82,7 @@ public final class DeathChestUtils {
         int upper = Collections.min(Arrays.asList(world.getTopY(), deathPoint.getY() + maxY));
         
         // Get the max X/Z (Spawn Radius)
-        int maxX = SewConfig.get(SewCoreConfig.MAX_DEATH_SCAN);
+        int maxX = SewConfig.get(SewDeathConfig.MAX_DEATH_SCAN);
         int maxI = 1 + ((maxX * maxX) * 4) + (maxX * 4);
         
         for ( int y = deathPoint.getY(); y < upper; y++ ) {
@@ -185,7 +186,7 @@ public final class DeathChestUtils {
         // TODO: Write "file" tag to disk to recover past deaths
         
         // Print the death chest coordinates
-        if (SewConfig.get(SewCoreConfig.PRINT_DEATH_CHEST_LOC))
+        if (SewConfig.get(SewDeathConfig.PRINT_DEATH_CHEST_LOC))
             player.sendMessage(TranslatableServerSide.text(player, "player.death_chest.location", Text.literal(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)));
         CoreMod.logInfo("Death chest for " + player.getName().getString() + " spawned at " + MessageUtils.xyzToString(chestPos.offset(Direction.UP, 1)));
         

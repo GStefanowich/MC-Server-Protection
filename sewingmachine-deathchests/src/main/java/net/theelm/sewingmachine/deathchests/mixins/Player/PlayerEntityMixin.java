@@ -38,6 +38,7 @@ import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.deathchests.config.SewDeathConfig;
 import net.theelm.sewingmachine.deathchests.utilities.DeathChestUtils;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import net.theelm.sewingmachine.interfaces.PvpEntity;
@@ -50,7 +51,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(value = PlayerEntity.class, priority = 10000)
+@Mixin(value = PlayerEntity.class, priority = 1)
 public abstract class PlayerEntityMixin extends LivingEntity implements BackpackCarrier, PvpEntity {
     @Shadow protected abstract void vanishCursedItems();
     
@@ -69,16 +70,13 @@ public abstract class PlayerEntityMixin extends LivingEntity implements Backpack
         boolean keepInventory = this.getWorld().getGameRules().getBoolean(GameRules.KEEP_INVENTORY);
         PlayerBackpack backpack = this.getBackpack();
         
-        if (!SewConfig.get(SewCoreConfig.DO_DEATH_CHESTS)) {
-            // Drop the backpack if we're not using death chests (And keep inventory is off)
-            if (!keepInventory) {
-                DeathChestUtils.createDeathSnapshotFor((PlayerEntity)(LivingEntity) this);
-                
-                // Drop the contents of the backpack (Only if the player HAS one)
-                if (backpack != null)
-                    backpack.dropAll(true);
-            }
-            return;
+        // Drop the backpack if we're not using death chests (And keep inventory is off)
+        if (!keepInventory) {
+            DeathChestUtils.createDeathSnapshotFor((PlayerEntity)(LivingEntity) this);
+
+            // Drop the contents of the backpack (Only if the player HAS one)
+            if (backpack != null)
+                backpack.dropAll(true);
         }
         
         // Only do if we're not keeping the inventory, and the player is actually dead! (Death Chest!)
@@ -87,7 +85,7 @@ public abstract class PlayerEntityMixin extends LivingEntity implements Backpack
             BlockPos chestPos;
             
             // Check if player is in combat
-            if (SewConfig.get(SewCoreConfig.PVP_DISABLE_DEATH_CHEST) && this.inCombat()) {
+            if (SewConfig.get(SewDeathConfig.PVP_DISABLE_DEATH_CHEST) && this.inCombat()) {
                 // Drop the backpack as well as the inventory (Only if the player HAS one)
                 if (backpack != null)
                     backpack.dropAll(true);

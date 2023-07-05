@@ -47,6 +47,7 @@ import net.minecraft.village.VillagerDataContainer;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.VillagerTownie;
@@ -64,7 +65,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.UUID;
 
-@Mixin(value = VillagerEntity.class, priority = 10000)
+@Mixin(value = VillagerEntity.class, priority = 1)
 public abstract class VillagerEntityMixin extends MerchantEntity implements InteractionObserver, VillagerDataContainer, VillagerTownie {
     // TODO: Attempt saving the town UUID as a Memory, not directly as a property
     /*private static final MemoryModuleType<UUID> TOWN;*/
@@ -145,7 +146,7 @@ public abstract class VillagerEntityMixin extends MerchantEntity implements Inte
         }
         
         // Add the baby to the Town
-        if (SewConfig.get(SewCoreConfig.TOWN_VILLAGERS_INCLUDE)) {
+        if (SewConfig.get(SewProtectionConfig.TOWN_VILLAGERS_INCLUDE)) {
             BlockPos pos = spouse.getBlockPos();
             ClaimantTown town = ((IClaimedChunk)this.getWorld().getChunk(pos))
                 .getTown();

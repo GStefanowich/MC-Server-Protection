@@ -26,12 +26,13 @@
 package net.theelm.sewingmachine.permissions.mixins.Player;
 
 import com.mojang.authlib.GameProfile;
+import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.permissions.interfaces.PlayerPermissions;
 import net.theelm.sewingmachine.permissions.objects.PlayerRank;
 import net.theelm.sewingmachine.permissions.utilities.RankUtils;
@@ -44,21 +45,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ServerPlayerEntity.class)
+@Deprecated(forRemoval = true)
 public abstract class ServerPlayerEntityMixin extends PlayerEntity implements PlayerPermissions {
     @Shadow @Final public ServerPlayerInteractionManager interactionManager;
     
     public ServerPlayerEntityMixin(World world, BlockPos pos, float yaw, GameProfile gameProfile) {
         super(world, pos, yaw, gameProfile);
-    }
-    
-    @Inject(at = @At("RETURN"), method = "<init>*")
-    public void onInitialize(CallbackInfo callback) {
-        // Set the player to "adventure"-like if they are not allowed to modify the world
-        if (!RankUtils.hasPermission(this, Permissions.INTERACT_WORLD)) {
-            this.getAbilities().allowModifyWorld = false;
-            this.getAbilities().invulnerable = true;
-            this.sendAbilitiesUpdate();
-        }
     }
     
     /*

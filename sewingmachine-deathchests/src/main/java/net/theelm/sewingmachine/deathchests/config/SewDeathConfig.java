@@ -23,35 +23,22 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.packets;
+package net.theelm.sewingmachine.deathchests.config;
 
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
-import net.minecraft.network.PacketByteBuf;
-import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
-import net.theelm.sewingmachine.protection.enums.ClaimRanks;
-import net.theelm.sewingmachine.utilities.Sew;
-import org.jetbrains.annotations.NotNull;
+import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.config.ConfigOption;
 
 /**
- * Created on Jul 05 2023 at 3:53 AM.
+ * Created on Jul 05 2023 at 5:28 PM.
  * By greg in sewingmachine
  */
-public record ClaimPermissionPacket(ClaimPermissions permission, ClaimRanks rank) implements FabricPacket {
-    public static final PacketType<ClaimPermissionPacket> TYPE = PacketType.create(Sew.modIdentifier("claim_permission"), ClaimPermissionPacket::new);
+public final class SewDeathConfig {
+    private SewDeathConfig() {}
     
-    public ClaimPermissionPacket(@NotNull PacketByteBuf buf) {
-        this(buf.readEnumConstant(ClaimPermissions.class), buf.readNullable(reader -> reader.readEnumConstant(ClaimRanks.class)));
-    }
+    public static final ConfigOption<Integer> MAX_DEATH_SCAN = ConfigOption.json("death_chest.max_distance", 4);
+    public static final ConfigOption<Integer> MAX_DEATH_ELEVATION = ConfigOption.json("death_chest.max_elevation", -1);
+    public static final ConfigOption<Boolean> PRINT_DEATH_CHEST_LOC = ConfigOption.json("death_chest.print_coordinates", true);
     
-    @Override
-    public void write(@NotNull PacketByteBuf buf) {
-        buf.writeEnumConstant(this.permission);
-        buf.writeNullable(this.rank, PacketByteBuf::writeEnumConstant);
-    }
-    
-    @Override
-    public PacketType<?> getType() {
-        return ClaimPermissionPacket.TYPE;
-    }
+    // Player Combat
+    public static final ConfigOption<Boolean> PVP_DISABLE_DEATH_CHEST = ConfigOption.json("player.pvp.no_death_chest", true);
 }

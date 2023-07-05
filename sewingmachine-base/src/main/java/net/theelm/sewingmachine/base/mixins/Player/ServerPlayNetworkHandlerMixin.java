@@ -76,10 +76,6 @@ public abstract class ServerPlayNetworkHandlerMixin implements ServerPlayPacketL
     // On connect
     @Inject(at = @At("RETURN"), method = "<init>")
     public void onPlayerConnect(MinecraftServer server, ClientConnection connection, ServerPlayerEntity player, CallbackInfo callback) {
-        // Send out the READY event
-        NetworkHandlerCallback.READY.invoker()
-            .ready(server, connection, player);
-        
         // Check if server has been joined before
         if (((PlayerData) player).getFirstJoinAt() == null) {
             // Get starting money
@@ -139,6 +135,10 @@ public abstract class ServerPlayNetworkHandlerMixin implements ServerPlayPacketL
         
         // Always update join time to NOW
         ((PlayerData) player).updateLastJoin();
+        
+        // Lastly send out the READY event
+        NetworkHandlerCallback.READY.invoker()
+            .ready(server, connection, player);
     }
     
     // When player leaves

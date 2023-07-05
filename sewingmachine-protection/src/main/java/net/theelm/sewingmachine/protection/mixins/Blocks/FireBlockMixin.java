@@ -45,7 +45,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
  * Created on Aug 16 2021 at 12:18 AM.
  * By greg in SewingMachineMod
  */
-@Mixin(value = FireBlock.class, priority = 10000)
+@Mixin(value = FireBlock.class, priority = 1)
 public abstract class FireBlockMixin extends AbstractFireBlock {
     public FireBlockMixin(Settings settings, float damage) {
         super(settings, damage);

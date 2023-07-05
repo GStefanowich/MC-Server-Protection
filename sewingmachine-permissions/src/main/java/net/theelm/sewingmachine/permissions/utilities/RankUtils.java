@@ -60,12 +60,12 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 
+@Deprecated(forRemoval = true)
 public final class RankUtils {
-
     private static final HashMap<String, PlayerRank> RANKS = new LinkedHashMap<>();
     private static final ConcurrentHashMap<UUID, PlayerRank[]> PLAYER_RANKS = new ConcurrentHashMap<>();
     private static final String GLOBAL_RANK = "*";
-
+    
     private RankUtils() {}
     
     public static @NotNull CompletableFuture<Suggestions> getSuggestions(@NotNull SuggestionsBuilder builder) {
@@ -97,7 +97,7 @@ public final class RankUtils {
     public static @NotNull Set<String> getRanks() {
         return RankUtils.RANKS.keySet();
     }
-
+    
     /*
      * Get player ranks
      */
@@ -134,10 +134,10 @@ public final class RankUtils {
                     }
                 }
             }
-
+            
             // Sort the ranks in ascending order
             ranks.sort(PlayerRank::compareTo);
-
+            
             // Return as a primitive array
             return ranks.toArray(new PlayerRank[0]);
         } catch (FileNotFoundException e) {
@@ -169,7 +169,7 @@ public final class RankUtils {
     }
     
     public static boolean reload() {
-        return RankUtils.reload( false );
+        return RankUtils.reload(false);
     }
     public static boolean reload( boolean verbose ) {
         // Check if enabled in the config

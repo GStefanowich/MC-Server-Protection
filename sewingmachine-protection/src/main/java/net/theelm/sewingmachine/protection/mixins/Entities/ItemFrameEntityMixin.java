@@ -36,7 +36,7 @@ import net.minecraft.world.World;
 import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
 import org.spongepowered.asm.mixin.Mixin;
 
-@Mixin(value = ItemFrameEntity.class, priority = 10000)
+@Mixin(value = ItemFrameEntity.class, priority = 1)
 public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
     protected ItemFrameEntityMixin(EntityType<? extends AbstractDecorationEntity> entityType, World world) {
         super(entityType, world);

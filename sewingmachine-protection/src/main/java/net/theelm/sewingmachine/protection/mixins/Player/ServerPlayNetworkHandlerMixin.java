@@ -66,7 +66,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.UUID;
 
-@Mixin(ServerPlayNetworkHandler.class)
+@Mixin(value = ServerPlayNetworkHandler.class, priority = 1)
 public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement, PlayerClaimData {
     @Shadow @Final private MinecraftServer server;
     @Shadow public ServerPlayerEntity player;
@@ -208,6 +208,11 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement, P
     @Override
     public ClaimantPlayer getClaim() {
         return this.playerClaimData;
+    }
+    
+    @Override
+    public boolean hasClaim() {
+        return true;
     }
     
     // On connect

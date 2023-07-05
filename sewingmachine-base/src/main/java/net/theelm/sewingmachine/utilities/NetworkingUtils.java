@@ -129,4 +129,8 @@ public final class NetworkingUtils {
     public static <T extends FabricPacket> void send(ServerPlayerEntity player, T packet) {
         ServerPlayNetworking.send(player, packet);
     }
+    
+    public static <T extends FabricPacket> void empty(MinecraftClient client, ClientPlayNetworkHandler network, T packet, PacketSender sender) {}
+    
+    public static <T extends FabricPacket> void empty(MinecraftServer server, ServerPlayerEntity player, ServerPlayNetworkHandler network, T packet, PacketSender sender) {}
 }

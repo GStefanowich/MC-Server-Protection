@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(value = FarmlandBlock.class, priority = 10000)
+@Mixin(value = FarmlandBlock.class, priority = 1)
 public abstract class FarmlandBlockMixin extends Block {
     public FarmlandBlockMixin(Settings block$Settings_1) {
         super(block$Settings_1);

@@ -28,6 +28,7 @@ package net.theelm.sewingmachine.protection.events;
 import net.fabricmc.fabric.api.event.Event;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
 import net.theelm.sewingmachine.protection.mixins.Interfaces.LightningAccessor;
@@ -134,7 +135,7 @@ public final class EntityAttack {
             }
             
             // If the player is in creative, allow
-            if (player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS))
+            if (player.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS))
                 return ActionResult.PASS;
             
             // Get chunk protection

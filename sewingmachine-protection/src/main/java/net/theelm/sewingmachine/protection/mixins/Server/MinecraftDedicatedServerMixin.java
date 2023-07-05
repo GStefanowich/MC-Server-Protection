@@ -39,6 +39,7 @@ import net.minecraft.server.dedicated.MinecraftDedicatedServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.level.storage.LevelStorage;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -58,7 +59,7 @@ public abstract class MinecraftDedicatedServerMixin extends MinecraftServer impl
     
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/dedicated/MinecraftDedicatedServer.getSpawnProtectionRadius()I"), method = "isSpawnProtected")
     public int getVanillaSpawnProtection(@NotNull MinecraftDedicatedServer server, ServerWorld world, BlockPos pos, PlayerEntity player) {
-        if (SewConfig.get(SewCoreConfig.DISABLE_VANILLA_PROTECTION))
+        if (SewConfig.get(SewProtectionConfig.DISABLE_VANILLA_PROTECTION))
             return 0;
         return server.getSpawnProtectionRadius();
     }

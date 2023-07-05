@@ -49,7 +49,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Objects;
 
-@Mixin(value = {SheepEntity.class, MooshroomEntity.class, CowEntity.class, PigEntity.class, OcelotEntity.class, WolfEntity.class, ParrotEntity.class, CatEntity.class}, priority = 10000)
+@Mixin(value = {SheepEntity.class, MooshroomEntity.class, CowEntity.class, PigEntity.class, OcelotEntity.class, WolfEntity.class, ParrotEntity.class, CatEntity.class}, priority = 1)
 public abstract class AnimalInteract extends AnimalEntity {
     protected AnimalInteract(EntityType<? extends AnimalEntity> entityType_1, World world_1) {
         super(entityType_1, world_1);

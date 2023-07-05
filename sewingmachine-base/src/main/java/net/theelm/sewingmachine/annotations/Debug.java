@@ -23,12 +23,15 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.permissions.interfaces;
+package net.theelm.sewingmachine.annotations;
 
-import net.theelm.sewingmachine.permissions.objects.PlayerRank;
-import org.jetbrains.annotations.NotNull;
 
-@Deprecated(forRemoval = true)
-public interface PlayerPermissions {
-    @NotNull PlayerRank[] getRanks();
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Debug {
 }

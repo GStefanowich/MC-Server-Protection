@@ -30,9 +30,9 @@ import net.minecraft.item.Item;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
-import net.minecraft.util.annotation.Debug;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.annotations.Debug;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.config.ConfigArray;
 import net.theelm.sewingmachine.config.ConfigOption;
@@ -70,58 +70,18 @@ public class SewCoreConfig {
     public static final ConfigOption<Integer> DB_PORT = ConfigOption.json("database.port", 3306);
     
     /*
-     * Death chests
-     */
-    
-    public static final ConfigOption<Boolean> DO_DEATH_CHESTS = ConfigOption.json("death_chest.enabled", true);
-    public static final ConfigOption<Integer> MAX_DEATH_SCAN = ConfigOption.json("death_chest.max_distance", 4);
-    public static final ConfigOption<Integer> MAX_DEATH_ELEVATION = ConfigOption.json("death_chest.max_elevation", -1);
-    public static final ConfigOption<Boolean> PRINT_DEATH_CHEST_LOC = ConfigOption.json("death_chest.print_coordinates", true);
-    
-    // Player Combat
-    public static final ConfigOption<Boolean> PVP_DISABLE_DEATH_CHEST = ConfigOption.json("player.pvp.no_death_chest", true);
-    public static final ConfigOption<Boolean> PVP_COMBAT_LOG = ConfigOption.json("player.pvp.kill_on_logout", false);
-    
-    /*
      * Player Combat
      */
     
     public static final ConfigOption<Integer> PVP_COMBAT_SECONDS = ConfigOption.json("player.pvp.combat_seconds", 30);
+    public static final ConfigOption<Boolean> PVP_COMBAT_LOG = ConfigOption.json("player.pvp.kill_on_logout", false);
     
     /*
      * Primary Functions Booleans
      */
     
-    @Deprecated(forRemoval = true)
-    public static final ConfigOption<Boolean> DO_CLAIMS = ConfigOption.json("claims.enabled", true);
-    public static final ConfigOption<Boolean> CLAIM_CREATIVE_BYPASS = ConfigOption.json("claims.creative_bypass", true);
-    public static final ConfigOption<Boolean> DISABLE_VANILLA_PROTECTION = ConfigOption.json("claims.disable_vanilla", true);
-    
     public static final ConfigOption<String> NAME_SPAWN = ConfigOption.json("claims.name.spawn", "Spawn");
     public static final ConfigOption<String> NAME_WILDERNESS = ConfigOption.json("claims.name.wild", "Wilderness");
-    
-    /*
-     * Claiming Options
-     */
-    
-    public static final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_ENDERMAN = ConfigOption.json("claims.allow_player_override.griefing.enderman", false);
-    public static final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_CREEPER = ConfigOption.json("claims.allow_player_override.griefing.creeper", false);
-    public static final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_GHAST = ConfigOption.json("claims.allow_player_override.griefing.ghast", false);
-    public static final ConfigOption<Boolean> CLAIM_ALLOW_GRIEFING_WEATHER = ConfigOption.json("claims.allow_player_override.griefing.weather", false);
-    public static final ConfigOption<Boolean> CLAIM_ALLOW_PLAYER_COMBAT = ConfigOption.json("claims.allow_player_override.player_pvp", true);
-    public static final ConfigOption<Boolean> CLAIM_ALLOW_CROP_AUTOREPLANT = ConfigOption.json("claims.allow_player_override.crop_autoreplant", true);
-    public static final ConfigOption<Boolean> CLAIM_ALLOW_FIRE_SPREAD = ConfigOption.json("claims.allow_player_override.fire_spread", false);
-    
-    /*
-     * Protections
-     */
-    
-    public static final ConfigOption<Integer> CLAIM_OP_LEVEL_SPAWN = ConfigOption.json("claims.op_level.spawn", 1);
-    public static final ConfigOption<Integer> CLAIM_OP_LEVEL_OTHER = ConfigOption.json("claims.op_level.other_player", 1);
-    
-    // Claim Regions
-    public static final ConfigOption<Integer> MAXIMUM_REGION_WIDTH = ConfigOption.json("claims.regions.max_width", 32);
-    public static final ConfigOption<Integer> MINIMUM_REGION_WIDTH = ConfigOption.json("claims.regions.min_width", 3);
     
     /*
      * Logging
@@ -145,15 +105,6 @@ public class SewCoreConfig {
     public static final ConfigOption<Boolean> START_WITH_RECIPES = ConfigOption.json("player.recipes.unlock_all", false);
     
     /*
-     * Claiming
-     */
-    
-    public static final ConfigOption<Integer> PLAYER_CLAIMS_LIMIT = ConfigOption.json("claims.players.limit", 40);
-    public static final ConfigOption<Boolean> PLAYER_LIMIT_INCREASE = ConfigOption.json("claims.players.limit_increase.enabled", false);
-    public static final ConfigOption<Integer> PLAYER_CLAIM_BUY_LIMIT = ConfigOption.json("claims.players.limit_increase.maximum", -1);
-    public static final ConfigOption<Integer> PLAYER_CLAIM_BUY_COST = ConfigOption.json("claims.players.limit_increase.cost", 200);
-    
-    /*
      * Inventory
      */
     
@@ -166,13 +117,6 @@ public class SewCoreConfig {
     public static final ConfigOption<Boolean> ALLOW_BACKPACKS = ConfigOption.json("player.inventory.backpacks.enable", true);
     public static final ConfigOption<Boolean> BACKPACK_SEQUENTIAL = ConfigOption.json("player.inventory.backpacks.require_sequential", true);
     public static final ConfigOption<Integer> BACKPACK_STARTING_ROWS = ConfigOption.json("player.inventory.backpacks.starting_rows", 0);
-    
-    // Towns
-    public static final ConfigOption<Integer> TOWN_FOUND_COST = ConfigOption.json("claims.towns.cost", 500);
-    public static final ConfigOption<Integer> TOWN_CLAIMS_LIMIT = ConfigOption.json("claims.towns.limit", 200);
-    
-    public static final ConfigOption<Boolean> TOWN_VILLAGERS_INCLUDE = ConfigOption.json("claims.towns.villagers.include", true);
-    public static final ConfigOption<Integer> TOWN_VILLAGERS_VALUE = ConfigOption.json("claims.towns.villagers.value", 3);
     
     /*
      * Money options
@@ -244,6 +188,7 @@ public class SewCoreConfig {
      * Permission options
      */
     
+    @Deprecated(forRemoval = true)
     public static final ConfigOption<Boolean> HANDLE_PERMISSIONS = ConfigOption.json("server.permissions.enabled", true);
     
     /*

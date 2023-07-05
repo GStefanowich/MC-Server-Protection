@@ -26,6 +26,7 @@
 package net.theelm.sewingmachine.protection.interfaces;
 
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * Created on Jun 27 2023 at 10:43 PM.
@@ -33,7 +34,14 @@ import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
  */
 public interface PlayerClaimData {
     /**
-     * @return Get the Players claim information
+     * Get the Players claim information
+     * @return The Players claim information
      */
-    ClaimantPlayer getClaim();
+    @NotNull ClaimantPlayer getClaim();
+    
+    /**
+     * If the player has claim information set
+     * @return If set
+     */
+    boolean hasClaim();
 }

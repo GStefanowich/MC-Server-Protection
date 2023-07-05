@@ -7,15 +7,15 @@
 	"authors": [
 		"TheElm"
 	],
-
+	
 	"contact": {
 		"sources": "https://github.com/GStefanowich/MC-Server-Protection",
 		"issues": "https://github.com/GStefanowich/MC-Server-Protection/issues"
 	},
-
+	
 	"license": "MIT",
 	"icon": "assets/sewing-machine/icon.png",
-
+	
 	"environment": "*",
 	"entrypoints": {
 		"client": [],

@@ -36,11 +36,10 @@ import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
-import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
-import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
@@ -101,7 +100,7 @@ public final class SignPlots extends ShopSign {
             if (!MoneyUtils.takePlayerMoney(player, sign.getShopItemPrice()))
                 return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
             
-            if ((SewConfig.get(SewCoreConfig.PLAYER_CLAIM_BUY_LIMIT) > 0) && ((claim.getMaxChunkLimit() + sign.getShopItemCount()) > SewConfig.get(SewCoreConfig.PLAYER_CLAIM_BUY_LIMIT)))
+            if ((SewConfig.get(SewProtectionConfig.PLAYER_CLAIM_BUY_LIMIT) > 0) && ((claim.getMaxChunkLimit() + sign.getShopItemCount()) > SewConfig.get(SewProtectionConfig.PLAYER_CLAIM_BUY_LIMIT)))
                 return Either.left(Text.translatable("Can't buy any more of that."));
             
             // Increase the players chunk count
@@ -127,6 +126,6 @@ public final class SignPlots extends ShopSign {
     @Override
     public boolean isEnabled() {
         return SewConfig.get(SewCoreConfig.DO_MONEY)
-            && SewConfig.get(SewCoreConfig.PLAYER_CLAIM_BUY_LIMIT) != 0;
+            && SewConfig.get(SewProtectionConfig.PLAYER_CLAIM_BUY_LIMIT) != 0;
     }
 }

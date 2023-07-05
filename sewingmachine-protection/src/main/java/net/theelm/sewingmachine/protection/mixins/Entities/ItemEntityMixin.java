@@ -33,6 +33,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -60,7 +61,7 @@ public abstract class ItemEntityMixin extends Entity {
         if (!this.getWorld().isClient()) {
             if ( this.pickupDelay == 0 ) {
                 // Check if the entity is owned by the player (They dropped it)
-                if (player.getUuid().equals(this.thrower) || player.getUuid().equals(this.owner) || (player.isCreative() && SewConfig.get(SewCoreConfig.CLAIM_CREATIVE_BYPASS)))
+                if (player.getUuid().equals(this.thrower) || player.getUuid().equals(this.owner) || (player.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS)))
                     return;
                 
                 // Check if the player can pickup items in the chunk

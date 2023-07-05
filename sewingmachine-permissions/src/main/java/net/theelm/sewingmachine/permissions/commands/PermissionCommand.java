@@ -34,7 +34,7 @@ import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.Permissions;
+import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.permissions.utilities.RankUtils;
 import net.theelm.sewingmachine.permissions.objects.PlayerRank;
@@ -45,6 +45,7 @@ import net.theelm.sewingmachine.utilities.CommandUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+@Deprecated(forRemoval = true)
 public final class PermissionCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
@@ -69,7 +70,7 @@ public final class PermissionCommand extends SewCommand {
                     .suggests(RankUtils::suggestRanks)
                     .then(CommandManager.literal("nodes")
                         .then(CommandManager.argument("permission", StringArgumentType.string())
-                            .suggests(Permissions::suggestNodes)
+                            .suggests(PermissionNodes::suggestNodes)
                             .then(CommandManager.literal("grant")
                                 .executes(PermissionCommand::grantNodeToRank)
                             )

@@ -25,32 +25,73 @@
 
 package net.theelm.sewingmachine.protection.mixins.Client;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.RunArgs;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.util.Session;
+import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.interfaces.NameCache;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.objects.ClientClaimCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 @Mixin(MinecraftClient.class)
-public class MinecraftClientMixin implements PlayerClaimData {
+@Environment(EnvType.CLIENT)
+public abstract class MinecraftClientMixin implements PlayerClaimData, NameCache {
+    @Shadow public abstract Session getSession();
+    
+    private final @NotNull Map<UUID, Text> namesCache = new HashMap<>();
+    
     private @NotNull ClientClaimCache claimCache;
     private @Nullable ClaimantPlayer playerClaims;
     
-    @Inject(at = @At("RETURN"), method = "<init>")
-    public void onInit(RunArgs args, CallbackInfo callback) {
-        this.claimCache = new ClientClaimCache();
-        this.playerClaims = new ClaimantPlayer(this.claimCache, CoreMod.SPAWN_ID);
+    @Inject(at = @At("RETURN"), method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V")
+    private void onDisconnect(Screen screen, CallbackInfo callback) {
+        this.namesCache.clear();
+        
+        // Reset claim information after disconnect
+        this.claimCache = null;
+        this.playerClaims = null;
     }
     
     @Override
-    public ClaimantPlayer getClaim() {
+    public @NotNull ClaimantPlayer getClaim() {
+        if (this.playerClaims == null) {
+            this.claimCache = new ClientClaimCache();
+            UUID uuid = this.getSession()
+                .getUuidOrNull();
+            if (uuid == null)
+                uuid = CoreMod.SPAWN_ID;
+            this.playerClaims = new ClaimantPlayer(this.claimCache, uuid);
+        }
         return this.playerClaims;
+    }
+    
+    @Override
+    public boolean hasClaim() {
+        return this.playerClaims != null;
+    }
+    
+    @Override
+    public @Nullable Text getPlayerName(@NotNull UUID uuid) {
+        return this.namesCache.get(uuid);
+    }
+    
+    @Override
+    public void setPlayerName(@NotNull UUID uuid, @NotNull Text name) {
+        this.namesCache.put(uuid, name);
     }
 }

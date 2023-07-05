@@ -41,7 +41,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(value = HopperBlockEntity.class, priority = 10000)
+@Mixin(value = HopperBlockEntity.class, priority = 1)
 public abstract class HopperBlockEntityMixin extends LootableContainerBlockEntity implements Hopper {
     
     protected HopperBlockEntityMixin(BlockEntityType<?> blockEntityType, BlockPos blockPos, BlockState blockState) {

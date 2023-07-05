@@ -27,12 +27,17 @@ package net.theelm.sewingmachine.protection;
 
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.theelm.sewingmachine.base.packets.SewHelloPacket;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.events.ContainerAccessCallback;
 import net.theelm.sewingmachine.events.MessageDeployer;
+import net.theelm.sewingmachine.events.NetworkHandlerCallback;
+import net.theelm.sewingmachine.events.PlayerModsCallback;
+import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.events.RegionManageCallback;
 import net.theelm.sewingmachine.events.RegionUpdateCallback;
 import net.theelm.sewingmachine.events.PlayerTeleportCallback;
@@ -47,6 +52,9 @@ import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.interfaces.variables.EntityVariableFunction;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.protection.commands.ClaimCommand;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
+import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.events.BlockBreak;
 import net.theelm.sewingmachine.protection.events.BlockInteraction;
 import net.theelm.sewingmachine.protection.events.EntityAttack;
@@ -60,23 +68,26 @@ import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.objects.signs.SignDeed;
 import net.theelm.sewingmachine.protection.objects.signs.SignPlots;
 import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
+import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.ClaimPropertyUtils;
 import net.theelm.sewingmachine.protection.utilities.MessageClaimUtils;
 import net.theelm.sewingmachine.utilities.EntityVariables;
+import net.theelm.sewingmachine.utilities.ModUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import net.theelm.sewingmachine.utilities.ShopSigns;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
 import java.util.UUID;
 
 /**
  * Created on Jun 08 2023 at 11:58 PM.
  * By greg in sewingmachine
  */
-public class ServerCore implements ModInitializer, SewPlugin {
+public final class ServerCore implements ModInitializer, SewPlugin {
     @Override
     public void onInitialize() {
         // Create registry based listeners
@@ -191,6 +202,32 @@ public class ServerCore implements ModInitializer, SewPlugin {
                 income.addTax(town.getName(), town.getTaxRate());
         });
         
+        // Send the player their claim data if they have the mod
+        PlayerModsCallback.EVENT.register(player -> {
+            if (!ModUtils.hasModule(player, "protection"))
+                return;
+            
+            ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
+            
+            // Send permissions
+            for (ClaimPermissions permission : ClaimPermissions.values())
+                NetworkingUtils.send(player, new ClaimPermissionPacket(permission, claim.getPermissionRankRequirement(permission)));
+            
+            // Send claim settings
+            for (ClaimSettings setting : ClaimSettings.values())
+                if (setting.isEnabled())
+                    NetworkingUtils.send(player, new ClaimSettingPacket(setting, claim.getProtectedChunkSetting(setting)));
+            
+            // Send friends for friend settings
+            MinecraftServer server = player.getServer();
+            if (server != null) {
+                for (UUID friend : claim.getFriends()) {
+                    Text name = PlayerNameCallback.getName(server, friend);
+                    NetworkingUtils.send(player, new ClaimRankPacket(friend, name, claim.getFriendRank(friend)));
+                }
+            }
+        });
+        
         // When a player updates their settings
         NetworkingUtils.serverReceiver(ClaimPermissionPacket.TYPE, (server, player, network, packet, sender)
             -> ClaimPropertyUtils.updatePermission(player, packet.permission(), packet.rank()));
@@ -198,6 +235,10 @@ public class ServerCore implements ModInitializer, SewPlugin {
         // When a player updates their permissions
         NetworkingUtils.serverReceiver(ClaimSettingPacket.TYPE, (server, player, network, packet, sender)
             -> ClaimPropertyUtils.updateSetting(player, packet.setting(), packet.enabled()));
+        
+        // When a player updates their friends
+        NetworkingUtils.serverReceiver(ClaimRankPacket.TYPE, (server, player, network, packet, sender)
+            -> ClaimPropertyUtils.updateRank(player, packet.player(), packet.rank()));
         
         ShopSigns.add(SignDeed::new);
         ShopSigns.add(SignPlots::new);
@@ -208,5 +249,10 @@ public class ServerCore implements ModInitializer, SewPlugin {
         return new SewCommand[] {
             new ClaimCommand()
         };
+    }
+    
+    @Override
+    public @NotNull Optional<Class<?>> getConfigClass() {
+        return Optional.of(SewProtectionConfig.class);
     }
 }

@@ -47,6 +47,9 @@ public class ProtectionSettingsScreen extends SettingScreen {
     protected void addButtons(@NotNull SettingScreenListWidget list) {
         ClaimantPlayer claim = ((PlayerClaimData) this.client).getClaim();
         for (ClaimSettings setting : ClaimSettings.values()) {
+            if (!setting.isEnabled())
+                continue;
+            
             String name = setting.name()
                 .toLowerCase();
             

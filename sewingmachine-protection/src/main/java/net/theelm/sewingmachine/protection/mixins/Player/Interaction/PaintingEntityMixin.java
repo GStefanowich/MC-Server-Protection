@@ -38,7 +38,7 @@ import org.spongepowered.asm.mixin.Mixin;
  * Created on Aug 18 2021 at 1:38 PM.
  * By greg in SewingMachineMod
  */
-@Mixin(value = PaintingEntity.class, priority = 10000)
+@Mixin(value = PaintingEntity.class, priority = 1)
 public abstract class PaintingEntityMixin extends AbstractDecorationEntity {
     protected PaintingEntityMixin(EntityType<? extends AbstractDecorationEntity> entityType, World world) {
         super(entityType, world);
