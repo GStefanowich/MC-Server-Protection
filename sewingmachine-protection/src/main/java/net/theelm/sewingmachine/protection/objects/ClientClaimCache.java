@@ -25,18 +25,27 @@
 
 package net.theelm.sewingmachine.protection.objects;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.server.MinecraftServer;
 import net.theelm.sewingmachine.protection.claims.Claimant;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Created on Jul 05 2023 at 4:19 AM.
- * By greg in sewingmachine
- */
-public abstract class ClaimCache {
-    public abstract @NotNull MinecraftServer getServer();
+@Environment(EnvType.CLIENT)
+public final class ClientClaimCache extends ClaimCache {
+    @Override
+    public @NotNull MinecraftServer getServer() {
+        throw new IllegalStateException("Can't access server from Client");
+    }
     
-    public abstract @Nullable ClaimCacheEntry<?> addToCache(@Nullable Claimant claimant);
-    public abstract @Nullable Claimant removeFromCache(@Nullable Claimant claimant);
+    @Override
+    public @Nullable ClaimCacheEntry<?> addToCache(@Nullable Claimant claimant) {
+        return null;
+    }
+    
+    @Override
+    public @Nullable Claimant removeFromCache(@Nullable Claimant claimant) {
+        return null;
+    }
 }

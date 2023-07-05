@@ -25,12 +25,12 @@
 
 package net.theelm.sewingmachine.protection.interfaces;
 
-import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import org.jetbrains.annotations.NotNull;
 
 public interface ClaimsAccessor {
     /*
      * Cache
      */
-    @NotNull ClaimCache getClaimManager();
+    @NotNull ServerClaimCache getClaimManager();
 }

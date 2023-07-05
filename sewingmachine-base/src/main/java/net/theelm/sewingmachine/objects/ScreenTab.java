@@ -23,20 +23,28 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.objects;
+package net.theelm.sewingmachine.objects;
 
-import net.minecraft.server.MinecraftServer;
-import net.theelm.sewingmachine.protection.claims.Claimant;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Created on Jul 05 2023 at 4:19 AM.
+ * Created on Jul 04 2023 at 9:51 PM.
  * By greg in sewingmachine
  */
-public abstract class ClaimCache {
-    public abstract @NotNull MinecraftServer getServer();
+public abstract class ScreenTab extends Tab {
+    protected final @NotNull MinecraftClient client;
     
-    public abstract @Nullable ClaimCacheEntry<?> addToCache(@Nullable Claimant claimant);
-    public abstract @Nullable Claimant removeFromCache(@Nullable Claimant claimant);
+    protected ScreenTab(@NotNull MinecraftClient client) {
+        this.client = client;
+    }
+    
+    @Override
+    public final void setActive() {
+        this.client.setScreen(this.getScreen());
+    }
+    
+    protected abstract @Nullable Screen getScreen();
 }

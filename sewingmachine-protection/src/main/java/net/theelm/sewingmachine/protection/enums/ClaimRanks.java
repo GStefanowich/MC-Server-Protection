@@ -27,9 +27,10 @@ package net.theelm.sewingmachine.protection.enums;
 
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.theelm.sewingmachine.interfaces.TranslationDescriber;
 import org.jetbrains.annotations.NotNull;
 
-public enum ClaimRanks {
+public enum ClaimRanks implements TranslationDescriber {
     OWNER(2, "Restrict to Owners only", "Let this player do everything", Formatting.DARK_GREEN),
     ALLY(1, "Restrict to Allies and Owners", "Make this player your Ally", Formatting.DARK_GREEN),
     PASSIVE(0, "Restrict to anyone but Enemies", "This player is Nothing to you", Formatting.YELLOW),
@@ -59,6 +60,13 @@ public enum ClaimRanks {
     public boolean canPerform( @NotNull ClaimRanks userRank ) {
         return userRank.power >= this.power;
     }
+    
+    @Override
+    public String getTranslationKey() {
+        return "claim.rank." + this.name().toLowerCase();
+    }
+    
+    @Override
     public Formatting[] getColor() {
         return this.color;
     }

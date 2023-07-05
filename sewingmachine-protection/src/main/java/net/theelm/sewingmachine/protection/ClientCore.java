@@ -28,8 +28,12 @@ package net.theelm.sewingmachine.protection;
 import net.fabricmc.api.ClientModInitializer;
 import net.theelm.sewingmachine.base.packets.CancelMinePacket;
 import net.theelm.sewingmachine.events.TabRegisterEvent;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.interfaces.ClientMiner;
+import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.inventory.ProtectionsTab;
+import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
+import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 
 /**
@@ -41,6 +45,16 @@ public class ClientCore implements ClientModInitializer {
     public void onInitializeClient() {
         NetworkingUtils.clientReceiver(CancelMinePacket.TYPE, (client, network, packet, sender) -> {
             ((ClientMiner) client).stopMining(packet.pos());
+        });
+        
+        NetworkingUtils.clientReceiver(ClaimSettingPacket.TYPE, (client, network, packet, sender) -> {
+            ClaimantPlayer claim = ((PlayerClaimData) client).getClaim();
+            claim.updateSetting(packet.setting(), packet.enabled());
+        });
+        
+        NetworkingUtils.clientReceiver(ClaimPermissionPacket.TYPE, (client, network, packet, sender) -> {
+            ClaimantPlayer claim = ((PlayerClaimData) client).getClaim();
+            claim.updatePermission(packet.permission(), packet.rank());
         });
         
         // Add the protections tab to the inventory

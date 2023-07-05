@@ -31,7 +31,7 @@ import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.exceptions.TranslationKeyException;
-import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils.ClaimSlice;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
@@ -61,7 +61,7 @@ public interface IClaimedChunk {
     }
     boolean canPlayerClaim(@NotNull ClaimantPlayer player, boolean stopIfClaimed) throws TranslationKeyException;
     
-    @Nullable ClaimCache getClaimCache();
+    @Nullable ServerClaimCache getClaimCache();
     @Nullable UUID getOwnerId();
     @Nullable UUID getOwnerId(@Nullable BlockPos pos);
     @Nullable ClaimantPlayer getOwner();

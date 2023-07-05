@@ -36,7 +36,7 @@ import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.protection.commands.ClaimCommand;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
-import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
@@ -161,10 +161,10 @@ public class ChunkOwnerUpdate implements TickingAction {
             TranslatableServerSide.send(this.source, !this.verify, this.mode.getSuccessTranslation(), changed);
     }
     
-    public static @NotNull ChunkOwnerUpdate forPlayer(@NotNull ClaimCache claimCache, @NotNull ServerCommandSource source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
+    public static @NotNull ChunkOwnerUpdate forPlayer(@NotNull ServerClaimCache claimCache, @NotNull ServerCommandSource source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
         return new ChunkOwnerUpdate(source, claimCache.getPlayerClaim(uuid), mode, positions);
     }
-    public static @NotNull ChunkOwnerUpdate forTown(@NotNull ClaimCache claimCache, @NotNull ServerCommandSource source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
+    public static @NotNull ChunkOwnerUpdate forTown(@NotNull ServerClaimCache claimCache, @NotNull ServerCommandSource source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
         return new ChunkOwnerUpdate(source, claimCache.getTownClaim(uuid), mode, positions);
     }
     
@@ -241,7 +241,7 @@ public class ChunkOwnerUpdate implements TickingAction {
                     claimant.removeFromCount(worldChunk);
                 else if (!update.getVerify()) {
                     // If we aren't verifying the UNCLAIM, get the existing owner and subtract the chunk from them
-                    ClaimCache claims = chunk.getClaimCache();
+                    ServerClaimCache claims = chunk.getClaimCache();
                     if (claims != null && chunk.getOwnerId() != null)
                         claims.getPlayerClaim(chunk.getOwnerId())
                             .removeFromCount(worldChunk);

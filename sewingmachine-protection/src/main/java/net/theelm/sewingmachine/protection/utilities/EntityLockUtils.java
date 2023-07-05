@@ -35,6 +35,7 @@ import net.minecraft.block.BlastFurnaceBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.CartographyTableBlock;
+import net.minecraft.block.ChiseledBookshelfBlock;
 import net.minecraft.block.CraftingTableBlock;
 import net.minecraft.block.DropperBlock;
 import net.minecraft.block.EnchantingTableBlock;
@@ -53,10 +54,11 @@ import net.minecraft.block.StonecutterBlock;
 import net.minecraft.block.entity.BedBlockEntity;
 import net.minecraft.block.entity.BeehiveBlockEntity;
 import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.block.entity.BrushableBlockEntity;
+import net.minecraft.block.entity.ChiseledBookshelfBlockEntity;
 import net.minecraft.block.entity.JukeboxBlockEntity;
 import net.minecraft.block.entity.LockableContainerBlockEntity;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.Tameable;
 import net.minecraft.entity.decoration.ArmorStandEntity;
 import net.minecraft.entity.mob.PiglinEntity;
 import net.minecraft.entity.passive.CatEntity;
@@ -136,25 +138,25 @@ public final class EntityLockUtils {
                 return (blockState != null && (BeehiveBlockEntity.getHoneyLevel(blockState) > 0) ? SoundEvents.BLOCK_BEEHIVE_DRIP : EntityLockUtils.getDefaultLockSound());
             }
         }
-        if ( block instanceof BarrelBlock)
+        if (block instanceof BarrelBlock)
             return SoundEvents.BLOCK_FENCE_GATE_CLOSE;
-        if ( block instanceof LoomBlock || block instanceof CartographyTableBlock)
+        if (block instanceof LoomBlock || block instanceof CartographyTableBlock)
             return SoundEvents.UI_LOOM_SELECT_PATTERN;
-        if ( block instanceof AnvilBlock || block instanceof GrindstoneBlock)
+        if (block instanceof AnvilBlock || block instanceof GrindstoneBlock)
             return SoundEvents.BLOCK_ANVIL_PLACE;
-        if ( block instanceof FurnaceBlock || block instanceof BlastFurnaceBlock || block instanceof DropperBlock || block instanceof HopperBlock)
+        if (block instanceof FurnaceBlock || block instanceof BlastFurnaceBlock || block instanceof DropperBlock || block instanceof HopperBlock)
             return SoundEvents.BLOCK_IRON_DOOR_OPEN;
-        if ( block instanceof BeaconBlock || block instanceof EnchantingTableBlock)
+        if (block instanceof BeaconBlock || block instanceof EnchantingTableBlock)
             return SoundEvents.ENTITY_PLAYER_LEVELUP;
-        if ( block instanceof StonecutterBlock || block instanceof SmokerBlock)
+        if (block instanceof StonecutterBlock || block instanceof SmokerBlock)
             return SoundEvents.BLOCK_SCAFFOLDING_BREAK;
-        if ( block instanceof FletchingTableBlock)
+        if (block instanceof FletchingTableBlock)
             return SoundEvents.ITEM_CROSSBOW_LOADING_MIDDLE;
-        if ( block instanceof CraftingTableBlock)
+        if (block instanceof CraftingTableBlock || block instanceof ChiseledBookshelfBlock)
             return SoundEvents.BLOCK_WOOD_BREAK;
-        if ( block instanceof ShulkerBoxBlock)
+        if (block instanceof ShulkerBoxBlock)
             return SoundEvents.BLOCK_SHULKER_BOX_CLOSE;
-        if ( block instanceof BeehiveBlock)
+        if (block instanceof BeehiveBlock)
             return SoundEvents.BLOCK_BEEHIVE_DRIP;
         return EntityLockUtils.getDefaultLockSound();
     }
@@ -236,10 +238,12 @@ public final class EntityLockUtils {
     public static @Nullable ClaimPermissions getLockPermission(BlockEntity block) {
         if (block instanceof JukeboxBlockEntity)
             return ClaimPermissions.STORAGE;
-        if ( block instanceof LockableContainerBlockEntity)
+        if (block instanceof LockableContainerBlockEntity || block instanceof ChiseledBookshelfBlockEntity)
             return ClaimPermissions.STORAGE;
-        if ( block instanceof BedBlockEntity)
+        if (block instanceof BedBlockEntity)
             return ClaimPermissions.BEDS;
+        if (block instanceof BrushableBlockEntity)
+            return ClaimPermissions.BLOCKS;
         return null;
     }
     public static @Nullable ClaimPermissions getLockPermission(@NotNull Block block) {

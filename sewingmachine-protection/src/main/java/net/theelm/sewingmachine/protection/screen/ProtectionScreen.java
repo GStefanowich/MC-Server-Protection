@@ -29,10 +29,26 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.screens.SettingScreen;
+import net.theelm.sewingmachine.screens.SettingScreenListWidget;
+import org.jetbrains.annotations.NotNull;
 
 @Environment(EnvType.CLIENT)
 public class ProtectionScreen extends SettingScreen {
     public ProtectionScreen() {
         super(Text.literal("Protections"));
+    }
+    
+    @Override
+    protected void addButtons(@NotNull SettingScreenListWidget list) {
+        list.addScreenButton(Text.literal("Claim Settings"), Text.literal("Settings for your Player claim"), () -> {
+            SettingScreen screen = new ProtectionSettingsScreen();
+            screen.parent = this;
+            return screen;
+        });
+        list.addScreenButton(Text.literal("Claim Permissions"), Text.literal("Permissions for your Player claim"), () -> {
+            SettingScreen screen = new PermissionSettingsScreen();
+            screen.parent = this;
+            return screen;
+        });
     }
 }

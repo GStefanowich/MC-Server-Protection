@@ -50,7 +50,8 @@
 		"World.WorldChunkMixin"
 	],
 	"client": [
-		"Client.ClientPlayerInteractionManagerMixin"
+		"Client.ClientPlayerInteractionManagerMixin",
+		"Client.MinecraftClientMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

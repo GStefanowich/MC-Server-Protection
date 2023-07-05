@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.protection.mixins.Server;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.protection.claims.Claimant;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
-import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
@@ -42,7 +42,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
  */
 @Mixin(MinecraftServer.class)
 public class MinecraftServerMixin implements ClaimsAccessor {
-    private ClaimCache sewingMachineClaimManager;
+    private ServerClaimCache sewingMachineClaimManager;
 
     /**
      * Save claim information when the server saves
@@ -50,8 +50,8 @@ public class MinecraftServerMixin implements ClaimsAccessor {
     @Inject(at = @At("RETURN"), method = "save")
     public void save(boolean silent, boolean boolean_2, boolean boolean_3, @NotNull CallbackInfoReturnable<Boolean> callback) {
         if (callback.getReturnValue()) {
-            ClaimCache claims = ((ClaimsAccessor)this).getClaimManager();
-
+            ServerClaimCache claims = ((ClaimsAccessor)this).getClaimManager();
+            
             if (!silent) CoreMod.logInfo("Saving claim data");
             claims.getCaches()
                 .forEach(Claimant::save);
@@ -59,10 +59,10 @@ public class MinecraftServerMixin implements ClaimsAccessor {
     }
     
     @Override
-    public @NotNull ClaimCache getClaimManager() {
+    public @NotNull ServerClaimCache getClaimManager() {
         if (this.sewingMachineClaimManager == null) {
             MinecraftServer server = (MinecraftServer) (Object) this;
-            this.sewingMachineClaimManager = new ClaimCache(server, server.getOverworld());
+            this.sewingMachineClaimManager = new ServerClaimCache(server, server.getOverworld());
         }
         return this.sewingMachineClaimManager;
     }

@@ -28,7 +28,14 @@ package net.theelm.sewingmachine.protection.screen;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.text.Text;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.enums.ClaimSettings;
+import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
+import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
 import net.theelm.sewingmachine.screens.SettingScreen;
+import net.theelm.sewingmachine.screens.SettingScreenListWidget;
+import net.theelm.sewingmachine.utilities.NetworkingUtils;
+import org.jetbrains.annotations.NotNull;
 
 @Environment(EnvType.CLIENT)
 public class ProtectionSettingsScreen extends SettingScreen {
@@ -36,4 +43,19 @@ public class ProtectionSettingsScreen extends SettingScreen {
         super(Text.literal("Protection Settings"));
     }
     
+    @Override
+    protected void addButtons(@NotNull SettingScreenListWidget list) {
+        ClaimantPlayer claim = ((PlayerClaimData) this.client).getClaim();
+        for (ClaimSettings setting : ClaimSettings.values()) {
+            String name = setting.name()
+                .toLowerCase();
+            
+            list.addToggleButton(
+                Text.translatable("claim.settings." + name),
+                Text.translatable("claim.settings.tooltip." + name),
+                claim == null ? setting.isEnabled() : claim.getProtectedChunkSetting(setting),
+                (button, state) -> NetworkingUtils.send(this.client, new ClaimSettingPacket(setting, state.get()))
+            );
+        }
+    }
 }

@@ -23,20 +23,17 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.objects;
+package net.theelm.sewingmachine.interfaces;
 
-import net.minecraft.server.MinecraftServer;
-import net.theelm.sewingmachine.protection.claims.Claimant;
+import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * Created on Jul 05 2023 at 4:19 AM.
+ * Created on Jul 05 2023 at 1:40 AM.
  * By greg in sewingmachine
  */
-public abstract class ClaimCache {
-    public abstract @NotNull MinecraftServer getServer();
+public interface TranslationDescriber {
+    @NotNull String getTranslationKey();
     
-    public abstract @Nullable ClaimCacheEntry<?> addToCache(@Nullable Claimant claimant);
-    public abstract @Nullable Claimant removeFromCache(@Nullable Claimant claimant);
+    @NotNull Formatting[] getColor();
 }

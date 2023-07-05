@@ -33,6 +33,7 @@ import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.objects.ClaimTag;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
@@ -168,8 +169,8 @@ public final class ClaimantPlayer extends Claimant {
     public void readCustomDataFromTag(@NotNull NbtCompound tag) {
         // Get the players town
         ClaimantTown town = null;
-        if ( NbtUtils.hasUUID(tag, "town") ) {
-            town = this.claimCache.getTownClaim(NbtUtils.getUUID(tag, "town"));
+        if ( NbtUtils.hasUUID(tag, "town") && this.claimCache instanceof ServerClaimCache claimCache ) {
+            town = claimCache.getTownClaim(NbtUtils.getUUID(tag, "town"));
             
             // Ensure that the town has the player in the ranks
             if ((town != null) && town.getFriendRank(this.getId()) == null)

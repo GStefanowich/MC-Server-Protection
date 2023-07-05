@@ -70,7 +70,7 @@ public final class TranslatableServerSide {
     }
     public static @NotNull MutableText text(@NotNull PlayerEntity player, String key, Object... objects) {
         if (!(player instanceof ServerPlayerEntity serverPlayer))
-            return null;
+            return Text.translatable(key, objects); // If done client side, return as a translation key to be handled clientside
         return TranslatableServerSide.text(serverPlayer, key, objects);
     }
     public static @NotNull MutableText text(@NotNull ServerPlayerEntity player, String key, Object... objects) {

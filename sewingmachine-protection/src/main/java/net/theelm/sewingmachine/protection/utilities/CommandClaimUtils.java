@@ -40,8 +40,7 @@ import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
-import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
-import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashSet;
@@ -54,7 +53,7 @@ public final class CommandClaimUtils {
     
     public static @NotNull CompletableFuture<Suggestions> getAllTowns(@NotNull CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+        ServerClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
         
         Set<String> townNames = new HashSet<>();

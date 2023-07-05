@@ -23,20 +23,34 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.objects;
+package net.theelm.sewingmachine.protection.packets;
 
-import net.minecraft.server.MinecraftServer;
-import net.theelm.sewingmachine.protection.claims.Claimant;
+import net.fabricmc.fabric.api.networking.v1.FabricPacket;
+import net.fabricmc.fabric.api.networking.v1.PacketType;
+import net.minecraft.network.PacketByteBuf;
+import net.theelm.sewingmachine.protection.enums.ClaimSettings;
+import net.theelm.sewingmachine.utilities.Sew;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * Created on Jul 05 2023 at 4:19 AM.
+ * Created on Jul 05 2023 at 3:57 AM.
  * By greg in sewingmachine
  */
-public abstract class ClaimCache {
-    public abstract @NotNull MinecraftServer getServer();
+public record ClaimSettingPacket(ClaimSettings setting, boolean enabled) implements FabricPacket {
+    public static final PacketType<ClaimSettingPacket> TYPE = PacketType.create(Sew.modIdentifier("claim_setting"), ClaimSettingPacket::new);
     
-    public abstract @Nullable ClaimCacheEntry<?> addToCache(@Nullable Claimant claimant);
-    public abstract @Nullable Claimant removeFromCache(@Nullable Claimant claimant);
+    public ClaimSettingPacket(@NotNull PacketByteBuf buf) {
+        this(buf.readEnumConstant(ClaimSettings.class), buf.readBoolean());
+    }
+    
+    @Override
+    public void write(@NotNull PacketByteBuf buf) {
+        buf.writeEnumConstant(this.setting);
+        buf.writeBoolean(this.enabled);
+    }
+    
+    @Override
+    public PacketType<?> getType() {
+        return ClaimSettingPacket.TYPE;
+    }
 }

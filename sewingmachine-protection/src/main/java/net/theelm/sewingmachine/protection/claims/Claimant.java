@@ -28,10 +28,11 @@ package net.theelm.sewingmachine.protection.claims;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
+import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
-import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.objects.ClaimCacheEntry;
 import net.theelm.sewingmachine.protection.objects.ClaimTag;
 import net.theelm.sewingmachine.protection.utilities.ClaimNbtUtils;
@@ -72,9 +73,9 @@ public abstract class Claimant {
     private final @NotNull ClaimantType type;
     private final @NotNull UUID id;
     
-    private final Set<PlayerVisitor> visitors = Collections.synchronizedSet(new LinkedHashSet<>());
+    private final @NotNull Set<PlayerVisitor> visitors = Collections.synchronizedSet(new LinkedHashSet<>());
     
-    private final ClaimCacheEntry<?> saveHandle;
+    private final @Nullable ClaimCacheEntry<?> saveHandle;
     
     protected MutableText name = null;
     
@@ -87,7 +88,8 @@ public abstract class Claimant {
         this.saveHandle = this.claimCache.addToCache(this);
         
         // Load all information about the claim
-        this.readCustomDataFromTag(ClaimNbtUtils.readClaimData( this.type, id ));
+        if (cache instanceof ServerClaimCache)
+            this.readCustomDataFromTag(ClaimNbtUtils.readClaimData(this.type, this.id));
     }
     
     /* Player Friend Options */
@@ -133,11 +135,11 @@ public abstract class Claimant {
     
     /* Owner Options */
     public final void updateSetting(ClaimSettings setting, Boolean bool) {
-        this.chunkClaimOptions.put( setting, bool );
+        this.chunkClaimOptions.put(setting, bool);
         this.markDirty();
     }
     public final void updatePermission(ClaimPermissions permission, ClaimRanks rank) {
-        this.rankPermissions.put( permission, rank );
+        this.rankPermissions.put(permission, rank);
         this.markDirty();
     }
     
@@ -215,10 +217,11 @@ public abstract class Claimant {
         this.save();
     }
     public final void markDirty() {
-        this.saveHandle.markDirty();
+        if (this.saveHandle != null)
+            this.saveHandle.markDirty();
     }
     public final void save() {
-        if (this.saveHandle.isDirty()) {
+        if (this.saveHandle != null && this.saveHandle.isDirty()) {
             this.forceSave();
             this.saveHandle.markClean();
         }
@@ -244,7 +247,7 @@ public abstract class Claimant {
             friendTag.putString("r", friend.getValue().name());
             
             // Save the ranked player to our data tag
-            rankList.add( friendTag );
+            rankList.add(friendTag);
         }
         tag.put(rankNbtTag(this), rankList);
         

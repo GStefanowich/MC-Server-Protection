@@ -23,20 +23,34 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.objects;
+package net.theelm.sewingmachine.protection.mixins.Client;
 
-import net.minecraft.server.MinecraftServer;
-import net.theelm.sewingmachine.protection.claims.Claimant;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.RunArgs;
+import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
+import net.theelm.sewingmachine.protection.objects.ClientClaimCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-/**
- * Created on Jul 05 2023 at 4:19 AM.
- * By greg in sewingmachine
- */
-public abstract class ClaimCache {
-    public abstract @NotNull MinecraftServer getServer();
+@Mixin(MinecraftClient.class)
+public class MinecraftClientMixin implements PlayerClaimData {
+    private @NotNull ClientClaimCache claimCache;
+    private @Nullable ClaimantPlayer playerClaims;
     
-    public abstract @Nullable ClaimCacheEntry<?> addToCache(@Nullable Claimant claimant);
-    public abstract @Nullable Claimant removeFromCache(@Nullable Claimant claimant);
+    @Inject(at = @At("RETURN"), method = "<init>")
+    public void onInit(RunArgs args, CallbackInfo callback) {
+        this.claimCache = new ClientClaimCache();
+        this.playerClaims = new ClaimantPlayer(this.claimCache, CoreMod.SPAWN_ID);
+    }
+    
+    @Override
+    public ClaimantPlayer getClaim() {
+        return this.playerClaims;
+    }
 }

@@ -56,12 +56,16 @@ import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.interfaces.PlayerMovement;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
-import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.objects.signs.SignDeed;
 import net.theelm.sewingmachine.protection.objects.signs.SignPlots;
+import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
+import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimPropertyUtils;
 import net.theelm.sewingmachine.protection.utilities.MessageClaimUtils;
 import net.theelm.sewingmachine.utilities.EntityVariables;
+import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import net.theelm.sewingmachine.utilities.ShopSigns;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
@@ -130,7 +134,7 @@ public class ServerCore implements ModInitializer, SewPlugin {
                 return null;
             }
             
-            ClaimCache claims = chunk.getClaimCache();
+            ServerClaimCache claims = chunk.getClaimCache();
             ClaimantPlayer claim = claims.getPlayerClaim(owner);
             
             Text name = claim.getName(entity instanceof PlayerEntity player ? player.getUuid() : null);
@@ -186,6 +190,14 @@ public class ServerCore implements ModInitializer, SewPlugin {
             if (town != null)
                 income.addTax(town.getName(), town.getTaxRate());
         });
+        
+        // When a player updates their settings
+        NetworkingUtils.serverReceiver(ClaimPermissionPacket.TYPE, (server, player, network, packet, sender)
+            -> ClaimPropertyUtils.updatePermission(player, packet.permission(), packet.rank()));
+        
+        // When a player updates their permissions
+        NetworkingUtils.serverReceiver(ClaimSettingPacket.TYPE, (server, player, network, packet, sender)
+            -> ClaimPropertyUtils.updateSetting(player, packet.setting(), packet.enabled()));
         
         ShopSigns.add(SignDeed::new);
         ShopSigns.add(SignPlots::new);

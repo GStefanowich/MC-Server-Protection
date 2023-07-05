@@ -23,42 +23,51 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.screen;
+package net.theelm.sewingmachine.protection.utilities;
 
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.minecraft.text.Text;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.theelm.sewingmachine.events.RegionUpdateCallback;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
+import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
-import net.theelm.sewingmachine.screens.SettingScreen;
-import net.theelm.sewingmachine.screens.SettingScreenListWidget;
+import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
+import net.theelm.sewingmachine.utilities.ModUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import org.jetbrains.annotations.NotNull;
 
-@Environment(EnvType.CLIENT)
-public class PermissionSettingsScreen extends SettingScreen {
-    public PermissionSettingsScreen() {
-        super(Text.literal("Permission Settings"));
-    }
+/**
+ * Created on Jul 05 2023 at 4:05 AM.
+ * By greg in sewingmachine
+ */
+public final class ClaimPropertyUtils {
+    private ClaimPropertyUtils() {}
     
-    @Override
-    protected void addButtons(@NotNull SettingScreenListWidget list) {
-        ClaimantPlayer claim = ((PlayerClaimData) this.client).getClaim();
+    public static void updateSetting(@NotNull ServerPlayerEntity player, @NotNull ClaimSettings setting, boolean enabled) {
+        // Update the runtime
+        ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
+        claim.updateSetting(setting, enabled);
         
-        for (ClaimPermissions permission : ClaimPermissions.values()) {
-            String name = permission.name()
-                .toLowerCase();
-            
-            list.addCycleButton(
-                ClaimRanks.class,
-                Text.translatable("claim.permissions." + name),
-                Text.translatable("claim.permissions.tooltip." + name),
-                claim == null ? permission.getDefault() : claim.getPermissionRankRequirement(permission),
-                (button, state) -> NetworkingUtils.send(this.client, new ClaimPermissionPacket(permission, state.get()))
-            );
+        // Notify other players
+        if (ClaimSettings.PLAYER_COMBAT.equals(setting)) {
+            RegionUpdateCallback.EVENT.invoker()
+                .update(player);
         }
+        
+        // Send a packet notifying the player of their change
+        if (ModUtils.hasModule(player, "protection"))
+            NetworkingUtils.send(player, new ClaimSettingPacket(setting, enabled));
+    }
+    public static void updatePermission(@NotNull ServerPlayerEntity player, @NotNull ClaimPermissions permission, @NotNull ClaimRanks rank) {
+        ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
+        
+        // Save the permission to the claim
+        claim.updatePermission(permission, rank);
+        
+        // Send a packet notifying the player of their change
+        if (ModUtils.hasModule(player, "protection"))
+            NetworkingUtils.send(player, new ClaimPermissionPacket(permission, rank));
     }
 }

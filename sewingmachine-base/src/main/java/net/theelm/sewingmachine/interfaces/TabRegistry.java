@@ -27,14 +27,17 @@ package net.theelm.sewingmachine.interfaces;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.font.TextRenderer;
 import net.theelm.sewingmachine.objects.Tab;
+import net.theelm.sewingmachine.objects.TabContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.List;
 
 @Environment(EnvType.CLIENT)
 public interface TabRegistry {
     void registerTab(@Nullable Integer index, @NotNull Tab tab);
-    @NotNull Collection<Tab> getTabs();
+    @NotNull TabContext getTabs(@NotNull TextRenderer renderer, int x, int y, int backgroundHeight);
 }

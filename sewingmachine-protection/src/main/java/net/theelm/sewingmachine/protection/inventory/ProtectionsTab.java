@@ -26,25 +26,27 @@
 package net.theelm.sewingmachine.protection.inventory;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.text.Text;
+import net.theelm.sewingmachine.objects.ScreenTab;
 import net.theelm.sewingmachine.objects.Tab;
 import net.theelm.sewingmachine.protection.screen.ProtectionScreen;
 import net.theelm.sewingmachine.screens.SettingScreen;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * Created on Jul 03 2023 at 4:00 PM.
  * By greg in sewingmachine
  */
-public class ProtectionsTab extends Tab {
-    private final @NotNull MinecraftClient client;
+public class ProtectionsTab extends ScreenTab {
     private final @NotNull Text text;
     private final @NotNull ItemStack icon;
     
     public ProtectionsTab(@NotNull MinecraftClient client) {
-        this.client = client;
+        super(client);
         this.text = Text.literal("Protections");
         this.icon = new ItemStack(Items.CARTOGRAPHY_TABLE);
     }
@@ -61,7 +63,7 @@ public class ProtectionsTab extends Tab {
     
     @Override
     public boolean isEnabled() {
-        return true;
+        return true; // TODO: Compare mods with the server to guarantee that protections are enabled
     }
     
     @Override
@@ -70,7 +72,7 @@ public class ProtectionsTab extends Tab {
     }
     
     @Override
-    public void setActive() {
-        this.client.setScreenAndRender(new ProtectionScreen());
+    protected @Nullable Screen getScreen() {
+        return new ProtectionScreen();
     }
 }

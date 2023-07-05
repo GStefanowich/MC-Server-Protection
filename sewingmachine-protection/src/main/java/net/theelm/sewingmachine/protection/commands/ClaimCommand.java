@@ -67,8 +67,9 @@ import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
-import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
+import net.theelm.sewingmachine.protection.utilities.ClaimPropertyUtils;
 import net.theelm.sewingmachine.protection.utilities.CommandClaimUtils;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.theelm.sewingmachine.utilities.CasingUtils;
@@ -578,7 +579,7 @@ public final class ClaimCommand extends SewCommand {
         return this.claimChunkAt(source, world, chunkFor, verify, Arrays.asList(positions));
     }
     public int claimChunkAt(@NotNull ServerCommandSource source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull Collection<? extends BlockPos> positions) {
-        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+        ServerClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
         ((LogicalWorld)world).addTickableEvent(ChunkOwnerUpdate.forPlayer(
             claimCache,
@@ -666,7 +667,7 @@ public final class ClaimCommand extends SewCommand {
         return this.unclaimChunkAt(source, world, chunkFor, verify, Arrays.asList(positions));
     }
     public int unclaimChunkAt(@NotNull ServerCommandSource source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull Collection<? extends BlockPos> positions) {
-        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+        ServerClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
         ((LogicalWorld)world).addTickableEvent(ChunkOwnerUpdate.forPlayer(
             claimCache,
@@ -767,7 +768,7 @@ public final class ClaimCommand extends SewCommand {
         // Get player information
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
-        ClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
+        ServerClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
         ServerPlayerEntity founder = source.getPlayer();
         
         // Charge the player money
@@ -919,7 +920,7 @@ public final class ClaimCommand extends SewCommand {
         // Get the town
         String townName = StringArgumentType.getString(context, "town");
         
-        ClaimCache claimCache = ((ClaimsAccessor) server).getClaimManager();
+        ServerClaimCache claimCache = ((ClaimsAccessor) server).getClaimManager();
         ClaimantTown town = claimCache.getTownClaim(townName);
         
         if (town == null)
@@ -1020,15 +1021,14 @@ public final class ClaimCommand extends SewCommand {
     }
     private void updateSetting(@NotNull ServerPlayerEntity player, ClaimPermissions permission, ClaimRanks rank) throws CommandSyntaxException {
         // Update the runtime
-        ((PlayerClaimData) player).getClaim()
-            .updatePermission(permission, rank);
+        ClaimPropertyUtils.updatePermission(player, permission, rank);
         
         // Notify the player
         player.sendMessage(Text.literal("Interacting with ").formatted(Formatting.WHITE)
-                .append(Text.literal(CasingUtils.sentence(permission.name())).formatted(Formatting.AQUA))
-                .append(Text.literal(" is now limited to ").formatted(Formatting.WHITE))
-                .append(Text.literal(CasingUtils.sentence(rank.name())).formatted(Formatting.AQUA))
-                .append(Text.literal(".").formatted(Formatting.WHITE))
+            .append(Text.literal(CasingUtils.sentence(permission.name())).formatted(Formatting.AQUA))
+            .append(Text.literal(" is now limited to ").formatted(Formatting.WHITE))
+            .append(Text.literal(CasingUtils.sentence(rank.name())).formatted(Formatting.AQUA))
+            .append(Text.literal(".").formatted(Formatting.WHITE))
         );
     }
     private int updateBoolean(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
@@ -1040,14 +1040,7 @@ public final class ClaimCommand extends SewCommand {
         ServerPlayerEntity player = context.getSource().getPlayer();
         
         // Update the runtime
-        ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
-        claim.updateSetting(setting, enabled);
-        
-        // Notify other players
-        if (ClaimSettings.PLAYER_COMBAT.equals(setting)) {
-            RegionUpdateCallback.EVENT.invoker()
-                .update(player);
-        }
+        ClaimPropertyUtils.updateSetting(player, setting, enabled);
         
         // Notify the player
         player.sendMessage(Text.literal(CasingUtils.words(setting.name().replace("_", " "))).formatted(Formatting.AQUA)
@@ -1176,7 +1169,7 @@ public final class ClaimCommand extends SewCommand {
             .findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Get the Claims handler
-        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+        ServerClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
         
         // Check if the command player and the target are friends
@@ -1205,7 +1198,7 @@ public final class ClaimCommand extends SewCommand {
         String name = StringArgumentType.getString(context, "location");
         
         // Get the Claims handler
-        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+        ServerClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
         
         // Check if the command player and the target are friends
@@ -1329,7 +1322,7 @@ public final class ClaimCommand extends SewCommand {
     private int invitedList(@NotNull ServerCommandSource source, @NotNull GameProfile player) {
         // Get information about the server
         MinecraftServer server = source.getServer();
-        ClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
+        ServerClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
         UserCache cache = server.getUserCache();
         Whitelist whitelist = server.getPlayerManager().getWhitelist();
         

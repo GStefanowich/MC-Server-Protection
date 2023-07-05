@@ -33,7 +33,7 @@ import net.theelm.sewingmachine.exceptions.TranslationKeyException;
 import net.theelm.sewingmachine.protection.interfaces.Claim;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
-import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils.ClaimSlice;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
@@ -198,7 +198,7 @@ public abstract class ChunkMixin implements BlockView, IClaimedChunk, Claim {
     }
     
     @Override
-    public @Nullable ClaimCache getClaimCache() {
+    public @Nullable ServerClaimCache getClaimCache() {
         Chunk chunk = (Chunk)(Object)this;
         
         // TODO: Alternative way of getting the World from the Chunk?

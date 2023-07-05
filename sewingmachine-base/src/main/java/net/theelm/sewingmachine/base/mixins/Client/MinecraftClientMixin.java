@@ -26,8 +26,10 @@
 package net.theelm.sewingmachine.base.mixins.Client;
 
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.font.TextRenderer;
 import net.theelm.sewingmachine.interfaces.TabRegistry;
 import net.theelm.sewingmachine.objects.Tab;
+import net.theelm.sewingmachine.objects.TabContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -48,7 +50,7 @@ public abstract class MinecraftClientMixin implements TabRegistry {
     }
     
     @Override
-    public @NotNull Collection<Tab> getTabs() {
-        return this.registeredTabs;
+    public @NotNull TabContext getTabs(@NotNull TextRenderer renderer, int x, int y, int backgroundHeight) {
+        return new TabContext(this.registeredTabs, renderer, x, y, backgroundHeight);
     }
 }

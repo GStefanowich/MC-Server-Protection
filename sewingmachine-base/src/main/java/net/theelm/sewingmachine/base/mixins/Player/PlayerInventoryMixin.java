@@ -48,7 +48,7 @@ public abstract class PlayerInventoryMixin implements Inventory, Nameable {
     public void onInsertStack(ItemStack itemStack, CallbackInfoReturnable<Boolean> callback) {
         PlayerBackpack backpack = ((BackpackCarrier)this.player).getBackpack();
         if ((backpack != null) && backpack.shouldAutoPickup(itemStack) && backpack.insertStack(itemStack) && itemStack.isEmpty())
-            callback.setReturnValue( true );
+            callback.setReturnValue(true);
     }
     
     @Inject(at = @At(value = "INVOKE", target = "net/minecraft/entity/player/PlayerEntity.dropItem(Lnet/minecraft/item/ItemStack;Z)Lnet/minecraft/entity/ItemEntity;"), method = "offer", cancellable = true)

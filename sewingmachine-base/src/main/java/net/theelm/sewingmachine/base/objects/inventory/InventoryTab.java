@@ -29,23 +29,25 @@ import com.mojang.authlib.GameProfile;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.screen.ingame.InventoryScreen;
 import net.minecraft.client.network.ClientPlayerEntity;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
+import net.theelm.sewingmachine.objects.ScreenTab;
 import net.theelm.sewingmachine.objects.Tab;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 @Environment(EnvType.CLIENT)
-public final class InventoryTab extends Tab {
-    private final @NotNull MinecraftClient client;
+public final class InventoryTab extends ScreenTab {
     private final @NotNull Text text;
     private final @NotNull ItemStack icon;
     
     public InventoryTab(@NotNull MinecraftClient client) {
-        this.client = client;
+        super(client);
         this.text = Text.translatable("container.inventory");
         
         GameProfile profile = client.getSession()
@@ -76,10 +78,10 @@ public final class InventoryTab extends Tab {
     }
     
     @Override
-    public void setActive() {
+    protected @Nullable Screen getScreen() {
         ClientPlayerEntity player = this.client.player;
-        if (player != null)
-            this.client.setScreen(new InventoryScreen(player));
-        else this.client.setScreen(null);
+        if (player == null)
+            return null;
+        return new InventoryScreen(player);
     }
 }

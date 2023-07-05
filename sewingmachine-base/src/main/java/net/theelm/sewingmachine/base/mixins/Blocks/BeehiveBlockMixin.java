@@ -51,7 +51,7 @@ public abstract class BeehiveBlockMixin {
     @Inject(at = @At("TAIL"), method = "onUse", cancellable = true)
     public void onInteractWith(BlockState state, World world, BlockPos pos, PlayerEntity player, Hand hand, BlockHitResult hitResult, CallbackInfoReturnable<ActionResult> callback) {
         // If the player has an empty hand
-        if (callback.getReturnValue() == ActionResult.PASS && hand == Hand.MAIN_HAND && player.getStackInHand(hand).isEmpty()) {
+        if (!world.isClient() && callback.getReturnValue() == ActionResult.PASS && hand == Hand.MAIN_HAND && player.getStackInHand(hand).isEmpty()) {
             // If the block entity is a hive
             BlockEntity hiveEntity = world.getBlockEntity(pos);
             if (hiveEntity instanceof BeehiveBlockEntity beehiveBlock) {

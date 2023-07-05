@@ -32,7 +32,7 @@ import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
-import net.theelm.sewingmachine.protection.objects.ClaimCache;
+import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimNbtUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.TownNameUtils;
@@ -62,10 +62,10 @@ public final class ClaimantTown extends Claimant {
     private @Nullable ClaimantPlayer owner;
     private Set<UUID> villagers;
     
-    public ClaimantTown(@NotNull ClaimCache cache, @NotNull UUID townId) {
+    public ClaimantTown(@NotNull ServerClaimCache cache, @NotNull UUID townId) {
         super(cache, ClaimantType.TOWN, townId);
     }
-    public ClaimantTown(@NotNull ClaimCache cache, @NotNull UUID townId, @NotNull MutableText townName) {
+    public ClaimantTown(@NotNull ServerClaimCache cache, @NotNull UUID townId, @NotNull MutableText townName) {
         this(cache, townId);
         this.name = townName;
     }
@@ -84,15 +84,17 @@ public final class ClaimantTown extends Claimant {
         return this.ownerId;
     }
     public @Nullable ClaimantPlayer getOwner() {
-        if (this.owner == null && this.ownerId != null)
-            this.owner = this.claimCache.getPlayerClaim(this.ownerId);
+        if (this.owner == null && this.ownerId != null && this.claimCache instanceof ServerClaimCache claimCache)
+            this.owner = claimCache.getPlayerClaim(this.ownerId);
         return this.owner;
     }
     public void setOwner(@NotNull UUID owner) {
-        this.updateFriend(owner, ClaimRanks.OWNER);
-        this.ownerId = owner;
-        this.owner = this.claimCache.getPlayerClaim(owner);
-        this.markDirty();
+        if (this.claimCache instanceof ServerClaimCache claimCache) {
+            this.updateFriend(owner, ClaimRanks.OWNER);
+            this.ownerId = owner;
+            this.owner = claimCache.getPlayerClaim(owner);
+            this.markDirty();
+        }
     }
     
     public int getResidentCount() {
@@ -144,8 +146,10 @@ public final class ClaimantTown extends Claimant {
     @Override
     public boolean updateFriend(@NotNull final UUID player, @Nullable final ClaimRanks rank) {
         if ( super.updateFriend( player, rank ) ) {
-            ClaimantPlayer claim = this.claimCache.getPlayerClaim(player);
-            claim.setTown(rank == null ? null : this);
+            if (this.claimCache instanceof ServerClaimCache claimCache) {
+                ClaimantPlayer claim = claimCache.getPlayerClaim(player);
+                claim.setTown(rank == null ? null : this);
+            }
             return true;
         }
         return false;
