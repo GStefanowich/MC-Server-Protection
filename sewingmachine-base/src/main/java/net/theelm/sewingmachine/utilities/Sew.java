@@ -33,6 +33,7 @@ import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
 import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.objects.SewModules;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.File;
@@ -47,18 +48,20 @@ public final class Sew {
     /*
      * Mod Assets
      */
+    
     public static @NotNull Identifier modIdentifier(@NotNull String key) {
-        return new Identifier(CoreMod.MOD_ID + ":" + key);
+        return new Identifier(SewModules.MODULE + ":" + key);
     }
     
     /*
      * Configurations
      */
+    
     public static @NotNull File getConfDir() throws RuntimeException {
         // Get the directory
         final File config = Sew.getFabric()
             .getConfigDirectory();
-        final File dir = new File(config, CoreMod.MOD_ID);
+        final File dir = new File(config, SewModules.MODULE);
         // Make sure the directory exists
         if (!(dir.exists() || dir.mkdirs()))
             throw new RuntimeException("Error accessing the config");
@@ -69,6 +72,7 @@ public final class Sew {
     /*
      * Fabric Elements
      */
+    
     public static Either<MinecraftServer, MinecraftClient> getGameInstance() {
         Object instance = Sew.getFabric()
             .getGameInstance();
@@ -78,13 +82,14 @@ public final class Sew {
             return Either.right(client);
         throw new RuntimeException("Could not access game instance.");
     }
+    
     public static @NotNull FabricLoader getFabric() {
         return FabricLoader.getInstance();
     }
     public static @NotNull ModContainer getMod(@NotNull String id) {
         return Sew.getFabric()
             .getModContainer(id)
-            .orElseThrow(RuntimeException::new);
+            .orElseThrow(() -> new RuntimeException("Could not find mod container \"" + id + "\""));
     }
     public static boolean isClient() {
         return Sew.getFabric().getEnvironmentType() == EnvType.CLIENT;

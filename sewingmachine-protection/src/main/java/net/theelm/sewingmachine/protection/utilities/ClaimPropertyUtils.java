@@ -41,6 +41,7 @@ import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
 import net.theelm.sewingmachine.utilities.ModUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
@@ -77,7 +78,7 @@ public final class ClaimPropertyUtils {
             NetworkingUtils.send(player, new ClaimPermissionPacket(permission, rank));
     }
 
-    public static void updateRank(@NotNull ServerPlayerEntity player, @NotNull UUID friend, @NotNull ClaimRanks rank) {
+    public static void updateRank(@NotNull ServerPlayerEntity player, @NotNull UUID friend, @Nullable ClaimRanks rank) {
         ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
         
         // Save the update to the claim
@@ -91,7 +92,7 @@ public final class ClaimPropertyUtils {
                 Text display = PlayerNameCallback.getPlainName(server, friend)
                     .copyContentOnly();
                 
-                NetworkingUtils.send(player, new ClaimRankPacket(friend, display, rank));
+                NetworkingUtils.send(player, new ClaimRankPacket(friend, display, rank == null ? ClaimRanks.PASSIVE : rank));
             }
         }
     }

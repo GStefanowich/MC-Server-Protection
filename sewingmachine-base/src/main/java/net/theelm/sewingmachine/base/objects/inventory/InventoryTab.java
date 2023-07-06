@@ -37,7 +37,6 @@ import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.objects.ScreenTab;
-import net.theelm.sewingmachine.objects.Tab;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

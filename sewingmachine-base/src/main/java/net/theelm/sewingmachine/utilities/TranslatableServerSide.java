@@ -40,6 +40,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.theelm.sewingmachine.objects.SewModules;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
@@ -173,7 +174,7 @@ public final class TranslatableServerSide {
         return JsonParser.parseReader(new InputStreamReader( resource )).getAsJsonObject();
     }
     private static @NotNull String getResourcePath(@NotNull Locale locale) {
-        return "/assets/" + CoreMod.MOD_ID + "/lang/" + (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase() + ".json";
+        return "/assets/" + SewModules.MODULE + "/lang/" + (locale.getLanguage() + "_" + locale.getCountry()).toLowerCase() + ".json";
     }
     
     private static boolean matchAny(@NotNull String needle, @NotNull String... haystack ) {

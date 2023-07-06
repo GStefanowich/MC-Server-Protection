@@ -287,8 +287,6 @@ public final class SewConfig extends SewConfigContainer {
             buf.writeString(option.getPath());
             buf.writeString(option.getElement().toString());
         }
-        
-        System.out.println("Writing config");
     }
     public static void readFromPacket(@NotNull PacketByteBuf buf) {
         Map<String, ? extends ConfigBase<?>> config = SewConfig.INSTANCE.configOptions.stream()
@@ -309,8 +307,6 @@ public final class SewConfig extends SewConfigContainer {
             if (value != null)
                 option.set(value);
         }
-        
-        System.out.println("Reading config");
     }
     
     public static void afterReload(Runnable runnable) {

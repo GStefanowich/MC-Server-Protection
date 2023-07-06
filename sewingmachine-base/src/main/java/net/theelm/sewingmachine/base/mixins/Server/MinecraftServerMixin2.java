@@ -33,6 +33,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.objects.DynamicLevelProperties;
+import net.theelm.sewingmachine.objects.SewModules;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
@@ -94,7 +95,7 @@ public abstract class MinecraftServerMixin2 extends ReentrantThreadExecutor<Serv
         Identifier identifier = registryKey.getValue();
         ServerWorld world = server.getWorld(registryKey);
         if (world == null)
-            throw new NullPointerException("Could not find default world \"" + identifier.getNamespace() + ":" + identifier.getPath() + "\", please update " + CoreMod.MOD_ID + "/config.json");
+            throw new NullPointerException("Could not find default world \"" + identifier.getNamespace() + ":" + identifier.getPath() + "\", please update " + SewModules.MODULE + "/config.json");
         return world;
     }
     

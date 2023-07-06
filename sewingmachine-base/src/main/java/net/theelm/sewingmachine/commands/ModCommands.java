@@ -44,6 +44,7 @@ import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
+import net.theelm.sewingmachine.objects.SewModules;
 import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.GuideUtils;
@@ -88,7 +89,7 @@ public final class ModCommands extends SewCommand {
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess access) {
-        CommandUtils.register(dispatcher, CoreMod.MOD_ID, (builder) -> {
+        CommandUtils.register(dispatcher, SewModules.MODULE, (builder) -> {
             builder.requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.ADMIN_CLAIM_SHOPS))
                 .then(CommandManager.literal("reload")
                     .requires(CommandPredicate.opLevel(OpLevels.STOP).or(PermissionNodes.ALL_PERMISSIONS))

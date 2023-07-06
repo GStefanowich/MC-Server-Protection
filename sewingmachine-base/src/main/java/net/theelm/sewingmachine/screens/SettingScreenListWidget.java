@@ -118,6 +118,8 @@ public class SettingScreenListWidget extends EntryListWidget<SettingScreenListWi
     }
     
     public static class Entry extends EntryListWidget.Entry<Entry> {
+        private static final int X_OFFSET = -6;
+        private static final int Y_OFFSET = -3;
         private final @NotNull ButtonWidget widget;
         
         public Entry(@NotNull ButtonWidget widget) {
@@ -127,7 +129,7 @@ public class SettingScreenListWidget extends EntryListWidget<SettingScreenListWi
         @Override
         public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
             this.widget.setWidth(entryWidth);
-            this.widget.setPosition(x - 6, y - 3);
+            this.widget.setPosition(x + X_OFFSET, y + Y_OFFSET);
             this.widget.render(context, mouseX, mouseY, tickDelta);
         }
         

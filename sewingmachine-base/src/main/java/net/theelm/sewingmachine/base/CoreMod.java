@@ -46,6 +46,7 @@ import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.base.objects.ShopStats;
+import net.theelm.sewingmachine.objects.SewModules;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.DevUtils;
 import net.fabricmc.fabric.api.object.builder.v1.block.entity.FabricBlockEntityTypeBuilder;
@@ -77,7 +78,6 @@ import java.util.WeakHashMap;
 
 public abstract class CoreMod {
     public static final String MOD_ID = "sewing-machine";
-    private static final String MOD_PREFIX = CoreMod.MOD_ID + "-";
     
     // Create ourselves a universal logger
     private static final Logger logger = LogManager.getLogger();
@@ -125,7 +125,11 @@ public abstract class CoreMod {
             plugin.getConfigClass()
                 .ifPresent(SewConfig::addConfigClass);
             
-            commands.addAll(List.of(plugin.getCommands()));
+            SewCommand[] pluginCommands = plugin.getCommands();
+            if (pluginCommands != null)
+                for (SewCommand command : pluginCommands)
+                    if (command != null)
+                        commands.add(command);
         }
         
         SewConfig.firstInitialize();
@@ -145,13 +149,13 @@ public abstract class CoreMod {
         }
     }
     
-    protected @NotNull List<SewPlugin> getPlugins() {
+    protected @NotNull List<@NotNull SewPlugin> getPlugins() {
         List<SewPlugin> plugins = new ArrayList<>();
         for (EntrypointContainer<Object> entry : this.getEntryPoints()) {
             ModContainer container = entry.getProvider();
             ModMetadata metadata = container.getMetadata();
             if (
-                metadata.getId().startsWith(CoreMod.MOD_PREFIX)
+                metadata.getId().startsWith(SewModules.MOD_PREFIX)
                 && entry.getEntrypoint() instanceof SewPlugin plugin
             ) plugins.add(plugin);
         }
@@ -164,7 +168,7 @@ public abstract class CoreMod {
             ModContainer container = entry.getProvider();
             ModMetadata metadata = container.getMetadata();
             if (
-                metadata.getId().startsWith(CoreMod.MOD_PREFIX)
+                metadata.getId().startsWith(SewModules.MOD_PREFIX)
                 && entry.getEntrypoint() instanceof SewPlugin
             ) metadatas.add(metadata);
         }
@@ -185,8 +189,8 @@ public abstract class CoreMod {
             if (compare == null)
                 continue;
             
-            if (trim && id.startsWith(CoreMod.MOD_PREFIX))
-                id = id.substring(CoreMod.MOD_PREFIX.length());
+            if (trim && id.startsWith(SewModules.MOD_PREFIX))
+                id = id.substring(SewModules.MOD_PREFIX.length());
             
             String version = metadata.getVersion()
                 .getFriendlyString();
@@ -218,7 +222,7 @@ public abstract class CoreMod {
         return FabricLoader.getInstance();
     }
     public static @NotNull ModMetadata getModMetaData() {
-        return Sew.getMod(CoreMod.MOD_ID).getMetadata();
+        return Sew.getMod(SewModules.BASE).getMetadata();
     }
     public static @NotNull String getModVersion() {
         return CoreMod.getModMetaData().getVersion().getFriendlyString();

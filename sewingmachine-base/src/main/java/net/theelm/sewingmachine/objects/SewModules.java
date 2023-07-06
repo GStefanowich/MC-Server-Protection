@@ -23,25 +23,45 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.objects;
 
-import com.mojang.brigadier.builder.ArgumentBuilder;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.server.command.ServerCommandSource;
-import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
+public final class SewModules {
+    private SewModules() {}
 
-/**
- * Created on Jun 08 2023 at 7:56 PM.
- * By greg in sewingmachine
- */
-public interface SewPlugin {
-    default @NotNull Optional<Class<?>> getConfigClass() {
-        return Optional.empty();
-    }
-    default @Nullable SewCommand[] getCommands() { return new SewCommand[0]; }
-    default void updatePrimaryCommand(@NotNull ArgumentBuilder<ServerCommandSource, ?> builder, @NotNull CommandRegistryAccess access) {}
+    /**
+     * The name of the module
+     */
+    public static final @NotNull String MODULE = "sewing-machine";
+    
+    /**
+     * The prefix used for all submodules
+     */
+    public static final @NotNull String MOD_PREFIX = MODULE + "-";
+    
+    /**
+     * Base module with all necessary libraries
+     */
+    public static final @NotNull String BASE = MOD_PREFIX + "base";
+    
+    /**
+     * Chat module for formatting chat
+     */
+    public static final @NotNull String CHAT = MOD_PREFIX + "chat";
+    
+    /**
+     * Custom module for some custom implementations
+     */
+    public static final @NotNull String CUSTOM = MOD_PREFIX + "custom";
+    
+    /**
+     * Deathchests module for handling death chests
+     */
+    public static final @NotNull String DEATHCHESTS = MOD_PREFIX + "deathchests";
+    
+    /**
+     * Protection module for world claims
+     */
+    public static final @NotNull String PROTECTION = MOD_PREFIX + "protection";
 }

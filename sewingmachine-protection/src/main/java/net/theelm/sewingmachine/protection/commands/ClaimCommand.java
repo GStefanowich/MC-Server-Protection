@@ -290,7 +290,7 @@ public final class ClaimCommand extends SewCommand {
             // Remove a friends rank
             .then(CommandManager.literal("remove")
                 .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
-                    //.suggests(CommandUtilities::getAllPlayerNames)
+                    .suggests(CommandUtils::getAllPlayerNames)
                     .executes(this::remRank)
                 )
             )
@@ -1102,8 +1102,10 @@ public final class ClaimCommand extends SewCommand {
         return Command.SINGLE_SUCCESS;
     }
     private int remRank(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerCommandSource source = context.getSource();
+        
         // Get the player
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        ServerPlayerEntity player = source.getPlayer();
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context, "friend");
         GameProfile friend = gameProfiles.stream().findAny()
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
@@ -1125,7 +1127,9 @@ public final class ClaimCommand extends SewCommand {
         player.playSound(SoundEvents.ENTITY_VILLAGER_DEATH, SoundCategory.MASTER, 0.5f, 1f );
         
         // Find the entity of the friend
-        ServerPlayerEntity friendEntity = context.getSource().getServer().getPlayerManager().getPlayer( friend.getId() );
+        ServerPlayerEntity friendEntity = source.getServer()
+            .getPlayerManager()
+            .getPlayer(friend.getId());
         
         // If the friend is online
         if ( friendEntity != null ) {

@@ -204,7 +204,7 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
     }
     
     @Override
-    public @NotNull SewCommand[] getCommands() {
+    public @Nullable SewCommand[] getCommands() {
         return new SewCommand[]{
             new AdminCommands(),
             new BackpackCommand(),
@@ -238,7 +238,8 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
     public static @NotNull MinecraftServer get() {
         return Sew.getGameInstance()
             .left()
-            .orElseGet(ClientCore::getServer);
+            // Don't method reference otherwise it'll import and check client classes
+            .orElseGet(() -> ClientCore.getServer());
     }
     public static @NotNull MinecraftServer get(@NotNull PlayerEntity player) {
         return Objects.requireNonNull(player.getServer());

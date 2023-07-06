@@ -26,7 +26,6 @@
 package net.theelm.sewingmachine.deathchests.utilities;
 
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.deathchests.config.SewDeathConfig;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
