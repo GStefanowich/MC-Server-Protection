@@ -26,6 +26,8 @@
 package net.theelm.sewingmachine.protection.screen;
 
 import com.mojang.authlib.GameProfile;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
@@ -48,10 +50,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.UUID;
 
-/**
- * Created on Jul 05 2023 at 2:35 PM.
- * By greg in sewingmachine
- */
+@Environment(EnvType.CLIENT)
 public final class RankSettingsScreen extends SettingScreen {
     protected RankSettingsScreen() {
         super(Text.literal("Rank Settings"));

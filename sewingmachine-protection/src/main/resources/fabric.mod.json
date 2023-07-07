@@ -3,7 +3,7 @@
 	"id": "sewing-machine-protection",
 	"version": "${version}",
 	"name": "Sewing Machine Protection",
-	"description": "A mod for sewing your worlds chunks together. Provides chunk claiming and other server utilities.",
+	"description": "A chunk claiming mod by sewing chunks together.",
 	"authors": [
 		"TheElm"
 	],
@@ -29,9 +29,10 @@
 		"sewingmachine-protection.mixins.json"
 	],
 	"depends": {
-		"sewing-machine-base": "*",
-		"fabricloader": ">=0.14.21",
-		"fabric": "*"
+		"minecraft": ">=${minecraft}",
+		"sewing-machine-base": "${version}",
+		"fabricloader": ">=${fabricloader}",
+		"fabric": ">=${fabricapi}"
 	},
 	"suggests": {}
 }

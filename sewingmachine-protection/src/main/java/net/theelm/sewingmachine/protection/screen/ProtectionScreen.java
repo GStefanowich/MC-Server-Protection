@@ -32,30 +32,29 @@ import net.theelm.sewingmachine.screens.SettingScreen;
 import net.theelm.sewingmachine.screens.SettingScreenListWidget;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Supplier;
+
 @Environment(EnvType.CLIENT)
-public class ProtectionScreen extends SettingScreen {
+public final class ProtectionScreen extends SettingScreen {
     public ProtectionScreen() {
         super(Text.literal("Protections"));
     }
     
     @Override
     protected void addButtons(@NotNull SettingScreenListWidget list) {
-        list.addScreenButton(Text.literal("Claim Settings"), Text.literal("Settings for your Player claim"), () -> {
-            SettingScreen screen = new ProtectionSettingsScreen();
-            screen.parent = this;
-            return screen;
-        });
-        list.addScreenButton(Text.literal("Claim Permissions"), Text.literal("Permissions for your Player claim"), () -> {
-            SettingScreen screen = new PermissionSettingsScreen();
-            screen.parent = this;
-            return screen;
-        });
+        this.addScreenButton(list, ProtectionClaimScreen::new, Text.literal("Claims"), Text.literal("Claim chunks"));
+        this.addScreenButton(list, ProtectionSettingsScreen::new, Text.literal("Claim Settings"), Text.literal("Settings for your Player claim"));
+        this.addScreenButton(list, PermissionSettingsScreen::new, Text.literal("Claim Permissions"), Text.literal("Permissions for your Player claim"));
         if (!this.client.isInSingleplayer() || this.client.isIntegratedServerRunning()) {
-            list.addScreenButton(Text.literal("Claim Ranks"), Text.literal("The permissions for other players"), () -> {
-                SettingScreen screen = new RankSettingsScreen();
-                screen.parent = this;
-                return screen;
-            });
+            this.addScreenButton(list, RankSettingsScreen::new, Text.literal("Claim Ranks"), Text.literal("The permissions for other players"));
         }
+    }
+    
+    private void addScreenButton(@NotNull SettingScreenListWidget list, @NotNull Supplier<SettingScreen> supplier, @NotNull Text text, @NotNull Text tooltip) {
+        list.addScreenButton(text, tooltip, () -> {
+            SettingScreen screen = supplier.get();
+            screen.parent = this;
+            return screen;
+        });
     }
 }
