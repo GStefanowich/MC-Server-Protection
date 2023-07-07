@@ -36,6 +36,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.interfaces.NameCache;
+import net.theelm.sewingmachine.protection.interfaces.ClientClaimData;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -51,13 +52,15 @@ import java.util.UUID;
 
 @Mixin(MinecraftClient.class)
 @Environment(EnvType.CLIENT)
-public abstract class MinecraftClientMixin implements PlayerClaimData, NameCache {
+public abstract class MinecraftClientMixin implements ClientClaimData, PlayerClaimData, NameCache {
     @Shadow @Nullable public ClientWorld world;
     @Shadow public abstract Session getSession();
     
     private final @NotNull Map<UUID, Text> namesCache = new HashMap<>();
     
     private @Nullable ClaimantPlayer playerClaims;
+    private int claimedChunks;
+    private int maximumChunks;
     
     @Inject(at = @At("RETURN"), method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V")
     private void onDisconnect(Screen screen, CallbackInfo callback) {
@@ -65,6 +68,8 @@ public abstract class MinecraftClientMixin implements PlayerClaimData, NameCache
         
         // Reset claim information after disconnect
         this.playerClaims = null;
+        this.claimedChunks = 0;
+        this.maximumChunks = 0;
     }
     
     @Override
@@ -95,5 +100,25 @@ public abstract class MinecraftClientMixin implements PlayerClaimData, NameCache
     @Override
     public void setPlayerName(@NotNull UUID uuid, @NotNull Text name) {
         this.namesCache.put(uuid, name);
+    }
+    
+    @Override
+    public int getMaxChunks() {
+        return this.maximumChunks;
+    }
+    
+    @Override
+    public void setMaximumChunks(int maximum) {
+        this.maximumChunks = maximum;
+    }
+    
+    @Override
+    public int getClaimedChunks() {
+        return this.claimedChunks;
+    }
+    
+    @Override
+    public void setClaimedChunks(int claimed) {
+        this.claimedChunks = claimed;
     }
 }

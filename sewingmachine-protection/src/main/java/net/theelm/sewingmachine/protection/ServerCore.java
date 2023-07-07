@@ -72,6 +72,7 @@ import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.objects.signs.SignDeed;
 import net.theelm.sewingmachine.protection.objects.signs.SignPlots;
 import net.theelm.sewingmachine.protection.packets.ClaimChunkPacket;
+import net.theelm.sewingmachine.protection.packets.ClaimCountPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimQueryPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
@@ -215,6 +216,7 @@ public final class ServerCore implements ModInitializer, SewPlugin {
                 return;
             
             ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
+            NetworkingUtils.send(player, new ClaimCountPacket(claim));
             
             // Send permissions
             for (ClaimPermissions permission : ClaimPermissions.values())

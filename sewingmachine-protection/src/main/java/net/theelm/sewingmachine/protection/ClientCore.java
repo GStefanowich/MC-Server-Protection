@@ -33,11 +33,13 @@ import net.minecraft.world.chunk.ChunkStatus;
 import net.theelm.sewingmachine.base.packets.CancelMinePacket;
 import net.theelm.sewingmachine.events.TabRegisterEvent;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.interfaces.ClientClaimData;
 import net.theelm.sewingmachine.protection.interfaces.ClientMiner;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.interfaces.NameCache;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.inventory.ProtectionsTab;
+import net.theelm.sewingmachine.protection.packets.ClaimCountPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
@@ -73,6 +75,11 @@ public class ClientCore implements ClientModInitializer {
             
             // Store the rank
             claim.updateFriend(packet.player(), packet.rank());
+        });
+        
+        NetworkingUtils.clientReceiver(ClaimCountPacket.TYPE, (client, network, packet, sender) -> {
+            ((ClientClaimData) client).setClaimedChunks(packet.current());
+            ((ClientClaimData) client).setMaximumChunks(packet.maximum());
         });
         
         NetworkingUtils.clientReceiver(ClaimedChunkPacket.TYPE, (client, network, packet, sender) -> {

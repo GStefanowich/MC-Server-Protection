@@ -30,13 +30,17 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.protection.interfaces.ClientClaimData;
 import net.theelm.sewingmachine.protection.objects.FrameData;
 import net.theelm.sewingmachine.protection.objects.MapChunk;
 import net.theelm.sewingmachine.protection.objects.MapWidget;
 import net.theelm.sewingmachine.screens.SettingScreen;
 import net.theelm.sewingmachine.screens.SettingScreenListWidget;
 import net.theelm.sewingmachine.utilities.ColorUtils;
+import net.theelm.sewingmachine.utilities.text.MessageUtils;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -50,6 +54,7 @@ public final class ProtectionClaimScreen extends SettingScreen {
     
     private final FrameData frame;
     private @Nullable MapWidget widget = null;
+    private @Nullable Text claimsText = null;
     private int ticks = 0;
     
     protected ProtectionClaimScreen() {
@@ -83,6 +88,14 @@ public final class ProtectionClaimScreen extends SettingScreen {
             if (this.ticks-- <= 0) {
                 this.ticks = 60;
                 this.widget.update();
+                
+                ClientClaimData claimData = (ClientClaimData) this.client;
+                int current = claimData.getClaimedChunks();
+                int limit = claimData.getMaxChunks();
+                this.claimsText = TextUtils.literal()
+                    .append(MessageUtils.formatNumber(current, current == limit ? Formatting.RED : Formatting.GREEN))
+                    .append(" / ")
+                    .append(MessageUtils.formatNumber(limit, Formatting.WHITE));
             }
             
             // Draw the owner tooltip if hovering over a chunk
@@ -91,7 +104,8 @@ public final class ProtectionClaimScreen extends SettingScreen {
                 context.drawTooltip(this.textRenderer, hovered.getName(), mouseX, mouseY);
             
             // Draw the number of claims that a player has available
-            context.drawTextWithShadow(this.textRenderer, Text.literal("0 / 1,000"), this.x, this.y + this.backgroundHeight, ColorUtils.Argb.WHITE);
+            if (this.claimsText != null)
+                context.drawTextWithShadow(this.textRenderer, this.claimsText, this.x, this.y + this.backgroundHeight, ColorUtils.Argb.WHITE);
         }
     }
     

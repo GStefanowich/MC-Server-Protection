@@ -75,8 +75,8 @@ public final class MapWidget {
         this.chunkWidth = chunkWidth;
         this.chunkHeight = chunkHeight;
         
-        this.chunkX = chunkPos.x - Math.round((float)chunkWidth / 2);
-        this.chunkZ = chunkPos.z - Math.round((float)chunkHeight / 2);
+        this.chunkX = chunkPos.x - Math.round((float) chunkWidth / 2) + 1;
+        this.chunkZ = chunkPos.z - Math.round((float) chunkHeight / 2) + 1;
     }
     
     public void update() {
@@ -124,13 +124,16 @@ public final class MapWidget {
                 int offsetX = x * MapChunk.WIDTH;
                 int offsetZ = z * MapChunk.WIDTH;
                 
-                int relativeX = this.frame.scaleX(mouseX);
-                int relativeY = this.frame.scaleY(mouseY);
-                
-                boolean isHovered = relativeX > offsetX
-                    && relativeX < offsetX + MapChunk.WIDTH
-                    && relativeY > offsetZ
-                    && relativeY < offsetZ + MapChunk.WIDTH;
+                boolean isHovered = false;
+                if (this.isMouseOver(mouseX, mouseY)) {
+                    int relativeX = this.frame.scaleX(mouseX);
+                    int relativeY = this.frame.scaleY(mouseY);
+                    
+                    isHovered = relativeX > offsetX
+                        && relativeX < offsetX + MapChunk.WIDTH
+                        && relativeY > offsetZ
+                        && relativeY < offsetZ + MapChunk.WIDTH;
+                }
                 
                 MapChunk chunk = inner[z];
                 if (chunk != null) {

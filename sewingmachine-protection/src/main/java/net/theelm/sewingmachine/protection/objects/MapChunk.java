@@ -106,6 +106,8 @@ public final class MapChunk {
                     mutable.set(x, 0, z);
                     int y = this.chunk.sampleHeightmap(Heightmap.Type.WORLD_SURFACE, mutable.getX(), mutable.getZ()) + 1;
                     BlockState blockState;
+                    
+                    // If no block was found above void
                     if (y <= world.getBottomY() + 1) {
                         blockState = Blocks.BEDROCK.getDefaultState();
                     } else {
@@ -139,22 +141,14 @@ public final class MapChunk {
                 double f;
                 if (mapColor == MapColor.WATER_BLUE) {
                     f = (double)t * 0.1 + (double)(x + z & 1) * 0.2;
-                    if (f < 0.5) {
-                        brightness = MapColor.Brightness.HIGH;
-                    } else if (f > 0.9) {
-                        brightness = MapColor.Brightness.LOW;
-                    } else {
-                        brightness = MapColor.Brightness.NORMAL;
-                    }
+                    if (f < 0.5) brightness = MapColor.Brightness.HIGH;
+                    else if (f > 0.9) brightness = MapColor.Brightness.LOW;
+                    else brightness = MapColor.Brightness.NORMAL;
                 } else {
                     f = (e - d) * 4.0 / (double)(4) + ((double)(x + z & 1) - 0.5) * 0.4;
-                    if (f > 0.6) {
-                        brightness = MapColor.Brightness.HIGH;
-                    } else if (f < -0.6) {
-                        brightness = MapColor.Brightness.LOW;
-                    } else {
-                        brightness = MapColor.Brightness.NORMAL;
-                    }
+                    if (f > 0.6) brightness = MapColor.Brightness.HIGH;
+                    else if (f < -0.6) brightness = MapColor.Brightness.LOW;
+                    else brightness = MapColor.Brightness.NORMAL;
                 }
                 
                 d = e;

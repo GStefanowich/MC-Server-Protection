@@ -40,8 +40,11 @@ import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
+import net.theelm.sewingmachine.protection.packets.ClaimCountPacket;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
+import net.theelm.sewingmachine.utilities.ModUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
+import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import org.jetbrains.annotations.NotNull;
@@ -113,6 +116,10 @@ public final class SignPlots extends ShopSign {
         } catch (NotEnoughMoneyException e) {
             return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
         }
+        
+        // Send a network update packet
+        if (ModUtils.hasModule(player, "protection"))
+            NetworkingUtils.send(player, new ClaimCountPacket(claim));
         
         player.sendMessage(Text.translatable("Chunks claimed ").formatted(Formatting.YELLOW)
             .append(Text.translatable(FormattingUtils.format(claim.getCount())).formatted(Formatting.AQUA))
