@@ -52,7 +52,7 @@ import java.util.UUID;
  * Created on Jul 17 2022 at 11:01 AM.
  * By greg in SewingMachineMod
  */
-public final class ServerCore extends CoreMod implements ModInitializer, SewPlugin {
+public final class ServerCore implements ModInitializer, SewPlugin {
     @Override
     public void onInitialize() {
         PlayerNameCallback.INSTANCE.register(new PlayerNameCallback() {

@@ -3,7 +3,7 @@
 	"id": "sewing-machine-chat",
 	"version": "${version}",
 	"name": "Sewing Machine Chat",
-	"description": "A mod for sewing your worlds chunks together. Provides chunk claiming and other server utilities.",
+	"description": "Chat mod for providing chat formatting and styling.",
 	"authors": [
 		"TheElm"
 	],
@@ -18,9 +18,7 @@
 
 	"environment": "*",
 	"entrypoints": {
-		"client": [
-			"net.theelm.sewingmachine.chat.ClientCore"
-		],
+		"client": [],
 		"main": [
 			"net.theelm.sewingmachine.chat.ServerCore"
 		]
@@ -29,9 +27,10 @@
 		"sewingmachine-chat.mixins.json"
 	],
 	"depends": {
-		"sewing-machine-base": "*",
-		"fabricloader": ">=0.14.21",
-		"fabric": "*"
+		"minecraft": ">=${minecraft}",
+		"sewing-machine-base": "${version}",
+		"fabricloader": ">=${fabricloader}",
+		"fabric": ">=${fabricapi}"
 	},
 	"suggests": {}
 }

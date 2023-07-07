@@ -3,7 +3,7 @@
 	"id": "sewing-machine-deathchests",
 	"version": "${version}",
 	"name": "Sewing Machine Deathchests",
-	"description": "A mod for sewing your worlds chunks together. Provides chunk claiming and other server utilities.",
+	"description": "A death chest mod that works entirely serverside.",
 	"authors": [
 		"TheElm"
 	],
@@ -27,9 +27,10 @@
 		"sewingmachine-deathchests.mixins.json"
 	],
 	"depends": {
-		"sewing-machine-base": "*",
-		"fabricloader": ">=0.14.21",
-		"fabric": "*"
+		"minecraft": ">=${minecraft}",
+		"sewing-machine-base": "${version}",
+		"fabricloader": ">=${fabricloader}",
+		"fabric": ">=${fabricapi}"
 	},
 	"suggests": {}
 }
