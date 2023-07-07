@@ -31,6 +31,7 @@ import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.DyeColor;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.math.ColorHelper;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -570,5 +571,19 @@ public final class ColorUtils {
     
     static {
         RANDOM = new Random();
+    }
+    
+    public static final class Argb {
+        public static final int WHITE;
+        public static final int RED;
+        static {
+            Color color;
+            
+            color = Color.WHITE;
+            WHITE = ColorHelper.Argb.getArgb(color.getAlpha(), color.getRed(), color.getGreen(), color.getBlue());
+            
+            color = Color.RED;
+            RED = ColorHelper.Argb.getArgb(color.getAlpha(), color.getRed(), color.getGreen(), color.getBlue());
+        }
     }
 }

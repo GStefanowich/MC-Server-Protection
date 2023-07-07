@@ -36,11 +36,14 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ColorHelper;
 import net.minecraft.util.math.Direction;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.WorldChunk;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -58,7 +61,7 @@ public final class MapChunk {
         HOVER_HIGHLIGHT = ColorHelper.Argb.getArgb(100, color.getRed(), color.getGreen(), color.getBlue());
         
         color = Color.CYAN;
-        CLAIM_HIGHLIGHT = ColorHelper.Argb.getArgb(40, color.getRed(), color.getGreen(), color.getBlue());
+        CLAIM_HIGHLIGHT = ColorHelper.Argb.getArgb(80, color.getRed(), color.getGreen(), color.getBlue());
     }
     
     private final @NotNull World world;
@@ -66,8 +69,6 @@ public final class MapChunk {
     
     private final int[][] colors = new int[WIDTH][WIDTH];
     private final boolean ceiling;
-    
-    private @Nullable Text owner = Text.literal("TheElm");
     
     public MapChunk(@NotNull WorldChunk chunk) {
         this.chunk = chunk;
@@ -197,13 +198,22 @@ public final class MapChunk {
     }
     
     public boolean hasOwner() {
-        return this.owner != null;
+        return this.getOwner() != null;
     }
     
-    public @NotNull Text getOwner() {
-        if (this.owner == null)
+    public @Nullable ClaimantPlayer getOwner() {
+        return ((IClaimedChunk) this.chunk).getOwner();
+    }
+    
+    public @NotNull Text getName() {
+        ClaimantPlayer owner = this.getOwner();
+        if (owner == null)
             return Text.literal("Wilderness");
-        return this.owner;
+        return owner.getName();
+    }
+    
+    public @NotNull ChunkPos getPos() {
+        return this.chunk.getPos();
     }
     
     private @NotNull BlockState getFluidStateIfVisible(@NotNull World world, @NotNull BlockState state, @NotNull BlockPos pos) {

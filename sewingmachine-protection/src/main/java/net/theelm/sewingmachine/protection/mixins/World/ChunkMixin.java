@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.protection.mixins.World;
 
+import net.minecraft.client.world.ClientWorld;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
@@ -33,6 +34,7 @@ import net.theelm.sewingmachine.exceptions.TranslationKeyException;
 import net.theelm.sewingmachine.protection.interfaces.Claim;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils.ClaimSlice;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
@@ -198,17 +200,21 @@ public abstract class ChunkMixin implements BlockView, IClaimedChunk, Claim {
     }
     
     @Override
-    public @Nullable ServerClaimCache getClaimCache() {
+    public @Nullable ClaimCache getClaimCache() {
         Chunk chunk = (Chunk)(Object)this;
+        World world = null;
         
         // TODO: Alternative way of getting the World from the Chunk?
-        if (chunk instanceof WorldChunk worldChunk) {
-            MinecraftServer server = worldChunk.getWorld().getServer();
-            return ((ClaimsAccessor)server).getClaimManager();
-        } else if (this.heightLimitView instanceof World world) {
-            MinecraftServer server = world.getServer();
-            return ((ClaimsAccessor)server).getClaimManager();
-        }
+        if (chunk instanceof WorldChunk worldChunk)
+            world = worldChunk.getWorld();
+        else if (this.heightLimitView instanceof World viewWorld)
+            world = viewWorld;
+        
+        if (world instanceof ClientWorld clientWorld) {
+            return ((ClaimsAccessor) clientWorld).getClaimManager();
+            
+        } else if (world != null)
+            return ((ClaimsAccessor) world.getServer()).getClaimManager();
         
         return null;
     }

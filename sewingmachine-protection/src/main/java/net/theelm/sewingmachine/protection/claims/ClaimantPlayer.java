@@ -127,7 +127,7 @@ public final class ClaimantPlayer extends Claimant {
         return FormattingUtils.deepCopy(this.name);
     }
     public @NotNull MutableText updateName() {
-        return TextUtils.mutable(PlayerNameCallback.getName(this.claimCache.getServer(), this.getId()));
+        return TextUtils.mutable(PlayerNameCallback.getName(this.getId()));
     }
     
     /* Send Messages */

@@ -51,6 +51,7 @@
 	],
 	"client": [
 		"Client.ClientPlayerInteractionManagerMixin",
+		"Client.ClientWorldMixin",
 		"Client.MinecraftClientMixin"
 	],
 	"injectors": {

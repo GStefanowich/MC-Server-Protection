@@ -48,6 +48,7 @@ import net.theelm.sewingmachine.protection.interfaces.Claim;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
+import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
 import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protections.BlockRange;
@@ -360,11 +361,11 @@ public final class ClaimChunkUtils {
      */
     public static final class ClaimSlice {
         private final NavigableMap<Integer, InnerClaim> innerChunks = Collections.synchronizedNavigableMap(new TreeMap<>());
-        private final ServerClaimCache claims;
+        private final ClaimCache claims;
         private final HeightLimitView view;
         private final int chunkPos;
 
-        public ClaimSlice(@NotNull ServerClaimCache claims, @NotNull HeightLimitView view, int chunkPos) {
+        public ClaimSlice(@NotNull ClaimCache claims, @NotNull HeightLimitView view, int chunkPos) {
             this.claims = claims;
             this.view = view;
             this.chunkPos = chunkPos;

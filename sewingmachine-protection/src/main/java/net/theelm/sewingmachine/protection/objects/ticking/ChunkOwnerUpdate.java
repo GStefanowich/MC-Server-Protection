@@ -26,6 +26,9 @@
 package net.theelm.sewingmachine.protection.objects.ticking;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.exceptions.TranslationKeyException;
@@ -36,8 +39,13 @@ import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.protection.commands.ClaimCommand;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
+import net.theelm.sewingmachine.protection.packets.ClaimedChunkPacket;
+import net.theelm.sewingmachine.utilities.ChunkUtils;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
+import net.theelm.sewingmachine.utilities.ModUtils;
+import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.CommandSource;
@@ -219,6 +227,14 @@ public class ChunkOwnerUpdate implements TickingAction {
                 }
                 
                 worldChunk.setNeedsSaving(true);
+                
+                // Send out an update to nearby players
+                Collection<ServerPlayerEntity> watchers = ChunkUtils.getPlayersMonitoring(worldChunk.getWorld(), worldChunk.getPos());
+                for (ServerPlayerEntity watcher : watchers) {
+                    if (ModUtils.hasModule(watcher, "protection"))
+                        NetworkingUtils.send(watcher, new ClaimedChunkPacket(worldChunk.getPos(), claimant.getId(), claimant.getName()));
+                }
+                
                 return ActionResult.SUCCESS;
             }
             @Override
@@ -241,7 +257,7 @@ public class ChunkOwnerUpdate implements TickingAction {
                     claimant.removeFromCount(worldChunk);
                 else if (!update.getVerify()) {
                     // If we aren't verifying the UNCLAIM, get the existing owner and subtract the chunk from them
-                    ServerClaimCache claims = chunk.getClaimCache();
+                    ClaimCache claims = chunk.getClaimCache();
                     if (claims != null && chunk.getOwnerId() != null)
                         claims.getPlayerClaim(chunk.getOwnerId())
                             .removeFromCount(worldChunk);
@@ -264,6 +280,14 @@ public class ChunkOwnerUpdate implements TickingAction {
                 chunk.updatePlayerOwner(null);
                 
                 worldChunk.setNeedsSaving(true);
+                
+                // Send out an update to nearby players
+                Collection<ServerPlayerEntity> watchers = ChunkUtils.getPlayersMonitoring(worldChunk.getWorld(), worldChunk.getPos());
+                for (ServerPlayerEntity watcher : watchers) {
+                    if (ModUtils.hasModule(watcher, "protection"))
+                        NetworkingUtils.send(watcher, new ClaimedChunkPacket(worldChunk.getPos(), null, null));
+                }
+                
                 return ActionResult.SUCCESS;
             }
             @Override

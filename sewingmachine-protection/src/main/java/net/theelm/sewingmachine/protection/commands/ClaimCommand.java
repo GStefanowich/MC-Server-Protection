@@ -59,6 +59,7 @@ import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.interfaces.VillagerTownie;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
 import net.theelm.sewingmachine.objects.Value;
+import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.ticking.ChunkOwnerUpdate;
 import net.theelm.sewingmachine.protection.claims.Claimant;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
@@ -578,15 +579,16 @@ public final class ClaimCommand extends SewCommand {
         return this.claimChunkAt(source, world, chunkFor, verify, Arrays.asList(positions));
     }
     public int claimChunkAt(@NotNull ServerCommandSource source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull Collection<? extends BlockPos> positions) {
-        ServerClaimCache claimCache = ((ClaimsAccessor)source.getServer())
-            .getClaimManager();
-        ((LogicalWorld)world).addTickableEvent(ChunkOwnerUpdate.forPlayer(
-            claimCache,
-            source,
-            chunkFor,
-            ChunkOwnerUpdate.Mode.CLAIM,
-            positions
-        ).setVerify(verify));
+        MinecraftServer server = source.getServer();
+        if (((ClaimsAccessor) server).getClaimManager() instanceof ServerClaimCache claimCache) {
+            ((LogicalWorld)world).addTickableEvent(ChunkOwnerUpdate.forPlayer(
+                claimCache,
+                source,
+                chunkFor,
+                ChunkOwnerUpdate.Mode.CLAIM,
+                positions
+            ).setVerify(verify));
+        }
         return Command.SINGLE_SUCCESS;
     }
     
@@ -666,15 +668,16 @@ public final class ClaimCommand extends SewCommand {
         return this.unclaimChunkAt(source, world, chunkFor, verify, Arrays.asList(positions));
     }
     public int unclaimChunkAt(@NotNull ServerCommandSource source, @NotNull World world, @NotNull final UUID chunkFor, final boolean verify, @NotNull Collection<? extends BlockPos> positions) {
-        ServerClaimCache claimCache = ((ClaimsAccessor)source.getServer())
-            .getClaimManager();
-        ((LogicalWorld)world).addTickableEvent(ChunkOwnerUpdate.forPlayer(
-            claimCache,
-            source,
-            chunkFor,
-            ChunkOwnerUpdate.Mode.UNCLAIM,
-            positions
-        ).setVerify(verify));
+        MinecraftServer server = source.getServer();
+        if (((ClaimsAccessor) server).getClaimManager() instanceof ServerClaimCache claimCache) {
+            ((LogicalWorld)world).addTickableEvent(ChunkOwnerUpdate.forPlayer(
+                claimCache,
+                source,
+                chunkFor,
+                ChunkOwnerUpdate.Mode.UNCLAIM,
+                positions
+            ).setVerify(verify));
+        }
         return Command.SINGLE_SUCCESS;
     }
     
@@ -767,7 +770,9 @@ public final class ClaimCommand extends SewCommand {
         // Get player information
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
-        ServerClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
+        if (!(((ClaimsAccessor) server).getClaimManager() instanceof ServerClaimCache claimCache))
+            return 0;
+        
         ServerPlayerEntity founder = source.getPlayer();
         
         // Charge the player money
@@ -918,8 +923,8 @@ public final class ClaimCommand extends SewCommand {
         
         // Get the town
         String townName = StringArgumentType.getString(context, "town");
-        
-        ServerClaimCache claimCache = ((ClaimsAccessor) server).getClaimManager();
+        if (!(((ClaimsAccessor) server).getClaimManager() instanceof ServerClaimCache claimCache))
+            return 0;
         ClaimantTown town = claimCache.getTownClaim(townName);
         
         if (town == null)
@@ -941,11 +946,14 @@ public final class ClaimCommand extends SewCommand {
     }
     private int adminSetEntityTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
+        MinecraftServer server = source.getServer();
         
         Collection<? extends Entity> entities = EntityArgumentType.getEntities(context, "entities");
         String townName = StringArgumentType.getString(context, "town");
-        ClaimantTown town = ((ClaimsAccessor)source.getServer()).getClaimManager()
-            .getTownClaim(townName);
+        if (!(((ClaimsAccessor) server).getClaimManager() instanceof ServerClaimCache claimCache))
+            return 0;
+        
+        ClaimantTown town = claimCache.getTownClaim(townName);
         
         if (town == null)
             throw TOWN_NOT_EXISTS.create();
@@ -965,7 +973,7 @@ public final class ClaimCommand extends SewCommand {
             .append(town.getName())
             .append("."), false);
         if (added > 0) {
-            town.send(source.getServer(), TextUtils.literal()
+            town.send(server, TextUtils.literal()
                 .append(amount)
                 .append(" villagers have been added to your town.")
             );
@@ -1158,7 +1166,7 @@ public final class ClaimCommand extends SewCommand {
             .findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Get the Claims handler
-        ServerClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
         
         // Check if the command player and the target are friends
@@ -1187,7 +1195,7 @@ public final class ClaimCommand extends SewCommand {
         String name = StringArgumentType.getString(context, "location");
         
         // Get the Claims handler
-        ServerClaimCache claimCache = ((ClaimsAccessor)source.getServer())
+        ClaimCache claimCache = ((ClaimsAccessor)source.getServer())
             .getClaimManager();
         
         // Check if the command player and the target are friends
@@ -1311,7 +1319,7 @@ public final class ClaimCommand extends SewCommand {
     private int invitedList(@NotNull ServerCommandSource source, @NotNull GameProfile player) {
         // Get information about the server
         MinecraftServer server = source.getServer();
-        ServerClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
+        ClaimCache claimCache = ((ClaimsAccessor)server).getClaimManager();
         UserCache cache = server.getUserCache();
         Whitelist whitelist = server.getPlayerManager().getWhitelist();
         

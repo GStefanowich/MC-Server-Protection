@@ -29,16 +29,15 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.server.MinecraftServer;
 import net.theelm.sewingmachine.protection.claims.Claimant;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.UUID;
+
 @Environment(EnvType.CLIENT)
 public final class ClientClaimCache extends ClaimCache {
-    @Override
-    public @NotNull MinecraftServer getServer() {
-        throw new IllegalStateException("Can't access server from Client");
-    }
-    
     @Override
     public @Nullable ClaimCacheEntry<?> addToCache(@Nullable Claimant claimant) {
         return null;
@@ -46,6 +45,17 @@ public final class ClientClaimCache extends ClaimCache {
     
     @Override
     public @Nullable Claimant removeFromCache(@Nullable Claimant claimant) {
+        return null;
+    }
+    
+    @Override
+    public @NotNull ClaimantPlayer getPlayerClaim(@NotNull UUID uuid) {
+        // Create new object
+        return new ClaimantPlayer(this, uuid);
+    }
+    
+    @Override
+    public @Nullable ClaimantTown getTownClaim(UUID townId) {
         return null;
     }
 }

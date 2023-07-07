@@ -40,6 +40,7 @@ import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
+import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import org.jetbrains.annotations.NotNull;
 
@@ -53,13 +54,13 @@ public final class CommandClaimUtils {
     
     public static @NotNull CompletableFuture<Suggestions> getAllTowns(@NotNull CommandContext<ServerCommandSource> context, SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerClaimCache claimCache = ((ClaimsAccessor)source.getServer())
-            .getClaimManager();
+        MinecraftServer server = source.getServer();
         
         Set<String> townNames = new HashSet<>();
-        
-        claimCache.getTownCaches()
-            .forEach(town -> townNames.add(town.getName().getString()));
+        if (((ClaimsAccessor) server).getClaimManager() instanceof ServerClaimCache claimCache) {
+            claimCache.getTownCaches()
+                .forEach(town -> townNames.add(town.getName().getString()));
+        }
         
         return CommandSource.suggestMatching(
             townNames,

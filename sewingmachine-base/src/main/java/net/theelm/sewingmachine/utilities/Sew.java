@@ -32,7 +32,6 @@ import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.Identifier;
-import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.objects.SewModules;
 import org.jetbrains.annotations.NotNull;
 
@@ -80,6 +79,24 @@ public final class Sew {
             return Either.left(server);
         if (instance instanceof MinecraftClient client)
             return Either.right(client);
+        throw new RuntimeException("Could not access game instance.");
+    }
+    
+    /**
+     * Gets the game instance, preferring the Server
+     * @return
+     */
+    public static Either<MinecraftServer, MinecraftClient> getServerInstance() {
+        Object instance = Sew.getFabric()
+            .getGameInstance();
+        if (instance instanceof MinecraftClient client) {
+            MinecraftServer server = client.getServer();
+            if (server != null)
+                return Either.left(server);
+            return Either.right(client);
+        }
+        if (instance instanceof MinecraftServer server)
+            return Either.left(server);
         throw new RuntimeException("Could not access game instance.");
     }
     

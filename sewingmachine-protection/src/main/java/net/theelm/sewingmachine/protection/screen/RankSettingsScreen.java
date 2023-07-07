@@ -32,7 +32,7 @@ import net.minecraft.client.network.PlayerListEntry;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
-import net.theelm.sewingmachine.protection.interfaces.NameCache;
+import net.theelm.sewingmachine.interfaces.NameCache;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
 import net.theelm.sewingmachine.screens.SettingScreen;

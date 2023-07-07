@@ -25,7 +25,6 @@
 
 package net.theelm.sewingmachine.protection.objects;
 
-import com.mojang.authlib.GameProfile;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
 import net.theelm.sewingmachine.interfaces.LogicalWorld;
 import net.theelm.sewingmachine.interfaces.TickableContext;
@@ -118,7 +117,6 @@ public final class ServerClaimCache extends ClaimCache implements TickingAction 
         );
     }
     
-    @Override
     public @NotNull MinecraftServer getServer() {
         return this.server;
     }
@@ -128,6 +126,7 @@ public final class ServerClaimCache extends ClaimCache implements TickingAction 
      */
     
     // Get the PlayerPermissions object from the cache
+    @Override
     public @NotNull ClaimantPlayer getPlayerClaim(@NotNull UUID playerUUID) {
         ClaimantPlayer player;
         
@@ -138,16 +137,11 @@ public final class ServerClaimCache extends ClaimCache implements TickingAction 
         // Create new object
         return new ClaimantPlayer(this, playerUUID);
     }
-    public @NotNull ClaimantPlayer getPlayerClaim(@NotNull GameProfile profile) {
-        return this.getPlayerClaim(profile.getId());
-    }
-    public @NotNull ClaimantPlayer getPlayerClaim(@NotNull ServerPlayerEntity player) {
-        return this.getPlayerClaim(player.getUuid());
-    }
     
     /*
      * Towns
      */
+    @Override
     public @Nullable ClaimantTown getTownClaim(UUID townId) {
         ClaimantTown town;
         

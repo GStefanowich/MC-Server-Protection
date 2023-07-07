@@ -36,6 +36,7 @@ import net.theelm.sewingmachine.protection.objects.MapChunk;
 import net.theelm.sewingmachine.protection.objects.MapWidget;
 import net.theelm.sewingmachine.screens.SettingScreen;
 import net.theelm.sewingmachine.screens.SettingScreenListWidget;
+import net.theelm.sewingmachine.utilities.ColorUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -65,13 +66,12 @@ public final class ProtectionClaimScreen extends SettingScreen {
     
     @Override
     protected void addButtons(@NotNull SettingScreenListWidget list) {
-        World world = this.client.world;
         PlayerEntity player = this.client.player;
         
         this.frame.x = this.x;
         this.frame.y = this.y;
-        this.widget = (world != null && player != null)
-            ? new MapWidget(world, player.getChunkPos(), this.frame, this.chunkX, this.chunkY) : null;
+        this.widget = (player != null)
+            ? new MapWidget(this.client, player.getChunkPos(), this.frame, this.chunkX, this.chunkY) : null;
     }
     
     @Override
@@ -85,9 +85,13 @@ public final class ProtectionClaimScreen extends SettingScreen {
                 this.widget.update();
             }
             
+            // Draw the owner tooltip if hovering over a chunk
             MapChunk hovered = this.widget.render(context, mouseX, mouseY);
             if (hovered != null)
-                context.drawTooltip(this.textRenderer, hovered.getOwner(), mouseX, mouseY);
+                context.drawTooltip(this.textRenderer, hovered.getName(), mouseX, mouseY);
+            
+            // Draw the number of claims that a player has available
+            context.drawTextWithShadow(this.textRenderer, Text.literal("0 / 1,000"), this.x, this.y + this.backgroundHeight, ColorUtils.Argb.WHITE);
         }
     }
     

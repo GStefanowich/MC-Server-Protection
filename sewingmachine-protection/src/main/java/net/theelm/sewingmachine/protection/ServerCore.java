@@ -29,8 +29,11 @@ import net.fabricmc.api.ModInitializer;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.chunk.ChunkStatus;
 import net.theelm.sewingmachine.base.packets.SewHelloPacket;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.events.ContainerAccessCallback;
@@ -64,12 +67,16 @@ import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.interfaces.PlayerMovement;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.objects.signs.SignDeed;
 import net.theelm.sewingmachine.protection.objects.signs.SignPlots;
+import net.theelm.sewingmachine.protection.packets.ClaimChunkPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
+import net.theelm.sewingmachine.protection.packets.ClaimQueryPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
+import net.theelm.sewingmachine.protection.packets.ClaimedChunkPacket;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.ClaimPropertyUtils;
 import net.theelm.sewingmachine.protection.utilities.MessageClaimUtils;
@@ -145,7 +152,7 @@ public final class ServerCore implements ModInitializer, SewPlugin {
                 return null;
             }
             
-            ServerClaimCache claims = chunk.getClaimCache();
+            ClaimCache claims = chunk.getClaimCache();
             ClaimantPlayer claim = claims.getPlayerClaim(owner);
             
             Text name = claim.getName(entity instanceof PlayerEntity player ? player.getUuid() : null);
@@ -239,6 +246,40 @@ public final class ServerCore implements ModInitializer, SewPlugin {
         // When a player updates their friends
         NetworkingUtils.serverReceiver(ClaimRankPacket.TYPE, (server, player, network, packet, sender)
             -> ClaimPropertyUtils.updateRank(player, packet.player(), packet.rank()));
+        
+        // When the client queries who owns a chunk (Used for map overlay)
+        NetworkingUtils.serverReceiver(ClaimQueryPacket.TYPE, (server, player, network, packet, sender) -> {
+            ChunkPos chunkPos = player.getChunkPos();
+            ChunkPos queryPos = packet.chunkPos();
+            
+            int diffX = chunkPos.x - queryPos.x;
+            int diffZ = chunkPos.z - queryPos.z;
+            
+            // Prevent querying chunks that are too far away from the player
+            if (
+                diffX > 8
+                || diffX < -8
+                || diffZ > 8
+                || diffZ < -8
+            ) return;
+            
+            ClaimantPlayer claim = null;
+            ServerWorld world = player.getServerWorld();
+            if (world.getChunk(queryPos.x, queryPos.z, ChunkStatus.FULL, false) instanceof IClaimedChunk claimedChunk)
+                claim = claimedChunk.getOwner();
+            
+            // Send the information
+            NetworkingUtils.send(player, new ClaimedChunkPacket(
+                queryPos,
+                claim == null ? null : claim.getId(),
+                claim == null ? null : claim.getName(player)
+            ));
+        });
+        
+        // When the client requests to (un)claim a chunk
+        NetworkingUtils.serverReceiver(ClaimChunkPacket.TYPE, (server, player, network, packet, sender) -> {
+            System.out.println("Chunk " + (packet.claimed() ? "" : "un") + "claim request");
+        });
         
         ShopSigns.add(SignDeed::new);
         ShopSigns.add(SignPlots::new);

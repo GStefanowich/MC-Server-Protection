@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.interfaces;
+package net.theelm.sewingmachine.interfaces;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;

@@ -27,18 +27,32 @@ package net.theelm.sewingmachine.protection.objects;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.network.ClientPlayerEntity;
+import net.minecraft.client.render.RenderLayer;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
-import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.chunk.WorldChunk;
+import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.packets.ClaimChunkPacket;
+import net.theelm.sewingmachine.protection.packets.ClaimQueryPacket;
+import net.theelm.sewingmachine.utilities.BlockUtils;
+import net.theelm.sewingmachine.utilities.ColorUtils;
+import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Objects;
+import java.util.UUID;
+
 @Environment(EnvType.CLIENT)
 public final class MapWidget {
-    private final @NotNull World world;
+    private final @NotNull MinecraftClient client;
     private final @NotNull FrameData frame;
     
     private final int chunkWidth;
@@ -49,11 +63,12 @@ public final class MapWidget {
     
     private final MapChunk[][] chunks;
     
+    private int mouseDrag = 0;
     private boolean mouseOne = false;
     private boolean mouseTwo = false;
     
-    public MapWidget(@NotNull World world, @NotNull ChunkPos chunkPos, @NotNull FrameData frame, int chunkWidth, int chunkHeight) {
-        this.world = world;
+    public MapWidget(@NotNull MinecraftClient client, @NotNull ChunkPos chunkPos, @NotNull FrameData frame, int chunkWidth, int chunkHeight) {
+        this.client = client;
         this.frame = frame;
         
         this.chunks = new MapChunk[chunkWidth][chunkHeight];
@@ -65,6 +80,9 @@ public final class MapWidget {
     }
     
     public void update() {
+        ClientWorld world = this.getWorld();
+        if (world == null)
+            return;
         for (int x = 0; x < this.chunkWidth; x++) {
             MapChunk[] inner = this.chunks[x];
             for (int z = 0; z < this.chunkHeight; z++) {
@@ -72,17 +90,29 @@ public final class MapWidget {
                 if (data != null)
                     data.update();
                 else {
-                    Chunk chunk = this.world.getChunk(this.chunkX + x, this.chunkZ + z, ChunkStatus.EMPTY, false);
+                    Chunk chunk = world.getChunk(this.chunkX + x, this.chunkZ + z, ChunkStatus.EMPTY, false);
                     if (chunk instanceof WorldChunk worldChunk) {
                         MapChunk mapChunk = new MapChunk(worldChunk);
                         
                         inner[z] = mapChunk;
                         
+                        // Update the chunk
                         mapChunk.update();
+                        
+                        // Query the server
+                        NetworkingUtils.send(this.client, new ClaimQueryPacket(mapChunk.getPos()));
                     }
                 }
             }
         }
+    }
+    
+    public @Nullable ClientPlayerEntity getPlayer() {
+        return this.client.player;
+    }
+    
+    public @Nullable ClientWorld getWorld() {
+        return this.client.world;
     }
     
     public @Nullable MapChunk render(@NotNull DrawContext context, int mouseX, int mouseY) {
@@ -111,6 +141,16 @@ public final class MapWidget {
             }
         }
         
+        PlayerEntity player = this.getPlayer();
+        if (player != null) {
+            BlockPos pos = player.getBlockPos();
+            int x = pos.getX() - (this.chunkX * MapChunk.WIDTH);
+            int z = pos.getZ() - (this.chunkZ * MapChunk.WIDTH);
+            
+            // Draw a dot for where the player is standing
+            this.frame.fillDot(context, x - 1, z - 1, x + 1, z + 1, ColorUtils.Argb.RED);
+        }
+        
         return hovered;
     }
     
@@ -121,10 +161,7 @@ public final class MapWidget {
             this.mouseOne = true;
         if (button == 1 && !this.mouseTwo)
             this.mouseTwo = true;
-
-        System.out.println("Pressed button " + button);
-        
-        return true;
+        return this.mouseOne || this.mouseTwo;
     }
     
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
@@ -132,10 +169,24 @@ public final class MapWidget {
             this.mouseOne = false;
         else if (button == 1 && this.mouseTwo)
             this.mouseTwo = false;
+        else return false;
+        
         if (this.isMouseOver(mouseX, mouseY)) {
-            System.out.println("Released button " + button);
-            return true;
+            MapChunk chunk = this.getAtMouse(mouseX, mouseY);
+            if (chunk != null) {
+                if (button == 0) {
+                    this.claimChunk(chunk);
+                    return true;
+                }
+                if (button == 1) {
+                    this.unclaimChunk(chunk);
+                    return true;
+                }
+            }
         }
+        
+        if (!this.mouseOne && !this.mouseTwo)
+            this.mouseDrag = 0;
         
         return false;
     }
@@ -149,28 +200,56 @@ public final class MapWidget {
     
     public void mouseMoved(double mouseX, double mouseY) {
         if (
-            !this.mouseOne
-            || !this.mouseTwo
+            !(this.mouseOne || this.mouseTwo)
             || this.mouseOne == this.mouseTwo
+            || this.mouseDrag++ < 20
+            || !this.isMouseOver(mouseX, mouseY)
         ) return;
+        this.mouseDrag = 0;
         
         MapChunk chunk = this.getAtMouse(mouseX, mouseY);
         if (chunk == null)
             return;
         
-        if (this.mouseOne) {
-            
-        }
+        if (this.mouseOne)
+            this.claimChunk(chunk);
         
-        if (this.mouseTwo) {
-            
-        }
+        if (this.mouseTwo)
+            this.unclaimChunk(chunk);
+    }
+    
+    /**
+     * Send a request to the server to claim the chunk
+     * @param chunk
+     */
+    public void claimChunk(@NotNull MapChunk chunk) {
+        if (chunk.hasOwner())
+            return;
+        NetworkingUtils.send(this.client, new ClaimChunkPacket(chunk.getPos(), true));
+    }
+    
+    /**
+     * Send a request to the server to unclaim the chunk
+     * @param chunk
+     */
+    public void unclaimChunk(@NotNull MapChunk chunk) {
+        ClaimantPlayer owner = chunk.getOwner();
+        if (owner == null)
+            return;
+        UUID self = this.client.getSession()
+            .getUuidOrNull();
+        if (!Objects.equals(self, owner.getId()))
+            return;
+        NetworkingUtils.send(this.client, new ClaimChunkPacket(chunk.getPos(), false));
     }
     
     public @Nullable MapChunk getAtMouse(double mouseX, double mouseY) {
         int relativeX = this.frame.scaleX(mouseX);
         int relativeY = this.frame.scaleY(mouseY);
-        
-        return null;
+        int x = BlockUtils.chunkPos(relativeX);
+        int z = BlockUtils.chunkPos(relativeY);
+        if (x >= this.chunkWidth || z >= this.chunkHeight)
+            return null;
+        return this.chunks[x][z];
     }
 }

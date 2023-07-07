@@ -286,4 +286,13 @@ public final class BlockUtils {
         world.getChunkManager()
             .markForUpdate(pos);
     }
+    
+    /**
+     * Get the chunk pos of the coordinate
+     * @param pos
+     * @return
+     */
+    public static int chunkPos(int pos) {
+        return (pos - (pos % 16)) / 16;
+    }
 }

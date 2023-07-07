@@ -26,18 +26,25 @@
 package net.theelm.sewingmachine.protection;
 
 import net.fabricmc.api.ClientModInitializer;
+import net.minecraft.client.world.ClientWorld;
+import net.minecraft.text.Text;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.chunk.ChunkStatus;
 import net.theelm.sewingmachine.base.packets.CancelMinePacket;
 import net.theelm.sewingmachine.events.TabRegisterEvent;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.interfaces.ClientMiner;
-import net.theelm.sewingmachine.protection.interfaces.NameCache;
+import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
+import net.theelm.sewingmachine.interfaces.NameCache;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.inventory.ProtectionsTab;
 import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
+import net.theelm.sewingmachine.protection.packets.ClaimedChunkPacket;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
-import net.theelm.sewingmachine.utilities.text.TextUtils;
+
+import java.util.UUID;
 
 /**
  * Created on Jul 01 2023 at 3:14 PM.
@@ -66,6 +73,26 @@ public class ClientCore implements ClientModInitializer {
             
             // Store the rank
             claim.updateFriend(packet.player(), packet.rank());
+        });
+        
+        NetworkingUtils.clientReceiver(ClaimedChunkPacket.TYPE, (client, network, packet, sender) -> {
+            ClientWorld world = client.world;
+            ChunkPos chunkPos = packet.chunkPos();
+            
+            // Update the chunks owner after receiving a query
+            if (world.getChunk(chunkPos.x, chunkPos.z, ChunkStatus.FULL, false) instanceof IClaimedChunk chunk) {
+                UUID owner = packet.owner();
+                
+                // Update the name in our cache
+                if (owner != null) {
+                    Text name = packet.name();
+                    if (name != null)
+                        ((NameCache) client).setPlayerName(owner, name);
+                }
+                
+                // Update the chunk owner
+                chunk.updatePlayerOwner(owner, false);
+            }
         });
         
         // Add the protections tab to the inventory

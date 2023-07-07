@@ -100,4 +100,17 @@ public final class FrameData {
             color
         );
     }
+    public void fillDot(@NotNull DrawContext context, int x1, int y1, int x2, int y2, int color) {
+        x1 *= this.scale();
+        x1 += this.x + this.padding();
+        y1 *= this.scale();
+        y1 += this.y + this.padding();
+        x2 *= this.scale();
+        x2 += this.x + this.padding();
+        y2 *= this.scale();
+        y2 += this.y + this.padding();
+        
+        // Fill in
+        context.fill(RenderLayer.getGuiOverlay(), x1, y1, x2, y2, color);
+    }
 }

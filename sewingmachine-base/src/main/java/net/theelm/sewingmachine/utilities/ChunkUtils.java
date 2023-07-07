@@ -25,8 +25,16 @@
 
 package net.theelm.sewingmachine.utilities;
 
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.server.world.ServerChunkManager;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
+import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
+
+import java.util.Collection;
+import java.util.Collections;
 
 /**
  * Created on Jun 26 2023 at 1:23 AM.
@@ -38,5 +46,15 @@ public final class ChunkUtils {
     public static int getPositionWithinChunk(@NotNull BlockPos blockPos) {
         int chunkIndex = blockPos.getX() & 0xF;
         return (chunkIndex |= (blockPos.getZ() & 0xF) << 4);
+    }
+    
+    public static @NotNull Collection<ServerPlayerEntity> getPlayersMonitoring(@NotNull World world, @NotNull ChunkPos chunkPos) {
+        if (world instanceof ServerWorld serverWorld)
+            return ChunkUtils.getPlayersMonitoring(serverWorld, chunkPos);
+        return Collections.emptyList();
+    }
+    public static @NotNull Collection<ServerPlayerEntity> getPlayersMonitoring(@NotNull ServerWorld world, @NotNull ChunkPos chunkPos) {
+        ServerChunkManager chunkManager = world.getChunkManager();
+        return chunkManager.threadedAnvilChunkStorage.getPlayersWatchingChunk(chunkPos, false);
     }
 }

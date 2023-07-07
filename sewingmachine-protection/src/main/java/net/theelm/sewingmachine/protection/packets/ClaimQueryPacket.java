@@ -23,34 +23,41 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.objects;
+package net.theelm.sewingmachine.protection.packets;
 
-import com.mojang.authlib.GameProfile;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.MinecraftServer;
-import net.theelm.sewingmachine.protection.claims.Claimant;
-import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
-import net.theelm.sewingmachine.protection.claims.ClaimantTown;
+import net.fabricmc.fabric.api.networking.v1.FabricPacket;
+import net.fabricmc.fabric.api.networking.v1.PacketType;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.util.math.ChunkPos;
+import net.theelm.sewingmachine.utilities.Sew;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.UUID;
 
 /**
- * Created on Jul 05 2023 at 4:19 AM.
+ * Created on Jul 07 2023 at 1:58 AM.
  * By greg in sewingmachine
  */
-public abstract class ClaimCache {
-    public abstract @Nullable ClaimCacheEntry<?> addToCache(@Nullable Claimant claimant);
-    public abstract @Nullable Claimant removeFromCache(@Nullable Claimant claimant);
+public record ClaimQueryPacket(int x, int z) implements FabricPacket {
+    public static final PacketType<ClaimQueryPacket> TYPE = PacketType.create(Sew.modIdentifier("claim_query"), ClaimQueryPacket::new);
     
-    public abstract @NotNull ClaimantPlayer getPlayerClaim(@NotNull UUID uuid);
-    public final @NotNull ClaimantPlayer getPlayerClaim(@NotNull GameProfile profile) {
-        return this.getPlayerClaim(profile.getId());
+    public ClaimQueryPacket(@NotNull ChunkPos pos) {
+        this(pos.x, pos.z);
     }
-    public final @NotNull ClaimantPlayer getPlayerClaim(@NotNull PlayerEntity player) {
-        return this.getPlayerClaim(player.getUuid());
+    public ClaimQueryPacket(@NotNull PacketByteBuf buf) {
+        this(buf.readInt(), buf.readInt());
     }
     
-    public abstract @Nullable ClaimantTown getTownClaim(UUID townId);
+    public @NotNull ChunkPos chunkPos() {
+        return new ChunkPos(this.x, this.z);
+    }
+    
+    @Override
+    public void write(@NotNull PacketByteBuf buf) {
+        buf.writeInt(this.x);
+        buf.writeInt(this.z);
+    }
+    
+    @Override
+    public PacketType<?> getType() {
+        return ClaimQueryPacket.TYPE;
+    }
 }

@@ -78,7 +78,6 @@ public final class ClientCore extends CoreMod implements ClientModInitializer {
         
         // Set the backpack data when received from the server
         NetworkingUtils.clientReceiver(PlayerBackpackDataPacket.TYPE, (client, network, packet, sender) -> {
-            System.out.println("Received backpack data: " + packet.rows());
             ((BackpackCarrier) client.player)
                 .setBackpack(packet.getBackpack(client.player), false /* Nothing here to transmit */);
         });

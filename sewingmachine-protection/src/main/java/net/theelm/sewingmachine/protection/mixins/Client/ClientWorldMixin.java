@@ -23,49 +23,21 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.mixins.Server;
+package net.theelm.sewingmachine.protection.mixins.Client;
 
-import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.protection.claims.Claimant;
+import net.minecraft.client.world.ClientWorld;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
-import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
-import net.minecraft.server.MinecraftServer;
+import net.theelm.sewingmachine.protection.objects.ClientClaimCache;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-/**
- * Created on Apr 14 2022 at 3:05 PM.
- * By greg in SewingMachineMod
- */
-@Mixin(MinecraftServer.class)
-public class MinecraftServerMixin implements ClaimsAccessor {
-    private ServerClaimCache sewingMachineClaimManager;
-    
-    /**
-     * Save claim information when the server saves
-     */
-    @Inject(at = @At("RETURN"), method = "save")
-    public void save(boolean silent, boolean boolean_2, boolean boolean_3, @NotNull CallbackInfoReturnable<Boolean> callback) {
-        if (
-            callback.getReturnValue()
-            && ((ClaimsAccessor)this).getClaimManager() instanceof ServerClaimCache claims
-        ) {
-            if (!silent) CoreMod.logInfo("Saving claim data");
-            claims.getCaches()
-                .forEach(Claimant::save);
-        }
-    }
+@Mixin(ClientWorld.class)
+public class ClientWorldMixin implements ClaimsAccessor {
+    private @NotNull ClientClaimCache claimCache = new ClientClaimCache();
     
     @Override
     public @NotNull ClaimCache getClaimManager() {
-        if (this.sewingMachineClaimManager == null) {
-            MinecraftServer server = (MinecraftServer) (Object) this;
-            this.sewingMachineClaimManager = new ServerClaimCache(server, server.getOverworld());
-        }
-        return this.sewingMachineClaimManager;
+        return this.claimCache;
     }
 }

@@ -78,7 +78,7 @@ public final class ClaimantTown extends Claimant {
         return TownNameUtils.getOwnerTitle( this.getCount(), this.getResidentCount(), true );
     }
     public @NotNull MutableText getOwnerName() {
-        return TextUtils.mutable(PlayerNameCallback.getName(this.claimCache.getServer(), this.getOwnerId()));
+        return TextUtils.mutable(PlayerNameCallback.getName(this.getOwnerId()));
     }
     
     public @Nullable UUID getOwnerId() {

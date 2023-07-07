@@ -30,12 +30,13 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.util.Session;
+import net.minecraft.client.world.ClientWorld;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
-import net.theelm.sewingmachine.protection.interfaces.NameCache;
+import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
+import net.theelm.sewingmachine.interfaces.NameCache;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
-import net.theelm.sewingmachine.protection.objects.ClientClaimCache;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,11 +52,11 @@ import java.util.UUID;
 @Mixin(MinecraftClient.class)
 @Environment(EnvType.CLIENT)
 public abstract class MinecraftClientMixin implements PlayerClaimData, NameCache {
+    @Shadow @Nullable public ClientWorld world;
     @Shadow public abstract Session getSession();
     
     private final @NotNull Map<UUID, Text> namesCache = new HashMap<>();
     
-    private @NotNull ClientClaimCache claimCache;
     private @Nullable ClaimantPlayer playerClaims;
     
     @Inject(at = @At("RETURN"), method = "disconnect(Lnet/minecraft/client/gui/screen/Screen;)V")
@@ -63,19 +64,20 @@ public abstract class MinecraftClientMixin implements PlayerClaimData, NameCache
         this.namesCache.clear();
         
         // Reset claim information after disconnect
-        this.claimCache = null;
         this.playerClaims = null;
     }
     
     @Override
     public @NotNull ClaimantPlayer getClaim() {
         if (this.playerClaims == null) {
-            this.claimCache = new ClientClaimCache();
             UUID uuid = this.getSession()
                 .getUuidOrNull();
             if (uuid == null)
                 uuid = CoreMod.SPAWN_ID;
-            this.playerClaims = new ClaimantPlayer(this.claimCache, uuid);
+            this.playerClaims = new ClaimantPlayer(
+                ((ClaimsAccessor) this.world).getClaimManager(),
+                uuid
+            );
         }
         return this.playerClaims;
     }

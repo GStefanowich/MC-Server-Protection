@@ -26,8 +26,10 @@
 package net.theelm.sewingmachine.events;
 
 import com.mojang.authlib.GameProfile;
+import com.mojang.datafixers.util.Either;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -36,11 +38,17 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.UserCache;
 import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.base.ServerCore;
+import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.interfaces.NameCache;
+import net.theelm.sewingmachine.utilities.Sew;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -63,7 +71,7 @@ public interface PlayerNameCallback {
     default @NotNull Text getDisplayName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
         // Blank UUID is always Spawn/Server
         if (Objects.equals(CoreMod.SPAWN_ID, uuid))
-            return Text.literal("Spawn");
+            return Text.literal(SewConfig.get(SewCoreConfig.NAME_SPAWN));
         
         PlayerManager manager = server.getPlayerManager();
         ServerPlayerEntity player = manager.getPlayer(uuid);
@@ -86,6 +94,23 @@ public interface PlayerNameCallback {
     static @NotNull Text getName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
         return PlayerNameCallback.INSTANCE.invoker()
             .getDisplayName(server, uuid);
+    }
+    
+    static @NotNull Text getName(@NotNull UUID uuid) {
+        Either<MinecraftServer, MinecraftClient> either = Sew.getServerInstance();
+        
+        Optional<MinecraftServer> left = either.left();
+        if (left.isPresent())
+            return PlayerNameCallback.getName(left.get(), uuid);
+        
+        Optional<MinecraftClient> right = either.right();
+        if (right.isPresent()) {
+            Text name = ((NameCache) right.get()).getPlayerName(uuid);
+            if (name != null)
+                return name;
+        }
+        
+        return Text.literal(uuid.toString());
     }
     
     /**
