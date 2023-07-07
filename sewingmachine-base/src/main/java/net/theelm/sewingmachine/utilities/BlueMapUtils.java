@@ -43,8 +43,8 @@ import java.util.function.Consumer;
  * Created on Mar 14 2021 at 3:37 PM.
  * By greg in SewingMachineMod
  */
-public final class MapUtils {
-    private MapUtils() {}
+public final class BlueMapUtils {
+    private BlueMapUtils() {}
     public static void init() {}
     
     public static @NotNull Queue<Consumer<BlueMapAPI>> RUN = new ArrayDeque<>();
@@ -55,7 +55,7 @@ public final class MapUtils {
             CoreMod.logInfo("BlueMap Integration detected");
             
             Consumer<BlueMapAPI> consumer;
-            while ((consumer = MapUtils.RUN.poll()) != null)
+            while ((consumer = BlueMapUtils.RUN.poll()) != null)
                 consumer.accept(api);
         });
     }
@@ -64,7 +64,7 @@ public final class MapUtils {
         return BlueMapAPI.getInstance();
     }
     public static Optional<BlueMapMap> getWorldMap(@NotNull RegistryKey<World> worldKey) {
-        return MapUtils.getBlueMap().map(blueMapAPI -> {
+        return BlueMapUtils.getBlueMap().map(blueMapAPI -> {
             Identifier identifier = worldKey.getValue();
             String search = "world/dimensions/" + identifier.getNamespace() + "/" + identifier.getPath();
             for (BlueMapMap map : blueMapAPI.getMaps()) {

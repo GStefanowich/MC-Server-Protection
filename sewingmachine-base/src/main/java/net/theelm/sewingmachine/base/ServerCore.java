@@ -82,7 +82,7 @@ import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.DevUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
-import net.theelm.sewingmachine.utilities.MapUtils;
+import net.theelm.sewingmachine.utilities.BlueMapUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
@@ -115,7 +115,7 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
     public void onInitialize() {
         super.initialize();
         
-        MapUtils.init();
+        BlueMapUtils.init();
         
         CoreMod.logInfo("Initializing Database.");
         try {

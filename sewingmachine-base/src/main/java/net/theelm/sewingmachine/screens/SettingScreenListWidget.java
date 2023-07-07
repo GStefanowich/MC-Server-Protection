@@ -79,9 +79,7 @@ public class SettingScreenListWidget extends EntryListWidget<SettingScreenListWi
         return this.addClickable(builder);
     }
     public void addScreenButton(@NotNull Text text, @Nullable Text tooltip, @NotNull Supplier<@NotNull Screen> supplier) {
-        this.addButton(text, tooltip, button -> {
-            this.client.setScreen(supplier.get());
-        });
+        this.addButton(text, tooltip, button -> this.client.setScreen(supplier.get()));
     }
     public @NotNull ClickableWidget addToggleButton(@NotNull Text text, @Nullable Text tooltip, boolean state, ToggleWidget.@NotNull Change onChange) {
         ToggleWidget toggle = new ToggleWidget(state, onChange);

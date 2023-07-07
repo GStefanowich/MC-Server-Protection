@@ -25,6 +25,8 @@
 
 package net.theelm.sewingmachine.screens;
 
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.tooltip.Tooltip;
@@ -42,15 +44,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.function.Supplier;
 
-/**
- * Created on Jul 04 2023 at 12:13 AM.
- * By greg in sewingmachine
- */
+@Environment(EnvType.CLIENT)
 public abstract class SettingScreen extends Screen {
     public static final @NotNull Identifier BACKGROUND_TEXTURE = Sew.modIdentifier("textures/gui/settings.png");
     
-    protected int backgroundWidth = 176;
-    protected int backgroundHeight = 166;
+    protected final int backgroundWidth = 176;
+    protected final int backgroundHeight = 166;
     
     protected int x;
     protected int y;
@@ -86,7 +85,7 @@ public abstract class SettingScreen extends Screen {
         this.addButtons(this.listWidget);
     }
     
-    protected abstract void addButtons(@NotNull SettingScreenListWidget list);
+    protected void addButtons(@NotNull SettingScreenListWidget list) {}
     
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
@@ -118,7 +117,7 @@ public abstract class SettingScreen extends Screen {
     }
     
     @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+    public final boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         if (super.keyPressed(keyCode, scanCode, modifiers))
             return true;
         if (this.client.options.inventoryKey.matchesKey(keyCode, scanCode)) {
@@ -141,14 +140,12 @@ public abstract class SettingScreen extends Screen {
     }
     
     @Override
-    public boolean shouldPause() {
+    public final boolean shouldPause() {
         return false;
     }
     
     @Override
-    public void close() {
-        //this.client.player.closeHandledScreen();
-        //super.close();
+    public final void close() {
         this.client.setScreen(this.parent);
     }
 }
