@@ -26,7 +26,7 @@
 package net.theelm.sewingmachine.MySQL;
 
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.utilities.Sew;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 
 import java.io.File;
 import java.sql.Connection;

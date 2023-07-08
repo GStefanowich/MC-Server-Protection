@@ -29,24 +29,17 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.gui.tooltip.Tooltip;
-import net.minecraft.client.gui.widget.ButtonWidget;
-import net.minecraft.client.gui.widget.ClickableWidget;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.theelm.sewingmachine.interfaces.TabRegistry;
 import net.theelm.sewingmachine.objects.TabContext;
-import net.theelm.sewingmachine.objects.widgets.CycleWidget;
-import net.theelm.sewingmachine.objects.widgets.ToggleWidget;
-import net.theelm.sewingmachine.utilities.Sew;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.function.Supplier;
-
 @Environment(EnvType.CLIENT)
 public abstract class SettingScreen extends Screen {
-    public static final @NotNull Identifier BACKGROUND_TEXTURE = Sew.modIdentifier("textures/gui/settings.png");
+    public final @NotNull Identifier backgroundTexture;
     
     protected final int backgroundWidth = 176;
     protected final int backgroundHeight = 166;
@@ -62,7 +55,11 @@ public abstract class SettingScreen extends Screen {
     private @NotNull SettingScreenListWidget listWidget;
     
     protected SettingScreen(Text title) {
+        this(title, Sew.modIdentifier("textures/gui/settings.png"));
+    }
+    protected SettingScreen(Text title, Identifier background) {
         super(title);
+        this.backgroundTexture = background;
     }
     
     @Override
@@ -113,7 +110,7 @@ public abstract class SettingScreen extends Screen {
     private void drawBackground(@NotNull DrawContext context, int mouseX, int mouseY, float delta) {
         int i = this.x;
         int j = this.y;
-        context.drawTexture(BACKGROUND_TEXTURE, i, j, 0, 0, this.backgroundWidth, this.backgroundHeight);
+        context.drawTexture(this.backgroundTexture, i, j, 0, 0, this.backgroundWidth, this.backgroundHeight);
     }
     
     @Override

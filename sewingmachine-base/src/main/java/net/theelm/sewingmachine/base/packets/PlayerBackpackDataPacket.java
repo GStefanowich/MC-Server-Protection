@@ -28,11 +28,10 @@ package net.theelm.sewingmachine.base.packets;
 import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.nbt.NbtList;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.util.Identifier;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
-import net.theelm.sewingmachine.utilities.Sew;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 

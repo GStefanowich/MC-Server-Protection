@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.base.packets;
 import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.PacketByteBuf;
-import net.theelm.sewingmachine.utilities.Sew;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;

@@ -29,10 +29,8 @@ import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
@@ -62,6 +60,7 @@ import net.minecraft.util.math.Vec3i;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
+import net.theelm.sewingmachine.utilities.mod.SewServer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -90,7 +89,7 @@ public final class MessageUtils {
     }
     public static boolean sendAsWhisper(@Nullable ServerPlayerEntity sender, @NotNull ServerPlayerEntity target, @NotNull Text text) {
         // Log the the server
-        ServerCore.get()
+        SewServer.get()
             .sendMessage(text);
         
         // Send the message to the player (SENDER)
@@ -139,7 +138,7 @@ public final class MessageUtils {
     
     // Send a translation blob to all Players
     public static void sendToAll(@NotNull final String translationKey, final Object... objects) {
-        final MinecraftServer server = ServerCore.get();
+        final MinecraftServer server = SewServer.get();
         MessageUtils.sendSystem(
             server.getPlayerManager().getPlayerList().stream(),
             translationKey,
@@ -150,7 +149,7 @@ public final class MessageUtils {
         MessageUtils.sendToAll(text, Collections.emptyList());
     }
     public static boolean sendToAll(@NotNull final Text text, @NotNull Collection<ServerPlayerEntity> tags) {
-        final MinecraftServer server = ServerCore.get();
+        final MinecraftServer server = SewServer.get();
         
         // Log to the server
         server.sendMessage(text);
@@ -163,7 +162,7 @@ public final class MessageUtils {
         return false;
     }
     public static void sendToAll(@NotNull final Text text, @NotNull Predicate<ServerPlayerEntity> predicate) {
-        final MinecraftServer server = ServerCore.get();
+        final MinecraftServer server = SewServer.get();
         
         // Log to the server
         server.sendMessage(text);
@@ -180,7 +179,7 @@ public final class MessageUtils {
         MessageUtils.sendToOps( 1, translationKey, objects );
     }
     public static void sendToOps(final int opLevel, final String translationKey, final Object... objects) {
-        final MinecraftServer server = ServerCore.get();
+        final MinecraftServer server = SewServer.get();
         MessageUtils.sendSystem(
             server.getPlayerManager().getPlayerList().stream().filter((player) -> player.hasPermissionLevel( opLevel )),
             translationKey,
@@ -193,7 +192,7 @@ public final class MessageUtils {
         MessageUtils.consoleToOps(Text.literal("@"), event);
     }
     public static void consoleToOps(@NotNull Text player, @NotNull Text event) {
-        MinecraftServer server = ServerCore.get();
+        MinecraftServer server = SewServer.get();
         GameRules gameRules = server.getGameRules();
         
         Text send = (Text.translatable("chat.type.admin", player, event)).formatted(Formatting.GRAY, Formatting.ITALIC);

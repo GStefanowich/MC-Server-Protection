@@ -41,7 +41,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.NameCache;
-import net.theelm.sewingmachine.utilities.Sew;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -95,7 +95,7 @@ public interface PlayerNameCallback {
     }
     
     static @NotNull Text getName(@NotNull UUID uuid) {
-        Either<MinecraftServer, MinecraftClient> either = Sew.getServerInstance();
+        Either<MinecraftServer, MinecraftClient> either = Sew.getGameInstancePreferServer();
         
         Optional<MinecraftServer> left = either.left();
         if (left.isPresent())

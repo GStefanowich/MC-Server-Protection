@@ -27,6 +27,7 @@ package net.theelm.sewingmachine.protection.objects.ticking;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -41,6 +42,7 @@ import net.theelm.sewingmachine.protection.commands.ClaimCommand;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
+import net.theelm.sewingmachine.protection.packets.ClaimCountPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimedChunkPacket;
 import net.theelm.sewingmachine.utilities.ChunkUtils;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
@@ -83,6 +85,7 @@ public class ChunkOwnerUpdate implements TickingAction {
     private final @NotNull List<ChunkPos> changed = new ArrayList<>();
     
     private boolean verify = true;
+    private boolean silent = false;
     
     private ChunkOwnerUpdate(@NotNull ServerCommandSource source, @Nullable Claimant claimant, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {
         this.source = source;
@@ -92,7 +95,7 @@ public class ChunkOwnerUpdate implements TickingAction {
         this.positions.addAll(positions);
     }
     
-    public ChunkOwnerUpdate setVerify(boolean force) {
+    public @NotNull ChunkOwnerUpdate setVerify(boolean force) {
         this.verify = force;
         return this;
     }
@@ -100,10 +103,15 @@ public class ChunkOwnerUpdate implements TickingAction {
         return this.verify;
     }
     
+    public @NotNull ChunkOwnerUpdate setSilent() {
+        this.silent = true;
+        return this;
+    }
+    
     public int getInitialSize() {
         return this.initialSize;
     }
-    public @NotNull ServerCommandSource getSource() {
+    public @Nullable ServerCommandSource getSource() {
         return this.source;
     }
     public @Nullable Claimant getClaimant() {
@@ -134,13 +142,16 @@ public class ChunkOwnerUpdate implements TickingAction {
             if (result == ActionResult.FAIL)
                 throw this.mode.getException(this.source);
         } catch (TranslationKeyException e) {
-            TranslatableServerSide.send(this.source, !this.verify, e.getKey());
+            if (!this.silent)
+                TranslatableServerSide.send(this.source, !this.verify, e.getKey());
             return true;
         } catch (CommandSyntaxException e) {
-            this.source.sendFeedback(
-                () -> Text.literal(e.getMessage()).formatted(Formatting.RED),
-                false
-            );
+            if (!this.silent) {
+                this.source.sendFeedback(
+                    () -> Text.literal(e.getMessage()).formatted(Formatting.RED),
+                    false
+                );
+            }
             return true;
         }
         
@@ -151,6 +162,14 @@ public class ChunkOwnerUpdate implements TickingAction {
         boolean finished = this.positions.isEmpty();
         if (finished)
             this.finish();
+        
+        if (this.claimant instanceof ClaimantPlayer claimantPlayer) {
+            MinecraftServer server = world.getServer();
+            ServerPlayerEntity player = claimantPlayer.getPlayer(server);
+            if (player != null && ModUtils.hasModule(player, "protection"))
+                NetworkingUtils.send(player, new ClaimCountPacket(claimantPlayer));
+        }
+        
         return finished;
     }
     
@@ -165,7 +184,7 @@ public class ChunkOwnerUpdate implements TickingAction {
         
         // Log the chunks that were changed
         CoreMod.logInfo(this.claimant.getName().getString() + " has " + this.mode.name().toLowerCase(Locale.ROOT) + "ed " + changed + " chunk(s): (" + log + ")");
-        if (changed > 0)
+        if (changed > 0 && !this.silent)
             TranslatableServerSide.send(this.source, !this.verify, this.mode.getSuccessTranslation(), changed);
     }
     
@@ -202,8 +221,11 @@ public class ChunkOwnerUpdate implements TickingAction {
                     if (!Objects.equals(chunk.getOwnerId(), claimantTown.getOwnerId()))
                         return ActionResult.FAIL;
                     
-                    if (chunk.getTown() != null && chunk.getTown() != claimantTown)
-                        throw ClaimCommand.CHUNK_ALREADY_OWNED.create(source);
+                    if (chunk.getTown() != null && chunk.getTown() != claimantTown) {
+                        if (source != null)
+                            throw ClaimCommand.CHUNK_ALREADY_OWNED.create(source);
+                        return ActionResult.FAIL;
+                    }
                     
                     claimantTown.addToCount(worldChunk);
                     chunk.updateTownOwner(claimant.getId());
@@ -249,6 +271,8 @@ public class ChunkOwnerUpdate implements TickingAction {
         UNCLAIM {
             @Override
             public ActionResult run(@NotNull WorldChunk worldChunk, @NotNull ChunkOwnerUpdate update) throws CommandSyntaxException, TranslationKeyException {
+                ServerCommandSource source = update.getSource();
+                
                 IClaimedChunk chunk = (IClaimedChunk) worldChunk;
                 Claimant claimant = Objects.requireNonNull(update.getClaimant());
                 
@@ -264,8 +288,11 @@ public class ChunkOwnerUpdate implements TickingAction {
                 }
                 
                 // If the chunk is not owned
-                if (update.getVerify() && chunk.getOwnerId() == null && update.getInitialSize() <= 1)
-                    throw ClaimCommand.CHUNK_NOT_OWNED.create(update.getSource());
+                if (update.getVerify() && chunk.getOwnerId() == null && update.getInitialSize() <= 1) {
+                    if (source != null)
+                        throw ClaimCommand.CHUNK_NOT_OWNED.create(source);
+                    return ActionResult.FAIL;
+                }
                 
                 // If the chunk is owned by another player
                 if (update.getVerify() && chunk.getOwnerId() != null && !Objects.equals(claimant.getId(), chunk.getOwnerId()) )

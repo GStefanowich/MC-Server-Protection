@@ -57,8 +57,8 @@ public final class MapChunk {
     static {
         Color color;
         
-        color = Color.YELLOW;
-        HOVER_HIGHLIGHT = ColorHelper.Argb.getArgb(100, color.getRed(), color.getGreen(), color.getBlue());
+        color = Color.GRAY;
+        HOVER_HIGHLIGHT = ColorHelper.Argb.getArgb(65, color.getRed(), color.getGreen(), color.getBlue());
         
         color = Color.CYAN;
         CLAIM_HIGHLIGHT = ColorHelper.Argb.getArgb(80, color.getRed(), color.getGreen(), color.getBlue());
@@ -83,11 +83,11 @@ public final class MapChunk {
         if (this.chunk.isEmpty())
             return;
         
-        for(int x = 0; x < MapChunk.WIDTH; x++) {
+        for (int x = MapChunk.WIDTH - 1; x >= 0; x--) {
             double d = 0.0;
             
             int[] colors = this.colors[x];
-            for(int z = 0; z < MapChunk.WIDTH; z++) {
+            for (int z = MapChunk.WIDTH - 1; z >= 0; z--) {
                 Multiset<MapColor> multiset = LinkedHashMultiset.create();
                 int t = 0;
                 double e = 0.0;
@@ -145,7 +145,7 @@ public final class MapChunk {
                     else if (f > 0.9) brightness = MapColor.Brightness.LOW;
                     else brightness = MapColor.Brightness.NORMAL;
                 } else {
-                    f = (e - d) * 4.0 / (double)(4) + ((double)(x + z & 1) - 0.5) * 0.4;
+                    f = (e - d) * 4.0 / (double)(4) /*+ ((double)(x + z & 1) - 0.5) * 0.4*/;
                     if (f > 0.6) brightness = MapColor.Brightness.HIGH;
                     else if (f < -0.6) brightness = MapColor.Brightness.LOW;
                     else brightness = MapColor.Brightness.NORMAL;

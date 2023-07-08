@@ -1,0 +1,12 @@
+{
+	"ui.sew.settings.protections": "Protections",
+	
+	"ui.sew.settings.claim_map": "Claim Map",
+	"ui.sew.settings.tooltip.claim_map": "Claim chunks",
+	"ui.sew.settings.claim_settings": "Claim Settings",
+	"ui.sew.settings.tooltip.claim_settings": "Manage settings for your claim area",
+	"ui.sew.settings.claim_permissions": "Claim Permissions",
+	"ui.sew.settings.tooltip.claim_permissions": "Manage permissions for your claim area",
+	"ui.sew.settings.claim_ranks": "Claim Ranks",
+	"ui.sew.settings.tooltip.claim_ranks": "Manage access other players have in your claim area"
+}

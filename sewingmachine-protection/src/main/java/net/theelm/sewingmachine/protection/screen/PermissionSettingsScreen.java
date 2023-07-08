@@ -40,8 +40,8 @@ import org.jetbrains.annotations.NotNull;
 
 @Environment(EnvType.CLIENT)
 public class PermissionSettingsScreen extends SettingScreen {
-    public PermissionSettingsScreen() {
-        super(Text.literal("Permission Settings"));
+    public PermissionSettingsScreen(@NotNull Text title) {
+        super(title);
     }
     
     @Override

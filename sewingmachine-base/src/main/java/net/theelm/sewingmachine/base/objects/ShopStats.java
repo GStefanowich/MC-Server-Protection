@@ -27,10 +27,9 @@ package net.theelm.sewingmachine.base.objects;
 
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
-import net.theelm.sewingmachine.base.CoreMod;
 import net.minecraft.item.Item;
 import net.minecraft.stat.StatType;
-import net.theelm.sewingmachine.utilities.Sew;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import org.jetbrains.annotations.NotNull;
 
 public final class ShopStats {

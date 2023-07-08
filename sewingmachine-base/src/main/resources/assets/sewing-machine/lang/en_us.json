@@ -1,4 +1,5 @@
 {
+  "player.inventory.backpack": "Backpack",
   "key.sewingmachine.backpack": "Open Backpack",
   
   "chat.change.town": "Switched to Town chat.",

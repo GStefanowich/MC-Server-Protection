@@ -45,7 +45,7 @@ public final class BackpackTab extends Tab {
     
     public BackpackTab(@NotNull MinecraftClient client) {
         this.client = client;
-        this.text = Text.literal("Backpack");
+        this.text = Text.translatable("player.inventory.backpack");
         this.icon = new ItemStack(Items.BUNDLE);
     }
     
@@ -60,7 +60,7 @@ public final class BackpackTab extends Tab {
     }
     
     @Override
-    public boolean isEnabled() {
+    public boolean isVisible() {
         return this.client.player != null
             && ((BackpackCarrier) this.client.player).getBackpack() != null;
     }

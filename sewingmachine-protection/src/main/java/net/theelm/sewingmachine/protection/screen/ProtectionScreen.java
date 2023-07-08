@@ -32,27 +32,32 @@ import net.theelm.sewingmachine.screens.SettingScreen;
 import net.theelm.sewingmachine.screens.SettingScreenListWidget;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 @Environment(EnvType.CLIENT)
 public final class ProtectionScreen extends SettingScreen {
-    public ProtectionScreen() {
-        super(Text.literal("Protections"));
+    public ProtectionScreen(@NotNull Text title) {
+        super(title);
     }
     
     @Override
     protected void addButtons(@NotNull SettingScreenListWidget list) {
-        this.addScreenButton(list, ProtectionClaimScreen::new, Text.literal("Claims"), Text.literal("Claim chunks"));
-        this.addScreenButton(list, ProtectionSettingsScreen::new, Text.literal("Claim Settings"), Text.literal("Settings for your Player claim"));
-        this.addScreenButton(list, PermissionSettingsScreen::new, Text.literal("Claim Permissions"), Text.literal("Permissions for your Player claim"));
+        this.addTranslatedScreenButton(list, ProtectionClaimScreen::new, "claim_map");
+        this.addTranslatedScreenButton(list, ProtectionSettingsScreen::new, "claim_settings");
+        this.addTranslatedScreenButton(list, PermissionSettingsScreen::new, "claim_permissions");
         if (!this.client.isInSingleplayer() || this.client.isIntegratedServerRunning()) {
-            this.addScreenButton(list, RankSettingsScreen::new, Text.literal("Claim Ranks"), Text.literal("The permissions for other players"));
+            this.addTranslatedScreenButton(list, RankSettingsScreen::new, "claim_ranks");
         }
     }
     
-    private void addScreenButton(@NotNull SettingScreenListWidget list, @NotNull Supplier<SettingScreen> supplier, @NotNull Text text, @NotNull Text tooltip) {
+    private void addTranslatedScreenButton(@NotNull SettingScreenListWidget list, @NotNull Function<Text, SettingScreen> supplier, @NotNull String key) {
+        this.addScreenButton(list, supplier, Text.translatable("ui.sew.settings." + key), Text.translatable("ui.sew.settings.tooltip." + key));
+    }
+    
+    private void addScreenButton(@NotNull SettingScreenListWidget list, @NotNull Function<Text, SettingScreen> supplier, @NotNull Text text, @NotNull Text tooltip) {
         list.addScreenButton(text, tooltip, () -> {
-            SettingScreen screen = supplier.get();
+            SettingScreen screen = supplier.apply(text);
             screen.parent = this;
             return screen;
         });

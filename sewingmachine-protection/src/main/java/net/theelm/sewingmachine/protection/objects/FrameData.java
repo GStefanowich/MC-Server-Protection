@@ -83,6 +83,12 @@ public final class FrameData {
     }
     
     public void fillDot(@NotNull DrawContext context, int x, int y, int color) {
+        this.fillDot(context, x, y, color, false);
+    }
+    public void fillDot(@NotNull DrawContext context, int x, int y, int color, boolean outline) {
+        if (outline && !this.isOutline(x, y))
+            return;
+        
         x *= this.scale();
         y *= this.scale();
         if (x - this.padding < 0 || y - this.padding < 0 || x + this.padding >= this.width() || y + this.padding >= this.height())
@@ -112,5 +118,12 @@ public final class FrameData {
         
         // Fill in
         context.fill(RenderLayer.getGuiOverlay(), x1, y1, x2, y2, color);
+    }
+    
+    private boolean isOutline(int x, int y) {
+        int modX = x % MapChunk.WIDTH;
+        int modY = y % MapChunk.WIDTH;
+        return modX == 0 || modX == 15
+            || modY == 0 || modY == 15;
     }
 }

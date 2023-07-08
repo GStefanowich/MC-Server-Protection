@@ -23,33 +23,39 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.packets;
+package net.theelm.sewingmachine.utilities.mod;
 
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
-import net.minecraft.network.PacketByteBuf;
-import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
-import net.theelm.sewingmachine.utilities.mod.Sew;
+import net.minecraft.client.MinecraftClient;
+import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public record ClaimCountPacket(int current, int maximum) implements FabricPacket {
-    public static PacketType<ClaimCountPacket> TYPE = PacketType.create(Sew.modIdentifier("claim_count"), ClaimCountPacket::new);
+import java.util.Objects;
+
+/**
+ * Created on Jul 07 2023 at 9:41 PM.
+ * By greg in sewingmachine
+ */
+public final class SewClient {
+    private SewClient() {}
     
-    public ClaimCountPacket(@NotNull PacketByteBuf buf) {
-        this(buf.readInt(), buf.readInt());
-    }
-    public ClaimCountPacket(@NotNull ClaimantPlayer claimant) {
-        this(claimant.getCount(), claimant.getMaxChunkLimit());
+    /**
+     * Gets the MinecraftServer
+     *   If running as the server, will Exception
+     *   If running as the client, will return the IntegratedMinecraftServer
+     * @return
+     */
+    public static @NotNull MinecraftClient get() {
+        return Sew.getGameInstance()
+            .right()
+            .orElseThrow(() -> new RuntimeException("Called Client object from illegal position."));
     }
     
-    @Override
-    public void write(@NotNull PacketByteBuf buf) {
-        buf.writeInt(this.current);
-        buf.writeInt(this.maximum);
+    public static @NotNull MinecraftServer getServer() {
+        return Objects.requireNonNull(SewClient.getServer(SewClient.get()));
     }
     
-    @Override
-    public PacketType<?> getType() {
-        return ClaimCountPacket.TYPE;
+    public static @Nullable MinecraftServer getServer(@NotNull MinecraftClient client) {
+        return client.getServer();
     }
 }

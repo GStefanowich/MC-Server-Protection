@@ -31,13 +31,15 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.util.Formatting;
+import net.theelm.sewingmachine.utilities.mod.SewServer;
 
 public class TeamUtils {
     
     private static final Team pirates;
     
     private static Scoreboard getScoreboard() {
-        return ServerCore.get().getScoreboard();
+        return SewServer.get()
+            .getScoreboard();
     }
     
     public static void applyTeams(PlayerEntity player) {

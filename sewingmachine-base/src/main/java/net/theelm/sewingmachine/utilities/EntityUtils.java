@@ -39,6 +39,7 @@ import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.interfaces.SpawnerMob;
 import net.theelm.sewingmachine.base.mixins.Server.ServerWorldAccessor;
+import net.theelm.sewingmachine.utilities.mod.SewServer;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -285,13 +286,13 @@ public final class EntityUtils {
      */
     public static @Nullable ServerPlayerEntity getPlayer(@NotNull String username) {
         // If the player is online
-        return ServerCore.get()
+        return SewServer.get()
             .getPlayerManager()
             .getPlayer(username);
     }
     public static @Nullable ServerPlayerEntity getPlayer(@NotNull UUID playerId) {
         // If the player is online
-        return ServerCore.get()
+        return SewServer.get()
             .getPlayerManager()
             .getPlayer(playerId);
     }
@@ -448,7 +449,7 @@ public final class EntityUtils {
         EntityUtils.kickAllPlayers(null);
     }
     public static void kickAllPlayers(@Nullable Text reason) {
-        MinecraftServer server = ServerCore.get();
+        MinecraftServer server = SewServer.get();
         PlayerManager manager = server.getPlayerManager();
         if (reason == null)
             manager.disconnectAllPlayers();

@@ -39,8 +39,8 @@ import org.jetbrains.annotations.NotNull;
 
 @Environment(EnvType.CLIENT)
 public class ProtectionSettingsScreen extends SettingScreen {
-    public ProtectionSettingsScreen() {
-        super(Text.literal("Protection Settings"));
+    public ProtectionSettingsScreen(@NotNull Text title) {
+        super(title);
     }
     
     @Override

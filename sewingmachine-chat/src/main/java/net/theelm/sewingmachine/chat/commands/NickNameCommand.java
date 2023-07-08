@@ -55,6 +55,7 @@ import net.theelm.sewingmachine.utilities.ColorUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.mod.SewServer;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -197,7 +198,7 @@ public final class NickNameCommand extends SewCommand {
             .update(player, true);
         
         // Send update to the player list
-        ServerCore.get(player).getPlayerManager().sendToAll(
+        SewServer.get(player).getPlayerManager().sendToAll(
             (new PlayerListS2CPacket(PlayerListS2CPacket.Action.UPDATE_DISPLAY_NAME, player))
         );
         

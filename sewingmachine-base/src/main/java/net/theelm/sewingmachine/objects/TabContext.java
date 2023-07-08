@@ -28,7 +28,6 @@ package net.theelm.sewingmachine.objects;
 import net.minecraft.client.font.TextRenderer;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.item.ItemStack;
-import net.minecraft.util.Colors;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -103,7 +102,7 @@ public record TabContext(List<Tab> tabs, TextRenderer textRenderer, int x, int y
                 continue;
             
             // Call the tab activate
-            if (activate && !tab.isActive() && tab.isEnabled())
+            if (activate && tab.canClick() && tab.isVisible())
                 tab.setActive();
             
             return true;
@@ -129,7 +128,7 @@ public record TabContext(List<Tab> tabs, TextRenderer textRenderer, int x, int y
         for (Tab tab : tabs) {
             if (tab.isActive())
                 continue;
-            if (tab.isEnabled())
+            if (tab.isVisible())
                 return true;
         }
         return false;

@@ -67,7 +67,7 @@ public final class InventoryTab extends ScreenTab {
     }
     
     @Override
-    public boolean isEnabled() {
+    public boolean isVisible() {
         return this.client.player != null;
     }
     

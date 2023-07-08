@@ -25,7 +25,6 @@
 
 package net.theelm.sewingmachine.protection.mixins.World;
 
-import net.minecraft.client.world.ClientWorld;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
@@ -35,7 +34,6 @@ import net.theelm.sewingmachine.protection.interfaces.Claim;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
-import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils.ClaimSlice;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
@@ -44,7 +42,6 @@ import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.BlockView;
 import net.minecraft.world.HeightLimitView;
@@ -210,8 +207,8 @@ public abstract class ChunkMixin implements BlockView, IClaimedChunk, Claim {
         else if (this.heightLimitView instanceof World viewWorld)
             world = viewWorld;
         
-        if (world instanceof ClientWorld clientWorld) {
-            return ((ClaimsAccessor) clientWorld).getClaimManager();
+        if (world.isClient()) {
+            return ((ClaimsAccessor) world).getClaimManager();
             
         } else if (world != null)
             return ((ClaimsAccessor) world.getServer()).getClaimManager();

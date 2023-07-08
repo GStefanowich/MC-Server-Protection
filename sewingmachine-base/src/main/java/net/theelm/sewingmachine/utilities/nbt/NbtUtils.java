@@ -31,7 +31,6 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
 import net.theelm.sewingmachine.objects.WorldPos;
 import net.theelm.sewingmachine.utilities.LegacyConverter;
@@ -58,6 +57,7 @@ import net.minecraft.world.WorldProperties;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.ServerWorldProperties;
+import net.theelm.sewingmachine.utilities.mod.SewServer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -81,7 +81,7 @@ public final class NbtUtils {
     private NbtUtils() {}
     
     public static @NotNull Path levelNameFolder() {
-        return Paths.get(ServerCore.get().getSaveProperties().getLevelName());
+        return Paths.get(SewServer.get().getSaveProperties().getLevelName());
     }
     public static @NotNull Path worldSaveFolder(@NotNull RegistryKey<World> world) {
         return DimensionType.getSaveDirectory(world, NbtUtils.levelNameFolder());

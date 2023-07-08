@@ -31,7 +31,6 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.world.World;
 import net.theelm.sewingmachine.protection.interfaces.ClientClaimData;
 import net.theelm.sewingmachine.protection.objects.FrameData;
 import net.theelm.sewingmachine.protection.objects.MapChunk;
@@ -39,6 +38,7 @@ import net.theelm.sewingmachine.protection.objects.MapWidget;
 import net.theelm.sewingmachine.screens.SettingScreen;
 import net.theelm.sewingmachine.screens.SettingScreenListWidget;
 import net.theelm.sewingmachine.utilities.ColorUtils;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
@@ -56,9 +56,10 @@ public final class ProtectionClaimScreen extends SettingScreen {
     private @Nullable MapWidget widget = null;
     private @Nullable Text claimsText = null;
     private int ticks = 0;
+    private int claims = -1;
     
-    protected ProtectionClaimScreen() {
-        super(Text.literal("Claim chunks"));
+    protected ProtectionClaimScreen(@NotNull Text title) {
+        super(title, Sew.modIdentifier("textures/gui/settings_map.png"));
         
         this.frame = new FrameData(
             this.backgroundWidth,
@@ -88,14 +89,18 @@ public final class ProtectionClaimScreen extends SettingScreen {
             if (this.ticks-- <= 0) {
                 this.ticks = 60;
                 this.widget.update();
-                
-                ClientClaimData claimData = (ClientClaimData) this.client;
-                int current = claimData.getClaimedChunks();
+                this.claims = -1;
+            }
+            
+            ClientClaimData claimData = (ClientClaimData) this.client;
+            int current = claimData.getClaimedChunks();
+            if (this.claims != current) {
                 int limit = claimData.getMaxChunks();
                 this.claimsText = TextUtils.literal()
                     .append(MessageUtils.formatNumber(current, current == limit ? Formatting.RED : Formatting.GREEN))
                     .append(" / ")
                     .append(MessageUtils.formatNumber(limit, Formatting.WHITE));
+                this.claims = current;
             }
             
             // Draw the owner tooltip if hovering over a chunk
@@ -111,13 +116,13 @@ public final class ProtectionClaimScreen extends SettingScreen {
     
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return (this.widget != null && this.widget.mouseClicked(mouseX, mouseY, button))
+        return (this.widget != null && this.widget.mouseClicked(mouseX - this.frame.padding(), mouseY - this.frame.padding(), button))
             || super.mouseClicked(mouseX, mouseY, button);
     }
     
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return (this.widget != null && this.widget.mouseReleased(mouseX, mouseY, button))
+        return (this.widget != null && this.widget.mouseReleased(mouseX - this.frame.padding(), mouseY - this.frame.padding(), button))
             || super.mouseReleased(mouseX, mouseY, button);
     }
     

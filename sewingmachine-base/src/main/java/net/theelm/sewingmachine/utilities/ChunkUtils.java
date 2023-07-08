@@ -48,6 +48,17 @@ public final class ChunkUtils {
         return (chunkIndex |= (blockPos.getZ() & 0xF) << 4);
     }
     
+    public static boolean isPositionWithinSquareRange(@NotNull ChunkPos sourcePos, int range, @NotNull ChunkPos queryPos) {
+        int diffX = sourcePos.x - queryPos.x;
+        int diffZ = sourcePos.z - queryPos.z;
+        
+        // Prevent querying chunks that are too far away from the player
+        return diffX <= range
+            && diffX >= -range
+            && diffZ <= range
+            && diffZ >= -range;
+    }
+    
     public static @NotNull Collection<ServerPlayerEntity> getPlayersMonitoring(@NotNull World world, @NotNull ChunkPos chunkPos) {
         if (world instanceof ServerWorld serverWorld)
             return ChunkUtils.getPlayersMonitoring(serverWorld, chunkPos);

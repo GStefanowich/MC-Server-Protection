@@ -34,11 +34,9 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.ChunkStatus;
-import net.theelm.sewingmachine.base.packets.SewHelloPacket;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.events.ContainerAccessCallback;
 import net.theelm.sewingmachine.events.MessageDeployer;
-import net.theelm.sewingmachine.events.NetworkHandlerCallback;
 import net.theelm.sewingmachine.events.PlayerModsCallback;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.events.RegionManageCallback;
@@ -51,6 +49,7 @@ import net.theelm.sewingmachine.events.BlockPlaceCallback;
 import net.theelm.sewingmachine.events.TaxCollection;
 import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
 import net.theelm.sewingmachine.interfaces.ItemUseCallback;
+import net.theelm.sewingmachine.interfaces.LogicalWorld;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.interfaces.variables.EntityVariableFunction;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
@@ -63,6 +62,7 @@ import net.theelm.sewingmachine.protection.events.BlockInteraction;
 import net.theelm.sewingmachine.protection.events.EntityAttack;
 import net.theelm.sewingmachine.protection.events.ItemPlace;
 import net.theelm.sewingmachine.protection.events.ItemUse;
+import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.interfaces.PlayerMovement;
@@ -71,6 +71,7 @@ import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.objects.signs.SignDeed;
 import net.theelm.sewingmachine.protection.objects.signs.SignPlots;
+import net.theelm.sewingmachine.protection.objects.ticking.ChunkOwnerUpdate;
 import net.theelm.sewingmachine.protection.packets.ClaimChunkPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimCountPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
@@ -81,6 +82,7 @@ import net.theelm.sewingmachine.protection.packets.ClaimedChunkPacket;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.ClaimPropertyUtils;
 import net.theelm.sewingmachine.protection.utilities.MessageClaimUtils;
+import net.theelm.sewingmachine.utilities.ChunkUtils;
 import net.theelm.sewingmachine.utilities.EntityVariables;
 import net.theelm.sewingmachine.utilities.ModUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
@@ -88,6 +90,7 @@ import net.theelm.sewingmachine.utilities.ShopSigns;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -251,19 +254,10 @@ public final class ServerCore implements ModInitializer, SewPlugin {
         
         // When the client queries who owns a chunk (Used for map overlay)
         NetworkingUtils.serverReceiver(ClaimQueryPacket.TYPE, (server, player, network, packet, sender) -> {
-            ChunkPos chunkPos = player.getChunkPos();
+            // Verify that the player is not too far from the chunk
             ChunkPos queryPos = packet.chunkPos();
-            
-            int diffX = chunkPos.x - queryPos.x;
-            int diffZ = chunkPos.z - queryPos.z;
-            
-            // Prevent querying chunks that are too far away from the player
-            if (
-                diffX > 8
-                || diffX < -8
-                || diffZ > 8
-                || diffZ < -8
-            ) return;
+            if (!ChunkUtils.isPositionWithinSquareRange(player.getChunkPos(), 8, queryPos))
+                return;
             
             ClaimantPlayer claim = null;
             ServerWorld world = player.getServerWorld();
@@ -280,7 +274,23 @@ public final class ServerCore implements ModInitializer, SewPlugin {
         
         // When the client requests to (un)claim a chunk
         NetworkingUtils.serverReceiver(ClaimChunkPacket.TYPE, (server, player, network, packet, sender) -> {
-            System.out.println("Chunk " + (packet.claimed() ? "" : "un") + "claim request");
+            // Verify that the player is not too far from the chunk
+            ChunkPos queryPos = packet.chunkPos();
+            if (!ChunkUtils.isPositionWithinSquareRange(player.getChunkPos(), 8, queryPos))
+                return;
+            
+            // Get the claimCache from the server
+            if (((ClaimsAccessor) server).getClaimManager() instanceof ServerClaimCache claimCache) {
+                // Add a tickable event to the server
+                ((LogicalWorld) player.getServerWorld()).addTickableEvent(ChunkOwnerUpdate.forPlayer(
+                    claimCache,
+                    player.getCommandSource(),
+                    player.getUuid(),
+                    packet.claimed()
+                        ? ChunkOwnerUpdate.Mode.CLAIM : ChunkOwnerUpdate.Mode.UNCLAIM,
+                    Arrays.asList(queryPos.getStartPos())
+                ).setSilent().setVerify(true /* Must verify all claims */));
+            }
         });
         
         ShopSigns.add(SignDeed::new);

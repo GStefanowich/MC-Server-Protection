@@ -27,7 +27,6 @@ package net.theelm.sewingmachine.base.objects.inventory;
 
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.inventory.Inventory;
-import net.minecraft.inventory.SimpleInventory;
 import net.minecraft.screen.GenericContainerScreenHandler;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;

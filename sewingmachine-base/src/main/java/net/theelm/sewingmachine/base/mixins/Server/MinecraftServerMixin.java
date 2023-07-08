@@ -28,7 +28,6 @@ package net.theelm.sewingmachine.base.mixins.Server;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.util.math.random.Random;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
@@ -36,7 +35,7 @@ import net.theelm.sewingmachine.interfaces.MotdFunction;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.ServerVariables;
-import net.theelm.sewingmachine.utilities.text.TextUtils;
+import net.theelm.sewingmachine.utilities.mod.SewServer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerMetadata;
 import net.minecraft.text.MutableText;
@@ -171,7 +170,7 @@ public abstract class MinecraftServerMixin {
     
     private String descriptionReplaceVariables(@NotNull MutableText text, @Nullable String description) {
         if (description != null) {
-            MinecraftServer server = ServerCore.get();
+            MinecraftServer server = SewServer.get();
             
             // For all keys
             for (Map.Entry<String, MotdFunction> row : ServerVariables.entrySet()) {

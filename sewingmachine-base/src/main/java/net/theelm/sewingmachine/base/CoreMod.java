@@ -31,7 +31,6 @@ import net.fabricmc.loader.api.entrypoint.EntrypointContainer;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.resource.featuretoggle.FeatureFlags;
-import net.minecraft.resource.featuretoggle.FeatureSet;
 import net.minecraft.screen.ScreenHandlerType;
 import net.theelm.sewingmachine.MySQL.MySQLConnection;
 import net.theelm.sewingmachine.MySQL.MySQLHost;
@@ -61,7 +60,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Pair;
 import net.minecraft.util.Util;
 
-import net.theelm.sewingmachine.utilities.Sew;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -77,8 +76,6 @@ import java.util.UUID;
 import java.util.WeakHashMap;
 
 public abstract class CoreMod {
-    public static final String MOD_ID = "sewing-machine";
-    
     // Create ourselves a universal logger
     private static final Logger logger = LogManager.getLogger();
     
@@ -87,10 +84,17 @@ public abstract class CoreMod {
     
     public static final @NotNull UUID SPAWN_ID = Util.NIL_UUID;    
     
-    public static final BlockEntityType<LecternGuideBlockEntity> GUIDE_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Sew.modIdentifier("guide_lectern"), FabricBlockEntityTypeBuilder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
-    public static final BlockEntityType<LecternWarpsBlockEntity> WARPS_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Sew.modIdentifier("warps_lectern"), FabricBlockEntityTypeBuilder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
+    public static final BlockEntityType<LecternGuideBlockEntity> GUIDE_BLOCK_ENTITY;
+    public static final BlockEntityType<LecternWarpsBlockEntity> WARPS_BLOCK_ENTITY;
     
-    public static final ScreenHandlerType<BackpackScreenHandler> BACKPACK = Registry.register(Registries.SCREEN_HANDLER, Sew.modIdentifier("backpack"), new ScreenHandlerType<>(BackpackScreenHandler::new, FeatureFlags.VANILLA_FEATURES));
+    public static final ScreenHandlerType<BackpackScreenHandler> BACKPACK;
+    
+    static {
+        GUIDE_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Sew.modIdentifier("guide_lectern"), FabricBlockEntityTypeBuilder.create(LecternGuideBlockEntity::new, Blocks.LECTERN).build(null));
+        WARPS_BLOCK_ENTITY = Registry.register(Registries.BLOCK_ENTITY_TYPE, Sew.modIdentifier("warps_lectern"), FabricBlockEntityTypeBuilder.create(LecternWarpsBlockEntity::new, Blocks.LECTERN).build(null));
+
+        BACKPACK = Registry.register(Registries.SCREEN_HANDLER, Sew.modIdentifier("backpack"), new ScreenHandlerType<>(BackpackScreenHandler::new, FeatureFlags.VANILLA_FEATURES));
+    }
     
     // MySQL Host
     private static MySQLHost MySQL = null;

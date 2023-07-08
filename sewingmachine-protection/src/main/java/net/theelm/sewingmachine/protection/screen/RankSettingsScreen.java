@@ -52,8 +52,8 @@ import java.util.UUID;
 
 @Environment(EnvType.CLIENT)
 public final class RankSettingsScreen extends SettingScreen {
-    protected RankSettingsScreen() {
-        super(Text.literal("Rank Settings"));
+    protected RankSettingsScreen(@NotNull Text title) {
+        super(title);
     }
     
     @Override

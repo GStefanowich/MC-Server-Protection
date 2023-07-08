@@ -63,7 +63,7 @@ public class ProtectionsTab extends ScreenTab {
     }
     
     @Override
-    public boolean isEnabled() {
+    public boolean isVisible() {
         return ((PlayerClaimData) this.client).hasClaim();
     }
     
@@ -73,7 +73,18 @@ public class ProtectionsTab extends ScreenTab {
     }
     
     @Override
+    public boolean canClick() {
+        return super.canClick()
+            || !(this.client.currentScreen instanceof ProtectionScreen);
+    }
+    
+    @Override
     protected @Nullable Screen getScreen() {
-        return new ProtectionScreen();
+        if (this.client.currentScreen instanceof SettingScreen screen) {
+            Screen parent = screen.parent;
+            if (parent != null)
+                return parent;
+        }
+        return new ProtectionScreen(this.text);
     }
 }

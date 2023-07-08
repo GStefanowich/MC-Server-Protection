@@ -26,6 +26,7 @@
 package net.theelm.sewingmachine.utilities;
 
 import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 
 /**
  * Created on Aug 14 2021 at 9:34 PM.

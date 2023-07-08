@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.base.packets;
 import net.fabricmc.fabric.api.networking.v1.FabricPacket;
 import net.fabricmc.fabric.api.networking.v1.PacketType;
 import net.minecraft.network.PacketByteBuf;
-import net.theelm.sewingmachine.utilities.Sew;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 
 /**
  * Created on Jul 01 2023 at 12:29 AM.

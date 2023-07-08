@@ -23,33 +23,43 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.packets;
+package net.theelm.sewingmachine.utilities.mod;
 
-import net.fabricmc.fabric.api.networking.v1.FabricPacket;
-import net.fabricmc.fabric.api.networking.v1.PacketType;
-import net.minecraft.network.PacketByteBuf;
-import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
-import net.theelm.sewingmachine.utilities.mod.Sew;
+import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public record ClaimCountPacket(int current, int maximum) implements FabricPacket {
-    public static PacketType<ClaimCountPacket> TYPE = PacketType.create(Sew.modIdentifier("claim_count"), ClaimCountPacket::new);
+import java.util.Objects;
+import java.util.UUID;
+
+/**
+ * Created on Jul 07 2023 at 9:41 PM.
+ * By greg in sewingmachine
+ */
+public final class SewServer {
+    private SewServer() {}
     
-    public ClaimCountPacket(@NotNull PacketByteBuf buf) {
-        this(buf.readInt(), buf.readInt());
-    }
-    public ClaimCountPacket(@NotNull ClaimantPlayer claimant) {
-        this(claimant.getCount(), claimant.getMaxChunkLimit());
+    /**
+     * Gets the MinecraftServer
+     *   If running as the server, will return the DedicatedMinecraftServer
+     *   If running as the client, will return the IntegratedMinecraftServer
+     * @return
+     */
+    public static @NotNull MinecraftServer get() {
+        return Sew.getGameInstance()
+            .left()
+            // Don't method reference otherwise it'll import and check client classes
+            .orElseGet(() -> SewClient.getServer());
     }
     
-    @Override
-    public void write(@NotNull PacketByteBuf buf) {
-        buf.writeInt(this.current);
-        buf.writeInt(this.maximum);
+    public static @NotNull MinecraftServer get(@NotNull PlayerEntity player) {
+        return Objects.requireNonNull(player.getServer());
     }
     
-    @Override
-    public PacketType<?> getType() {
-        return ClaimCountPacket.TYPE;
+    public static @Nullable ServerPlayerEntity getPlayer(@NotNull MinecraftServer server, @NotNull UUID uuid) {
+        return server.getPlayerManager().getPlayer(uuid);
     }
+
 }

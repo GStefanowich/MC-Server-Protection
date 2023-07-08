@@ -42,6 +42,7 @@ import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.utilities.DevUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
+import net.theelm.sewingmachine.utilities.mod.SewServer;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.StyleApplicator;
@@ -134,7 +135,7 @@ public interface ShopSignData {
             return null;
         if (Objects.equals(uuid, CoreMod.SPAWN_ID))
             return Optional.of(new GameProfile(uuid, "Server"));
-        UserCache cache = ServerCore.get()
+        UserCache cache = SewServer.get()
             .getUserCache();
         return cache.getByUuid(uuid);
     }

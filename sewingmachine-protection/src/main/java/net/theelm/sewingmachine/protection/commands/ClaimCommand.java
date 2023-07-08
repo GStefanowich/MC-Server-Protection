@@ -80,6 +80,7 @@ import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.theelm.sewingmachine.utilities.WarpUtils;
+import net.theelm.sewingmachine.utilities.mod.SewServer;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import net.minecraft.command.CommandSource;
@@ -1093,7 +1094,7 @@ public final class ClaimCommand extends SewCommand {
         player.playSound(SoundEvents.ENTITY_VILLAGER_TRADE, SoundCategory.MASTER, 0.5f, 1f );
         
         // Find the entity of the friend
-        ServerPlayerEntity friendEntity = ServerCore.getPlayer(source.getServer(), friend.getId());
+        ServerPlayerEntity friendEntity = SewServer.getPlayer(source.getServer(), friend.getId());
         if ( friendEntity != null ) {
             // Notify the friend
             friendEntity.sendMessage(Text.literal("Player ").formatted(Formatting.WHITE)

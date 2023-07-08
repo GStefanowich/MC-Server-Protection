@@ -86,16 +86,15 @@ import net.theelm.sewingmachine.utilities.BlueMapUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.dedicated.MinecraftDedicatedServer;
-import net.minecraft.server.integrated.IntegratedServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
-import net.theelm.sewingmachine.utilities.Sew;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.ShopSigns;
+import net.theelm.sewingmachine.utilities.mod.SewClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -235,19 +234,6 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
         };
     }
     
-    public static @NotNull MinecraftServer get() {
-        return Sew.getGameInstance()
-            .left()
-            // Don't method reference otherwise it'll import and check client classes
-            .orElseGet(() -> ClientCore.getServer());
-    }
-    public static @NotNull MinecraftServer get(@NotNull PlayerEntity player) {
-        return Objects.requireNonNull(player.getServer());
-    }
-    public static @Nullable ServerPlayerEntity getPlayer(@NotNull MinecraftServer server, @NotNull UUID uuid) {
-        return server.getPlayerManager().getPlayer(uuid);
-    }
-    
     public static @NotNull RegistryKey<World> defaultWorldKey() {
         return SewConfig.get(SewCoreConfig.DEFAULT_WORLD);
     }
@@ -282,12 +268,5 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
         if (!world.isPresent())
             world = Optional.ofNullable(server.getWorld(World.OVERWORLD));
         return world.orElseThrow(NullPointerException::new);
-    }
-    
-    public static boolean isIntegratedServer() {
-        return ServerCore.get() instanceof IntegratedServer;
-    }
-    public static boolean isDedicatedServer() {
-        return ServerCore.get() instanceof MinecraftDedicatedServer;
     }
 }

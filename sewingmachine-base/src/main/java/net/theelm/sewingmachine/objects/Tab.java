@@ -50,10 +50,18 @@ public abstract class Tab {
     public abstract @NotNull Text getText();
     
     /**
+     * If the tab should be visible
+     * @return
+     */
+    public abstract boolean isVisible();
+    
+    /**
      * If the tab is clickable
      * @return
      */
-    public abstract boolean isEnabled();
+    public boolean canClick() {
+        return !this.isActive();
+    }
     
     /**
      * If the tab is currently selected

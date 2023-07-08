@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.utilities;
+package net.theelm.sewingmachine.utilities.mod;
 
 import com.mojang.datafixers.util.Either;
 import net.fabricmc.api.EnvType;
@@ -72,6 +72,13 @@ public final class Sew {
      * Fabric Elements
      */
     
+    /**
+     * Get the game instance
+     *   If in Singleplayer, this will return the MinecraftClient
+     *   If in Multiplayer, this will return the MinecraftClient
+     *   If is the Server, this will return the DedicatedMinecraftServer
+     * @return
+     */
     public static Either<MinecraftServer, MinecraftClient> getGameInstance() {
         Object instance = Sew.getFabric()
             .getGameInstance();
@@ -84,19 +91,30 @@ public final class Sew {
     
     /**
      * Gets the game instance, preferring the Server
+     *   If in Singleplayer, this will return the IntegratedServer
+     *   If in Multiplayer, this will return the MinecraftClient
+     *   If is the Server, this will return the DedicatedMinecraftServer
      * @return
      */
-    public static Either<MinecraftServer, MinecraftClient> getServerInstance() {
-        Object instance = Sew.getFabric()
-            .getGameInstance();
-        if (instance instanceof MinecraftClient client) {
-            MinecraftServer server = client.getServer();
-            if (server != null)
-                return Either.left(server);
-            return Either.right(client);
+    public static Either<MinecraftServer, MinecraftClient> getGameInstancePreferServer() {
+        FabricLoader fabric = Sew.getFabric();
+        Object instance = fabric.getGameInstance();
+        switch (fabric.getEnvironmentType()) {
+            case CLIENT: {
+                if (instance instanceof MinecraftClient client) {
+                    MinecraftServer server = SewClient.getServer(client);
+                    if (server != null)
+                        return Either.left(server);
+                    return Either.right(client);
+                }
+                break;
+            }
+            case SERVER: {
+                if (instance instanceof MinecraftServer server)
+                    return Either.left(server);
+                break;
+            }
         }
-        if (instance instanceof MinecraftServer server)
-            return Either.left(server);
         throw new RuntimeException("Could not access game instance.");
     }
     

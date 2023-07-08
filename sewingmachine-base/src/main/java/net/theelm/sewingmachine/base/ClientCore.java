@@ -43,11 +43,8 @@ import net.theelm.sewingmachine.base.objects.inventory.InventoryTab;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import net.theelm.sewingmachine.utilities.KeybindUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
-import net.theelm.sewingmachine.utilities.Sew;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
-import java.util.Objects;
 
 public final class ClientCore extends CoreMod implements ClientModInitializer {
     private static final KeyBinding backpackKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
@@ -91,17 +88,5 @@ public final class ClientCore extends CoreMod implements ClientModInitializer {
         
         // Register the screen
         HandledScreens.register(CoreMod.BACKPACK, BackpackScreen::new);
-    }
-    
-    @NotNull
-    public static MinecraftClient get() {
-        return Sew.getGameInstance()
-            .right()
-            .orElseThrow(() -> new RuntimeException("Called Client object from illegal position."));
-    }
-    
-    @NotNull
-    public static MinecraftServer getServer() {
-        return Objects.requireNonNull(ClientCore.get().getServer());
     }
 }

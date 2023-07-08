@@ -126,12 +126,12 @@ public final class MapWidget {
                 
                 boolean isHovered = false;
                 if (this.isMouseOver(mouseX, mouseY)) {
-                    int relativeX = this.frame.scaleX(mouseX);
-                    int relativeY = this.frame.scaleY(mouseY);
+                    int relativeX = this.frame.scaleX(mouseX - this.frame.padding());
+                    int relativeY = this.frame.scaleY(mouseY - this.frame.padding());
                     
-                    isHovered = relativeX > offsetX
+                    isHovered = relativeX >= offsetX
                         && relativeX < offsetX + MapChunk.WIDTH
-                        && relativeY > offsetZ
+                        && relativeY >= offsetZ
                         && relativeY < offsetZ + MapChunk.WIDTH;
                 }
                 
