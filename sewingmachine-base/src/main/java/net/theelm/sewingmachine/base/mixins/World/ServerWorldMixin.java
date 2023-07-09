@@ -29,7 +29,7 @@ import net.minecraft.registry.DynamicRegistryManager;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.entry.RegistryEntry;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.LogicalWorld;
 import net.theelm.sewingmachine.interfaces.TickableContext;
@@ -74,11 +74,11 @@ public abstract class ServerWorldMixin extends World implements LogicalWorld, Se
     @Inject(at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "net/minecraft/server/world/ServerWorld.setTimeOfDay(J)V"), method = "tick")
     public void onTick(BooleanSupplier booleanSupplier, CallbackInfo callback) {
         long worldDay = IntUtils.timeToDays(this);
-        long worldYear = worldDay / SewConfig.get(SewCoreConfig.CALENDAR_DAYS);
-        worldDay = worldDay - (worldYear * SewConfig.get(SewCoreConfig.CALENDAR_DAYS));
+        long worldYear = worldDay / SewConfig.get(SewBaseConfig.CALENDAR_DAYS);
+        worldDay = worldDay - (worldYear * SewConfig.get(SewBaseConfig.CALENDAR_DAYS));
         
         NumberFormat formatter = NumberFormat.getInstance();
-        String year = CasingUtils.acronym(SewConfig.get(SewCoreConfig.CALENDAR_YEAR_EPOCH), true);
+        String year = CasingUtils.acronym(SewConfig.get(SewBaseConfig.CALENDAR_YEAR_EPOCH), true);
         TitleUtils.showPlayerAlert((ServerWorld)(World) this,
             Text.literal("Rise and shine! Day ")
                 .append(formatter.format( worldDay ))
@@ -111,7 +111,7 @@ public abstract class ServerWorldMixin extends World implements LogicalWorld, Se
         RegistryKey<World> key = this.getRegistryKey();
         
         // If the world should save it's properties to a different location
-        if ((!key.equals(World.OVERWORLD)) && !bl && SewConfig.get(SewCoreConfig.WORLD_SEPARATE_PROPERTIES)) {
+        if ((!key.equals(World.OVERWORLD)) && !bl && SewConfig.get(SewBaseConfig.WORLD_SEPARATE_PROPERTIES)) {
             NbtUtils.writeWorldDat(
                 this.toServerWorld(),
                 this.getLevelProperties()

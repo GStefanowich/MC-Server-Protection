@@ -30,7 +30,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.RegistryEntryArgumentType;
 import net.minecraft.registry.RegistryKeys;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
@@ -53,7 +53,7 @@ public final class SpawnerCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, "spawner", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.SILK_TOUCH_SPAWNERS).and(OpLevels.CHEATING))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.SILK_TOUCH_SPAWNERS).and(OpLevels.CHEATING))
             .then(CommandManager.argument("type", RegistryEntryArgumentType.registryEntry(registry, RegistryKeys.ENTITY_TYPE))
                 .suggests(SuggestionProviders.SUMMONABLE_ENTITIES)
                 .executes((context) -> {

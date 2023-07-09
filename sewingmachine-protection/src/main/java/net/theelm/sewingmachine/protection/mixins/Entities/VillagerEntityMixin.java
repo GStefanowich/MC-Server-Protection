@@ -45,7 +45,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.village.VillagerData;
 import net.minecraft.village.VillagerDataContainer;
 import net.minecraft.world.World;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
@@ -134,7 +134,7 @@ public abstract class VillagerEntityMixin extends MerchantEntity implements Inte
         VillagerEntity child = callback.getReturnValue();
         
         // Give the baby a name
-        if (SewConfig.get(SewCoreConfig.RANDOM_NAME_VILLAGERS)) {
+        if (SewConfig.get(SewBaseConfig.RANDOM_NAME_VILLAGERS)) {
             Text name = EntityUtils.Naming.create(child.getRandom(), child.getVillagerData(), 4);
             if (name != null) {
                 /*
@@ -165,7 +165,7 @@ public abstract class VillagerEntityMixin extends MerchantEntity implements Inte
                     sName = null,
                     bName = null;
                 
-                if (SewConfig.get(SewCoreConfig.RANDOM_NAME_VILLAGERS)) {
+                if (SewConfig.get(SewBaseConfig.RANDOM_NAME_VILLAGERS)) {
                     if (this.hasCustomName() && spouse.hasCustomName()) {
                         pName = ColorUtils.format(this.getDisplayName(), Formatting.WHITE);
                         sName = ColorUtils.format(spouse.getDisplayName(), Formatting.WHITE);

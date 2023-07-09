@@ -31,8 +31,7 @@ import net.minecraft.entity.passive.TameableEntity;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.tag.BlockTags;
 import net.minecraft.util.math.random.Random;
-import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.PermissionNodes;
@@ -233,7 +232,7 @@ public final class EntityUtils {
     public static <T extends Entity> boolean preventSpawnered(@NotNull EntityType<T> type) {
         if (EntityUtils.cannotBeSpawnered(type))
             return true;
-        List<EntityType<?>> blacklist = SewConfig.get(SewCoreConfig.SPAWNER_ABSORB_BLACKLIST);
+        List<EntityType<?>> blacklist = SewConfig.get(SewBaseConfig.SPAWNER_ABSORB_BLACKLIST);
         for (EntityType<?> blacklisted : blacklist) {
             if (Objects.equals(blacklisted, type))
                 return true;

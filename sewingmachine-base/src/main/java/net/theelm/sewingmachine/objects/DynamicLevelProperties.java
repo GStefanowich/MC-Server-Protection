@@ -27,7 +27,7 @@ package net.theelm.sewingmachine.objects;
 
 import com.mojang.serialization.Lifecycle;
 import net.minecraft.registry.DynamicRegistryManager;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.nbt.NbtCompound;
@@ -71,55 +71,55 @@ public final class DynamicLevelProperties implements ServerWorldProperties {
     
     @Override
     public void setSpawnX(int spawnX) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_SPAWN)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_SPAWN)
             .setSpawnX(spawnX);
     }
     
     @Override
     public void setSpawnY(int spawnY) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_SPAWN)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_SPAWN)
             .setSpawnY(spawnY);
     }
     
     @Override
     public void setSpawnZ(int spawnZ) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_SPAWN)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_SPAWN)
             .setSpawnZ(spawnZ);
     }
     
     @Override
     public void setSpawnAngle(float angle) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_SPAWN)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_SPAWN)
             .setSpawnAngle(angle);
     }
     
     @Override
     public void setSpawnPos(BlockPos pos, float angle) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_SPAWN)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_SPAWN)
             .setSpawnPos(pos, angle);
     }
     
     @Override
     public int getSpawnX() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_SPAWN)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_SPAWN)
             .getSpawnX();
     }
     
     @Override
     public int getSpawnY() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_SPAWN)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_SPAWN)
             .getSpawnY();
     }
     
     @Override
     public int getSpawnZ() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_SPAWN)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_SPAWN)
             .getSpawnZ();
     }
     
     @Override
     public float getSpawnAngle() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_SPAWN)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_SPAWN)
             .getSpawnAngle();
     }
     
@@ -135,72 +135,72 @@ public final class DynamicLevelProperties implements ServerWorldProperties {
     
     @Override
     public long getTimeOfDay() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_TIME)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_TIME)
             .getTimeOfDay();
     }
     
     @Override
     public void setTimeOfDay(long timeOfDay) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_TIME).setTimeOfDay(timeOfDay);
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_TIME).setTimeOfDay(timeOfDay);
     }
     
     @Override
     public boolean isRaining() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
             .isRaining();
     }
     
     @Override
     public void setRaining(boolean raining) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
             .setRaining(raining);
     }
     
     @Override
     public boolean isThundering() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
             .isThundering();
     }
     
     @Override
     public void setThundering(boolean thundering) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
             .setThundering(thundering);
     }
     
     @Override
     public int getRainTime() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
             .getRainTime();
     }
     
     @Override
     public void setRainTime(int rainTime) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
             .setRainTime(rainTime);
     }
     
     @Override
     public int getThunderTime() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
             .getThunderTime();
     }
     
     @Override
     public void setThunderTime(int thunderTime) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
             .setThunderTime(thunderTime);
     }
     
     @Override
     public int getClearWeatherTime() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
             .getClearWeatherTime();
     }
     
     @Override
     public void setClearWeatherTime(int clearWeatherTime) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
             .setClearWeatherTime(clearWeatherTime);
     }
     
@@ -224,7 +224,7 @@ public final class DynamicLevelProperties implements ServerWorldProperties {
     
     @Override
     public GameRules getGameRules() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_GAME_RULES)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_GAME_RULES)
             .getGameRules();
     }
     
@@ -265,25 +265,25 @@ public final class DynamicLevelProperties implements ServerWorldProperties {
     
     @Override
     public GameMode getGameMode() {
-        return (SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_GAMEMODE) ? this.dynamic : this.accessor)
+        return (SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_GAMEMODE) ? this.dynamic : this.accessor)
             .getGameMode();
     }
     
     @Override
     public void setGameMode(GameMode gameMode) {
-        (SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_GAMEMODE) ? this.dynamic : this.accessor)
+        (SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_GAMEMODE) ? this.dynamic : this.accessor)
             .setGameMode(gameMode);
     }
     
     @Override
     public void setWorldBorder(WorldBorder.Properties properties) {
-        this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WORLD_BORDER)
+        this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WORLD_BORDER)
             .setWorldBorder(properties);
     }
     
     @Override
     public WorldBorder.Properties getWorldBorder() {
-        return this.getSewPropertiesFor(SewCoreConfig.WORLD_SPECIFIC_WORLD_BORDER)
+        return this.getSewPropertiesFor(SewBaseConfig.WORLD_SPECIFIC_WORLD_BORDER)
             .getWorldBorder();
     }
     
@@ -306,7 +306,7 @@ public final class DynamicLevelProperties implements ServerWorldProperties {
     }
     
     public NbtCompound writeToTag(DynamicRegistryManager registryManager) {
-        if (SewConfig.get(SewCoreConfig.WORLD_SEPARATE_PROPERTIES) && this.dynamic instanceof LevelProperties levelProperties)
+        if (SewConfig.get(SewBaseConfig.WORLD_SEPARATE_PROPERTIES) && this.dynamic instanceof LevelProperties levelProperties)
             return levelProperties.cloneWorldNbt(registryManager, null);
         return new NbtCompound();
     }

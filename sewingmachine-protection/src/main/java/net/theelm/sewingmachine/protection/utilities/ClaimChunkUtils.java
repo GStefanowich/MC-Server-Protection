@@ -38,7 +38,7 @@ import net.minecraft.world.WorldView;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
@@ -50,7 +50,6 @@ import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protection.interfaces.PlayerTravel;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.PlayerVisitor;
-import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.utilities.ChunkUtils;
@@ -219,7 +218,7 @@ public final class ClaimChunkUtils {
      */
     public static boolean canPlayerWarpTo(@NotNull PlayerEntity player, @NotNull UUID target) {
         if (SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
-            return SewConfig.get(SewCoreConfig.COMMAND_WARP_TPA);
+            return SewConfig.get(SewBaseConfig.COMMAND_WARP_TPA);
         return ClaimChunkUtils.canPlayerWarpTo(Objects.requireNonNull(player.getServer()), player.getUuid(), target);
     }
     

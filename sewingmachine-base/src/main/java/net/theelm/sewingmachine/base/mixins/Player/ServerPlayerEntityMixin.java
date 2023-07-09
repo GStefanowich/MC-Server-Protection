@@ -29,7 +29,7 @@ import com.mojang.authlib.GameProfile;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.registry.RegistryKey;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.PlayerSpawnCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.CompassDirections;
@@ -40,7 +40,6 @@ import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.interfaces.PlayerServerLanguage;
 import net.theelm.sewingmachine.utilities.EffectUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
-import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.SleepUtils;
 import net.theelm.sewingmachine.utilities.WarpUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
@@ -63,7 +62,6 @@ import net.minecraft.network.packet.s2c.play.PlayerSpawnPositionS2CPacket;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.ClickEvent;
 import net.minecraft.text.Text;
@@ -130,7 +128,7 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
     
     @Inject(at = @At("RETURN"), method = "<init>*")
     public void onInitialize(CallbackInfo callback) {
-        this.spawnPointDimension = SewConfig.get(SewCoreConfig.DEFAULT_WORLD);
+        this.spawnPointDimension = SewConfig.get(SewBaseConfig.DEFAULT_WORLD);
     }
     
     public ServerPlayerEntityMixin(World world, BlockPos blockPos, float yaw, GameProfile gameProfile) {
@@ -296,8 +294,8 @@ public abstract class ServerPlayerEntityMixin extends PlayerEntity implements Pl
     public void onChangeDimension(@NotNull ServerWorld world, @NotNull final CallbackInfoReturnable<Entity> callback) {
         RegistryKey<World> dimension = world.getRegistryKey();
         
-        if (SewConfig.get(SewCoreConfig.OVERWORLD_PORTAL_LOC) && dimension.equals(World.OVERWORLD)) this.setNetherPortal(this.getBlockPos());
-        else if (SewConfig.get(SewCoreConfig.NETHER_PORTAL_LOC) && dimension.equals(World.NETHER)) this.setOverworldPortal(this.getBlockPos());
+        if (SewConfig.get(SewBaseConfig.OVERWORLD_PORTAL_LOC) && dimension.equals(World.OVERWORLD)) this.setNetherPortal(this.getBlockPos());
+        else if (SewConfig.get(SewBaseConfig.NETHER_PORTAL_LOC) && dimension.equals(World.NETHER)) this.setOverworldPortal(this.getBlockPos());
         
         // Clear all players on the healthbar when changing worlds
         if (this.healthBar != null)

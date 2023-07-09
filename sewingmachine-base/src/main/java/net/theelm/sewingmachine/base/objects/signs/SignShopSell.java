@@ -36,20 +36,17 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerBalanceCallback;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
-import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
-import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.base.objects.ShopCraftAction;
 import net.theelm.sewingmachine.base.objects.ShopStats;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
-import net.theelm.sewingmachine.utilities.MoneyUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
 import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
@@ -105,7 +102,7 @@ public final class SignShopSell extends ShopSign.BuyTradeSell {
         Inventory chestInventory = null;
         
         // If shops disabled
-        if ( !SewConfig.get(SewCoreConfig.DO_MONEY) )
+        if ( !SewConfig.get(SewBaseConfig.DO_MONEY) )
             return Either.right(Boolean.TRUE);
         
         // These should NOT be null

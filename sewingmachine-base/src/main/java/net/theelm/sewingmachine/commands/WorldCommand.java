@@ -32,7 +32,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
@@ -124,7 +124,7 @@ public final class WorldCommand extends SewCommand {
     }
     private int updateServerSpawn(@NotNull MinecraftServer server, @NotNull ServerWorld world, @NotNull BlockPos pos) throws CommandSyntaxException {
         try {
-            SewConfig.set(SewCoreConfig.DEFAULT_WORLD, world.getRegistryKey());
+            SewConfig.set(SewBaseConfig.DEFAULT_WORLD, world.getRegistryKey());
             SewConfig.save();
         } catch (IOException e) {
             e.printStackTrace();

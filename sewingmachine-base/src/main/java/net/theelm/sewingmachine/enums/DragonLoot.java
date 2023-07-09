@@ -1,7 +1,7 @@
 package net.theelm.sewingmachine.enums;
 
 import net.minecraft.util.math.random.Random;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.base.objects.rewards.WeightedReward;
 import net.theelm.sewingmachine.base.objects.rewards.WeightedRewardEnchantedBook;
@@ -32,7 +32,7 @@ public final class DragonLoot {
         // Clear rewards before adding new ones
         DragonLoot.LOOT_REWARDS.clear();
         
-        if (SewConfig.get(SewCoreConfig.DRAGON_LOOT_END_ITEMS)) {
+        if (SewConfig.get(SewBaseConfig.DRAGON_LOOT_END_ITEMS)) {
             DragonLoot.itemReward(2800, Items.ELYTRA);
             DragonLoot.itemReward(250, Items.ELYTRA, (player, stack) -> ItemUtils.makeUnbreakable(stack));
             DragonLoot.itemReward(250, Items.FISHING_ROD, (player, stack) -> ItemUtils.makeUnbreakable(stack));
@@ -67,7 +67,7 @@ public final class DragonLoot {
             DragonLoot.itemReward(1400, Items.EXPERIENCE_BOTTLE, (player, stack) -> stack.setCount(IntUtils.random(player.getRandom(), 10, 32)));
         }
         
-        if (SewConfig.get(SewCoreConfig.DRAGON_LOOT_RARE_BOOKS)) {
+        if (SewConfig.get(SewBaseConfig.DRAGON_LOOT_RARE_BOOKS)) {
             DragonLoot.bookReward(440, Enchantments.SHARPNESS, 6);
             DragonLoot.bookReward(300, Enchantments.SHARPNESS, 7);
             DragonLoot.bookReward(150, Enchantments.SHARPNESS, 8);

@@ -35,7 +35,6 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.deathchests.config.SewDeathConfig;

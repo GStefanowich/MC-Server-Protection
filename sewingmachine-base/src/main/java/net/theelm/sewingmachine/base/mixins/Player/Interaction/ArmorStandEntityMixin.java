@@ -100,6 +100,8 @@ public abstract class ArmorStandEntityMixin extends LivingEntity {
     
     @Inject(at = @At("HEAD"), method = "interactAt", cancellable = true)
     public void onPlayerInteract(PlayerEntity player, Vec3d vec3d, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
+        if (this.getWorld().isClient())
+            return;
         ItemStack handStack = player.getStackInHand(hand);
         
         if (!this.shouldHideBasePlate()) {

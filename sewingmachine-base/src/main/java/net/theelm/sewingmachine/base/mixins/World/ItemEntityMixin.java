@@ -26,19 +26,17 @@
 package net.theelm.sewingmachine.base.mixins.World;
 
 import net.minecraft.entity.damage.DamageTypes;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.damage.DamageSource;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
-import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -66,7 +64,7 @@ public abstract class ItemEntityMixin extends Entity {
     
     @Inject(at = @At("HEAD"), method = "setStack")
     private void OnConstruct(ItemStack stack, CallbackInfo callback) {
-        Map<Item, Integer> items = SewConfig.get(SewCoreConfig.ITEM_DESPAWN_TIMES);
+        Map<Item, Integer> items = SewConfig.get(SewBaseConfig.ITEM_DESPAWN_TIMES);
         this.overriddenSewingDespawnTime = items.get(stack.getItem());
     }
     

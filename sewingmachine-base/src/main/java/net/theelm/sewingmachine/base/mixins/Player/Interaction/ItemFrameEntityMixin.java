@@ -63,7 +63,9 @@ public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
     }
     
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
-    public void onPlayerInteract(@NotNull final PlayerEntity player, @NotNull final Hand hand, final @NotNull CallbackInfoReturnable<ActionResult> callback) {
+    public void onPlayerInteract(@NotNull PlayerEntity player, @NotNull final Hand hand, final @NotNull CallbackInfoReturnable<ActionResult> callback) {
+        if (this.getWorld().isClient())
+            return;
         ItemFrameEntity itemFrame = (ItemFrameEntity)(AbstractDecorationEntity) this;
         
         // Do special item frame interaction if NOT CROUCHING and HOLDING A TOOL
@@ -106,12 +108,11 @@ public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
     @Inject(at = @At("HEAD"), method = "damage", cancellable = true)
     public void onDamage(@NotNull DamageSource damageSource, float damage, final @NotNull CallbackInfoReturnable<Boolean> callback) {
         Entity attacker = damageSource.getAttacker();
-        if (!(attacker instanceof PlayerEntity player))
+        if (!(attacker instanceof ServerPlayerEntity player))
             return;
         
         // If player should be able to interact with the item frame
         if (!BlockBreakCallback.canDestroy(player, (ServerWorld) this.getWorld(), Hand.MAIN_HAND, this.getBlockPos(), null, null))
             callback.setReturnValue(false);
     }
-    
 }

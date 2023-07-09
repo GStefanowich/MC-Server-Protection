@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.protections.logging;
 import net.minecraft.registry.RegistryKey;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.MySQL.MySQLStatement;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.entity.Entity;
@@ -137,8 +137,8 @@ public final class EventLogger implements Runnable {
         // If logging is disabled for a certain type, ignore
         if (action instanceof BlockEvent blockEvent) {
             if (
-                (blockEvent.getAction() == BlockAction.BREAK) && (!SewConfig.get(SewCoreConfig.LOG_BLOCKS_BREAKING))
-                || (blockEvent.getAction() == BlockAction.PLACE) && (!SewConfig.get(SewCoreConfig.LOG_BLOCKS_PLACING))
+                (blockEvent.getAction() == BlockAction.BREAK) && (!SewConfig.get(SewBaseConfig.LOG_BLOCKS_BREAKING))
+                || (blockEvent.getAction() == BlockAction.PLACE) && (!SewConfig.get(SewBaseConfig.LOG_BLOCKS_PLACING))
             ) return false;
         }
         // Store the log action
@@ -164,11 +164,11 @@ public final class EventLogger implements Runnable {
     // Log clean
     public static void doCleanup() {
         // Ignore if disabled
-        if (SewConfig.get(SewCoreConfig.LOG_RESET_TIME) <= 0)
+        if (SewConfig.get(SewBaseConfig.LOG_RESET_TIME) <= 0)
             return;
         
         try (MySQLStatement stmt = CoreMod.getSQL().prepare("DELETE FROM `logging_Blocks` WHERE `updatedAt` <= (NOW() - INTERVAL ? MINUTE)")
-            .addPrepared(SewConfig.get(SewCoreConfig.LOG_RESET_INTERVAL).converToMinutes(SewConfig.get(SewCoreConfig.LOG_RESET_TIME)))) {
+            .addPrepared(SewConfig.get(SewBaseConfig.LOG_RESET_INTERVAL).converToMinutes(SewConfig.get(SewBaseConfig.LOG_RESET_TIME)))) {
             
             stmt.executeUpdate();
             CoreMod.logInfo( "Database cleanup completed" );

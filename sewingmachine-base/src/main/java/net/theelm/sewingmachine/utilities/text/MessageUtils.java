@@ -29,7 +29,7 @@ import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
@@ -337,14 +337,14 @@ public final class MessageUtils {
     }
     public static @NotNull MutableText getWorldTime(@NotNull WorldProperties properties) {
         long worldDay = IntUtils.timeToDays(properties);
-        long worldYear = worldDay / SewConfig.get(SewCoreConfig.CALENDAR_DAYS);
-        worldDay = worldDay - (worldYear * SewConfig.get(SewCoreConfig.CALENDAR_DAYS));
+        long worldYear = worldDay / SewConfig.get(SewBaseConfig.CALENDAR_DAYS);
+        worldDay = worldDay - (worldYear * SewConfig.get(SewBaseConfig.CALENDAR_DAYS));
         
-        String year = CasingUtils.acronym(SewConfig.get(SewCoreConfig.CALENDAR_YEAR_EPOCH), true);
+        String year = CasingUtils.acronym(SewConfig.get(SewBaseConfig.CALENDAR_YEAR_EPOCH), true);
         MutableText yearText = MessageUtils.formatNumber(worldYear);
         if (!year.isEmpty()) {
             yearText.append(" " + year);
-            yearText.styled(MessageUtils.simpleHoverText(SewConfig.get(SewCoreConfig.CALENDAR_YEAR_EPOCH)));
+            yearText.styled(MessageUtils.simpleHoverText(SewConfig.get(SewBaseConfig.CALENDAR_YEAR_EPOCH)));
         }
         
         return Text.literal("")

@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Entities;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.LivingEntity;
@@ -65,7 +65,7 @@ public abstract class EndermanEntityMixin extends HostileEntity implements Anger
     
     @Override
     protected boolean shouldDropLoot() {
-        if (SewConfig.get(SewCoreConfig.ENDERMEN_FARMS_DROP_NO_LOOT) && this.possibleEntityFarm)
+        if (SewConfig.get(SewBaseConfig.ENDERMEN_FARMS_DROP_NO_LOOT) && this.possibleEntityFarm)
             return false;
         return super.shouldDropLoot();
     }
@@ -77,7 +77,7 @@ public abstract class EndermanEntityMixin extends HostileEntity implements Anger
     }
     
     private static boolean sewCanEndermanSpawn(@NotNull WorldView view) {
-        if (!SewConfig.get(SewCoreConfig.PREVENT_NETHER_ENDERMEN))
+        if (!SewConfig.get(SewBaseConfig.PREVENT_NETHER_ENDERMEN))
             return true;
         
         World world;

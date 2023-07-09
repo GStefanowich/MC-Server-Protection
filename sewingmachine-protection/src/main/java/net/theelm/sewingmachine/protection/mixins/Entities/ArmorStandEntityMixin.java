@@ -33,7 +33,6 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;

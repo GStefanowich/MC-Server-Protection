@@ -27,7 +27,7 @@ package net.theelm.sewingmachine.base.mixins.World;
 
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.DragonLoot;
 import net.theelm.sewingmachine.events.RegionManageCallback;
@@ -151,7 +151,7 @@ public abstract class EnderDragonFightMixin {
         
         // Attempt to set the ability to spawn to TRUE
         if ( !this.sewingMachineDragonShouldExist )
-            this.sewingMachineDragonShouldExist = ( players >= SewConfig.get(SewCoreConfig.DRAGON_PLAYERS) );
+            this.sewingMachineDragonShouldExist = ( players >= SewConfig.get(SewBaseConfig.DRAGON_PLAYERS) );
         
         // If the ability to spawn is FALSE
         if ( !this.sewingMachineDragonShouldExist ) {
@@ -172,7 +172,7 @@ public abstract class EnderDragonFightMixin {
                 
                 // Show notice to players in The End
                 if ( !this.dragonKilled )
-                    TitleUtils.showPlayerAlert( this.world, Text.literal( formatter.format(players) + " / " + formatter.format(SewConfig.get(SewCoreConfig.DRAGON_PLAYERS)) + " required players to fight the dragon." ));
+                    TitleUtils.showPlayerAlert( this.world, Text.literal( formatter.format(players) + " / " + formatter.format(SewConfig.get(SewBaseConfig.DRAGON_PLAYERS)) + " required players to fight the dragon." ));
                 
                 this.sewingMachineEndPlayers = players;
             }
@@ -236,7 +236,7 @@ public abstract class EnderDragonFightMixin {
     public void dragonDestroyed(@NotNull EnderDragonEntity dragon, @NotNull CallbackInfo callback) {
         if (this.dragonUuid.equals(dragon.getUuid()))
             this.sewingMachineDragonShouldExist = false;
-        final boolean giveLootReward = SewConfig.get(SewCoreConfig.DRAGON_LOOT_END_ITEMS) || SewConfig.get(SewCoreConfig.DRAGON_LOOT_RARE_BOOKS);
+        final boolean giveLootReward = SewConfig.get(SewBaseConfig.DRAGON_LOOT_END_ITEMS) || SewConfig.get(SewBaseConfig.DRAGON_LOOT_RARE_BOOKS);
         
         // Notify players not participating in the fight
         int players = this.seenPlayers.size();
@@ -276,7 +276,7 @@ public abstract class EnderDragonFightMixin {
             // Update the dragons health
             int count = Math.max(this.seenPlayers.size() - 1, 0),
                 baseHealth = 200;
-            float newMax = baseHealth + (count * SewConfig.get(SewCoreConfig.DRAGON_ADDITIONAL_HEALTH));
+            float newMax = baseHealth + (count * SewConfig.get(SewBaseConfig.DRAGON_ADDITIONAL_HEALTH));
             
             for (EnderDragonEntity dragon : dragons) {
                 dragon.getMaxHealth();

@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Entities;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.minecraft.entity.EntityType;
@@ -49,7 +49,7 @@ public abstract class VillagerEntityMixin extends MerchantEntity implements Inte
     
     @Inject(at = @At("RETURN"), method = "readCustomDataFromNbt")
     public void afterReadingData(NbtCompound tag, CallbackInfo callback) {
-        if ((!this.hasCustomName()) && SewConfig.get(SewCoreConfig.RANDOM_NAME_VILLAGERS)) {
+        if ((!this.hasCustomName()) && SewConfig.get(SewBaseConfig.RANDOM_NAME_VILLAGERS)) {
             Text name = EntityUtils.Naming.create(this.random, this.getVillagerData(), 4);
             if (name != null) {
                 /*

@@ -31,7 +31,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.MessageArgumentType;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
@@ -61,7 +61,7 @@ public final class HoldingCommand extends SewCommand {
         // Command to display the object the player is holding
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             CommandUtils.register(dispatcher, slot.getName(), builder -> builder
-                .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_EQUIPMENT))
+                .requires(CommandPredicate.isEnabled(SewBaseConfig.COMMAND_EQUIPMENT))
                 .then(CommandManager.argument("message", MessageArgumentType.message())
                     .executes((source) -> this.slotMessage(source, slot))
                 )

@@ -34,7 +34,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
@@ -113,7 +113,7 @@ public final class SignBackpack extends ShopSign {
                 return Either.left(TranslatableServerSide.text(player, "backpack.no_downsize"));
             
             // If backpacks must be purchased in order
-            if ( SewConfig.get(SewCoreConfig.BACKPACK_SEQUENTIAL)) {
+            if ( SewConfig.get(SewBaseConfig.BACKPACK_SEQUENTIAL)) {
                 int currentRows = ( backpack == null ? 0 : backpack.getRows() );
                 if ((newPackRows - 1) > currentRows)
                     return Either.left(TranslatableServerSide.text(player, "backpack.need_previous"));
@@ -144,6 +144,6 @@ public final class SignBackpack extends ShopSign {
     
     @Override
     public boolean isEnabled() {
-        return (SewConfig.get(SewCoreConfig.DO_MONEY) && SewConfig.get(SewCoreConfig.ALLOW_BACKPACKS));
+        return (SewConfig.get(SewBaseConfig.DO_MONEY) && SewConfig.get(SewBaseConfig.ALLOW_BACKPACKS));
     }
 }

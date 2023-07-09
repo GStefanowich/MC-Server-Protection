@@ -35,7 +35,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
@@ -83,7 +83,7 @@ public final class SignShopFree extends ShopSign.BuyTradeSell {
         Inventory chestInventory = null;
         
         // If shops disabled
-        if ( !SewConfig.get(SewCoreConfig.DO_MONEY) )
+        if ( !SewConfig.get(SewBaseConfig.DO_MONEY) )
             return Either.right(Boolean.TRUE);
         
         // Check if the attached chest exists

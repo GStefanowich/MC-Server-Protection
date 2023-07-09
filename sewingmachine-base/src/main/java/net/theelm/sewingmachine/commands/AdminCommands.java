@@ -31,7 +31,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.SewConfig;
@@ -118,7 +118,7 @@ public final class AdminCommands extends SewCommand {
             CommandUtils.register(dispatcher, "Dragon Players", builder -> builder
                 .then(CommandManager.argument("count", IntegerArgumentType.integer( 0 ))
                     .executes((context) -> {
-                        SewConfig.set(SewCoreConfig.DRAGON_PLAYERS, ConfigOption.convertToJSON(
+                        SewConfig.set(SewBaseConfig.DRAGON_PLAYERS, ConfigOption.convertToJSON(
                             IntegerArgumentType.getInteger( context, "count" )
                         ));
                         return Command.SINGLE_SUCCESS;

@@ -31,8 +31,7 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
-import net.theelm.sewingmachine.base.utilities.BackpackUtils;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
@@ -43,7 +42,6 @@ import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.TranslatableServerSide;
 import net.minecraft.command.argument.ItemStackArgumentType;
 import net.minecraft.item.Item;
-import net.minecraft.screen.SimpleNamedScreenHandlerFactory;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -59,7 +57,7 @@ public final class BackpackCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, "Backpack", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.ALLOW_BACKPACKS))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.ALLOW_BACKPACKS))
             .then(CommandManager.literal("pickup")
                 .then(CommandManager.argument("item", ItemStackArgumentType.itemStack(registry))
                     .executes(this::autoPickup)

@@ -334,6 +334,11 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     
     @Inject(at = @At("RETURN"), method = "readNbt")
     public void onNbtRead(@NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
+        // We only want to create shopsigns on the server,
+        //   return if client
+        if (this.world.isClient())
+            return;
+        
         Text type = this.getFrontText()
             .getMessage(0, false);
         

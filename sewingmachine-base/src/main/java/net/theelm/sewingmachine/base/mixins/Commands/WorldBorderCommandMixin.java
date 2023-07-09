@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Commands;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.ServerCommandSource;
@@ -78,7 +78,7 @@ public class WorldBorderCommandMixin {
     }
     
     private static ServerWorld getWorld(MinecraftServer server, ServerCommandSource source) {
-        if (SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_WORLD_BORDER))
+        if (SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_WORLD_BORDER))
             return source.getWorld();
         return server.getOverworld();
     }

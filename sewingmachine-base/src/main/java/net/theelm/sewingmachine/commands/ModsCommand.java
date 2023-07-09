@@ -29,7 +29,7 @@ import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
 import net.minecraft.command.CommandRegistryAccess;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.utilities.CommandUtils;
@@ -58,7 +58,7 @@ public final class ModsCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, "Mods", (builder) -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_MODS_LIST))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.COMMAND_MODS_LIST))
             .executes(this::getModList)
         );
     }

@@ -30,6 +30,7 @@ import com.mojang.serialization.DataResult;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
+import net.minecraft.server.MinecraftServer;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
 import net.theelm.sewingmachine.objects.WorldPos;
@@ -57,6 +58,7 @@ import net.minecraft.world.WorldProperties;
 import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.ServerWorldProperties;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.mod.SewServer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -77,17 +79,22 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 
 public final class NbtUtils {
-    
     private NbtUtils() {}
     
     public static @NotNull Path levelNameFolder() {
-        return Paths.get(SewServer.get().getSaveProperties().getLevelName());
+        return NbtUtils.levelNameFolder(SewServer.get());
     }
-    public static @NotNull Path worldSaveFolder(@NotNull RegistryKey<World> world) {
-        return DimensionType.getSaveDirectory(world, NbtUtils.levelNameFolder());
+    public static @NotNull Path levelNameFolder(@NotNull MinecraftServer server) {
+        String level = server.getSaveProperties().getLevelName();
+        if (Sew.isClient())
+            return Paths.get("saves", level);
+        return Paths.get(level);
     }
-    public static @NotNull File worldSaveFile(@NotNull RegistryKey<World> world) {
-        return new File(NbtUtils.worldSaveFolder(world).toFile(), WorldSavePath.LEVEL_DAT.getRelativePath());
+    public static @NotNull Path worldSaveFolder(@NotNull MinecraftServer server, @NotNull RegistryKey<World> world) {
+        return DimensionType.getSaveDirectory(world, NbtUtils.levelNameFolder(server));
+    }
+    public static @NotNull File worldSaveFile(@NotNull MinecraftServer server, @NotNull RegistryKey<World> world) {
+        return new File(NbtUtils.worldSaveFolder(server, world).toFile(), WorldSavePath.LEVEL_DAT.getRelativePath());
     }
     public static @NotNull File playerDataFile(@NotNull UUID uuid) {
         return Paths.get(
@@ -133,7 +140,7 @@ public final class NbtUtils {
      * Additional World DAT
      */
     public static boolean readWorldDat(@NotNull ServerWorld world, @NotNull ServerWorldProperties properties) {
-        File file = NbtUtils.worldSaveFile(world.getRegistryKey());
+        File file = NbtUtils.worldSaveFile(world.getServer(), world.getRegistryKey());
         
         if (!file.exists())
             return false;
@@ -183,7 +190,7 @@ public final class NbtUtils {
     }
     public static boolean writeWorldDat(@NotNull ServerWorld world, @NotNull WorldProperties properties) {
         return NbtUtils.writeBackupAndMove(
-            NbtUtils.worldSaveFile(world.getRegistryKey()),
+            NbtUtils.worldSaveFile(world.getServer(), world.getRegistryKey()),
             NbtUtils.writeWorldDatToTag(world, properties)
         );
     }
@@ -225,7 +232,7 @@ public final class NbtUtils {
         try {
             String path = file.getAbsolutePath();
             File directory = new File(path.substring(0, path.length() - fileName.length()));
-    
+            
             String filePrefix = fileName.substring(0, indexOf);
             String fileType = fileName.substring(indexOf);
             

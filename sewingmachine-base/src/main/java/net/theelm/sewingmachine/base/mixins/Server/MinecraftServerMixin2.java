@@ -29,8 +29,7 @@ import com.google.common.collect.ImmutableList;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
-import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.objects.DynamicLevelProperties;
 import net.theelm.sewingmachine.objects.SewModules;
@@ -60,7 +59,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.Collections;
 import java.util.Iterator;
@@ -91,7 +89,7 @@ public abstract class MinecraftServerMixin2 extends ReentrantThreadExecutor<Serv
      */
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/MinecraftServer.getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "prepareStartRegion")
     private ServerWorld onPreparingStartRegion(@NotNull MinecraftServer server, WorldGenerationProgressListener worldGenerationProgressListener) {
-        RegistryKey<World> registryKey = SewConfig.get(SewCoreConfig.DEFAULT_WORLD);
+        RegistryKey<World> registryKey = SewConfig.get(SewBaseConfig.DEFAULT_WORLD);
         Identifier identifier = registryKey.getValue();
         ServerWorld world = server.getWorld(registryKey);
         if (world == null)
@@ -104,7 +102,7 @@ public abstract class MinecraftServerMixin2 extends ReentrantThreadExecutor<Serv
         Set<Map.Entry<RegistryKey<DimensionOptions>, DimensionOptions>> worlds = registry.getEntrySet();
         
         // If we're doing world-specific gamerules and options
-        if (SewConfig.get(SewCoreConfig.WORLD_SEPARATE_PROPERTIES)) {
+        if (SewConfig.get(SewBaseConfig.WORLD_SEPARATE_PROPERTIES)) {
             Iterator<Map.Entry<RegistryKey<DimensionOptions>, DimensionOptions>> iterator = worlds.iterator();
             GeneratorOptions genOptions = this.saveProperties.getGeneratorOptions();
             
@@ -138,7 +136,7 @@ public abstract class MinecraftServerMixin2 extends ReentrantThreadExecutor<Serv
                     DimensionUtils.addWorldBorderListener(world);
                     
                     // Load the levels properties
-                    if (!NbtUtils.readWorldDat(world, worldProperties.getDynamicPropertyHandler()) && SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_WORLD_BORDER))
+                    if (!NbtUtils.readWorldDat(world, worldProperties.getDynamicPropertyHandler()) && SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_WORLD_BORDER))
                         worldProperties.setWorldBorder(WorldBorder.DEFAULT_BORDER);
                 }
             }

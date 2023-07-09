@@ -26,13 +26,12 @@
 package net.theelm.sewingmachine.protection.interfaces;
 
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.exceptions.TranslationKeyException;
 import net.theelm.sewingmachine.protection.objects.ClaimCache;
-import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils.ClaimSlice;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
@@ -75,7 +74,7 @@ public interface IClaimedChunk {
     default MutableText getOwnerName(@Nullable UUID zonePlayer) {
         UUID owner = this.getOwnerId();
         if ( owner == null )
-            return Text.literal(SewConfig.get(SewCoreConfig.NAME_WILDERNESS))
+            return Text.literal(SewConfig.get(SewBaseConfig.NAME_WILDERNESS))
                 .formatted(Formatting.GREEN);
         
         // Get the owner of the chunk
@@ -93,7 +92,7 @@ public interface IClaimedChunk {
     default MutableText getOwnerName(@Nullable UUID zonePlayer, @Nullable BlockPos pos) {
         UUID owner = this.getOwnerId(pos);
         if ( owner == null )
-            return Text.literal(SewConfig.get(SewCoreConfig.NAME_WILDERNESS))
+            return Text.literal(SewConfig.get(SewBaseConfig.NAME_WILDERNESS))
                 .formatted(Formatting.GREEN);
         
         // Get the owner of the chunk

@@ -39,8 +39,7 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.command.CommandRegistryAccess;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.TeleportsCommand;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.commands.arguments.EnumArgumentType;
@@ -247,7 +246,7 @@ public final class ClaimCommand extends SewCommand {
         LiteralCommandNode<ServerCommandSource> friends = CommandUtils.register(dispatcher, "friends", builder -> builder
             // Whitelist a friend
             .then(CommandManager.literal("whitelist")
-                .requires(CommandPredicate.isEnabled(SewCoreConfig.FRIEND_WHITELIST))
+                .requires(CommandPredicate.isEnabled(SewBaseConfig.FRIEND_WHITELIST))
                 .then(CommandManager.argument("friend", GameProfileArgumentType.gameProfile())
                     .suggests((context, builder2) -> {
                         PlayerManager manager = context.getSource().getServer().getPlayerManager();

@@ -32,7 +32,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
@@ -64,7 +64,7 @@ public final class SignBalance extends ShopSign {
     @Override
     public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull final ServerPlayerEntity player, @NotNull final BlockPos signPos, final ShopSignData sign) {
         // If shops disabled
-        if ( !SewConfig.get(SewCoreConfig.DO_MONEY) )
+        if ( !SewConfig.get(SewBaseConfig.DO_MONEY) )
             return Either.right(Boolean.TRUE);
         
         long playerHas = MoneyUtils.getPlayerMoney( player );
@@ -77,6 +77,6 @@ public final class SignBalance extends ShopSign {
     
     @Override
     public boolean isEnabled() {
-        return SewConfig.get(SewCoreConfig.DO_MONEY);
+        return SewConfig.get(SewBaseConfig.DO_MONEY);
     }
 }

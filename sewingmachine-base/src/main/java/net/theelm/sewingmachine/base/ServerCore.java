@@ -31,7 +31,7 @@ import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.objects.BalanceUpdateHandler;
 import net.theelm.sewingmachine.base.objects.signs.SignBackpack;
 import net.theelm.sewingmachine.base.objects.signs.SignBalance;
@@ -84,17 +84,13 @@ import net.theelm.sewingmachine.utilities.DevUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.BlueMapUtils;
 import net.minecraft.entity.Entity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldProperties;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
-import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.ShopSigns;
-import net.theelm.sewingmachine.utilities.mod.SewClient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -104,7 +100,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 
 public final class ServerCore extends CoreMod implements ModInitializer, SewPlugin {
     /*
@@ -138,7 +133,7 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
         
         // Update the mod version in config
         try {
-            SewConfig.set(SewCoreConfig.CONFIG_VERSION, ConfigOption.convertToJSON(CoreMod.getModVersion()));
+            SewConfig.set(SewBaseConfig.CONFIG_VERSION, ConfigOption.convertToJSON(CoreMod.getModVersion()));
             SewConfig.save();
             
             ShopSigns.add(SignBackpack::new);
@@ -155,7 +150,7 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
             
             // Register the server tax
             TaxCollection.EVENT.register((income, world, pos) -> {
-                Integer tax = SewConfig.get(SewCoreConfig.SERVER_SALES_TAX);
+                Integer tax = SewConfig.get(SewBaseConfig.SERVER_SALES_TAX);
                 if (tax != null)
                     income.addTax(Text.literal("Spawn"), tax);
             });
@@ -199,7 +194,7 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
     
     @Override
     public @NotNull Optional<Class<?>> getConfigClass() {
-        return Optional.of(SewCoreConfig.class);
+        return Optional.of(SewBaseConfig.class);
     }
     
     @Override
@@ -235,12 +230,12 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
     }
     
     public static @NotNull RegistryKey<World> defaultWorldKey() {
-        return SewConfig.get(SewCoreConfig.DEFAULT_WORLD);
+        return SewConfig.get(SewBaseConfig.DEFAULT_WORLD);
     }
     
     public static @NotNull BlockPos getSpawn(@NotNull World world) {
         // Get the forced position of TheEnd
-        if ((world instanceof ServerWorld serverWorld) && (world.getRegistryKey() == World.END) && (!SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_SPAWN))) {
+        if ((world instanceof ServerWorld serverWorld) && (world.getRegistryKey() == World.END) && (!SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_SPAWN))) {
             BlockPos pos = serverWorld.getSpawnPos();
             // Only if the forced position is set
             if (pos != null)

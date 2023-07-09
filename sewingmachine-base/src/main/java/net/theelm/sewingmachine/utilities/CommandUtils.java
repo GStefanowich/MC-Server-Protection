@@ -37,14 +37,10 @@ import com.mojang.brigadier.tree.CommandNode;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.server.command.CommandManager;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.ConfigPredicate;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.interfaces.PlayerData;
-import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
 import net.minecraft.command.CommandSource;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -83,7 +79,7 @@ public final class CommandUtils {
         String info = (descriptive.isEmpty() || descriptive.equalsIgnoreCase(command) ? "/" + display : descriptive.toLowerCase(Locale.ROOT) + " [/" + display + "]") + " command";
         
         // Check if hot-reloading the config is disabled (If it is we don't want to register the commands)
-        if (!SewConfig.get(SewCoreConfig.HOT_RELOADING)) {
+        if (!SewConfig.get(SewBaseConfig.HOT_RELOADING)) {
             // If the command isn't allowed, don't register it
             if (node.getRequirement() instanceof ConfigPredicate configPredicate && configPredicate.isDisabled()) {
                 CoreMod.logDebug("- Skipping registering " + info);

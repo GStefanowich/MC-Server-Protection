@@ -34,7 +34,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerBalanceCallback;
@@ -60,7 +60,7 @@ public final class SignWaystone extends ShopSign {
     @Override
     public boolean formatSign(@NotNull final ShopSignBuilder sign, @NotNull final ServerPlayerEntity creator) throws ShopBuilderException {
         // Set the signs price
-        sign.setTradePrice(SewConfig.get(SewCoreConfig.WARP_WAYSTONE_COST));
+        sign.setTradePrice(SewConfig.get(SewBaseConfig.WARP_WAYSTONE_COST));
         
         String name;
         Text nameText = sign.getSignLine(1);
@@ -115,12 +115,12 @@ public final class SignWaystone extends ShopSign {
         
         int warps = WarpUtils.getWarps(player)
             .size();
-        int allowed = SewConfig.get(SewCoreConfig.WARP_WAYSTONES_ALLOWED);
+        int allowed = SewConfig.get(SewBaseConfig.WARP_WAYSTONES_ALLOWED);
         
         if (warps >= allowed && (WarpUtils.getWarp(player, warpName) == null))
             return Either.left(Text.literal("Too many waystones. Can't build any more."));
         
-        int cost = SewConfig.get(SewCoreConfig.WARP_WAYSTONE_COST);
+        int cost = SewConfig.get(SewBaseConfig.WARP_WAYSTONE_COST);
         
         if (!PlayerBalanceCallback.hasBalance(player, cost))
             return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));

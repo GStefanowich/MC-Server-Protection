@@ -37,7 +37,7 @@ import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.registry.RegistryKey;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.events.PlayerTeleportCallback;
@@ -123,7 +123,7 @@ public final class TeleportsCommand extends SewCommand {
         );
         
         CommandUtils.register(dispatcher, "tpa", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_WARP_TPA))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                 .suggests(CommandUtils::getAllPlayerNames)
                 .then(CommandManager.argument("location", StringArgumentType.string())
@@ -136,7 +136,7 @@ public final class TeleportsCommand extends SewCommand {
         );
         
         CommandUtils.register(dispatcher, "tpaccept", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_WARP_TPA))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(WarpUtils::hasWarp)
                 .executes(this::tpAcceptCommand)
@@ -144,7 +144,7 @@ public final class TeleportsCommand extends SewCommand {
         );
         
         CommandUtils.register(dispatcher, "tpdeny", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_WARP_TPA))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("player", EntityArgumentType.player())
                 .requires(WarpUtils::hasWarp)
                 .executes(this::tpDenyCommand)
@@ -152,7 +152,7 @@ public final class TeleportsCommand extends SewCommand {
         );
         
         CommandUtils.register(dispatcher, "home", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_WARP_TPA))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.COMMAND_WARP_TPA))
             .then(CommandManager.argument("location", StringArgumentType.string())
                 .suggests(this::playerHomeNames)
                 .then(CommandManager.literal("rename")

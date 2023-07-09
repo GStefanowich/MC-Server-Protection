@@ -27,7 +27,7 @@ package net.theelm.sewingmachine.base.mixins.Entities;
 
 import net.minecraft.entity.damage.DamageTypes;
 import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.WarpUtils;
@@ -85,7 +85,7 @@ public abstract class LivingEntityMixin extends Entity {
     @Inject(at = @At("TAIL"), method = "onDeath")
     public void onDeath(DamageSource damageSource, CallbackInfo callback) {
         // If disabled
-        if (!SewConfig.get(SewCoreConfig.SPAWNER_ABSORB_MOBS))
+        if (!SewConfig.get(SewBaseConfig.SPAWNER_ABSORB_MOBS))
             return;
         
         // If not dead or is player
@@ -186,7 +186,7 @@ public abstract class LivingEntityMixin extends Entity {
             }
             
             // Check the inventory
-            if (totem == null && (entity instanceof ServerPlayerEntity player) && SewConfig.get(SewCoreConfig.TOTEM_ANYWHERE)) {
+            if (totem == null && (entity instanceof ServerPlayerEntity player) && SewConfig.get(SewBaseConfig.TOTEM_ANYWHERE)) {
                 for (int slot = 0; slot < player.getInventory().size(); slot++) {
                     ItemStack pack = player.getInventory().getStack(slot);
                     if (pack.getItem() == Items.TOTEM_OF_UNDYING) {
@@ -234,13 +234,13 @@ public abstract class LivingEntityMixin extends Entity {
                 return false;
             
             // If the player can fall from the end into the sky of the overworld
-            if (World.END.equals(self.getWorld().getRegistryKey()) && SewConfig.get(SewCoreConfig.END_FALL_FROM_SKY)) {
+            if (World.END.equals(self.getWorld().getRegistryKey()) && SewConfig.get(SewBaseConfig.END_FALL_FROM_SKY)) {
                 WarpUtils.teleportEntity(World.OVERWORLD, this, BlockPos.ofFloored(this.getX(), 400, this.getZ()));
                 return false;
             }
             
             // If the player can fall from any worlds void back to spawn
-            if (SewConfig.get(SewCoreConfig.VOID_FALL_TO_SPAWN) && !(self instanceof Monster)) { // Teleport to the spawn world
+            if (SewConfig.get(SewBaseConfig.VOID_FALL_TO_SPAWN) && !(self instanceof Monster)) { // Teleport to the spawn world
                 WarpUtils.teleportEntity(ServerCore.defaultWorldKey(), this);
                 return false;
             }

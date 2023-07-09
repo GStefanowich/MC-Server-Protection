@@ -29,7 +29,7 @@ import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.world.gen.structure.StructureKeys;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.base.objects.WanderingTraderProfileCollection;
 import net.theelm.sewingmachine.utilities.EntityUtils;
@@ -72,7 +72,7 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
     @Inject(at = @At("HEAD"), method = "fillRecipes", cancellable = true)
     protected void fillRecipes(@NotNull CallbackInfo callback) {
         // If replacing wandering trader trades with better items is enabled
-        if (SewConfig.isTrue(SewCoreConfig.IMPROVED_WANDERING_TRADER)) {
+        if (SewConfig.isTrue(SewBaseConfig.IMPROVED_WANDERING_TRADER)) {
             TradeOffers.Factory[] mainFactory = WANDERING_TRADER_TRADES.get(1);
             TradeOffers.Factory[] rareFactory = WANDERING_TRADER_TRADES.get(2);
             if (mainFactory != null && rareFactory != null) {
@@ -129,15 +129,15 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
      */
     @Inject(at = @At("HEAD"), method = "getWanderTarget", cancellable = true)
     protected void onGetHomePosition(@NotNull CallbackInfoReturnable<BlockPos> callback) {
-        if (SewConfig.get(SewCoreConfig.WANDERING_TRADER_FORCE_SPAWN) && SewConfig.equals(SewCoreConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD, this.getWorld().getRegistryKey()) && EntityUtils.isEntityWanderingTrader(this))
-            callback.setReturnValue(SewConfig.get(SewCoreConfig.WANDERING_TRADER_FORCE_SPAWN_POS));
+        if (SewConfig.get(SewBaseConfig.WANDERING_TRADER_FORCE_SPAWN) && SewConfig.equals(SewBaseConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD, this.getWorld().getRegistryKey()) && EntityUtils.isEntityWanderingTrader(this))
+            callback.setReturnValue(SewConfig.get(SewBaseConfig.WANDERING_TRADER_FORCE_SPAWN_POS));
     }
     
     @Override
     public void remove(RemovalReason removalReason) {
         if (!this.isClient() && EntityUtils.isEntityWanderingTrader(this)) {
             // Announce the removal of the wandering trader
-            if (SewConfig.get(SewCoreConfig.ANNOUNCE_WANDERING_TRADER))
+            if (SewConfig.get(SewBaseConfig.ANNOUNCE_WANDERING_TRADER))
                 EntityUtils.wanderingTraderDeparture((WanderingTraderEntity) (Entity) this);
             
             // Remove wandering trader from player list

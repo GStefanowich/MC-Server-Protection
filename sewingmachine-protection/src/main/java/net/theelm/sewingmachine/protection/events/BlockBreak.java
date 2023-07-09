@@ -28,7 +28,6 @@ package net.theelm.sewingmachine.protection.events;
 import net.fabricmc.fabric.api.event.Event;
 import net.minecraft.entity.mob.EndermanEntity;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;

@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.base.mixins.Server;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.PlayerManager;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.base.objects.WanderingTraderProfileCollection;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
@@ -67,7 +67,7 @@ public abstract class PlayerManagerMixin {
         TeamUtils.applyTeams(player);
         
         // Get the world that the wandering trader spawns in
-        ServerWorld world = this.server.getWorld(SewConfig.get(SewCoreConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD));
+        ServerWorld world = this.server.getWorld(SewConfig.get(SewBaseConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD));
         if (world != null) {
             // Check if the wandering trader is still in the world
             UUID uuid = EntityUtils.getWanderingTraderId(this.server);
@@ -79,7 +79,7 @@ public abstract class PlayerManagerMixin {
     
     @Inject(at = @At("HEAD"), method = "setMainWorld", cancellable = true)
     public void beforeSetMainWorld(ServerWorld world, CallbackInfo callback) {
-        if (!SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_WORLD_BORDER))
+        if (!SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_WORLD_BORDER))
             return;
         DimensionUtils.addWorldBorderListener(world);
         callback.cancel();
@@ -112,12 +112,12 @@ public abstract class PlayerManagerMixin {
      */
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/MinecraftServer.getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "createPlayer")
     public ServerWorld getFirstDefaultWorld(@NotNull MinecraftServer server, @NotNull GameProfile profile) {
-        return server.getWorld(SewConfig.get(SewCoreConfig.DEFAULT_WORLD));
+        return server.getWorld(SewConfig.get(SewBaseConfig.DEFAULT_WORLD));
     }
     
     @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/MinecraftServer.getOverworld()Lnet/minecraft/server/world/ServerWorld;"), method = "respawnPlayer")
     public ServerWorld getRespawnDefaultWorld(@NotNull MinecraftServer server, @NotNull ServerPlayerEntity player, boolean alive) {
-        return server.getWorld(SewConfig.get(SewCoreConfig.DEFAULT_WORLD));
+        return server.getWorld(SewConfig.get(SewBaseConfig.DEFAULT_WORLD));
     }
     
     /**
@@ -128,7 +128,7 @@ public abstract class PlayerManagerMixin {
      */
     @Redirect(at = @At(value = "FIELD", target = "Lnet/minecraft/world/World;OVERWORLD:Lnet/minecraft/registry/RegistryKey;"), method = "onPlayerConnect")
     public RegistryKey<World> getStartingDefaultWorld(@NotNull ClientConnection connection, @NotNull ServerPlayerEntity player) {
-        return SewConfig.get(SewCoreConfig.DEFAULT_WORLD);
+        return SewConfig.get(SewBaseConfig.DEFAULT_WORLD);
     }
     
     // TODO: Respawn particles?

@@ -26,7 +26,6 @@
 package net.theelm.sewingmachine.protection.mixins.Player.Interaction;
 
 import net.minecraft.util.ActionResult;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;

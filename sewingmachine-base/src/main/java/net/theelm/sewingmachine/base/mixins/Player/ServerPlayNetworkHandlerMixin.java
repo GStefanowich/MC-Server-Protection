@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Player;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.NetworkHandlerCallback;
 import net.theelm.sewingmachine.interfaces.PlayerData;
@@ -79,14 +79,14 @@ public abstract class ServerPlayNetworkHandlerMixin implements ServerPlayPacketL
         // Check if server has been joined before
         if (((PlayerData) player).getFirstJoinAt() == null) {
             // Get starting money
-            int startingMoney = SewConfig.get(SewCoreConfig.STARTING_MONEY);
+            int startingMoney = SewConfig.get(SewBaseConfig.STARTING_MONEY);
             
             // Give the player the starting amount
-            if ( SewConfig.get(SewCoreConfig.DO_MONEY) && (startingMoney > 0))
+            if ( SewConfig.get(SewBaseConfig.DO_MONEY) && (startingMoney > 0))
                 MoneyUtils.givePlayerMoney(player, startingMoney);
             
             // Give the player the starting items
-            for (Map.Entry<Item, Integer> item : SewConfig.get(SewCoreConfig.STARTING_ITEMS).entrySet()) {
+            for (Map.Entry<Item, Integer> item : SewConfig.get(SewBaseConfig.STARTING_ITEMS).entrySet()) {
                 ItemStack stack = new ItemStack(item.getKey());
                 stack.setCount(item.getValue());
                 
@@ -95,7 +95,7 @@ public abstract class ServerPlayNetworkHandlerMixin implements ServerPlayPacketL
             }
             
             // Give the player all of the games recipes
-            if (SewConfig.get(SewCoreConfig.START_WITH_RECIPES)) {
+            if (SewConfig.get(SewBaseConfig.START_WITH_RECIPES)) {
                 Collection<Recipe<?>> recipes = server.getRecipeManager().values();
                 this.player.unlockRecipes(recipes);
             }
@@ -104,7 +104,7 @@ public abstract class ServerPlayNetworkHandlerMixin implements ServerPlayPacketL
             ((PlayerData) player).updateFirstJoin();
         } else {
             Long lastJoin;
-            int allowance = SewConfig.get(SewCoreConfig.DAILY_ALLOWANCE);
+            int allowance = SewConfig.get(SewBaseConfig.DAILY_ALLOWANCE);
             
             // If we should give a daily allowance
             if ((allowance > 0) && ((lastJoin = ((PlayerData) player).getLastJoinAt()) != null)) {

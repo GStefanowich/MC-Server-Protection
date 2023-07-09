@@ -31,7 +31,7 @@ import com.google.gson.JsonParser;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.registry.RegistryKey;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.chat.interfaces.Nicknamable;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
@@ -40,7 +40,6 @@ import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.StyleApplicator;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.server.MinecraftServer;
@@ -112,7 +111,7 @@ public final class PlayerNameUtils {
     public static @NotNull MutableText fetchPlayerName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
         // If we're looking up UUID 0, 0 (Spawn) don't try to do a lookup
         if ( uuid.equals( CoreMod.SPAWN_ID) )
-            return Text.literal(SewConfig.get(SewCoreConfig.NAME_SPAWN));
+            return Text.literal(SewConfig.get(SewBaseConfig.NAME_SPAWN));
         
         // Check if there is an online player with UUID (No unnecessary web calls)
         MutableText playerName;

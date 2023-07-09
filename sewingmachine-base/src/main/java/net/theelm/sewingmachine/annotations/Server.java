@@ -23,21 +23,17 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.deathchests.config;
+package net.theelm.sewingmachine.annotations;
 
-import net.theelm.sewingmachine.config.ConfigOption;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
- * Created on Jul 05 2023 at 5:28 PM.
- * By greg in sewingmachine
+ * Used to mark Config options as Server-only
  */
-public final class SewDeathConfig {
-    private SewDeathConfig() {}
-    
-    public static final ConfigOption<Integer> MAX_DEATH_SCAN = ConfigOption.json("death_chest.max_distance", 4);
-    public static final ConfigOption<Integer> MAX_DEATH_ELEVATION = ConfigOption.json("death_chest.max_elevation", -1);
-    public static final ConfigOption<Boolean> PRINT_DEATH_CHEST_LOC = ConfigOption.json("death_chest.print_coordinates", true);
-    
-    // Player Combat
-    public static final ConfigOption<Boolean> PVP_DISABLE_DEATH_CHEST = ConfigOption.json("player.pvp.no_death_chest", true);
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Server {
 }

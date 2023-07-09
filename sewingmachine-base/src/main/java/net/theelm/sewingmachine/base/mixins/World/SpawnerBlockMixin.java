@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.World;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.block.BlockState;
@@ -63,7 +63,7 @@ public abstract class SpawnerBlockMixin extends BlockWithEntity {
     
     @Override
     public void afterBreak(World world, @NotNull PlayerEntity player, BlockPos blockPos, BlockState blockState, @Nullable BlockEntity blockEntity, ItemStack itemStack) {
-        if (!SewConfig.get(SewCoreConfig.SILK_TOUCH_SPAWNERS)) {
+        if (!SewConfig.get(SewBaseConfig.SILK_TOUCH_SPAWNERS)) {
             super.afterBreak(world, player, blockPos, blockState, blockEntity, itemStack);
         } else {
             player.incrementStat(Stats.MINED.getOrCreateStat(this));
@@ -81,7 +81,7 @@ public abstract class SpawnerBlockMixin extends BlockWithEntity {
                 
                 boolean doDrop = false;
                 
-                int toolDamage = SewConfig.get(SewCoreConfig.SPAWNER_PICKUP_DAMAGE);
+                int toolDamage = SewConfig.get(SewBaseConfig.SPAWNER_PICKUP_DAMAGE);
                 if (handItem.getItem().isDamageable() && (doDrop = (EnchantmentHelper.getLevel(Enchantments.SILK_TOUCH, handItem) > 0))) {
                     if (!world.isClient()) {
                         // Damage the pickaxe

@@ -35,7 +35,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.LogicalWorld;
@@ -93,12 +93,12 @@ public final class SignWarp extends ShopSign {
     
     @Override
     public boolean isEnabled() {
-        return SewConfig.get(SewCoreConfig.WARP_MAX_DISTANCE) > 0;
+        return SewConfig.get(SewBaseConfig.WARP_MAX_DISTANCE) > 0;
     }
     
     private boolean generateNewWarp(@NotNull final ServerPlayerEntity player) {
         MinecraftServer server = player.getServer();
-        RegistryKey<World> registryKey = SewConfig.get(SewCoreConfig.WARP_DIMENSION);
+        RegistryKey<World> registryKey = SewConfig.get(SewBaseConfig.WARP_DIMENSION);
         
         ServerWorld world = server.getWorld(registryKey);
         if (world == null)

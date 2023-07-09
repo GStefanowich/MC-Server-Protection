@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Items;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.item.ItemStack;
 import org.spongepowered.asm.mixin.Mixin;
@@ -37,7 +37,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class ItemStackMixin {
     @Inject(at = @At("RETURN"), method = "getRepairCost", cancellable = true)
     public void onGetCost(CallbackInfoReturnable<Integer> callback) {
-        if (SewConfig.get(SewCoreConfig.ANVIL_DISABLE_COST_REPAIR))
+        if (SewConfig.get(SewBaseConfig.ANVIL_DISABLE_COST_REPAIR))
             callback.setReturnValue(0);
     }
 }

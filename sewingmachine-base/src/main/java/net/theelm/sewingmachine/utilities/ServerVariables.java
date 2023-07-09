@@ -26,7 +26,7 @@
 package net.theelm.sewingmachine.utilities;
 
 import net.minecraft.GameVersion;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.MotdFunction;
 import net.minecraft.SharedConstants;
@@ -82,8 +82,8 @@ public class ServerVariables {
                 worldDay = 0L;
             else {
                 worldDay = IntUtils.timeToDays(world);
-                long worldYear = worldDay / SewConfig.get(SewCoreConfig.CALENDAR_DAYS);
-                worldDay = worldDay - (worldYear * SewConfig.get(SewCoreConfig.CALENDAR_DAYS));
+                long worldYear = worldDay / SewConfig.get(SewBaseConfig.CALENDAR_DAYS);
+                worldDay = worldDay - (worldYear * SewConfig.get(SewBaseConfig.CALENDAR_DAYS));
             }
             
             return FormattingUtils.format(worldDay);
@@ -98,7 +98,7 @@ public class ServerVariables {
                 worldYear = 0L;
             else {
                 long worldDay = IntUtils.timeToDays(world);
-                worldYear = worldDay / SewConfig.get(SewCoreConfig.CALENDAR_DAYS);
+                worldYear = worldDay / SewConfig.get(SewBaseConfig.CALENDAR_DAYS);
             }
             
             return FormattingUtils.format(worldYear);
@@ -159,7 +159,7 @@ public class ServerVariables {
         });
         
         // Year epoch
-        variables.put("config.epoch", server -> CasingUtils.acronym(SewConfig.get(SewCoreConfig.CALENDAR_YEAR_EPOCH), true));
+        variables.put("config.epoch", server -> CasingUtils.acronym(SewConfig.get(SewBaseConfig.CALENDAR_YEAR_EPOCH), true));
         
         VARIABLES = Collections.unmodifiableMap(variables);
     }

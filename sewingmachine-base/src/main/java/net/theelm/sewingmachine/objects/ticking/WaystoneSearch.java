@@ -26,8 +26,7 @@
 package net.theelm.sewingmachine.objects.ticking;
 
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.LogicalWorld;
 import net.theelm.sewingmachine.interfaces.TickableContext;
@@ -172,7 +171,7 @@ public class WaystoneSearch implements TickingAction {
             WarpUtils.teleportEntityAndAttached(this.world, this.player, safeTeleportPos);
             
             // Notify the player of their new location
-            if ((!SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_SPAWN)) || SewConfig.equals(SewCoreConfig.WARP_DIMENSION, SewCoreConfig.DEFAULT_WORLD))
+            if ((!SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_SPAWN)) || SewConfig.equals(SewBaseConfig.WARP_DIMENSION, SewBaseConfig.DEFAULT_WORLD))
                 TranslatableServerSide.send(this.player, "warp.random.teleported", distance);
             else
                 TranslatableServerSide.send(this.player, "warp.random.teleported_world");

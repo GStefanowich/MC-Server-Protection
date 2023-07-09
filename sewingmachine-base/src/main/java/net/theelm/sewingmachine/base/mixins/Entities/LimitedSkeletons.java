@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Entities;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
@@ -62,7 +62,7 @@ public abstract class LimitedSkeletons extends HostileEntity implements RangedAt
     @Inject(at = @At("RETURN"), method = "attack")
     public void onAttack(LivingEntity livingEntity, float damage, CallbackInfo callback) {
         World world = this.getWorld();
-        if (world == null || world.isClient() || (!SewConfig.get(SewCoreConfig.LIMIT_SKELETON_ARROWS)))
+        if (world == null || world.isClient() || (!SewConfig.get(SewBaseConfig.LIMIT_SKELETON_ARROWS)))
             return;
         
         this.createArrowQuiver();

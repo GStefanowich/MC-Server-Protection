@@ -34,7 +34,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerTeleportCallback;
 import net.theelm.sewingmachine.events.RegionManageCallback;
@@ -178,8 +178,8 @@ public final class WarpUtils {
     
     private static int getRandom(int position) {
         int random = ThreadLocalRandom.current().nextInt(
-            position - SewConfig.get(SewCoreConfig.WARP_MAX_DISTANCE),
-            position + SewConfig.get(SewCoreConfig.WARP_MAX_DISTANCE)
+            position - SewConfig.get(SewBaseConfig.WARP_MAX_DISTANCE),
+            position + SewConfig.get(SewBaseConfig.WARP_MAX_DISTANCE)
         );
         return ( 16 * Math.round(random >> 4) ) + 8;
     }

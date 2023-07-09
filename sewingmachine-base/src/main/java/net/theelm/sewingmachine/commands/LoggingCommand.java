@@ -34,8 +34,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.MySQL.MySQLStatement;
-import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
@@ -74,9 +73,9 @@ import java.util.function.UnaryOperator;
 public final class LoggingCommand extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess access) {
-        if (( SewConfig.any(SewCoreConfig.LOG_CHUNKS_CLAIMED, SewCoreConfig.LOG_CHUNKS_UNCLAIMED) ) && ( SewConfig.any(SewCoreConfig.LOG_BLOCKS_BREAKING, SewCoreConfig.LOG_BLOCKS_PLACING) )) {
+        if (( SewConfig.any(SewBaseConfig.LOG_CHUNKS_CLAIMED, SewBaseConfig.LOG_CHUNKS_UNCLAIMED) ) && ( SewConfig.any(SewBaseConfig.LOG_BLOCKS_BREAKING, SewBaseConfig.LOG_BLOCKS_PLACING) )) {
             CommandUtils.register(dispatcher, "blocklog", builder -> builder
-                .requires(CommandPredicate.opLevel(SewCoreConfig.LOG_VIEW_OP_LEVEL))
+                .requires(CommandPredicate.opLevel(SewBaseConfig.LOG_VIEW_OP_LEVEL))
                 .then(CommandManager.literal("pos")
                     .then(CommandManager.argument("dimension", DimensionArgumentType.dimension())
                         .then(CommandManager.argument("pos", BlockPosArgumentType.blockPos())

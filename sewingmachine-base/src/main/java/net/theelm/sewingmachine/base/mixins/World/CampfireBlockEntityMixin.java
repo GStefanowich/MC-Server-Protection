@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.World;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.CampfireBlock;
@@ -52,7 +52,7 @@ public abstract class CampfireBlockEntityMixin extends BlockEntity implements Cl
     
     @Inject(at = @At("TAIL"), method = "litServerTick")
     private static void onTick(@NotNull World world, @NotNull BlockPos pos, @NotNull BlockState state, @NotNull CampfireBlockEntity campfire, @NotNull CallbackInfo callback) {
-        if ((!world.isClient) && SewConfig.get(SewCoreConfig.EXTINGUISH_CAMPFIRES)) {
+        if ((!world.isClient) && SewConfig.get(SewBaseConfig.EXTINGUISH_CAMPFIRES)) {
             BlockState blockState = campfire.getCachedState();
             boolean isLit = blockState.get(CampfireBlock.LIT);
             

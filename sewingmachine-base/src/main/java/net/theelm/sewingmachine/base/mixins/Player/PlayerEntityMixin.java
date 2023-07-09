@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Player;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import net.theelm.sewingmachine.events.BlockPlaceCallback;
@@ -40,7 +40,6 @@ import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.boss.ServerBossBar;
 import net.minecraft.entity.boss.dragon.EnderDragonEntity;
 import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.item.RangedWeaponItem;
@@ -60,7 +59,6 @@ import net.theelm.sewingmachine.utilities.InventoryUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -107,7 +105,7 @@ public abstract class PlayerEntityMixin extends LivingEntity implements MoneyHol
     @Inject(at = @At("TAIL"), method = "tick")
     public void onTick(CallbackInfo callback) {
         if ((!this.getWorld().isClient) && ((Entity) this) instanceof ServerPlayerEntity) {
-            if (this.hitByOtherPlayerAt != null && (this.hitByOtherPlayerAt < System.currentTimeMillis() - (SewConfig.get(SewCoreConfig.PVP_COMBAT_SECONDS) * 1000))) {
+            if (this.hitByOtherPlayerAt != null && (this.hitByOtherPlayerAt < System.currentTimeMillis() - (SewConfig.get(SewBaseConfig.PVP_COMBAT_SECONDS) * 1000))) {
                 
                 // Remove player from combat
                 this.hitByOtherPlayerAt = null;
@@ -171,7 +169,7 @@ public abstract class PlayerEntityMixin extends LivingEntity implements MoneyHol
      */
     @Inject(at = @At("RETURN"), method = "initDataTracker")
     public void onInitDataTracking(@NotNull CallbackInfo callback) {
-        this.dataTracker.startTracking(MONEY, SewConfig.get(SewCoreConfig.STARTING_MONEY));
+        this.dataTracker.startTracking(MONEY, SewConfig.get(SewBaseConfig.STARTING_MONEY));
     }
     @Inject(at = @At("TAIL"), method = "writeCustomDataToNbt")
     public void onSavingData(@NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
@@ -202,7 +200,7 @@ public abstract class PlayerEntityMixin extends LivingEntity implements MoneyHol
             if (tag.contains("BackpackPickup", NbtElement.LIST_TYPE))
                 this.backpack.readPickupTags(tag.getList("BackpackPickup", NbtElement.STRING_TYPE));
         } else {
-            int startingBackpack = SewConfig.get(SewCoreConfig.BACKPACK_STARTING_ROWS);
+            int startingBackpack = SewConfig.get(SewBaseConfig.BACKPACK_STARTING_ROWS);
             if ( startingBackpack > 0 )
                 this.backpack = new PlayerBackpack((PlayerEntity)(LivingEntity)this, startingBackpack);
         }

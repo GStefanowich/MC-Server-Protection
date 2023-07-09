@@ -26,7 +26,6 @@
 package net.theelm.sewingmachine.protection.events;
 
 import net.fabricmc.fabric.api.event.Event;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
@@ -54,7 +53,6 @@ import net.minecraft.entity.projectile.ProjectileEntity;
 import net.minecraft.inventory.Inventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;

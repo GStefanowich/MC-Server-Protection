@@ -38,7 +38,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.UserCache;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.NameCache;
 import net.theelm.sewingmachine.utilities.mod.Sew;
@@ -69,7 +69,7 @@ public interface PlayerNameCallback {
     default @NotNull Text getDisplayName(@NotNull MinecraftServer server, @NotNull UUID uuid) {
         // Blank UUID is always Spawn/Server
         if (Objects.equals(CoreMod.SPAWN_ID, uuid))
-            return Text.literal(SewConfig.get(SewCoreConfig.NAME_SPAWN));
+            return Text.literal(SewConfig.get(SewBaseConfig.NAME_SPAWN));
         
         PlayerManager manager = server.getPlayerManager();
         ServerPlayerEntity player = manager.getPlayer(uuid);

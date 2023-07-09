@@ -29,7 +29,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.random.Random;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.base.objects.WanderingTraderProfileCollection;
 import net.theelm.sewingmachine.utilities.BlockUtils;
@@ -73,7 +73,7 @@ public abstract class WanderingTraderManagerMixin implements Spawner {
     
     @Inject(at = @At("HEAD"), method = "trySpawn", cancellable = true)
     private void onAttemptTraderSpawn(@NotNull ServerWorld world, @NotNull CallbackInfoReturnable<Boolean> callback) {
-        if (!SewConfig.get(SewCoreConfig.WANDERING_TRADER_FORCE_SPAWN))
+        if (!SewConfig.get(SewBaseConfig.WANDERING_TRADER_FORCE_SPAWN))
             return;
         callback.setReturnValue( // Try spawning the wandering trader
             this.attemptWanderingTraderSpawn(world)
@@ -85,7 +85,7 @@ public abstract class WanderingTraderManagerMixin implements Spawner {
             return false;
         
         MinecraftServer server = world.getServer();
-        RegistryKey<World> worldKey = SewConfig.get(SewCoreConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD);
+        RegistryKey<World> worldKey = SewConfig.get(SewBaseConfig.WANDERING_TRADER_FORCE_SPAWN_WORLD);
         
         // Get the world the trader should spawn in
         if (!world.getRegistryKey().equals(worldKey))
@@ -100,7 +100,7 @@ public abstract class WanderingTraderManagerMixin implements Spawner {
         if (players.getPlayerList().isEmpty())
             return true;
         
-        BlockPos forcedPos = SewConfig.get(SewCoreConfig.WANDERING_TRADER_FORCE_SPAWN_POS);
+        BlockPos forcedPos = SewConfig.get(SewBaseConfig.WANDERING_TRADER_FORCE_SPAWN_POS);
         BlockPos nearbyPos = this.getNearbySpawnPos(world, forcedPos, 4);
         if (nearbyPos != null && this.doesNotSuffocateAt(world, nearbyPos)) {
             // Create a wandering trader
@@ -132,11 +132,11 @@ public abstract class WanderingTraderManagerMixin implements Spawner {
                 trader.setPositionTarget(forcedPos, 16);
                 
                 // Light nearby campfire
-                if (SewConfig.get(SewCoreConfig.WANDERING_TRADER_CAMPFIRES))
+                if (SewConfig.get(SewBaseConfig.WANDERING_TRADER_CAMPFIRES))
                     BlockUtils.igniteNearbyLightSources(world, trader.getBlockPos());
                 
                 // Announce the wandering trader
-                if (SewConfig.get(SewCoreConfig.ANNOUNCE_WANDERING_TRADER))
+                if (SewConfig.get(SewBaseConfig.ANNOUNCE_WANDERING_TRADER))
                     EntityUtils.wanderingTraderArrival(trader);
                 
                 // Add the wandering trader to the players list

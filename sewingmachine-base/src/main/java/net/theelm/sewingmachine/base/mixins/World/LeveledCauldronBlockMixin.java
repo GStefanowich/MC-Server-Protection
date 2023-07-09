@@ -26,7 +26,7 @@
 package net.theelm.sewingmachine.base.mixins.World;
 
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.mixins.Interfaces.ItemEntityAccessor;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.base.mixins.Interfaces.PowderBlockAccessor;
@@ -40,7 +40,6 @@ import net.minecraft.block.LeveledCauldronBlock;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.Fluids;
 import net.minecraft.item.BlockItem;
@@ -146,7 +145,7 @@ public abstract class LeveledCauldronBlockMixin extends Block {
             
             // Cancel the initial cauldron event
             callback.cancel();
-        } else if (SewConfig.get(SewCoreConfig.CAULDRON_HARDEN) && colliderStack.getItem() instanceof BlockItem && waterLevel >= 1) {
+        } else if (SewConfig.get(SewBaseConfig.CAULDRON_HARDEN) && colliderStack.getItem() instanceof BlockItem && waterLevel >= 1) {
             BlockItem blockItem = ((BlockItem)colliderStack.getItem());
             
             // If the block item is one of the Concrete Powder Blocks

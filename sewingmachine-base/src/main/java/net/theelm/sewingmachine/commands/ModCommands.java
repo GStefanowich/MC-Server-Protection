@@ -35,7 +35,7 @@ import com.mojang.datafixers.util.Either;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.blocks.entities.LecternGuideBlockEntity;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.SewConfig;
@@ -94,7 +94,7 @@ public final class ModCommands extends SewCommand {
                 .then(CommandManager.literal("reload")
                     .requires(CommandPredicate.opLevel(OpLevels.STOP).or(PermissionNodes.ALL_PERMISSIONS))
                     .then(CommandManager.literal("config")
-                        .requires(CommandPredicate.isEnabled(SewCoreConfig.HOT_RELOADING))
+                        .requires(CommandPredicate.isEnabled(SewBaseConfig.HOT_RELOADING))
                         .executes(this::reloadConfig)
                     )
                 )

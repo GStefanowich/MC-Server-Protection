@@ -27,7 +27,6 @@ package net.theelm.sewingmachine.events;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.entity.Entity;
@@ -38,7 +37,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Direction;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.packets.CancelMinePacket;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protections.logging.BlockEvent;
@@ -59,7 +58,7 @@ public interface BlockBreakCallback {
                 break;
         }
         
-        if (result != ActionResult.FAIL && SewConfig.get(SewCoreConfig.LOG_BLOCKS_BREAKING) && action == Action.STOP_DESTROY_BLOCK)
+        if (result != ActionResult.FAIL && SewConfig.get(SewBaseConfig.LOG_BLOCKS_BREAKING) && action == Action.STOP_DESTROY_BLOCK)
             BlockBreakCallback.onSuccess(entity, world, hand, pos, direction);
         else if (result == ActionResult.FAIL)
             BlockBreakCallback.onFailure(entity, world, hand, pos, direction);

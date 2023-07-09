@@ -36,6 +36,7 @@ import net.minecraft.network.PacketByteBuf;
 import net.minecraft.registry.Registries;
 import net.theelm.sewingmachine.annotations.Debug;
 import net.theelm.sewingmachine.annotations.Public;
+import net.theelm.sewingmachine.annotations.Server;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.protections.logging.EventLogger.LoggingIntervals;
 import net.theelm.sewingmachine.utilities.DevUtils;
@@ -102,9 +103,13 @@ public final class SewConfig extends SewConfigContainer {
             for (Annotation annotation : annotations) {
                 Class<? extends Annotation> type = annotation.annotationType();
                 
-                // Return the config without adding it to the array, because it's for dev only
-                if (type.equals(Debug.class) && !DevUtils.isDebugging())
-                    return config;
+                // Return the config without adding it to the array, because...
+                if (
+                    // It's for dev only
+                    (type.equals(Debug.class) && !DevUtils.isDebugging())
+                    // It's for servers only
+                    || (type.equals(Server.class) && !Sew.isServer())
+                ) return config;
                 
                 // Public options can be synced with the client
                 if (type.equals(Public.class))

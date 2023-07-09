@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Entities;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.base.goals.EatMyceliumGoal;
 import net.minecraft.entity.EntityType;
@@ -57,7 +57,7 @@ public abstract class CowEntityMixin extends AnimalEntity {
     
     @Inject(at = @At("TAIL"), method = "initGoals")
     protected void createGoals(final CallbackInfo callback) {
-        if (SewConfig.get(SewCoreConfig.COWS_EAT_MYCELIUM)) {
+        if (SewConfig.get(SewBaseConfig.COWS_EAT_MYCELIUM)) {
             this.eatMyceliumGoal = new EatMyceliumGoal(this);
             this.goalSelector.add(5, this.eatMyceliumGoal);
         } else {

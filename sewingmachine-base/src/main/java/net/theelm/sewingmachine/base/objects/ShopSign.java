@@ -29,13 +29,12 @@ import com.mojang.datafixers.util.Either;
 import net.minecraft.block.entity.LootableContainerBlockEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.ContainerAccessCallback;
 import net.theelm.sewingmachine.events.TaxCollection;
@@ -197,7 +196,7 @@ public abstract class ShopSign {
         
         @Override
         public boolean isEnabled() {
-            return SewConfig.get(SewCoreConfig.DO_MONEY) && SewConfig.get(SewCoreConfig.SHOP_SIGNS);
+            return SewConfig.get(SewBaseConfig.DO_MONEY) && SewConfig.get(SewBaseConfig.SHOP_SIGNS);
         }
     }
 }

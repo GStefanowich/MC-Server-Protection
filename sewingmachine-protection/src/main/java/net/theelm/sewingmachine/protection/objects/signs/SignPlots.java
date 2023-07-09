@@ -32,7 +32,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.math.BlockPos;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.exceptions.NotEnoughMoneyException;
@@ -132,7 +132,7 @@ public final class SignPlots extends ShopSign {
     
     @Override
     public boolean isEnabled() {
-        return SewConfig.get(SewCoreConfig.DO_MONEY)
+        return SewConfig.get(SewBaseConfig.DO_MONEY)
             && SewConfig.get(SewProtectionConfig.PLAYER_CLAIM_BUY_LIMIT) != 0;
     }
 }

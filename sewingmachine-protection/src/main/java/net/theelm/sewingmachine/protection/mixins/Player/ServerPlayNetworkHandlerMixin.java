@@ -40,8 +40,6 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
 import net.minecraft.world.chunk.WorldChunk;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
-import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;

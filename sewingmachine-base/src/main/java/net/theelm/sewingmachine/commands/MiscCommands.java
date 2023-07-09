@@ -37,8 +37,7 @@ import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.chunk.WorldChunk;
-import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
@@ -63,7 +62,7 @@ public final class MiscCommands extends SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, "shrug", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_SHRUG))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.COMMAND_SHRUG))
             .then(CommandManager.argument("message", MessageArgumentType.message())
                 .executes(this::shrugMessage)
             )
@@ -71,7 +70,7 @@ public final class MiscCommands extends SewCommand {
         );
         
         CommandUtils.register(dispatcher, "tableflip", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.COMMAND_TABLEFLIP))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.COMMAND_TABLEFLIP))
             .then(CommandManager.argument("message", MessageArgumentType.message())
                 .executes(this::flipMessage)
             )

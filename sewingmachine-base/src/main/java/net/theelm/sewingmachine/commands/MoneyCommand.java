@@ -34,7 +34,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.SewConfig;
@@ -66,7 +66,7 @@ public final class MoneyCommand extends SewCommand {
     private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = TranslatableServerSide.exception("player.money.poor");
     private static final ExceptionTranslatableServerSide PLAYER_NOT_FOUND = TranslatableServerSide.exception("player.not_found");
     
-    private static final ConfigOption<Integer> DEFAULT_STATE = SewCoreConfig.STARTING_MONEY;
+    private static final ConfigOption<Integer> DEFAULT_STATE = SewBaseConfig.STARTING_MONEY;
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
@@ -74,7 +74,7 @@ public final class MoneyCommand extends SewCommand {
          * Player Pay
          */
         LiteralCommandNode<ServerCommandSource> pay = CommandUtils.register(dispatcher, "pay", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.DO_MONEY))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.DO_MONEY))
             .then(CommandManager.argument("amount", IntegerArgumentType.integer(0))
                 .then(CommandManager.argument("player", GameProfileArgumentType.gameProfile())
                     .suggests(CommandUtils::getAllPlayerNames)
@@ -87,7 +87,7 @@ public final class MoneyCommand extends SewCommand {
          * Player Money Management
          */
         CommandUtils.register(dispatcher, "money", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewCoreConfig.DO_MONEY))
+            .requires(CommandPredicate.isEnabled(SewBaseConfig.DO_MONEY))
             // Admin GIVE money (Adds money)
             .then(CommandManager.literal("give")
                 // If player is OP
@@ -269,7 +269,7 @@ public final class MoneyCommand extends SewCommand {
         try {
             float startingMoney = SewConfig.get(DEFAULT_STATE);
             
-            MoneyUtils.setPlayerMoney(target.getId(), SewConfig.get(SewCoreConfig.STARTING_MONEY) );
+            MoneyUtils.setPlayerMoney(target.getId(), SewConfig.get(SewBaseConfig.STARTING_MONEY) );
             op.sendFeedback(
                 () -> Text.literal( "Set money for " ).formatted(Formatting.YELLOW)
                     .append( Text.literal( target.getName() ).formatted(Formatting.DARK_PURPLE) )

@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Ui;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.utilities.Assert;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
@@ -60,7 +60,7 @@ public abstract class AnvilScreenHandlerMixin extends ForgingScreenHandler {
     
     @ModifyConstant(method = "updateResult", constant = @Constant(intValue = 40))
     private int anvilMaxLevelOverride(int oldValue) {
-        if (SewConfig.isTrue(SewCoreConfig.ANVIL_DISABLE_COST_LIMIT))
+        if (SewConfig.isTrue(SewBaseConfig.ANVIL_DISABLE_COST_LIMIT))
             return Integer.MAX_VALUE;
         return oldValue;
     }

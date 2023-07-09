@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.World;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.fluid.FlowableFluid;
 import net.minecraft.fluid.Fluid;
@@ -43,7 +43,7 @@ public abstract class FlowableFluidMixin extends Fluid {
     
     @Redirect(at = @At(value = "INVOKE", target = "Lnet/minecraft/fluid/FlowableFluid;isInfinite(Lnet/minecraft/world/World;)Z"), method = "getUpdatedState")
     protected boolean onUpdate(FlowableFluid instance, World world) {
-        if (SewConfig.get(SewCoreConfig.NETHER_INFINITE_LAVA) // Is ENABLED
+        if (SewConfig.get(SewBaseConfig.NETHER_INFINITE_LAVA) // Is ENABLED
             && (instance.equals(Fluids.FLOWING_LAVA) || instance.equals(Fluids.LAVA)) // Is LAVA
             && world.getDimension().ultrawarm()) // NETHER
             return true;

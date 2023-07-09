@@ -29,8 +29,7 @@ import net.fabricmc.fabric.api.event.Event;
 import net.minecraft.block.ButtonBlock;
 import net.minecraft.sound.BlockSoundGroup;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
-import net.theelm.sewingmachine.base.objects.ShopSign;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
@@ -41,7 +40,6 @@ import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import net.theelm.sewingmachine.protections.logging.BlockEvent;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.EntityUtils;
-import net.theelm.sewingmachine.utilities.TitleUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -51,7 +49,6 @@ import net.minecraft.block.LeverBlock;
 import net.minecraft.block.TrapdoorBlock;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.EnderChestBlockEntity;
-import net.minecraft.block.entity.SignBlockEntity;
 import net.minecraft.block.enums.DoorHinge;
 import net.minecraft.block.enums.DoubleBlockHalf;
 import net.minecraft.item.BlockItem;
@@ -59,10 +56,7 @@ import net.minecraft.item.BucketItem;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.sound.SoundCategory;
-import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.ActionResult;
-import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Lazy;
 import net.minecraft.util.hit.BlockHitResult;
@@ -204,7 +198,7 @@ public final class BlockInteraction {
         
         // Test if allowed
         ActionResult result;
-        if (((result = BlockInteraction.canBlockPlace(player, blockPos, blockHitResult)) != ActionResult.FAIL) && SewConfig.get(SewCoreConfig.LOG_BLOCKS_BREAKING)) {
+        if (((result = BlockInteraction.canBlockPlace(player, blockPos, blockHitResult)) != ActionResult.FAIL) && SewConfig.get(SewBaseConfig.LOG_BLOCKS_BREAKING)) {
             if (item instanceof BlockItem blockItem)
                 EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, blockItem.getBlock(), blockPos));
             else

@@ -36,7 +36,7 @@ import net.theelm.sewingmachine.MySQL.MySQLConnection;
 import net.theelm.sewingmachine.MySQL.MySQLHost;
 import net.theelm.sewingmachine.MySQL.MySQLStatement;
 import net.theelm.sewingmachine.MySQL.MySQLite;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.objects.inventory.BackpackScreenHandler;
 import net.theelm.sewingmachine.blocks.entities.LecternGuideBlockEntity;
 import net.theelm.sewingmachine.blocks.entities.LecternWarpsBlockEntity;
@@ -102,7 +102,7 @@ public abstract class CoreMod {
         if ( CoreMod.MySQL == null ) {
             synchronized ( CoreMod.class ) {
                 if ( CoreMod.MySQL == null )
-                    CoreMod.MySQL = ( SewConfig.get(SewCoreConfig.DB_LITE) ?
+                    CoreMod.MySQL = ( SewConfig.get(SewBaseConfig.DB_LITE) ?
                         new MySQLite() : new MySQLConnection()
                     );
             }
@@ -236,7 +236,7 @@ public abstract class CoreMod {
         ArrayList<String> tables = new ArrayList<>();
         ArrayList<String> alters = new ArrayList<>();
         
-        if (( SewConfig.get(SewCoreConfig.LOG_CHUNKS_CLAIMED) || SewConfig.get(SewCoreConfig.LOG_CHUNKS_UNCLAIMED) ) && ( SewConfig.get(SewCoreConfig.LOG_BLOCKS_BREAKING) || SewConfig.get(SewCoreConfig.LOG_BLOCKS_PLACING) )) {
+        if (( SewConfig.get(SewBaseConfig.LOG_CHUNKS_CLAIMED) || SewConfig.get(SewBaseConfig.LOG_CHUNKS_UNCLAIMED) ) && ( SewConfig.get(SewBaseConfig.LOG_BLOCKS_BREAKING) || SewConfig.get(SewBaseConfig.LOG_BLOCKS_PLACING) )) {
             String blockUpdateEnums = getDatabaseReadyEnumerators( EventLogger.BlockAction.class );
             
             tables.add(

@@ -26,7 +26,7 @@
 package net.theelm.sewingmachine.base.mixins.Server;
 
 import net.minecraft.registry.RegistryKey;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.world.dimension.DimensionType;
 import org.spongepowered.asm.mixin.Mixin;
@@ -45,7 +45,7 @@ public class DimensionTypeMixin {
      */
     @Inject(at = @At("HEAD"), method = "getSaveDirectory", cancellable = true)
     private static void getSaveDirectory(RegistryKey<Path> worldRef, Path directory, CallbackInfoReturnable<Path> callback) {
-        if (SewConfig.get(SewCoreConfig.WORLD_DIMENSION_FOLDERS))
+        if (SewConfig.get(SewBaseConfig.WORLD_DIMENSION_FOLDERS))
             callback.setReturnValue(directory.resolve("dimensions").resolve(worldRef.getValue().getNamespace()).resolve(worldRef.getValue().getPath()));
     }
 }

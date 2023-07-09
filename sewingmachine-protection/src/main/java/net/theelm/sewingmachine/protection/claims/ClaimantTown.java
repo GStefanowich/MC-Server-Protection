@@ -26,8 +26,6 @@
 package net.theelm.sewingmachine.protection.claims;
 
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;

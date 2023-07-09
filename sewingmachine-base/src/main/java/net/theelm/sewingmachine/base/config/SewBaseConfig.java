@@ -33,6 +33,7 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.annotations.Debug;
+import net.theelm.sewingmachine.annotations.Server;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.config.ConfigArray;
 import net.theelm.sewingmachine.config.ConfigOption;
@@ -48,8 +49,8 @@ import java.util.function.Supplier;
  * Created on Jun 08 2023 at 8:06 PM.
  * By greg in sewingmachine
  */
-public class SewCoreConfig {
-    private SewCoreConfig() {}
+public class SewBaseConfig {
+    private SewBaseConfig() {}
     
     // Mod version
     public static final ConfigOption<String> CONFIG_VERSION = ConfigOption.json(SewConfig.VERSION_KEY, CoreMod.getModVersion());
@@ -63,11 +64,11 @@ public class SewCoreConfig {
      * Database handling
      */
     
-    public static final ConfigOption<String> DB_HOST = ConfigOption.json("database.host", "");
-    public static final ConfigOption<String> DB_NAME = ConfigOption.json("database.name", "");
-    public static final ConfigOption<String> DB_USER = ConfigOption.json("database.user", "");
-    public static final ConfigOption<String> DB_PASS = ConfigOption.json("database.pass", "");
-    public static final ConfigOption<Integer> DB_PORT = ConfigOption.json("database.port", 3306);
+    public static final @Server ConfigOption<String> DB_HOST = ConfigOption.json("database.host", "");
+    public static final @Server ConfigOption<String> DB_NAME = ConfigOption.json("database.name", "");
+    public static final @Server ConfigOption<String> DB_USER = ConfigOption.json("database.user", "");
+    public static final @Server ConfigOption<String> DB_PASS = ConfigOption.json("database.pass", "");
+    public static final @Server ConfigOption<Integer> DB_PORT = ConfigOption.json("database.port", 3306);
     
     /*
      * Player Combat
@@ -133,15 +134,15 @@ public class SewCoreConfig {
      * Worlds
      */
     
-    public static final ConfigOption<RegistryKey<World>> DEFAULT_WORLD = ConfigOption.registry("server.worlds.spawn_world", RegistryKeys.WORLD, World.OVERWORLD);
-    public static final ConfigOption<Boolean> WORLD_DIMENSION_FOLDERS = ConfigOption.json("server.worlds.use_dimension_folder", false);
+    public static final @Server ConfigOption<RegistryKey<World>> DEFAULT_WORLD = ConfigOption.registry("server.worlds.spawn_world", RegistryKeys.WORLD, World.OVERWORLD);
+    public static final @Server ConfigOption<Boolean> WORLD_DIMENSION_FOLDERS = ConfigOption.json("server.worlds.use_dimension_folder", false);
     
-    public static final Supplier<Boolean> WORLD_SEPARATE_PROPERTIES = () -> SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_TIME)
-        || SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_SPAWN)
-        || SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_WEATHER)
-        || SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_GAME_RULES)
-        || SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_GAMEMODE)
-        || SewConfig.get(SewCoreConfig.WORLD_SPECIFIC_WORLD_BORDER);
+    public static final Supplier<Boolean> WORLD_SEPARATE_PROPERTIES = () -> SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_TIME)
+        || SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_SPAWN)
+        || SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_WEATHER)
+        || SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_GAME_RULES)
+        || SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_GAMEMODE)
+        || SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_WORLD_BORDER);
     public static final ConfigOption<Boolean> WORLD_SPECIFIC_SPAWN = ConfigOption.json("server.worlds.separate_properties.spawn_pos", false);
     public static final ConfigOption<Boolean> WORLD_SPECIFIC_TIME = ConfigOption.json("server.worlds.separate_properties.time", false);
     public static final ConfigOption<Boolean> WORLD_SPECIFIC_WEATHER = ConfigOption.json("server.worlds.separate_properties.weather", false);

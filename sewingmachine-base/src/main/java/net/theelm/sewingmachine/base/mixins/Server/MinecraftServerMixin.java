@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.base.mixins.Server;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.util.math.random.Random;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.interfaces.MotdFunction;
@@ -78,7 +78,7 @@ public abstract class MinecraftServerMixin {
         /*
          * Process the randomized server icons
          */
-        for( String iconName : SewConfig.get(SewCoreConfig.SERVER_ICON_LIST) ) {
+        for( String iconName : SewConfig.get(SewBaseConfig.SERVER_ICON_LIST) ) {
             File iconFile = new File(".", iconName + ".png");
             if (iconFile.isFile()) {
                 try {
@@ -164,13 +164,13 @@ public abstract class MinecraftServerMixin {
     
     private void refreshMotd() {
         this.motds.clear();
-        this.motds.addAll(SewConfig.get(SewCoreConfig.SERVER_MOTD_LIST));
+        this.motds.addAll(SewConfig.get(SewBaseConfig.SERVER_MOTD_LIST));
         Collections.shuffle(this.motds);
     }
     
     private String descriptionReplaceVariables(@NotNull MutableText text, @Nullable String description) {
         if (description != null) {
-            MinecraftServer server = SewServer.get();
+            MinecraftServer server = ((MinecraftServer)(Object) this);
             
             // For all keys
             for (Map.Entry<String, MotdFunction> row : ServerVariables.entrySet()) {

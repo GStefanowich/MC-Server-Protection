@@ -27,7 +27,6 @@ package net.theelm.sewingmachine.protection.mixins.Server;
 
 import com.mojang.datafixers.DataFixer;
 import net.minecraft.util.ApiServices;
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.resource.ResourcePackManager;

@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Entities;
 
-import net.theelm.sewingmachine.base.config.SewCoreConfig;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
@@ -52,7 +52,7 @@ public abstract class WolfEntityMixin extends TameableEntity implements Angerabl
     @Inject(at = @At(value = "HEAD", shift = At.Shift.AFTER), method = "damage", cancellable = true)
     public void onDamage(DamageSource source, float amount, CallbackInfoReturnable<Boolean> callback) {
         if (this.isTamed() && source != null) {
-            if (source.getAttacker() instanceof PlayerEntity && !SewConfig.get(SewCoreConfig.WOLF_DAMAGE_BOOST_PLAYERS))
+            if (source.getAttacker() instanceof PlayerEntity && !SewConfig.get(SewBaseConfig.WOLF_DAMAGE_BOOST_PLAYERS))
                 return;
             
             if (this.isInvulnerableTo(source))
@@ -64,7 +64,7 @@ public abstract class WolfEntityMixin extends TameableEntity implements Angerabl
                     amount = (amount + 1.0F) / 2.0F;
                 
                 // Call damage at half the value
-                callback.setReturnValue(super.damage(source, amount / SewConfig.get(SewCoreConfig.WOLF_DAMAGE_BUFF)));
+                callback.setReturnValue(super.damage(source, amount / SewConfig.get(SewBaseConfig.WOLF_DAMAGE_BUFF)));
             }
         }
     }
@@ -73,7 +73,7 @@ public abstract class WolfEntityMixin extends TameableEntity implements Angerabl
     public boolean onTryAttack(Entity entity, DamageSource source, float damage) {
         float buff = damage;
         if (this.isTamed() && (!(entity instanceof ServerPlayerEntity)))
-            buff *= SewConfig.get(SewCoreConfig.WOLF_DAMAGE_RESIST);
+            buff *= SewConfig.get(SewBaseConfig.WOLF_DAMAGE_RESIST);
         return entity.damage(source, buff);
     }
 }
