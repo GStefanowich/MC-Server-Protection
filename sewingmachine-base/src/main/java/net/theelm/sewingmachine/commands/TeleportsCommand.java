@@ -71,6 +71,7 @@ import net.minecraft.util.Formatting;
 import net.minecraft.util.Pair;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -478,7 +479,7 @@ public final class TeleportsCommand extends SewCommand {
     }
     public static void feedback(@NotNull PlayerEntity porter, @NotNull GameProfile target, @Nullable Warp location) {
         MutableText feedback = Text.literal("")
-            .append(porter.getDisplayName().copyContentOnly())
+            .append(TextUtils.literal(porter.getDisplayName()))
             .append(" was teleported to ");
         
         if (porter.getUuid().equals(target.getId())) feedback.append("their");

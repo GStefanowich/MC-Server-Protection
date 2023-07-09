@@ -28,6 +28,7 @@ package net.theelm.sewingmachine.utilities.text;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.StringVisitable;
 import net.minecraft.text.Style;
+import net.minecraft.text.Text;
 import net.minecraft.text.TextContent;
 import net.theelm.sewingmachine.interfaces.TextModifier;
 import org.jetbrains.annotations.NotNull;
@@ -46,8 +47,10 @@ public final class VariableTextContent implements TextContent {
         this.content = content;
     }
     
-    public void execute(@NotNull MutableText parent, @NotNull TextModifier modifier) {
-        this.content = modifier.modify(parent, this.content);
+    public @NotNull Text execute(@NotNull MutableText parent, @NotNull TextModifier modifier) {
+        MutableText content = Text.literal(modifier.modify(parent, this.content));
+        content.setStyle(parent.getStyle());
+        return content;
     }
     
     @Override

@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.utilities.text;
 
+import net.minecraft.text.TextContent;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.ColorUtils;
 import net.minecraft.text.MutableText;
@@ -91,11 +92,26 @@ public final class TextUtils {
         return Text.literal(d + "");
     }
     
-    public static @NotNull MutableText mutable(@Nullable Text text) {
-        if (text instanceof MutableText mutable)
+    /**
+     * Returns a mutable instance of the plaintext content of {@code text}
+     */
+    public static @NotNull MutableText literal(@NotNull Text text) {
+        return Text.literal(text.getString());
+    }
+    
+    /**
+     * Returns {@code text} if it is a MutableText, or converts it to a MutableText
+     */
+    public static @NotNull MutableText mutable(@Nullable Text input) {
+        if (input instanceof MutableText mutable)
             return mutable;
-        return TextUtils.literal()
-            .append(text);
+        if (input == null)
+            return TextUtils.literal();
+        
+        MutableText mutable = MutableText.of(input.getContent());
+        for (Text sibling : input.getSiblings())
+            mutable.append(sibling);
+        return mutable;
     }
     
     public static @NotNull String legacyConvert(@NotNull Text text) {

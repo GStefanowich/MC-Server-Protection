@@ -33,8 +33,8 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.theelm.sewingmachine.protection.interfaces.ClientClaimData;
 import net.theelm.sewingmachine.protection.objects.FrameData;
-import net.theelm.sewingmachine.protection.objects.MapChunk;
 import net.theelm.sewingmachine.protection.objects.MapWidget;
+import net.theelm.sewingmachine.protection.objects.MapWidget.MapChunk;
 import net.theelm.sewingmachine.screens.SettingScreen;
 import net.theelm.sewingmachine.screens.SettingScreenListWidget;
 import net.theelm.sewingmachine.utilities.ColorUtils;
@@ -46,9 +46,6 @@ import org.jetbrains.annotations.Nullable;
 
 @Environment(EnvType.CLIENT)
 public final class ProtectionClaimScreen extends SettingScreen {
-    private final float scale = 1.5f;
-    private final int padding = 4;
-    
     private final int chunkX;
     private final int chunkY;
     
@@ -66,18 +63,28 @@ public final class ProtectionClaimScreen extends SettingScreen {
             this.backgroundHeight
         );
         
-        this.chunkX = Math.round(this.frame.width() / (MapChunk.WIDTH * this.scale));
-        this.chunkY = Math.round(this.frame.height() / (MapChunk.WIDTH * this.scale));
+        this.chunkX = Math.round(this.frame.width() / (MapChunk.WIDTH * this.frame.scale()));
+        this.chunkY = Math.round(this.frame.height() / (MapChunk.WIDTH * this.frame.scale()));
     }
     
     @Override
     protected void addButtons(@NotNull SettingScreenListWidget list) {
         PlayerEntity player = this.client.player;
         
+        // Update the frame using our screens x/y positions
         this.frame.x = this.x;
         this.frame.y = this.y;
-        this.widget = (player != null)
-            ? new MapWidget(this.client, player.getChunkPos(), this.frame, this.chunkX, this.chunkY) : null;
+        
+        if (player == null)
+            this.widget = null;
+        else {
+            // Create the widget
+            this.widget = new MapWidget(this.client, player.getChunkPos(), this.frame, this.chunkX, this.chunkY);
+            
+            // Register dynamic memory texture
+            this.client.getTextureManager()
+                .registerTexture(MapWidget.IDENTIFIER, this.widget.getTexture());
+        }
     }
     
     @Override
@@ -97,7 +104,7 @@ public final class ProtectionClaimScreen extends SettingScreen {
             if (this.claims != current) {
                 int limit = claimData.getMaxChunks();
                 this.claimsText = TextUtils.literal()
-                    .append(MessageUtils.formatNumber(current, current == limit ? Formatting.RED : Formatting.GREEN))
+                    .append(MessageUtils.formatNumber(current, current >= limit ? Formatting.RED : Formatting.GREEN))
                     .append(" / ")
                     .append(MessageUtils.formatNumber(limit, Formatting.WHITE));
                 this.claims = current;

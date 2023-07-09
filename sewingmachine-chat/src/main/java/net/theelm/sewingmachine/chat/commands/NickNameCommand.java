@@ -80,16 +80,21 @@ public final class NickNameCommand extends SewCommand {
                 )
                 .executes((context) -> {
                     ServerPlayerEntity player = context.getSource().getPlayer();
-                    return this.setNickForPlayer(player, null);
+                    try {
+                        return this.setNickForPlayer(player, null);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        return 0;
+                    }
                 })
             )
             .then(CommandManager.argument("nick", StringArgumentType.string())
-                .requires(CommandPredicate.node(PermissionNodes.PLAYER_NICKNAME))
+                .requires(CommandPredicate.node(PermissionNodes.PLAYER_NICKNAME).or(OpLevels.SPAWN_PROTECTION))
                 .then(CommandManager.argument("color", StringArgumentType.string())
-                    .requires(CommandPredicate.node(PermissionNodes.PLAYER_NICKNAME_COLOR))
+                    .requires(CommandPredicate.node(PermissionNodes.PLAYER_NICKNAME_COLOR).or(OpLevels.SPAWN_PROTECTION))
                     .suggests(ArgumentSuggestions::suggestColors)
                     .then(CommandManager.argument("ends", StringArgumentType.string())
-                        .requires(CommandPredicate.node(PermissionNodes.PLAYER_NICKNAME_COLOR_GRADIENT))
+                        .requires(CommandPredicate.node(PermissionNodes.PLAYER_NICKNAME_COLOR_GRADIENT).or(OpLevels.SPAWN_PROTECTION))
                         .suggests(ArgumentSuggestions::suggestColors)
                         .executes(this::commandNickSetNamedColorRange)
                     )
@@ -125,39 +130,39 @@ public final class NickNameCommand extends SewCommand {
         // Get command runtime information
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
-
+        
         // Get the nickname
         String nickname = this.commandVerifyNick(context);
         if (nickname == null)
             return 0;
-
+        
         return this.setNickForPlayer(player, nickname);
     }
     private int commandNickSetNamedColor(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
-
+        
         // Get the nickname
         String nickname = this.commandVerifyNick(context);
         if (nickname == null)
             return 0;
-
+        
         // Get the color
         Color color = ColorUtils.getRawColor(StringArgumentType.getString(context, "color"));
         if (color == null)
             return 0;
-
+        
         return this.setNickForPlayer(player, nickname, color);
     }
     private int commandNickSetNamedColorRange(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerPlayerEntity player = source.getPlayer();
-
+        
         // Get the nickname
         String nickname = this.commandVerifyNick(context);
         if (nickname == null)
             return 0;
-
+        
         // Get the color
         Color starts = ColorUtils.getRawColor(StringArgumentType.getString(context, "color"));
         Color ends = ColorUtils.getRawColor(StringArgumentType.getString(context, "ends"));
@@ -171,7 +176,7 @@ public final class NickNameCommand extends SewCommand {
         String nickname = StringArgumentType.getString(context, "nick");
         return this.setNickForPlayer(player, nickname);
     }
-
+    
     private int setNickForPlayer(@NotNull final ServerPlayerEntity player, @Nullable final String nickname) {
         return this.setNickForPlayer(player, nickname, null);
     }

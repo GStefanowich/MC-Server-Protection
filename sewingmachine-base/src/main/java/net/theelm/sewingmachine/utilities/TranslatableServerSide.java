@@ -41,6 +41,7 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.theelm.sewingmachine.objects.SewModules;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.InputStream;
@@ -83,7 +84,7 @@ public final class TranslatableServerSide {
         for (int i = 0; i < objects.length; ++i) {
             Object obj = objects[i];
             if (obj instanceof Text text) {
-                objects[i] = text.copyContentOnly();
+                objects[i] = TextUtils.literal(text);
             } else if (obj == null) {
                 objects[i] = "null";
             }
@@ -91,10 +92,10 @@ public final class TranslatableServerSide {
         
         return TranslatableServerSide.replace(language, translation, objects);
     }
-    private static @NotNull MutableText replace(@NotNull Locale language, @NotNull String text, @NotNull Object... objects) {
+    private static @NotNull MutableText replace(@NotNull Locale language, @NotNull String value, @NotNull Object... objects) {
         if ( objects.length <= 0 )
-            return Text.literal(text);
-        String[] separated = text.split( "((?<=%[a-z])|(?=%[a-z]))" );
+            return Text.literal(value);
+        String[] separated = value.split( "((?<=%[a-z])|(?=%[a-z]))" );
         
         // Get the formatter for numbers
         NumberFormat formatter = NumberFormat.getInstance(language);
@@ -109,15 +110,15 @@ public final class TranslatableServerSide {
                 if (obj instanceof ServerTranslatable translatable)
                     obj = translatable.translate(language).formatted(Formatting.AQUA);
                 
-                if ( ("%s".equalsIgnoreCase(seg)) && ( obj instanceof MutableText mutableText) ) {
+                if ( ("%s".equalsIgnoreCase(seg)) && ( obj instanceof Text text) ) {
                     // Create if null
                     if (out == null)
                         out = Text.literal("");
                     // Color translations
-                    if (mutableText.getContent() instanceof TranslatableTextContent translatableText)
+                    if (text.getContent() instanceof TranslatableTextContent translatableText && text instanceof MutableText mutableText)
                         mutableText.formatted(Formatting.DARK_AQUA);
                     // Append
-                    out.append(mutableText);
+                    out.append(text);
                 } else if ( ("%d".equalsIgnoreCase( seg )) && (obj instanceof Number number) ) {
                     // Create if null
                     if (out == null) out = Text.literal("");
@@ -147,7 +148,7 @@ public final class TranslatableServerSide {
     }
     
     private static String getTranslation(Locale language, String key) {
-        JsonObject object = TranslatableServerSide.readLanguageFile( language );
+        JsonObject object = TranslatableServerSide.readLanguageFile(language);
         if ( !Objects.equals(language, Locale.US) && !object.has(key))
             return TranslatableServerSide.getTranslation(Locale.US, key);
         JsonElement element = object.get( key );
@@ -160,7 +161,7 @@ public final class TranslatableServerSide {
     private static JsonObject readLanguageFile(Locale language) {
         String filePath;
         InputStream resource = CoreMod.class.getResourceAsStream(
-            filePath = TranslatableServerSide.getResourcePath( language )
+            filePath = TranslatableServerSide.getResourcePath(language)
         );
         if (resource == null) {
             // If not already using English, Fallback to English

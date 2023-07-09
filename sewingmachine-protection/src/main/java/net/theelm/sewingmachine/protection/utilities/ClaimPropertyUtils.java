@@ -40,6 +40,7 @@ import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
 import net.theelm.sewingmachine.utilities.ModUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -89,9 +90,7 @@ public final class ClaimPropertyUtils {
         if (ModUtils.hasModule(player, "protection")) {
             MinecraftServer server = player.getServer();
             if (server != null) {
-                Text display = PlayerNameCallback.getPlainName(server, friend)
-                    .copyContentOnly();
-                
+                Text display = TextUtils.literal(PlayerNameCallback.getPlainName(server, friend));
                 NetworkingUtils.send(player, new ClaimRankPacket(friend, display, rank == null ? ClaimRanks.PASSIVE : rank));
             }
         }

@@ -60,8 +60,11 @@ public abstract class PlayerEntityMixin extends LivingEntity implements Nicknama
      */
     @Inject(at = @At("HEAD"), method = "getDisplayName", cancellable = true)
     public void getPlayerNickname(CallbackInfoReturnable<Text> callback) {
-        if ((((LivingEntity)this) instanceof ServerPlayerEntity) && (this.getPlayerNickname() != null))
-            callback.setReturnValue(this.getPlayerNickname());
+        if (((LivingEntity)this) instanceof ServerPlayerEntity) {
+            Text nickname = this.getPlayerNickname();
+            if (nickname != null)
+                callback.setReturnValue(nickname);
+        }
     }
     
     /*

@@ -63,6 +63,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -144,7 +145,7 @@ public class WaystoneCommand extends SewCommand {
         
         source.sendFeedback(
             () -> Text.literal("Set ")
-                .append(target.getDisplayName().copyContentOnly())
+                .append(TextUtils.literal(target.getDisplayName()))
                 .append("'s waystone ")
                 .append(Text.literal(name).formatted(Formatting.AQUA))
                 .append(" to ")
@@ -170,7 +171,7 @@ public class WaystoneCommand extends SewCommand {
             () -> Text.literal("Deleted the waystone ")
                 .append(Text.literal(name).formatted(Formatting.AQUA))
                 .append(" of ")
-                .append(target.getDisplayName().copyContentOnly())
+                .append(TextUtils.literal(target.getDisplayName()))
                 .append("."),
             true
         );

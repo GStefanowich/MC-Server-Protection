@@ -80,7 +80,7 @@ public final class FormattingUtils {
     }
     
     public static @NotNull MutableText deepCopy(@NotNull final Text text) {
-        return text.copyContentOnly();
+        return text.copy();
     }
     
     private static @NotNull String[] stringToColorSegments(@NotNull String raw) {
@@ -192,12 +192,24 @@ public final class FormattingUtils {
         if (main == null)
             return null;
         
-        // Iterate the siblings looking for replaceable text
-        for (Text text : main.getSiblings())
-            if (text instanceof MutableText mutable && text.getContent() instanceof VariableTextContent variable)
-                variable.execute(mutable, modifier);
+        MutableText updated = null;
         
-        return main;
+        // Iterate the siblings looking for replaceable text
+        for (Text text : main.getSiblings()) {
+            Text update;
+            if (text.getContent() instanceof VariableTextContent variable)
+                update = variable.execute(TextUtils.mutable(text), modifier);
+            else {
+                System.out.println(text.getClass());
+                update = text;
+            }
+            
+            if (updated == null)
+                updated = TextUtils.mutable(update);
+            else updated.append(update);
+        }
+        
+        return updated == null ? main : updated;
     }
     
     public static @NotNull String format(@NotNull Number number) {

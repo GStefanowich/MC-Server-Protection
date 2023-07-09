@@ -30,11 +30,12 @@ import net.fabricmc.api.Environment;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderLayer;
 import net.minecraft.util.math.MathHelper;
+import net.theelm.sewingmachine.protection.objects.MapWidget.MapChunk;
 import org.jetbrains.annotations.NotNull;
 
 @Environment(EnvType.CLIENT)
 public final class FrameData {
-    private final float scale = 1.5f;
+    private final float scale = 1f;
     private final int padding;
     
     private final int width;
@@ -44,7 +45,7 @@ public final class FrameData {
     public int y = 0;
     
     public FrameData(int width, int height) {
-        this(width, height, 4);
+        this(width, height, 8);
     }
     public FrameData(int width, int height, int padding) {
         this.padding = padding;
@@ -82,29 +83,11 @@ public final class FrameData {
         return this.padding * 2;
     }
     
-    public void fillDot(@NotNull DrawContext context, int x, int y, int color) {
-        this.fillDot(context, x, y, color, false);
+    public void plot(@NotNull DrawContext context) {
+        this.plot(context, this.x + this.padding(), this.y + this.padding());
     }
-    public void fillDot(@NotNull DrawContext context, int x, int y, int color, boolean outline) {
-        if (outline && !this.isOutline(x, y))
-            return;
-        
-        x *= this.scale();
-        y *= this.scale();
-        if (x - this.padding < 0 || y - this.padding < 0 || x + this.padding >= this.width() || y + this.padding >= this.height())
-            return;
-        
-        x += this.x + this.padding();
-        y += this.y + this.padding();
-        
-        context.fill(
-            RenderLayer.getGuiOverlay(),
-            x,
-            y,
-            MathHelper.clamp(Math.round(x + this.scale()), this.x, this.x + this.width() - this.padding()),
-            MathHelper.clamp(Math.round(y + this.scale()), this.y, this.y + this.height() - this.padding()),
-            color
-        );
+    public void plot(@NotNull DrawContext context, int x, int y) {
+        context.drawTexture(MapWidget.IDENTIFIER, x, y, 0.0f, 0.0f, this.width, this.height, this.width, this.height);
     }
     public void fillDot(@NotNull DrawContext context, int x1, int y1, int x2, int y2, int color) {
         x1 *= this.scale();
@@ -117,7 +100,13 @@ public final class FrameData {
         y2 += this.y + this.padding();
         
         // Fill in
-        context.fill(RenderLayer.getGuiOverlay(), x1, y1, x2, y2, color);
+        context.fill(RenderLayer.getGuiOverlay(),
+            x1,
+            y1,
+            MathHelper.clamp(x2, this.x, this.x + this.width() - this.padding()),
+            MathHelper.clamp(y2, this.y, this.y + this.height() - this.padding()),
+            color
+        );
     }
     
     private boolean isOutline(int x, int y) {

@@ -60,6 +60,7 @@ import net.minecraft.util.math.Direction;
 import net.minecraft.util.math.EulerAngle;
 import net.minecraft.world.World;
 import net.minecraft.world.dimension.DimensionType;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -237,7 +238,7 @@ public final class DeathChestUtils {
                 if (customName == null || (color = customName.getStyle().getColor()) == null)
                     color = TextColor.fromFormatting(Formatting.GOLD);
                 return s.withColor(color);
-            }).append(copyOf.getDisplayName().copyContentOnly()).append("'s Corpse"));
+            }).append(TextUtils.literal(copyOf.getDisplayName())).append("'s Corpse"));
         corpse.setCustomNameVisible(true);
         
         // Set the armor stands head

@@ -34,6 +34,7 @@ import net.minecraft.text.Text;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.Nicknamable;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
+import net.theelm.sewingmachine.utilities.FormattingUtils;
 import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -87,7 +88,9 @@ public abstract class ServerPlayerEntityMixin implements PlayerChat {
     
     @Inject(at = @At("HEAD"), method = "getPlayerListName", cancellable = true)
     public void getServerlistDisplayName(@NotNull CallbackInfoReturnable<Text> callback) {
-        callback.setReturnValue(((Nicknamable) this).getPlayerNickname());
+        Text nickname = ((Nicknamable) this).getPlayerNickname();
+        if (nickname != null)
+            callback.setReturnValue(nickname);
     }
     
     @Inject(at = @At("TAIL"), method = "writeCustomDataToNbt")

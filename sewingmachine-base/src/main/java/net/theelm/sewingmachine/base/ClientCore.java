@@ -27,11 +27,9 @@ package net.theelm.sewingmachine.base;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.screen.ingame.HandledScreens;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
-import net.minecraft.server.MinecraftServer;
 import net.theelm.sewingmachine.base.objects.inventory.BackpackScreen;
 import net.theelm.sewingmachine.base.packets.PlayerBackpackDataPacket;
 import net.theelm.sewingmachine.base.packets.PlayerBackpackOpenPacket;

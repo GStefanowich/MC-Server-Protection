@@ -585,5 +585,9 @@ public final class ColorUtils {
             color = Color.RED;
             RED = ColorHelper.Argb.getArgb(color.getAlpha(), color.getRed(), color.getGreen(), color.getBlue());
         }
+        
+        public static int get(int alpha, int red, int green, int blue) {
+            return alpha << 24 | red << 16 | green << 8 | blue;
+        }
     }
 }
