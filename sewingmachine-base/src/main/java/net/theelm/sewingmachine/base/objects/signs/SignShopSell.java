@@ -49,7 +49,7 @@ import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
 import net.theelm.sewingmachine.utilities.TitleUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -107,11 +107,11 @@ public final class SignShopSell extends ShopSign.BuyTradeSell {
         
         // These should NOT be null
         if (((sign.getShopItem()) == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null) || (sign.getShopItemDisplay() == null))
-            return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
+            return Either.left(ServerText.text(player, "shop.error.database"));
         
         // Refuse to trade with own player
         if (player.getUuid().equals(sign.getShopOwner()))
-            return Either.left(TranslatableServerSide.text(player, "shop.error.self_sell"));
+            return Either.left(ServerText.text(player, "shop.error.self_sell"));
         
         // Check if the attached chest exists
         if (!sign.isInfinite() && (chest = InventoryUtils.getAttachedChest(player.getEntityWorld(), signPos)) == null)
@@ -125,16 +125,16 @@ public final class SignShopSell extends ShopSign.BuyTradeSell {
             
             // If the chest is open
             if (ChestBlockEntity.getPlayersLookingInChestCount(player.getEntityWorld(), chest.getPos()) > 0)
-                return Either.left(TranslatableServerSide.text(player, "shop.error.chest_open"));
+                return Either.left(ServerText.text(player, "shop.error.chest_open"));
             
             // If player does not have any of item
             if (InventoryUtils.getInventoryCount(player.getInventory(), sign::itemMatchPredicate) < sign.getShopItemCount())
-                return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
+                return Either.left(ServerText.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
         }
         
         // Take shop keepers money
         if (!(sign.isInfinite() || PlayerBalanceCallback.hasBalance(sign.getShopOwner(), sign.getShopItemPrice())))
-            return Either.left(TranslatableServerSide.text(player, "shop.error.money_chest"));
+            return Either.left(ServerText.text(player, "shop.error.money_chest"));
         
         // Put players item into chest
         if (!InventoryUtils.playerToChest(player, signPos, player.getInventory(), chestInventory, sign::itemMatchPredicate, sign.getShopItemCount(), true)) {
@@ -153,10 +153,14 @@ public final class SignShopSell extends ShopSign.BuyTradeSell {
             }
             
             if (!crafted)
-                return Either.left(TranslatableServerSide.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
+                return Either.left(ServerText.text(player, "shop.error.stock_player", sign.getShopItemDisplay()));
         }
         
-        // Give player money for item
+        // Take player money for item(s)
+        if (!sign.isInfinite())
+            PlayerBalanceCallback.take(sign.getShopOwner(), sign.getShopItemPrice());
+        
+        // Give player money for item(s)
         PlayerBalanceCallback.give(player, sign.getShopItemPrice());
         
         // Get shop owner

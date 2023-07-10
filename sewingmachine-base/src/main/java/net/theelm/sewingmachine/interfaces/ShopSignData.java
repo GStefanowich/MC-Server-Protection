@@ -26,10 +26,9 @@
 package net.theelm.sewingmachine.interfaces;
 
 import com.mojang.authlib.GameProfile;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.SignText;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralTextContent;
 import net.minecraft.util.ActionResult;
@@ -38,11 +37,11 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.CoreMod;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.objects.ShopSign;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.utilities.DevUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.StyleApplicator;
@@ -63,7 +62,6 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.UserCache;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -132,12 +130,12 @@ public interface ShopSignData {
     default @NotNull Optional<GameProfile> getShopOwnerProfile() {
         UUID uuid = this.getShopOwner();
         if (uuid == null)
-            return null;
+            return Optional.empty();
         if (Objects.equals(uuid, CoreMod.SPAWN_ID))
             return Optional.of(new GameProfile(uuid, "Server"));
-        UserCache cache = SewServer.get()
-            .getUserCache();
-        return cache.getByUuid(uuid);
+        return Sew.tryGetServer()
+            .map(MinecraftServer::getUserCache)
+            .flatMap(cache -> cache.getByUuid(uuid));
     }
     @Nullable Item getShopItem();
     @Nullable Identifier getShopItemIdentifier();
@@ -289,7 +287,7 @@ public interface ShopSignData {
         return stack;
     }
     
-    static ActionResult onSignInteract(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
+    static Test onSignInteract(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
         BlockPos blockPos = blockHitResult.getBlockPos();
         final BlockEntity blockEntity = world.getBlockEntity(blockPos);
         
@@ -312,12 +310,12 @@ public interface ShopSignData {
                         else if (shopSign.getSoundSourcePosition() != null && world.random.nextInt(12) == 0)
                             shopSign.playSound(player, SoundEvents.ENTITY_VILLAGER_YES, SoundCategory.NEUTRAL);
                     });
-                return ActionResult.SUCCESS;
+                return Test.SUCCESS;
             } else if (DevUtils.isDebugging()) {
                 CoreMod.logInfo("[DEBUG] Interacted with non-shop sign");
             }
         }
         
-        return ActionResult.PASS;
+        return Test.CONTINUE;
     }
 }

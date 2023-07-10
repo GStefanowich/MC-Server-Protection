@@ -41,7 +41,7 @@ import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.DevUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.player.HungerManager;
 import net.minecraft.entity.player.PlayerAbilities;
@@ -63,7 +63,7 @@ public final class AdminCommands extends SewCommand {
     public static final @NotNull String FEED = "Feed";
     public static final @NotNull String REPAIR = "Repair";
     
-    private static final ExceptionTranslatableServerSide PLAYERS_NOT_FOUND_EXCEPTION = TranslatableServerSide.exception("player.none_found");
+    private static final ExceptionTranslatableServerSide PLAYERS_NOT_FOUND_EXCEPTION = ServerText.exception("player.none_found");
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
@@ -144,7 +144,7 @@ public final class AdminCommands extends SewCommand {
         players.forEach(player -> {
             if (source.getEntity() == player)
                 this.toggleFlying(source, player);
-            else TranslatableServerSide.send(source, "player.abilities.flying_other." + (this.toggleFlying(null, player) ? "enabled" : "disabled"), player.getDisplayName());
+            else ServerText.send(source, "player.abilities.flying_other." + (this.toggleFlying(null, player) ? "enabled" : "disabled"), player.getDisplayName());
         });
         return Command.SINGLE_SUCCESS;
     }
@@ -157,8 +157,8 @@ public final class AdminCommands extends SewCommand {
         
         // Tell the player
         if (source == null)
-            TranslatableServerSide.send(player, "player.abilities.flying_self." + (abilities.allowFlying ? "enabled" : "disabled"));
-        else TranslatableServerSide.send(source, "player.abilities.flying_self." + (abilities.allowFlying ? "enabled" : "disabled"));
+            ServerText.send(player, "player.abilities.flying_self." + (abilities.allowFlying ? "enabled" : "disabled"));
+        else ServerText.send(source, "player.abilities.flying_self." + (abilities.allowFlying ? "enabled" : "disabled"));
         
         // If flying was turned off, stop the player mid-flight
         if (!abilities.allowFlying)
@@ -185,7 +185,7 @@ public final class AdminCommands extends SewCommand {
         players.forEach(player -> {
             if (source.getEntity() == player)
                 this.toggleGod(source, player);
-            else TranslatableServerSide.send(source, "player.abilities.godmode_other." + (this.toggleGod(null, player) ? "enabled" : "disabled"), player.getDisplayName());
+            else ServerText.send(source, "player.abilities.godmode_other." + (this.toggleGod(null, player) ? "enabled" : "disabled"), player.getDisplayName());
         });
         return Command.SINGLE_SUCCESS;
     }
@@ -198,8 +198,8 @@ public final class AdminCommands extends SewCommand {
         
         // Tell the player
         if (source == null)
-            TranslatableServerSide.send(player, "player.abilities.godmode_self." + (abilities.invulnerable ? "enabled" : "disabled"));
-        else TranslatableServerSide.send(source, "player.abilities.godmode_self." + (abilities.invulnerable ? "enabled" : "disabled"));
+            ServerText.send(player, "player.abilities.godmode_self." + (abilities.invulnerable ? "enabled" : "disabled"));
+        else ServerText.send(source, "player.abilities.godmode_self." + (abilities.invulnerable ? "enabled" : "disabled"));
         
         return abilities.invulnerable;
     }
@@ -221,7 +221,7 @@ public final class AdminCommands extends SewCommand {
         players.forEach(player -> {
             if (source.getEntity() == player)
                 this.healPlayer(source, player);
-            else TranslatableServerSide.send(source, (this.healPlayer(null, player) ? "player.abilities.healed_other" : "player.abilities.healed_dead"), player.getDisplayName());
+            else ServerText.send(source, (this.healPlayer(null, player) ? "player.abilities.healed_other" : "player.abilities.healed_dead"), player.getDisplayName());
         });
         return Command.SINGLE_SUCCESS;
     }
@@ -233,8 +233,8 @@ public final class AdminCommands extends SewCommand {
             
             // Tell the player
             if (source == null)
-                TranslatableServerSide.send(player, "player.abilities.healed_self");
-            else TranslatableServerSide.send(source, "player.abilities.healed_self");
+                ServerText.send(player, "player.abilities.healed_self");
+            else ServerText.send(source, "player.abilities.healed_self");
         }
         return alive;
     }
@@ -256,7 +256,7 @@ public final class AdminCommands extends SewCommand {
         players.forEach(player -> {
             if (source.getEntity() == player)
                 this.feedPlayer(source, player);
-            else TranslatableServerSide.send(source, (this.feedPlayer(null, player) ? "player.abilities.fed_other" : "player.abilities.fed_dead"), player.getDisplayName());
+            else ServerText.send(source, (this.feedPlayer(null, player) ? "player.abilities.fed_other" : "player.abilities.fed_dead"), player.getDisplayName());
         });
         return Command.SINGLE_SUCCESS;
     }
@@ -270,8 +270,8 @@ public final class AdminCommands extends SewCommand {
             
             // Tell the player
             if (source == null)
-                TranslatableServerSide.send(player, "player.abilities.fed_self");
-            else TranslatableServerSide.send(source, "player.abilities.fed_self");
+                ServerText.send(player, "player.abilities.fed_self");
+            else ServerText.send(source, "player.abilities.fed_self");
         }
         return alive;
     }

@@ -26,6 +26,7 @@
 package net.theelm.sewingmachine.protection.events;
 
 import net.fabricmc.fabric.api.event.Event;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.interfaces.ItemUseCallback;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
@@ -80,22 +81,22 @@ public final class ItemUse {
         event.register(ItemUse::blockInteract);
     }
     
-    private static @NotNull ActionResult blockInteract(@NotNull ServerPlayerEntity player, @NotNull World world, @NotNull Hand hand, @NotNull ItemStack itemStack) {
+    private static @NotNull Test blockInteract(@NotNull ServerPlayerEntity player, @NotNull World world, @NotNull Hand hand, @NotNull ItemStack itemStack) {
         if (itemStack.getItem() == Items.COMPASS) {
             Pair<Text, BlockPos> newDirection = ((PlayerData) player).cycleCompass();
             TitleUtils.showPlayerAlert(player, Formatting.YELLOW, Text.literal("Compass now pointing towards "), newDirection.getLeft());
             
-            return ActionResult.SUCCESS;
+            return Test.SUCCESS;
         } else if (itemStack.getItem() == Items.STICK) {
             /*
              * If item is stick and player has build permission
              */
             BlockHitResult hitResult = BlockUtils.getLookingBlock(world, player, 10, RaycastContext.FluidHandling.NONE);
             if ((hitResult.getType() != HitResult.Type.MISS) && ClaimChunkUtils.canPlayerBreakInChunk(player, hitResult.getBlockPos()) && ItemUse.stickBlockInteraction(player, world, hitResult))
-                return ActionResult.SUCCESS;
+                return Test.SUCCESS;
         }
         
-        return ActionResult.PASS;
+        return Test.CONTINUE;
     }
     private static boolean stickBlockInteraction(@NotNull ServerPlayerEntity player, @NotNull World world, @NotNull BlockHitResult hitResult) {
         Direction rotation = null;

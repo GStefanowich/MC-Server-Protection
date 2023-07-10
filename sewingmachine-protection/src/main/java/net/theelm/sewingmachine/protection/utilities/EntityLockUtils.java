@@ -109,7 +109,7 @@ import net.theelm.sewingmachine.protection.interfaces.ClaimsAccessor;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -324,7 +324,7 @@ public final class EntityLockUtils {
             }
             
             // Display that this item can't be opened
-            TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
+            TitleUtils.showPlayerAlert(player, Formatting.WHITE, ServerText.text(player, "claim.block.locked",
                 EntityLockUtils.getLockedName(source),
                 owner
             ));
@@ -349,7 +349,7 @@ public final class EntityLockUtils {
             WorldChunk chunk = world.getWorldChunk(blockPos);
             
             // Display that this item can't be opened
-            TitleUtils.showPlayerAlert(player, Formatting.WHITE, TranslatableServerSide.text(player, "claim.block.locked",
+            TitleUtils.showPlayerAlert(player, Formatting.WHITE, ServerText.text(player, "claim.block.locked",
                 EntityLockUtils.getLockedName(block),
                 (chunk == null ? Text.literal("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, blockPos))
             ));

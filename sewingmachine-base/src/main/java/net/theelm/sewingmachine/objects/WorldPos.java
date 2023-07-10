@@ -26,7 +26,6 @@
 package net.theelm.sewingmachine.objects;
 
 import net.minecraft.registry.RegistryKey;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.server.MinecraftServer;
@@ -35,7 +34,7 @@ import net.minecraft.util.math.BlockPointer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Position;
 import net.minecraft.world.World;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import org.jetbrains.annotations.NotNull;
 
 public class WorldPos implements BlockPointer, Position {
@@ -80,7 +79,7 @@ public class WorldPos implements BlockPointer, Position {
     
     @Override
     public ServerWorld getWorld() {
-        MinecraftServer server = SewServer.get();
+        MinecraftServer server = Sew.getServer();
         return server.getWorld(this.dimensionType);
     }
 }

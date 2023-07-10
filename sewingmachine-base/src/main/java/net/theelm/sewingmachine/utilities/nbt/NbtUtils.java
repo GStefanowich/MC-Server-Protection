@@ -59,7 +59,6 @@ import net.minecraft.world.border.WorldBorder;
 import net.minecraft.world.dimension.DimensionType;
 import net.minecraft.world.level.ServerWorldProperties;
 import net.theelm.sewingmachine.utilities.mod.Sew;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -82,7 +81,7 @@ public final class NbtUtils {
     private NbtUtils() {}
     
     public static @NotNull Path levelNameFolder() {
-        return NbtUtils.levelNameFolder(SewServer.get());
+        return NbtUtils.levelNameFolder(Sew.getServer());
     }
     public static @NotNull Path levelNameFolder(@NotNull MinecraftServer server) {
         String level = server.getSaveProperties().getLevelName();

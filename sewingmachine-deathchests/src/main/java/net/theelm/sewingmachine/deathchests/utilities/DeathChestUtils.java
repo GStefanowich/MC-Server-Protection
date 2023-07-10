@@ -31,7 +31,7 @@ import net.theelm.sewingmachine.deathchests.config.SewDeathConfig;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import net.theelm.sewingmachine.deathchests.interfaces.PlayerCorpse;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -187,7 +187,7 @@ public final class DeathChestUtils {
         
         // Print the death chest coordinates
         if (SewConfig.get(SewDeathConfig.PRINT_DEATH_CHEST_LOC))
-            player.sendMessage(TranslatableServerSide.text(player, "player.death_chest.location", Text.literal(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)));
+            player.sendMessage(ServerText.text(player, "player.death_chest.location", Text.literal(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)));
         CoreMod.logInfo("Death chest for " + player.getName().getString() + " spawned at " + MessageUtils.xyzToString(chestPos.offset(Direction.UP, 1)));
         
         // Add the entity to the world

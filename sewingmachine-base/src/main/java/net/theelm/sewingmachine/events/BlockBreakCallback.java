@@ -40,6 +40,7 @@ import net.minecraft.util.math.Direction;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.packets.CancelMinePacket;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.protections.logging.BlockEvent;
 import net.theelm.sewingmachine.protections.logging.EventLogger;
 import net.theelm.sewingmachine.utilities.EntityUtils;
@@ -50,26 +51,26 @@ import org.jetbrains.annotations.Nullable;
 @FunctionalInterface
 public interface BlockBreakCallback {
     Event<BlockBreakCallback> TEST = EventFactory.createArrayBacked(BlockBreakCallback.class, (listeners) -> (entity, world, hand, pos, direction, action) -> {
-        ActionResult result = ActionResult.PASS;
+        Test result = Test.CONTINUE;
         
         for (BlockBreakCallback event : listeners) {
             result = event.destroy(entity, world, hand, pos, direction, action);
-            if (result != ActionResult.PASS)
+            if (result.isConclusive())
                 break;
         }
         
-        if (result != ActionResult.FAIL && SewConfig.get(SewBaseConfig.LOG_BLOCKS_BREAKING) && action == Action.STOP_DESTROY_BLOCK)
+        if (result != Test.FAIL && SewConfig.get(SewBaseConfig.LOG_BLOCKS_BREAKING) && action == Action.STOP_DESTROY_BLOCK)
             BlockBreakCallback.onSuccess(entity, world, hand, pos, direction);
-        else if (result == ActionResult.FAIL)
+        else if (result == Test.FAIL)
             BlockBreakCallback.onFailure(entity, world, hand, pos, direction);
         
         return result;
     });
     
-    ActionResult destroy(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos pos, @Nullable Direction direction, @Nullable Action action);
+    Test destroy(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos pos, @Nullable Direction direction, @Nullable Action action);
     static boolean canDestroy(@NotNull Entity entity, @NotNull ServerWorld world, @NotNull Hand hand, @NotNull BlockPos pos, @Nullable Direction direction, @Nullable Action action) {
         return BlockBreakCallback.TEST.invoker()
-            .destroy(entity, world, hand, pos, direction, action) != ActionResult.FAIL;
+            .destroy(entity, world, hand, pos, direction, action) != Test.FAIL;
     }
     
     /**

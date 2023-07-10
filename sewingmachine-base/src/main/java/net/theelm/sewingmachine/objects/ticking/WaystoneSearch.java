@@ -32,7 +32,7 @@ import net.theelm.sewingmachine.interfaces.LogicalWorld;
 import net.theelm.sewingmachine.interfaces.TickableContext;
 import net.theelm.sewingmachine.interfaces.TickingAction;
 import net.theelm.sewingmachine.objects.DetachedTickableContext;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.WarpUtils;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -69,7 +69,7 @@ public class WaystoneSearch implements TickingAction {
             this.warp = null;
         else {
             // Tell the player
-            this.player.sendMessage(TranslatableServerSide.text(
+            this.player.sendMessage(ServerText.text(
                 this.player,
                 "warp.random.search"
             ));
@@ -111,7 +111,7 @@ public class WaystoneSearch implements TickingAction {
         boolean building  = unclaimed && (this.hasBuilt || (this.hasBuilt = this.claimAndBuild()));
         if (building) {
             // Build the return warp
-            this.player.sendMessage(TranslatableServerSide.text(
+            this.player.sendMessage(ServerText.text(
                 this.player,
                 "warp.random.build"
             ));
@@ -172,9 +172,9 @@ public class WaystoneSearch implements TickingAction {
             
             // Notify the player of their new location
             if ((!SewConfig.get(SewBaseConfig.WORLD_SPECIFIC_SPAWN)) || SewConfig.equals(SewBaseConfig.WARP_DIMENSION, SewBaseConfig.DEFAULT_WORLD))
-                TranslatableServerSide.send(this.player, "warp.random.teleported", distance);
+                ServerText.send(this.player, "warp.random.teleported", distance);
             else
-                TranslatableServerSide.send(this.player, "warp.random.teleported_world");
+                ServerText.send(this.player, "warp.random.teleported_world");
         }
     }
 }

@@ -45,7 +45,7 @@ import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import org.jetbrains.annotations.NotNull;
 
 /*
@@ -66,7 +66,7 @@ public final class SignDeed extends ShopSign {
         
         // These should NOT be null
         if (sign.getWorld() == null)
-            throw new ShopBuilderException(TranslatableServerSide.text(creator, "shop.error.database"));
+            throw new ShopBuilderException(ServerText.text(creator, "shop.error.database"));
         
         WorldChunk chunk = sign.getWorld().getWorldChunk( sign.getPos() );
         ClaimantTown town = null;

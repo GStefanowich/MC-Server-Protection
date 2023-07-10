@@ -34,7 +34,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.utilities.CommandUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.minecraft.block.BedBlock;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -50,7 +50,7 @@ import java.util.Set;
 import java.util.UUID;
 
 public final class PlayerSpawnCommand extends SewCommand {
-    private static final ExceptionTranslatableServerSide SPAWN_NOT_AT_BED = TranslatableServerSide.exception("spawn.set.missing_bed");
+    private static final ExceptionTranslatableServerSide SPAWN_NOT_AT_BED = ServerText.exception("spawn.set.missing_bed");
     public static final Set<UUID> commandRanUUIDs = Collections.synchronizedSet(new HashSet<>());
     public static final String COMMAND_NAME = "SetSpawn";
     

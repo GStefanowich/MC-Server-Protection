@@ -64,7 +64,7 @@ allprojects {
 			from(sourceSets.main.resources.srcDirs) {
 				include 'fabric.mod.json'
 				expand (
-					'version': "${mod_version}",
+					'version': "${project.mod_version}",
 					'minecraft': "${project.minecraft_version}",
 					'fabricloader': "${project.loader_version}",
 					'fabricapi': "${project.fabric_version}"

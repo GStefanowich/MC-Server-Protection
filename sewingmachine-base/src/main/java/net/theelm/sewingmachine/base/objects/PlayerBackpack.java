@@ -38,6 +38,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.screen.GenericContainerScreenHandler;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.ScreenHandlerType;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
@@ -332,16 +333,18 @@ public class PlayerBackpack extends SimpleInventory {
     
     @Override
     public void onOpen(@NotNull PlayerEntity player) {
-        // Play sound
-        player.playSound(SoundEvents.UI_TOAST_OUT, SoundCategory.BLOCKS, 0.5f, 1.0f);
+        // Play sound (Sent by the server)
+        if (player instanceof ServerPlayerEntity)
+            player.playSound(SoundEvents.UI_TOAST_OUT, SoundCategory.BLOCKS, 0.5f, 1.0f);
         
         // Parent method
         super.onOpen(player);
     }
     @Override
     public void onClose(@NotNull PlayerEntity player) {
-        // Play sound
-        player.playSound(SoundEvents.UI_TOAST_IN, SoundCategory.BLOCKS, 0.5f, 1.0f);
+        // Play sound (Sent by the server)
+        if (player instanceof ServerPlayerEntity)
+            player.playSound(SoundEvents.UI_TOAST_IN, SoundCategory.BLOCKS, 0.5f, 1.0f);
         
         // Parent method
         super.onClose(player);

@@ -48,7 +48,7 @@ import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.minecraft.command.argument.GameProfileArgumentType;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
@@ -63,8 +63,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 
 public final class MoneyCommand extends SewCommand {
-    private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = TranslatableServerSide.exception("player.money.poor");
-    private static final ExceptionTranslatableServerSide PLAYER_NOT_FOUND = TranslatableServerSide.exception("player.not_found");
+    private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = ServerText.exception("player.money.poor");
+    private static final ExceptionTranslatableServerSide PLAYER_NOT_FOUND = ServerText.exception("player.not_found");
     
     private static final ConfigOption<Integer> DEFAULT_STATE = SewBaseConfig.STARTING_MONEY;
     
@@ -368,7 +368,7 @@ public final class MoneyCommand extends SewCommand {
         try {
             
             int playerHas = MoneyUtils.getPlayerMoney(player.getUuid());
-            player.sendMessage(TranslatableServerSide.text(player, "player.money",
+            player.sendMessage(ServerText.text(player, "player.money",
                 playerHas
             ));
             

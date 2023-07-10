@@ -28,6 +28,7 @@ package net.theelm.sewingmachine.utilities;
 import com.google.common.collect.Maps;
 import net.minecraft.block.entity.SignText;
 import net.minecraft.registry.Registries;
+import net.minecraft.server.world.ServerWorld;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
@@ -68,7 +69,7 @@ public final class ShopSignBuilder implements ShopSignData {
      * Builder information
      */
     private final @NotNull SignBlockEntity sign;
-    private final @NotNull World world;
+    private final @NotNull ServerWorld world;
     private final @NotNull BlockPos blockPos;
     private Text[] lines = new Text[4];
     
@@ -87,7 +88,7 @@ public final class ShopSignBuilder implements ShopSignData {
     private BlockPos regionPosA = null;
     private BlockPos regionPosB = null;
     
-    private ShopSignBuilder(@NotNull World world, @NotNull BlockPos blockPos, @NotNull SignBlockEntity sign) {
+    private ShopSignBuilder(@NotNull ServerWorld world, @NotNull BlockPos blockPos, @NotNull SignBlockEntity sign) {
         this.world = world;
         this.blockPos = blockPos;
         this.sign = sign;
@@ -328,7 +329,7 @@ public final class ShopSignBuilder implements ShopSignData {
      * Static methods
      */
     private static final Map<String, ShopSignBuilder> buildingSigns = Collections.synchronizedMap(new HashMap<>());
-    public static ShopSignBuilder create(@NotNull final World world, @NotNull final BlockPos blockPos, @NotNull final SignBlockEntity sign) {
+    public static ShopSignBuilder create(@NotNull ServerWorld world, @NotNull BlockPos blockPos, @NotNull SignBlockEntity sign) {
         String worldLocation = ShopSignBuilder.createIdentifier(world, blockPos);
         if (buildingSigns.containsKey(worldLocation))
             return buildingSigns.get(worldLocation);

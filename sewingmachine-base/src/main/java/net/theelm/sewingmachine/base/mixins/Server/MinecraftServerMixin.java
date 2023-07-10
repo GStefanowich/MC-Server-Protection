@@ -35,7 +35,6 @@ import net.theelm.sewingmachine.interfaces.MotdFunction;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.ServerVariables;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.ServerMetadata;
 import net.minecraft.text.MutableText;

@@ -35,7 +35,6 @@ import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.command.CommandRegistryAccess;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.blocks.entities.LecternWarpsBlockEntity;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
@@ -44,7 +43,7 @@ import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.WarpUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -61,7 +60,6 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.Util;
 import net.minecraft.util.math.BlockPos;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
@@ -255,7 +253,7 @@ public class WaystoneCommand extends SewCommand {
                     TitleUtils.showPlayerAlert(
                         targetPlayer,
                         Formatting.YELLOW,
-                        TranslatableServerSide.text(targetPlayer, "warp.notice.player", porter.getDisplayName())
+                        ServerText.text(targetPlayer, "warp.notice.player", porter.getDisplayName())
                     );
                     targetPlayer.playSound(SoundEvents.UI_TOAST_IN, SoundCategory.MASTER, 1.0f, 1.0f);
                 }

@@ -48,6 +48,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.ColorHelper;
 import net.minecraft.util.math.Direction;
+import net.minecraft.util.math.MathHelper;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import net.minecraft.world.chunk.Chunk;
@@ -59,6 +60,7 @@ import net.theelm.sewingmachine.protection.packets.ClaimChunkPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimQueryPacket;
 import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.ColorUtils;
+import net.theelm.sewingmachine.utilities.MathUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import net.theelm.sewingmachine.utilities.mod.Sew;
 import org.jetbrains.annotations.NotNull;
@@ -75,12 +77,12 @@ public final class MapWidget {
     private final @NotNull MinecraftClient client;
     private final @NotNull NativeImageBackedTexture texture;
     private final @NotNull FrameData frame;
-
+    
     /**
      * The number of chunks to have in the X (Width) direction
      */
     private final int chunksX;
-
+    
     /**
      * The number of chunks to have in the Z (Height) direction
      */
@@ -98,6 +100,7 @@ public final class MapWidget {
     
     private final @NotNull ChunkPos startChunk;
     private final MapChunk[][] chunks;
+    private MapChunk hovering = null;
     
     private int mouseDrag = 0;
     private boolean mouseOne = false;
@@ -127,21 +130,23 @@ public final class MapWidget {
         ClientWorld world = this.getWorld();
         if (world == null)
             return;
+        ClientPlayerEntity player = this.getPlayer();
+        
         for (int x = 0; x < this.chunksX; x++) {
             MapChunk[] inner = this.chunks[x];
             for (int z = 0; z < this.chunksZ; z++) {
                 MapChunk data = inner[z];
                 if (data != null)
-                    data.update(x * MapChunk.WIDTH, z * MapChunk.WIDTH);
+                    data.update();
                 else {
                     Chunk chunk = world.getChunk(this.startChunk.x + x, this.startChunk.z + z, ChunkStatus.EMPTY, false);
                     if (chunk instanceof WorldChunk worldChunk) {
-                        MapChunk mapChunk = new MapChunk(worldChunk);
+                        MapChunk mapChunk = new MapChunk(player, worldChunk, x * MapChunk.WIDTH, z * MapChunk.WIDTH);
                         
                         inner[z] = mapChunk;
                         
                         // Update the chunk
-                        mapChunk.update(x * MapChunk.WIDTH, z * MapChunk.WIDTH);
+                        mapChunk.update();
                         
                         // Query the server
                         NetworkingUtils.send(this.client, new ClaimQueryPacket(mapChunk.getPos()));
@@ -164,54 +169,32 @@ public final class MapWidget {
     }
     
     public @Nullable MapChunk render(@NotNull DrawContext context, int mouseX, int mouseY) {
-        MapChunk hovered = null;
-        
         // Draw the map
         this.frame.plot(context);
         
-        // Draw the hovered chunk and return it
-        for (int x = 0; x < this.chunksX; x++) {
-            MapChunk[] inner = this.chunks[x];
-            for (int z = 0; z < this.chunksZ; z++) {
-                int offsetX = x * this.chunkWidth;
-                int offsetZ = z * this.chunkHeight;
-                
-                boolean isHovered = false;
-                if (this.isMouseOver(mouseX, mouseY)) {
-                    int relativeX = this.frame.scaleX(mouseX - this.frame.padding());
-                    int relativeY = this.frame.scaleY(mouseY - this.frame.padding());
-                    
-                    isHovered = relativeX >= offsetX
-                        && relativeX < offsetX + this.chunkWidth
-                        && relativeY >= offsetZ
-                        && relativeY < offsetZ + this.chunkHeight;
-                }
-                
-                MapChunk chunk = inner[z];
-                if (chunk != null) {
-                    if (isHovered)
-                        hovered = chunk;
-                    chunk.render(context, isHovered, offsetX, offsetZ);
-                }
-            }
+        if (!this.isMouseOverMap(mouseX, mouseY))
+            this.setHovering(null);
+        else {
+            int relativeX = this.frame.scaleX(mouseX - this.frame.padding());
+            int relativeY = this.frame.scaleY(mouseY - this.frame.padding());
+            int x = MathUtils.multipleOf(relativeX, this.chunkWidth);
+            int y = MathUtils.multipleOf(relativeY, this.chunkHeight);
+            this.setHovering(this.chunks[x][y]);
         }
         
-        // Draw the player dot
-        PlayerEntity player = this.getPlayer();
-        if (player != null) {
-            BlockPos pos = player.getBlockPos();
-            int x = pos.getX() - (this.startChunk.x * MapChunk.WIDTH);
-            int z = pos.getZ() - (this.startChunk.z * MapChunk.WIDTH);
-            
-            // Draw a dot for where the player is standing
-            this.frame.fillDot(context, x - 1, z - 1, x + 1, z + 1, ColorUtils.Argb.RED);
-        }
-        
-        return hovered;
+        return this.hovering;
+    }
+    
+    private void setHovering(@Nullable MapChunk chunk) {
+        if (this.hovering != null && !this.hovering.equals(chunk))
+            this.hovering.update(false);
+        this.hovering = chunk;
+        if (chunk != null)
+            this.hovering.update(true);
     }
     
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (!this.isMouseOver(mouseX, mouseY))
+        if (!this.isMouseOverMap(mouseX, mouseY))
             return false;
         if (button == 0 && !this.mouseOne)
             this.mouseOne = true;
@@ -227,15 +210,14 @@ public final class MapWidget {
             this.mouseTwo = false;
         else return false;
         
-        if (this.isMouseOver(mouseX, mouseY)) {
-            MapChunk chunk = this.getAtMouse(mouseX, mouseY);
-            if (chunk != null) {
+        if (this.isMouseOverMap(mouseX, mouseY)) {
+            if (this.hovering != null) {
                 if (button == 0) {
-                    this.claimChunk(chunk);
+                    this.claimHoveringChunk();
                     return true;
                 }
                 if (button == 1) {
-                    this.unclaimChunk(chunk);
+                    this.unclaimHoveringChunk();
                     return true;
                 }
             }
@@ -247,11 +229,13 @@ public final class MapWidget {
         return false;
     }
     
-    public boolean isMouseOver(double mouseX, double mouseY) {
-        return mouseX > this.frame.x
-            && mouseX < this.frame.x + this.frame.width()
-            && mouseY > this.frame.y
-            && mouseY < this.frame.y + this.frame.height();
+    public boolean isMouseOverMap(double mouseX, double mouseY) {
+        int relativeX = this.frame.scaleX(mouseX - this.frame.padding());
+        int relativeY = this.frame.scaleY(mouseY - this.frame.padding());
+        return relativeX >= 0
+            && relativeX < this.frame.width()
+            && relativeY >= 0
+            && relativeY < this.frame.height();
     }
     
     public void mouseMoved(double mouseX, double mouseY) {
@@ -259,54 +243,45 @@ public final class MapWidget {
             !(this.mouseOne || this.mouseTwo)
             || this.mouseOne == this.mouseTwo
             || this.mouseDrag++ < 20
-            || !this.isMouseOver(mouseX, mouseY)
+            || !this.isMouseOverMap(mouseX, mouseY)
         ) return;
         this.mouseDrag = 0;
         
-        MapChunk chunk = this.getAtMouse(mouseX, mouseY);
-        if (chunk == null)
+        if (this.hovering == null)
             return;
         
         if (this.mouseOne)
-            this.claimChunk(chunk);
+            this.claimHoveringChunk();
         
         if (this.mouseTwo)
-            this.unclaimChunk(chunk);
+            this.unclaimHoveringChunk();
     }
     
     /**
      * Send a request to the server to claim the chunk
-     * @param chunk
      */
-    public void claimChunk(@NotNull MapChunk chunk) {
-        if (chunk.hasOwner())
+    public void claimHoveringChunk() {
+        if (this.hovering == null || this.hovering.hasOwner())
             return;
-        NetworkingUtils.send(this.client, new ClaimChunkPacket(chunk.getPos(), true));
+        NetworkingUtils.send(this.client, new ClaimChunkPacket(this.hovering.getPos(), true));
     }
     
     /**
      * Send a request to the server to unclaim the chunk
-     * @param chunk
      */
-    public void unclaimChunk(@NotNull MapChunk chunk) {
-        ClaimantPlayer owner = chunk.getOwner();
+    public void unclaimHoveringChunk() {
+        if (this.hovering == null)
+            return;
+        
+        ClaimantPlayer owner = this.hovering.getOwner();
         if (owner == null)
             return;
+        
         UUID self = this.client.getSession()
             .getUuidOrNull();
         if (!Objects.equals(self, owner.getId()))
             return;
-        NetworkingUtils.send(this.client, new ClaimChunkPacket(chunk.getPos(), false));
-    }
-    
-    public @Nullable MapChunk getAtMouse(double mouseX, double mouseY) {
-        int relativeX = this.frame.scaleX(mouseX);
-        int relativeY = this.frame.scaleY(mouseY);
-        int x = BlockUtils.chunkPos(relativeX);
-        int z = BlockUtils.chunkPos(relativeY);
-        if (x >= this.chunksX || z >= this.chunksZ)
-            return null;
-        return this.chunks[x][z];
+        NetworkingUtils.send(this.client, new ClaimChunkPacket(this.hovering.getPos(), false));
     }
     
     public final class MapChunk {
@@ -314,29 +289,49 @@ public final class MapWidget {
         public static final int WIDTH = 16;
         public static final int HOVER_HIGHLIGHT;
         public static final int CLAIM_HIGHLIGHT;
+        public static final int PLAYER_HIGHLIGHT;
         static {
             Color color;
             
-            color = Color.BLACK;
-            HOVER_HIGHLIGHT = ColorHelper.Argb.getArgb(/*65*/ 255, color.getRed(), color.getGreen(), color.getBlue());
+            color = Color.GRAY;
+            HOVER_HIGHLIGHT = ColorHelper.Abgr.getAbgr(65, color.getBlue(), color.getGreen(), color.getRed());
             
             color = Color.CYAN;
             CLAIM_HIGHLIGHT = ColorHelper.Abgr.getAbgr(80, color.getBlue(), color.getGreen(), color.getRed());
+            
+            color = Color.RED;
+            PLAYER_HIGHLIGHT = ColorHelper.Abgr.getAbgr(255, color.getBlue(), color.getGreen(), color.getRed());
         }
         
         private final @NotNull World world;
         private final @NotNull WorldChunk chunk;
+        private final @Nullable BlockPos player;
+        
+        private final int offsetX;
+        private final int offsetZ;
         
         private final boolean hasCeiling;
+        private boolean hovering;
         
-        public MapChunk(@NotNull WorldChunk chunk) {
+        public MapChunk(@NotNull PlayerEntity player, @NotNull WorldChunk chunk, int offsetX, int offsetZ) {
             this.chunk = chunk;
             this.world = chunk.getWorld();
+            
+            this.offsetX = offsetX;
+            this.offsetZ = offsetZ;
+            
             this.hasCeiling = world.getDimension()
                 .hasCeiling();
+            
+            BlockPos playerPos = player.getBlockPos();
+            ChunkPos chunkPos = chunk.getPos();
+            int x = playerPos.getX() - chunkPos.getStartX();
+            int z = playerPos.getZ() - chunkPos.getStartZ();
+            this.player = (x >= 0 && z >= 0 && x <= WIDTH && z <= WIDTH)
+                ? new BlockPos(x, 0, z) : null;
         }
         
-        public void update(int offsetX, int offsetZ) {
+        public void update() {
             BlockPos.Mutable mutable = new BlockPos.Mutable();
             BlockPos.Mutable mutable2 = new BlockPos.Mutable();
             if (this.chunk.isEmpty())
@@ -346,12 +341,12 @@ public final class MapWidget {
             NativeImage image = MapWidget.this.texture.getImage();
             
             for (int x = MapChunk.WIDTH - 1; x >= 0; x--) {
-                int posX = offsetX + x;
+                int posX = this.offsetX + x;
                 double d = 0.0;
                 
                 //int[] colors = this.colors[x];
                 for (int z = MapChunk.WIDTH - 1; z >= 0; z--) {
-                    int posZ = offsetZ + z;
+                    int posZ = this.offsetZ + z;
                     
                     Multiset<MapColor> multiset = LinkedHashMultiset.create();
                     int t = 0;
@@ -420,15 +415,31 @@ public final class MapWidget {
                     image.setColor(posX, posZ, this.getRenderColor(mapColor, brightness));
                     if (isOwned)
                         image.blend(posX, posZ, CLAIM_HIGHLIGHT);
+                    if (this.hovering)
+                        image.blend(posX, posZ, HOVER_HIGHLIGHT);
+                }
+            }
+            
+            if (this.player != null) {
+                for (int x = this.player.getX() - 1; x < this.player.getX() + 1; x++) {
+                    for (int z = this.player.getZ() - 1; z < this.player.getZ() + 1; z++) {
+                        image.setColor(
+                            this.offsetX + x,
+                            this.offsetZ + z,
+                            PLAYER_HIGHLIGHT
+                        );
+                    }
                 }
             }
             
             MapWidget.this.texture.upload();
         }
         
-        public void render(@NotNull DrawContext context, boolean hover, int offsetX, int offsetZ) {
-            if (hover)
-                MapWidget.this.frame.fillDot(context, offsetX, offsetZ, offsetX + WIDTH, offsetZ + WIDTH, HOVER_HIGHLIGHT);
+        public void update(boolean hovering) {
+            boolean changed = this.hovering != hovering;
+            this.hovering = hovering;
+            if (changed)
+                this.update();
         }
         
         /**
@@ -473,6 +484,17 @@ public final class MapWidget {
         private @NotNull BlockState getFluidStateIfVisible(@NotNull World world, @NotNull BlockState state, @NotNull BlockPos pos) {
             FluidState fluidState = state.getFluidState();
             return !fluidState.isEmpty() && !state.isSideSolidFullSquare(world, pos, Direction.UP) ? fluidState.getBlockState() : state;
+        }
+        
+        @Override
+        public int hashCode() {
+            return this.chunk.hashCode();
+        }
+        
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof MapChunk other
+                && this.chunk == other.chunk;
         }
     }
 }

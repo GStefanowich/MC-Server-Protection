@@ -45,7 +45,7 @@ import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.WarpUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -68,10 +68,10 @@ public final class SignWaystone extends ShopSign {
             name = WarpUtils.PRIMARY_DEFAULT_HOME;
         else {
             if (!IntUtils.between(1, name.length(), 15))
-                throw new ShopBuilderException(TranslatableServerSide.text(creator, "warp.notice.name.too_long", 15));
+                throw new ShopBuilderException(ServerText.text(creator, "warp.notice.name.too_long", 15));
             
             if (!WarpUtils.validateName(name))
-                throw new ShopBuilderException(TranslatableServerSide.text(creator, "warp.notice.name.invalid"));
+                throw new ShopBuilderException(ServerText.text(creator, "warp.notice.name.invalid"));
         }
         
         // Set the sign owner to SPAWN
@@ -123,7 +123,7 @@ public final class SignWaystone extends ShopSign {
         int cost = SewConfig.get(SewBaseConfig.WARP_WAYSTONE_COST);
         
         if (!PlayerBalanceCallback.hasBalance(player, cost))
-            return Either.left(TranslatableServerSide.text(player, "shop.error.money_player"));
+            return Either.left(ServerText.text(player, "shop.error.money_player"));
         
         WarpUtils warp = new WarpUtils(warpName, player, player.getServerWorld(),signPos.down());
         if (!warp.claimAndBuild(() -> {

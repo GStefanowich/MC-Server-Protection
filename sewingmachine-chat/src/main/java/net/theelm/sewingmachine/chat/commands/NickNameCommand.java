@@ -39,7 +39,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.chat.config.SewChatConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.commands.arguments.ArgumentSuggestions;
@@ -54,8 +53,8 @@ import net.theelm.sewingmachine.chat.interfaces.Nicknamable;
 import net.theelm.sewingmachine.utilities.ColorUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.ServerText;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -63,7 +62,7 @@ import org.jetbrains.annotations.Nullable;
 import java.awt.Color;
 
 public final class NickNameCommand extends SewCommand {
-    private static final ExceptionTranslatableServerSide NAME_TOO_LONG = TranslatableServerSide.exception("player.nick.too_long");
+    private static final ExceptionTranslatableServerSide NAME_TOO_LONG = ServerText.exception("player.nick.too_long");
     private static final int NICK_MAX_LENGTH = 20;
     
     @Override
@@ -187,11 +186,11 @@ public final class NickNameCommand extends SewCommand {
         MutableText notifyMessage;
         Text newName = null;
         if (nickname == null)
-            notifyMessage = TranslatableServerSide.text(player, "player.nick.reset");
+            notifyMessage = ServerText.text(player, "player.nick.reset");
         else {
             // Format the text with a color
             newName = TextUtils.literal(nickname, starts, ends);
-            notifyMessage = TranslatableServerSide.text(player, "player.nick.updated", newName);
+            notifyMessage = ServerText.text(player, "player.nick.updated", newName);
         }
         
         // Update the players display name
@@ -203,7 +202,7 @@ public final class NickNameCommand extends SewCommand {
             .update(player, true);
         
         // Send update to the player list
-        SewServer.get(player).getPlayerManager().sendToAll(
+        Sew.getServer(player).getPlayerManager().sendToAll(
             (new PlayerListS2CPacket(PlayerListS2CPacket.Action.UPDATE_DISPLAY_NAME, player))
         );
         

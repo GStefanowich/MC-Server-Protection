@@ -25,17 +25,22 @@
 
 package net.theelm.sewingmachine.utilities.mod;
 
-import com.mojang.datafixers.util.Either;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import net.theelm.sewingmachine.objects.SewModules;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.File;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Created on Jul 01 2023 at 2:26 PM.
@@ -72,52 +77,6 @@ public final class Sew {
      * Fabric Elements
      */
     
-    /**
-     * Get the game instance
-     *   If in Singleplayer, this will return the MinecraftClient
-     *   If in Multiplayer, this will return the MinecraftClient
-     *   If is the Server, this will return the DedicatedMinecraftServer
-     * @return
-     */
-    public static Either<MinecraftServer, MinecraftClient> getGameInstance() {
-        Object instance = Sew.getFabric()
-            .getGameInstance();
-        if (instance instanceof MinecraftServer server)
-            return Either.left(server);
-        if (instance instanceof MinecraftClient client)
-            return Either.right(client);
-        throw new RuntimeException("Could not access game instance.");
-    }
-    
-    /**
-     * Gets the game instance, preferring the Server
-     *   If in Singleplayer, this will return the IntegratedServer
-     *   If in Multiplayer, this will return the MinecraftClient
-     *   If is the Server, this will return the DedicatedMinecraftServer
-     * @return
-     */
-    public static Either<MinecraftServer, MinecraftClient> getGameInstancePreferServer() {
-        FabricLoader fabric = Sew.getFabric();
-        Object instance = fabric.getGameInstance();
-        switch (fabric.getEnvironmentType()) {
-            case CLIENT: {
-                if (instance instanceof MinecraftClient client) {
-                    MinecraftServer server = SewClient.getServer(client);
-                    if (server != null)
-                        return Either.left(server);
-                    return Either.right(client);
-                }
-                break;
-            }
-            case SERVER: {
-                if (instance instanceof MinecraftServer server)
-                    return Either.left(server);
-                break;
-            }
-        }
-        throw new RuntimeException("Could not access game instance.");
-    }
-    
     public static @NotNull FabricLoader getFabric() {
         return FabricLoader.getInstance();
     }
@@ -127,9 +86,74 @@ public final class Sew {
             .orElseThrow(() -> new RuntimeException("Could not find mod container \"" + id + "\""));
     }
     public static boolean isClient() {
-        return Sew.getFabric().getEnvironmentType() == EnvType.CLIENT;
+        return Sew.tryGetClient()
+            .isPresent();
     }
     public static boolean isServer() {
-        return Sew.getFabric().getEnvironmentType() == EnvType.SERVER;
+        return Sew.tryGetServer()
+            .isPresent() || Sew.getFabric().getEnvironmentType() == EnvType.SERVER;
+    }
+    
+    /**
+     * Server assets
+     */
+    
+    /**
+     * Gets the MinecraftServer
+     *   If running as the server, will return the DedicatedMinecraftServer
+     *   If running as the client, will return the IntegratedMinecraftServer
+     * @return
+     */
+    public static @NotNull MinecraftServer getServer() {
+        return Sew.tryGetServer()
+            .orElseThrow(() -> new RuntimeException("Could not access game server here."));
+    }
+    
+    /**
+     * Gets the MinecraftServer
+     *   If running as the server, will return the DedicatedMinecraftServer
+     *   If running as the client, will return the IntegratedMinecraftServer
+     * @return
+     */
+    public static @NotNull Optional<MinecraftServer> tryGetServer() {
+        FabricLoader fabric = Sew.getFabric();
+        Object instance = fabric.getGameInstance();
+        return switch (fabric.getEnvironmentType()) {
+            case CLIENT -> SewClient.tryGetServer();
+            case SERVER -> instance instanceof MinecraftServer server ? Optional.of(server) : Optional.empty();
+        };
+    }
+    
+    public static @NotNull MinecraftServer getServer(@NotNull PlayerEntity player) {
+        return Objects.requireNonNull(player.getServer());
+    }
+    
+    public static @Nullable ServerPlayerEntity getPlayer(@NotNull MinecraftServer server, @NotNull UUID uuid) {
+        return server.getPlayerManager()
+            .getPlayer(uuid);
+    }
+    
+    /**
+     * Client assets
+     */
+    
+    /**
+     * Gets the MinecraftServer
+     *   If running as the server, will Exception
+     *   If running as the client, will return the IntegratedMinecraftServer
+     * @return
+     */
+    public static @NotNull MinecraftClient getClient() {
+        return Sew.tryGetClient()
+            .orElseThrow(() -> new RuntimeException("Could not access game client here."));
+    }
+    
+    public static @NotNull Optional<MinecraftClient> tryGetClient() {
+        FabricLoader fabric = Sew.getFabric();
+        Object instance = fabric.getGameInstance();
+        return switch (fabric.getEnvironmentType()) {
+            case CLIENT -> instance instanceof MinecraftClient client ? Optional.of(client) : Optional.empty();
+            case SERVER -> Optional.empty();
+        };
     }
 }

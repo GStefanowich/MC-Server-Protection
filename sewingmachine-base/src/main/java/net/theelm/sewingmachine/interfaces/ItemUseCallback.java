@@ -32,17 +32,18 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.enums.Test;
 
 public interface ItemUseCallback {
     Event<ItemUseCallback> EVENT = EventFactory.createArrayBacked( ItemUseCallback.class, (listeners) -> (player, world, hand, itemStack) -> {
         for (ItemUseCallback event : listeners) {
-            ActionResult result = event.use(player, world, hand, itemStack);
-            if (result != ActionResult.PASS)
+            Test result = event.use(player, world, hand, itemStack);
+            if (result.isConclusive())
                 return result;
         }
         
-        return ActionResult.PASS;
+        return Test.SUCCESS;
     });
     
-    ActionResult use(ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack);
+    Test use(ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack);
 }

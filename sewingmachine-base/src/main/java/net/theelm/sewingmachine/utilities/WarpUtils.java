@@ -44,7 +44,7 @@ import net.theelm.sewingmachine.interfaces.LogicalWorld;
 import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.objects.MaskSet;
 import net.theelm.sewingmachine.protections.BlockRange;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
@@ -404,7 +404,7 @@ public final class WarpUtils {
      * Static checks
      */
     public static @Nullable Warp getWarp(@NotNull final UUID uuid, @Nullable final String location) {
-        MinecraftServer server = SewServer.get();
+        MinecraftServer server = Sew.getServer();
         
         // Read from the player
         ServerPlayerEntity player;
@@ -419,7 +419,7 @@ public final class WarpUtils {
         return WarpUtils.fromMapByName(WarpUtils.getWarps(player), location);
     }
     public static @NotNull Map<String, WarpUtils.Warp> getWarps(@NotNull final UUID uuid) {
-        MinecraftServer server = SewServer.get();
+        MinecraftServer server = Sew.getServer();
         
         // Read from the player
         ServerPlayerEntity player;

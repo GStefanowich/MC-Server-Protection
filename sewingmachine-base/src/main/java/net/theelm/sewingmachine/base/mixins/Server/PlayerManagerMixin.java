@@ -33,6 +33,7 @@ import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.base.objects.WanderingTraderProfileCollection;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
+import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.TeamUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.ClientConnection;
@@ -73,7 +74,7 @@ public abstract class PlayerManagerMixin {
             UUID uuid = EntityUtils.getWanderingTraderId(this.server);
             Entity entity = world.getEntity(uuid);
             if (entity != null)
-                player.networkHandler.sendPacket(new WanderingTraderProfileCollection(entity).getPacket(PlayerListS2CPacket.Action.ADD_PLAYER));
+                player.networkHandler.sendPacket(new WanderingTraderProfileCollection(entity).getPacket());
         }
     }
     
@@ -93,6 +94,9 @@ public abstract class PlayerManagerMixin {
             
             // Send the player their XP information
             player.networkHandler.sendPacket(new ExperienceBarUpdateS2CPacket(player.experienceProgress, player.totalExperience, player.experienceLevel));
+            
+            // Resend the backpack after changing worlds since it doesn't copy
+            InventoryUtils.resendBackpack(player);
         }
     }
     

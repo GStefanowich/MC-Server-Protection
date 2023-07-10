@@ -27,6 +27,7 @@ package net.theelm.sewingmachine.protection.events;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
@@ -83,17 +84,17 @@ public final class EntityAttack {
      * @param source The damage source, damage applied, attacker, etc
      * @return SUCCESS - Cancel and return true; PASS - Allow the interaction; FAIL - Cancel the interaction
      */
-    private static ActionResult attack(@NotNull final Entity target, @NotNull final World world, @NotNull final DamageSource source) {
+    private static Test attack(@NotNull final Entity target, @NotNull final World world, @NotNull final DamageSource source) {
         final Entity attacker = EntityAttack.getRootAttacker(source);
         
         // If self harm
         if (target == attacker)
-            return ActionResult.PASS;
+            return Test.SUCCESS;
         
         if (attacker instanceof PlayerEntity player) {
             // Always allow defending self from hostiles
             if ((target instanceof Monster) && (!(target instanceof AbstractPiglinEntity abstractPiglin) || abstractPiglin.getTarget() instanceof PlayerEntity))
-                return ActionResult.PASS;
+                return Test.SUCCESS;
             
             // Do special item frame interaction if NOT CROUCHING and HOLDING A TOOL
             if ((target instanceof ItemFrameEntity itemFrame) && (!(player.isSneaking() && player.getMainHandStack().isDamageable()))) {
@@ -112,7 +113,7 @@ public final class EntityAttack {
                     if (containerBlock instanceof ChestBlock || containerBlock instanceof BarrelBlock) {
                         // Check chunk permissions
                         if (!ClaimChunkUtils.canPlayerLootChestsInChunk(player, containerPos))
-                            return ActionResult.FAIL;
+                            return Test.FAIL;
                         
                         Inventory containerInventory = InventoryUtils.getInventoryOf(world, containerPos);
                         if (containerInventory != null) {
@@ -120,21 +121,21 @@ public final class EntityAttack {
                             int takeStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
                             
                             InventoryUtils.chestToPlayer((ServerPlayerEntity) player, containerPos, containerInventory, player.getInventory(), itemStack, takeStackSize);
-                            return ActionResult.FAIL;
+                            return Test.FAIL;
                         }
                     }
                 }
                 
                 // If player should be able to interact with the item frame
                 if (!ClaimChunkUtils.canPlayerBreakInChunk(player, itemFrame.getBlockPos()))
-                    return ActionResult.FAIL;
+                    return Test.FAIL;
                 
-                return ActionResult.PASS;
+                return Test.SUCCESS;
             }
             
             // If the player is in creative, allow
             if (player.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS))
-                return ActionResult.PASS;
+                return Test.SUCCESS;
             
             // Get chunk protection
             WorldChunk chunk = world.getWorldChunk(target.getBlockPos());
@@ -144,26 +145,26 @@ public final class EntityAttack {
                 if (chunk != null) {
                     // If PvP is disallowed, stop the swing
                     if (!((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.PLAYER_COMBAT))
-                        return ActionResult.FAIL;
+                        return Test.FAIL;
                 }
                 
-                return ActionResult.PASS;
+                return Test.SUCCESS;
             }
             
             // Check if the tamed entity is tamed
             if ((target instanceof TameableEntity tameableEntity) && (((TameableEntity) target).getOwnerUuid() != null)) {
                 // Deny if the entity belongs to the attacker (Can't hurt friendlies)
                 if (player.getUuid().equals(tameableEntity.getOwnerUuid()))
-                    return ActionResult.FAIL;
+                    return Test.FAIL;
                 
                 // If player can interact with tameable mobs
                 if ((chunk != null) && ((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.HURT_TAMED))
-                    return ActionResult.PASS;
+                    return Test.SUCCESS;
                 
             } else {
                 // If player can interact with docile mobs
                 if (ClaimChunkUtils.canPlayerInteractFriendlies(player, target.getBlockPos()))
-                    return ActionResult.PASS;
+                    return Test.SUCCESS;
             }
             
             if (target instanceof LivingEntity)
@@ -174,19 +175,19 @@ public final class EntityAttack {
             if (target instanceof ItemFrameEntity itemFrame) {
                 WorldChunk chunk = world.getWorldChunk(itemFrame.getBlockPos());
                 if ((chunk == null) || ((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.CREEPER_GRIEFING))
-                    return ActionResult.PASS;
+                    return Test.SUCCESS;
             } else {
-                return ActionResult.PASS;
+                return Test.SUCCESS;
             }
             
         } else {
             // Pass for all other entity attackers
-            return ActionResult.PASS;
+            return Test.CONTINUE;
             
         }
         
         // Fail as a callback
-        return ActionResult.FAIL;
+        return Test.FAIL;
     }
     
     private static Entity getRootAttacker(@Nullable DamageSource source) {

@@ -23,43 +23,45 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.utilities.mod;
+package net.theelm.sewingmachine.enums;
 
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.ActionResult;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Objects;
-import java.util.UUID;
 
 /**
- * Created on Jul 07 2023 at 9:41 PM.
+ * Created on Jul 10 2023 at 1:28 AM.
  * By greg in sewingmachine
  */
-public final class SewServer {
-    private SewServer() {}
+public enum Test {
+    /**
+     * The Test is a SUCCESS, no more Tests need to be run
+     */
+    SUCCESS(ActionResult.SUCCESS, true),
     
     /**
-     * Gets the MinecraftServer
-     *   If running as the server, will return the DedicatedMinecraftServer
-     *   If running as the client, will return the IntegratedMinecraftServer
-     * @return
+     * The current Test is inconclusive and has been CONTINUED to the next Test
      */
-    public static @NotNull MinecraftServer get() {
-        return Sew.getGameInstance()
-            .left()
-            // Don't method reference otherwise it'll import and check client classes
-            .orElseGet(() -> SewClient.getServer());
+    CONTINUE(ActionResult.PASS, false),
+    
+    /**
+     * The Test has FAILED, no more Tests need to be run
+     */
+    FAIL(ActionResult.FAIL, true);
+    
+    private final @NotNull ActionResult actionResult;
+    
+    private final boolean conclusive;
+    
+    Test(@NotNull ActionResult equivalent, boolean conclusive) {
+        this.actionResult = equivalent;
+        this.conclusive = conclusive;
     }
     
-    public static @NotNull MinecraftServer get(@NotNull PlayerEntity player) {
-        return Objects.requireNonNull(player.getServer());
+    public @NotNull ActionResult toResult() {
+        return this.actionResult;
     }
     
-    public static @Nullable ServerPlayerEntity getPlayer(@NotNull MinecraftServer server, @NotNull UUID uuid) {
-        return server.getPlayerManager().getPlayer(uuid);
+    public boolean isConclusive() {
+        return this.conclusive;
     }
-
 }

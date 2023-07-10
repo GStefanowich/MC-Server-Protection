@@ -135,7 +135,7 @@ public final class ProtectionClaimScreen extends SettingScreen {
     
     @Override
     public boolean isMouseOver(double mouseX, double mouseY) {
-        return this.widget != null && this.widget.isMouseOver(mouseX, mouseY);
+        return this.widget != null && this.widget.isMouseOverMap(mouseX, mouseY);
     }
     
     @Override

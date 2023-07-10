@@ -25,7 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Blocks;
 
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.minecraft.block.BeehiveBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.entity.BeehiveBlockEntity;
@@ -37,7 +37,6 @@ import net.minecraft.text.MutableText;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
-import net.minecraft.util.Util;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -58,7 +57,7 @@ public abstract class BeehiveBlockMixin {
                 int bees = beehiveBlock.getBeeCount();
                 
                 // Get the translation key for the count of bees
-                MutableText hiveInfo = TranslatableServerSide.text(player, "bee_hive." + bees);
+                MutableText hiveInfo = ServerText.text(player, "bee_hive." + bees);
                 
                 player.playSound(SoundEvents.BLOCK_BEEHIVE_WORK, SoundCategory.MASTER, ((float) bees / 3), 1.0F);
                 

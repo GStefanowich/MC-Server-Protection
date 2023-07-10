@@ -26,19 +26,18 @@
 package net.theelm.sewingmachine.utilities;
 
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.ServerCore;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.scoreboard.Scoreboard;
 import net.minecraft.scoreboard.Team;
 import net.minecraft.util.Formatting;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 
 public class TeamUtils {
     
     private static final Team pirates;
     
     private static Scoreboard getScoreboard() {
-        return SewServer.get()
+        return Sew.getServer()
             .getScoreboard();
     }
     

@@ -29,12 +29,15 @@ import com.google.common.collect.Maps;
 import net.minecraft.block.entity.SignText;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.filter.FilteredMessage;
+import net.minecraft.server.world.ServerWorld;
+import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
 import net.theelm.sewingmachine.utilities.ShopSigns;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.nbt.NbtGet;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.block.BlockState;
@@ -83,11 +86,11 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     
     @Shadow public abstract SignText getFrontText();
     @Shadow private boolean waxed;
-
+    
     @Shadow protected abstract boolean setFrontText(SignText frontText);
-
+    
     @Shadow protected abstract SignText parseLines(SignText signText);
-
+    
     @Shadow private SignText frontText;
     // Shop Owner (Necessary to be a shop sign)
     private @Nullable UUID shopSign_Owner = null;
@@ -108,6 +111,16 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     
     // Where to play sounds from
     private @Nullable BlockPos shopSign_soundSourcePlayFromPos = null;
+    
+    private boolean isInitialized = false;
+    
+    public void firstRenderSign() {
+        if (!this.isInitialized) {
+            // Re-Render the sign when loaded
+            this.renderSign();
+            this.isInitialized = true;
+        }
+    }
     
     /*
      * Mixin Getters
@@ -261,7 +274,7 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     public void onTryChangeText(PlayerEntity player, boolean front, List<FilteredMessage> messages, CallbackInfo ci) {
         if (front && player instanceof ServerPlayerEntity serverPlayer) {
             // Get the sign
-            ShopSignBuilder builder = ShopSignBuilder.create(this.world, this.getPos(), (SignBlockEntity)(BlockEntity)this);
+            ShopSignBuilder builder = ShopSignBuilder.create((ServerWorld) this.world, this.getPos(), (SignBlockEntity)(BlockEntity)this);
             
             for (int i = 0; i < messages.size(); i++) {
                 String line = messages.get(i)
@@ -303,7 +316,7 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     
     @Inject(at = @At("RETURN"), method = "writeNbt")
     public void onNbtWrite(@NotNull NbtCompound tag, CallbackInfo callback) {
-        if ( this.shopSign_Owner == null )
+        if ( this.shopSign_Owner == null || !Sew.isServer() )
             return;
         
         // Add shop owner
@@ -334,11 +347,6 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     
     @Inject(at = @At("RETURN"), method = "readNbt")
     public void onNbtRead(@NotNull NbtCompound tag, @NotNull CallbackInfo callback) {
-        // We only want to create shopsigns on the server,
-        //   return if client
-        if (this.world.isClient())
-            return;
-        
         Text type = this.getFrontText()
             .getMessage(0, false);
         
@@ -384,11 +392,12 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
                 
                 // Get the Item PRICE
                 NbtUtils.tryGet(tag, NbtGet.INT, "shop_price", this::setShopItemPrice);
-                
-                // Re-Render the sign when loaded
-                this.renderSign();
             });
         }
     }
     
+    @Inject(at = @At("RETURN"), method = "tick")
+    private static void onTick(World world, BlockPos pos, BlockState state, SignBlockEntity sign, CallbackInfo callback) {
+        ((SignBlockEntityMixin)(Object) sign).firstRenderSign();
+    }
 }

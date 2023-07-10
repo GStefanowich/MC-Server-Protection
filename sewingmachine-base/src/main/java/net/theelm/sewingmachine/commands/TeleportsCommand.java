@@ -49,7 +49,7 @@ import net.theelm.sewingmachine.utilities.ColorUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.WarpUtils;
 import net.theelm.sewingmachine.utilities.WarpUtils.Warp;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
@@ -81,13 +81,13 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public final class TeleportsCommand extends SewCommand {
-    public static final ExceptionTranslatableServerSide INVALID_HOME_CHARACTERS = TranslatableServerSide.exception("warp.notice.name.invalid");
-    public static final ExceptionTranslatableServerSide INVALID_HOME_LENGTH = TranslatableServerSide.exception("warp.notice.name.too_long");
-    public static final ExceptionTranslatableServerSide PLAYER_NOT_IN_SPAWN = TranslatableServerSide.exception("warp.notice.player.outside_spawn");
-    public static final ExceptionTranslatableServerSide TARGET_NOT_IN_SPAWN = TranslatableServerSide.exception("warp.notice.target.outside_spawn");
-    public static final ExceptionTranslatableServerSide TARGET_NOT_REQUESTING = TranslatableServerSide.exception("warp.notice.no_request");
-    public static final ExceptionTranslatableServerSide TARGET_NO_WARP = TranslatableServerSide.exception("warp.notice.no_warp");
-    public static final ExceptionTranslatableServerSide TARGET_NOT_ONLINE = TranslatableServerSide.exception("warp.notice.offline");
+    public static final ExceptionTranslatableServerSide INVALID_HOME_CHARACTERS = ServerText.exception("warp.notice.name.invalid");
+    public static final ExceptionTranslatableServerSide INVALID_HOME_LENGTH = ServerText.exception("warp.notice.name.too_long");
+    public static final ExceptionTranslatableServerSide PLAYER_NOT_IN_SPAWN = ServerText.exception("warp.notice.player.outside_spawn");
+    public static final ExceptionTranslatableServerSide TARGET_NOT_IN_SPAWN = ServerText.exception("warp.notice.target.outside_spawn");
+    public static final ExceptionTranslatableServerSide TARGET_NOT_REQUESTING = ServerText.exception("warp.notice.no_request");
+    public static final ExceptionTranslatableServerSide TARGET_NO_WARP = ServerText.exception("warp.notice.no_warp");
+    public static final ExceptionTranslatableServerSide TARGET_NOT_ONLINE = ServerText.exception("warp.notice.offline");
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
@@ -333,7 +333,7 @@ public final class TeleportsCommand extends SewCommand {
                     TitleUtils.showPlayerAlert(
                         targetPlayer,
                         Formatting.YELLOW,
-                        TranslatableServerSide.text(targetPlayer, "warp.notice.player", porter.getDisplayName())
+                        ServerText.text(targetPlayer, "warp.notice.player", porter.getDisplayName())
                     );
                     targetPlayer.playSound(SoundEvents.UI_TOAST_IN, SoundCategory.MASTER, 1.0f, 1.0f);
                 }

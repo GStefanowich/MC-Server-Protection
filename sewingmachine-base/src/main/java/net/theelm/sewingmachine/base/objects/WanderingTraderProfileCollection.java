@@ -26,32 +26,31 @@
 package net.theelm.sewingmachine.base.objects;
 
 import com.mojang.authlib.GameProfile;
+import io.netty.buffer.Unpooled;
+import net.minecraft.network.PacketByteBuf;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.WanderingTraderEntity;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket.Action;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
-import net.minecraft.world.GameMode;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.UUID;
 
 /**
  * Created on Dec 02 2021 at 10:20 PM.
  * By greg in SewingMachineMod
  */
-public class WanderingTraderProfileCollection implements Collection<ServerPlayerEntity> {
-    private final @NotNull EmptyWanderingTraderIterator iterator = new EmptyWanderingTraderIterator();
-    private final @NotNull PlayerListS2CPacket.Entry entry;
+public final class WanderingTraderProfileCollection {
     private final @NotNull GameProfile profile;
     private final @NotNull Text name;
+    private final boolean show;
     
     public WanderingTraderProfileCollection() {
         this(null);
@@ -65,62 +64,52 @@ public class WanderingTraderProfileCollection implements Collection<ServerPlayer
             .append(Text.translatable(EntityType.WANDERING_TRADER.getTranslationKey()).formatted(Formatting.BLUE))
             .append(" - ")
             .append(text);
-        
-        this.entry = new PlayerListS2CPacket.Entry(this.profile.getId(), this.profile, show, 0, GameMode.DEFAULT, this.name, null);
+        this.show = show;
     }
     
-    public @NotNull PlayerListS2CPacket getPacket(PlayerListS2CPacket.Action action) {
-        EnumSet<PlayerListS2CPacket.Action> set = EnumSet.of(action);
-        PlayerListS2CPacket packet = new PlayerListS2CPacket(set, this);
-        packet.getEntries()
-            .add(this.entry);
-        return packet;
+    public @NotNull PlayerListS2CPacket getPacket() {
+        return this.getPacket(new Action[0]);
     }
-    
-    @Override
-    public int size() { return 1; }
-    
-    @Override
-    public boolean isEmpty() { return false; }
-    
-    @Override
-    public boolean contains(Object o) { return false; }
-    
-    @Override
-    public @NotNull Iterator<ServerPlayerEntity> iterator() { return this.iterator; }
-    
-    @Override
-    public @NotNull Object[] toArray() { return new Object[0]; }
-    
-    @Override
-    public @NotNull <T> T[] toArray(@NotNull T[] ts) { return (T[])this.toArray(); }
-    
-    @Override
-    public boolean add(ServerPlayerEntity serverPlayerEntity) { return false; }
-    
-    @Override
-    public boolean remove(Object o) { return false; }
-    
-    @Override
-    public boolean containsAll(@NotNull Collection<?> collection) { return false; }
-    
-    @Override
-    public boolean addAll(@NotNull Collection<? extends ServerPlayerEntity> collection) { return false; }
-    
-    @Override
-    public boolean removeAll(@NotNull Collection<?> collection) { return false; }
-    
-    @Override
-    public boolean retainAll(@NotNull Collection<?> collection) { return false; }
-    
-    @Override
-    public void clear() {}
-    
-    private static class EmptyWanderingTraderIterator implements Iterator<ServerPlayerEntity> {
-        @Override
-        public boolean hasNext() { return false; }
+    public @NotNull PlayerListS2CPacket getPacket(Action... actions) {
+        EnumSet<Action> set;
+        if (!this.show)
+            set = EnumSet.of(Action.UPDATE_LISTED);
+        else if (actions.length == 0)
+            set = EnumSet.of(Action.ADD_PLAYER, Action.UPDATE_DISPLAY_NAME, Action.UPDATE_LISTED);
+        else {
+            set = EnumSet.noneOf(Action.class);
+            for (Action action : actions)
+                set.add(action);
+        }
+        return this.getPacket(set);
+    }
+    public @NotNull PlayerListS2CPacket getPacket(@NotNull EnumSet<Action> actions) {
+        PacketByteBuf mimic = new PacketByteBuf(Unpooled.buffer());
+        mimic.writeEnumSet(actions, Action.class);
         
-        @Override
-        public ServerPlayerEntity next() { return null; }
+        mimic.writeCollection(Collections.singleton(this.profile), (buf, profile) -> {
+            buf.writeUuid(profile.getId());
+            for (Action action : actions) {
+                switch (action) {
+                    case ADD_PLAYER: {
+                        buf.writeString(profile.getName(), 16);
+                        buf.writePropertyMap(profile.getProperties());
+                        break;
+                    }
+                    case UPDATE_LISTED: {
+                        buf.writeBoolean(this.show);
+                        break;
+                    }
+                    case UPDATE_DISPLAY_NAME: {
+                        buf.writeNullable(this.name, PacketByteBuf::writeText);
+                        break;
+                    }
+                    default:
+                        throw new UnsupportedOperationException("No handler for mimicking Action packet type " + action);
+                }
+            }
+        });
+        
+        return new PlayerListS2CPacket(mimic);
     }
 }

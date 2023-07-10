@@ -119,7 +119,7 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
             MinecraftServer server = this.getServer();
             if (server != null) {
                 server.getPlayerManager()
-                    .sendToAll(new WanderingTraderProfileCollection(this).getPacket(PlayerListS2CPacket.Action.UPDATE_DISPLAY_NAME));
+                    .sendToAll(new WanderingTraderProfileCollection(this).getPacket());
             }
         }
     }
@@ -144,7 +144,7 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
             MinecraftServer server = this.getServer();
             if (server != null) {
                 server.getPlayerManager()
-                    .sendToAll(new WanderingTraderProfileCollection().getPacket(PlayerListS2CPacket.Action.UPDATE_LISTED));
+                    .sendToAll(new WanderingTraderProfileCollection().getPacket());
             }
         }
         super.remove(removalReason);

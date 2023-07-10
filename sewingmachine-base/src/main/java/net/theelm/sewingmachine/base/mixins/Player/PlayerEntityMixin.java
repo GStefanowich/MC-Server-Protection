@@ -27,6 +27,7 @@ package net.theelm.sewingmachine.base.mixins.Player;
 
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;
 import net.theelm.sewingmachine.events.BlockPlaceCallback;
 import net.theelm.sewingmachine.interfaces.MoneyHolder;
@@ -246,8 +247,8 @@ public abstract class PlayerEntityMixin extends LivingEntity implements MoneyHol
      */
     @Inject(at = @At("HEAD"), method = "canPlaceOn", cancellable = true)
     public void checkPlacement(BlockPos blockPos, Direction direction, ItemStack itemStack, CallbackInfoReturnable<Boolean> callback) {
-        ActionResult result = BlockPlaceCallback.EVENT.invoker().interact((ServerPlayerEntity)(LivingEntity)this, this.getWorld(), blockPos, direction, itemStack);
-        if (result != ActionResult.PASS)
-            callback.setReturnValue(result == ActionResult.SUCCESS);
+        Test result = BlockPlaceCallback.EVENT.invoker().interact((ServerPlayerEntity)(LivingEntity)this, this.getWorld(), blockPos, direction, itemStack);
+        if (result == Test.FAIL)
+            callback.setReturnValue(Boolean.FALSE);
     }
 }

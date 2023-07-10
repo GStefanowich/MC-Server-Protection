@@ -37,7 +37,7 @@ import net.theelm.sewingmachine.utilities.BossLootRewards;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.block.Blocks;
 import net.minecraft.block.entity.BlockEntity;
@@ -246,7 +246,7 @@ public abstract class EnderDragonFightMixin {
             .formatted(Formatting.YELLOW, Formatting.ITALIC), EntityUtils::isNotFightingDragon);
         
         this.seenPlayers.stream()
-            .map(uuid -> SewServer.getPlayer(this.world.getServer(), uuid))
+            .map(uuid -> Sew.getPlayer(this.world.getServer(), uuid))
             .filter(Objects::nonNull)
             .filter((player) -> {
                 // Increase the dragon kill statistic

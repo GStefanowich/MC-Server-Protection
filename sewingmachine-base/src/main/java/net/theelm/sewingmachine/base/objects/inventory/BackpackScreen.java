@@ -38,7 +38,7 @@ import net.theelm.sewingmachine.interfaces.TabRegistry;
 import net.theelm.sewingmachine.objects.TabContext;
 
 @Environment(EnvType.CLIENT)
-public class BackpackScreen extends AbstractInventoryScreen<GenericContainerScreenHandler> {
+public final class BackpackScreen extends AbstractInventoryScreen<GenericContainerScreenHandler> {
     private static final Identifier TEXTURE = new Identifier("textures/gui/container/generic_54.png");
     
     private TabContext tabContext;

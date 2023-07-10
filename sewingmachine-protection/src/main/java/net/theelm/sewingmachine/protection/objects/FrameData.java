@@ -89,30 +89,4 @@ public final class FrameData {
     public void plot(@NotNull DrawContext context, int x, int y) {
         context.drawTexture(MapWidget.IDENTIFIER, x, y, 0.0f, 0.0f, this.width, this.height, this.width, this.height);
     }
-    public void fillDot(@NotNull DrawContext context, int x1, int y1, int x2, int y2, int color) {
-        x1 *= this.scale();
-        x1 += this.x + this.padding();
-        y1 *= this.scale();
-        y1 += this.y + this.padding();
-        x2 *= this.scale();
-        x2 += this.x + this.padding();
-        y2 *= this.scale();
-        y2 += this.y + this.padding();
-        
-        // Fill in
-        context.fill(RenderLayer.getGuiOverlay(),
-            x1,
-            y1,
-            MathHelper.clamp(x2, this.x, this.x + this.width() - this.padding()),
-            MathHelper.clamp(y2, this.y, this.y + this.height() - this.padding()),
-            color
-        );
-    }
-    
-    private boolean isOutline(int x, int y) {
-        int modX = x % MapChunk.WIDTH;
-        int modY = y % MapChunk.WIDTH;
-        return modX == 0 || modX == 15
-            || modY == 0 || modY == 15;
-    }
 }

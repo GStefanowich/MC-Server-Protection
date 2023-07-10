@@ -29,21 +29,20 @@ import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.utilities.BlockUtils;
-import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import org.jetbrains.annotations.NotNull;
 
 public interface BlockInteractionCallback {
     Event<BlockInteractionCallback> EVENT = EventFactory.createArrayBacked( BlockInteractionCallback.class, (listeners) -> (player, world, hand, itemStack, blockHitResult) -> {
         for (BlockInteractionCallback event : listeners) {
-            ActionResult result = event.interact(player, world, hand, itemStack, blockHitResult);
-            if (result != ActionResult.PASS) {
-                if (result == ActionResult.FAIL) {
+            Test result = event.interact(player, world, hand, itemStack, blockHitResult);
+            if (result.isConclusive()) {
+                if (result == Test.FAIL) {
                     // If the result is a failure resend the player inventory to fix any lost counts
                     InventoryUtils.resendInventory(player);
                     
@@ -56,8 +55,8 @@ public interface BlockInteractionCallback {
             }
         }
         
-        return ActionResult.PASS;
+        return Test.CONTINUE;
     });
     
-    ActionResult interact(@NotNull ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack, BlockHitResult blockHitResult);
+    Test interact(@NotNull ServerPlayerEntity player, World world, Hand hand, ItemStack itemStack, BlockHitResult blockHitResult);
 }

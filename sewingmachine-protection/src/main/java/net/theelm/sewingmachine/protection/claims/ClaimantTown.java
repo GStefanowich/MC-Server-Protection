@@ -35,7 +35,7 @@ import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.utilities.ClaimNbtUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.TownNameUtils;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.entity.passive.VillagerEntity;
 import net.minecraft.nbt.NbtCompound;
@@ -168,7 +168,7 @@ public final class ClaimantTown extends Claimant {
     @Override
     public void send(@NotNull MinecraftServer server, @NotNull final Text text) {
         this.getFriends().forEach((uuid) -> {
-            ServerPlayerEntity player = SewServer.getPlayer(server, uuid);
+            ServerPlayerEntity player = Sew.getPlayer(server, uuid);
             if (player != null)
                 player.sendMessage(text);
         });

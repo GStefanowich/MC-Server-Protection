@@ -26,7 +26,6 @@
 package net.theelm.sewingmachine.events;
 
 import com.mojang.authlib.GameProfile;
-import com.mojang.datafixers.util.Either;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.client.MinecraftClient;
@@ -95,13 +94,11 @@ public interface PlayerNameCallback {
     }
     
     static @NotNull Text getName(@NotNull UUID uuid) {
-        Either<MinecraftServer, MinecraftClient> either = Sew.getGameInstancePreferServer();
-        
-        Optional<MinecraftServer> left = either.left();
+        Optional<MinecraftServer> left = Sew.tryGetServer();
         if (left.isPresent())
             return PlayerNameCallback.getName(left.get(), uuid);
         
-        Optional<MinecraftClient> right = either.right();
+        Optional<MinecraftClient> right = Sew.tryGetClient();
         if (right.isPresent()) {
             Text name = ((NameCache) right.get()).getPlayerName(uuid);
             if (name != null)

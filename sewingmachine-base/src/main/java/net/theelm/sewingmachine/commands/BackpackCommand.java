@@ -39,7 +39,7 @@ import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.base.objects.PlayerBackpack;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.minecraft.command.argument.ItemStackArgumentType;
 import net.minecraft.item.Item;
 import net.minecraft.server.command.CommandManager;
@@ -52,7 +52,7 @@ import java.util.OptionalInt;
 
 public final class BackpackCommand extends SewCommand {
     
-    private static final ExceptionTranslatableServerSide PLAYERS_NO_BACKPACK = TranslatableServerSide.exception("player.no_backpack");
+    private static final ExceptionTranslatableServerSide PLAYERS_NO_BACKPACK = ServerText.exception("player.no_backpack");
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {

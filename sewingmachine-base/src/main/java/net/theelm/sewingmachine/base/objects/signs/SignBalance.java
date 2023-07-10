@@ -38,7 +38,7 @@ import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import org.jetbrains.annotations.NotNull;
 
 /*
@@ -68,7 +68,7 @@ public final class SignBalance extends ShopSign {
             return Either.right(Boolean.TRUE);
         
         long playerHas = MoneyUtils.getPlayerMoney( player );
-        player.sendMessage(TranslatableServerSide.text( player, "player.money",
+        player.sendMessage(ServerText.text( player, "player.money",
             playerHas
         ));
         

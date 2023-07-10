@@ -36,7 +36,7 @@ import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.utilities.CommandUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.EquipmentSlot;
@@ -53,8 +53,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 
 public final class HoldingCommand extends SewCommand {
-    private static final ExceptionTranslatableServerSide PLAYER_EMPTY_HAND = TranslatableServerSide.exception("player.equipment.empty_hand");
-    private static final ExceptionTranslatableServerSide PLAYER_EMPTY_SLOT = TranslatableServerSide.exception("player.equipment.empty_slot");
+    private static final ExceptionTranslatableServerSide PLAYER_EMPTY_HAND = ServerText.exception("player.equipment.empty_hand");
+    private static final ExceptionTranslatableServerSide PLAYER_EMPTY_SLOT = ServerText.exception("player.equipment.empty_slot");
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {

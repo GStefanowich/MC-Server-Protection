@@ -26,10 +26,8 @@
 package net.theelm.sewingmachine.protection.objects.ticking;
 
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.exceptions.TranslationKeyException;
@@ -48,7 +46,7 @@ import net.theelm.sewingmachine.utilities.ChunkUtils;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.ModUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.ServerCommandSource;
@@ -143,7 +141,7 @@ public class ChunkOwnerUpdate implements TickingAction {
                 throw this.mode.getException(this.source);
         } catch (TranslationKeyException e) {
             if (!this.silent)
-                TranslatableServerSide.send(this.source, !this.verify, e.getKey());
+                ServerText.send(this.source, !this.verify, e.getKey());
             return true;
         } catch (CommandSyntaxException e) {
             if (!this.silent) {
@@ -185,7 +183,7 @@ public class ChunkOwnerUpdate implements TickingAction {
         // Log the chunks that were changed
         CoreMod.logInfo(this.claimant.getName().getString() + " has " + this.mode.name().toLowerCase(Locale.ROOT) + "ed " + changed + " chunk(s): (" + log + ")");
         if (changed > 0 && !this.silent)
-            TranslatableServerSide.send(this.source, !this.verify, this.mode.getSuccessTranslation(), changed);
+            ServerText.send(this.source, !this.verify, this.mode.getSuccessTranslation(), changed);
     }
     
     public static @NotNull ChunkOwnerUpdate forPlayer(@NotNull ServerClaimCache claimCache, @NotNull ServerCommandSource source, @NotNull UUID uuid, @NotNull Mode mode, @NotNull Collection<? extends BlockPos> positions) {

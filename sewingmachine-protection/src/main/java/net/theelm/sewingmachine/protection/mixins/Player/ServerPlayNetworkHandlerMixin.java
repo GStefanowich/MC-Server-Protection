@@ -52,7 +52,7 @@ import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.TitleUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
@@ -123,7 +123,7 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement, P
             MutableText popupText = ClaimChunkUtils.getPlayerWorldWilderness(player)
                 .append(
                     Text.literal(" [").formatted(Formatting.RED)
-                        .append(TranslatableServerSide.text(player, "claim.chunk.pvp"))
+                        .append(ServerText.text(player, "claim.chunk.pvp"))
                         .append("]")
                 );
             
@@ -186,7 +186,7 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement, P
                     if (claimedChunk.isSetting(playerPos, ClaimSettings.PLAYER_COMBAT)) {
                         popupText.append(
                             Text.literal(" [").formatted(Formatting.RED)
-                                .append(TranslatableServerSide.text(player, "claim.chunk.pvp"))
+                                .append(ServerText.text(player, "claim.chunk.pvp"))
                                 .append("]")
                         );
                     }

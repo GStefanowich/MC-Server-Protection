@@ -37,7 +37,7 @@ import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.protections.BlockRange;
 import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.argument.BlockPosArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -52,7 +52,7 @@ import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
 public final class RulerCommand extends SewCommand {
-    private static final ExceptionTranslatableServerSide BLOCK_NOT_HIT = TranslatableServerSide.exception("ruler.no_block");
+    private static final ExceptionTranslatableServerSide BLOCK_NOT_HIT = ServerText.exception("ruler.no_block");
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {

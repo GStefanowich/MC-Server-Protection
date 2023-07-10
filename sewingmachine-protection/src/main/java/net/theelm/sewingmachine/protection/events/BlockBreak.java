@@ -29,6 +29,7 @@ import net.fabricmc.fabric.api.event.Event;
 import net.minecraft.entity.mob.EndermanEntity;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
@@ -84,13 +85,13 @@ public final class BlockBreak {
         event.register(BlockBreak::canExplosiveBlockBreak);
     }
     
-    public static ActionResult canPlayerBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
+    public static Test canPlayerBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         if (!(entity instanceof ServerPlayerEntity player))
-            return ActionResult.PASS;
+            return Test.CONTINUE;
         
         // If player is in creative
         if ((player.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS)) || (action == Action.ABORT_DESTROY_BLOCK))
-            return ActionResult.PASS;
+            return Test.SUCCESS;
         
         BlockState blockState = world.getBlockState(blockPos);
         Block block = world.getBlockState(blockPos).getBlock();
@@ -103,7 +104,7 @@ public final class BlockBreak {
                 for (int i = 0; i < 4; i++) {
                     BlockState stem = world.getBlockState(blockPos.offset(dir));
                     if (stem.getBlock() instanceof AttachedStemBlock && stem.get(AttachedStemBlock.FACING) == dir.getOpposite())
-                        return ActionResult.PASS;
+                        return Test.SUCCESS;
                     
                     dir = dir.rotateYClockwise();
                 }
@@ -117,8 +118,8 @@ public final class BlockBreak {
             Block ground = groundState.getBlock();
             
             if ((ground instanceof SugarCaneBlock) && ClaimChunkUtils.canPlayerHarvestCrop(player, blockPos))
-                return ActionResult.PASS;
-
+                return Test.SUCCESS;
+            
         } else if (CropUtils.isCrop(block)) {
             /*
              * If block is a CROP, and the player is allowed to FARM
@@ -166,67 +167,67 @@ public final class BlockBreak {
                         world.setBlockState(blockPos, cropFresh);
                         
                         // Fail the break
-                        return ActionResult.FAIL;
+                        return Test.FAIL;
                     }
                 }
                 
-                return ActionResult.PASS;
+                return Test.SUCCESS;
             }
         }
         
         // If player has permission to break blocks
-        return (ClaimChunkUtils.canPlayerBreakInChunk(player, blockPos) ? ActionResult.PASS : ActionResult.FAIL);
+        return (ClaimChunkUtils.canPlayerBreakInChunk(player, blockPos) ? Test.SUCCESS : Test.FAIL);
     }
-    public static ActionResult canEndermenBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
+    public static Test canEndermenBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         if (entity instanceof EndermanEntity) {
             /*
              * Prevent an enderman from breaking claimed blocks
              */
             if (!ClaimChunkUtils.isSetting(ClaimSettings.ENDERMAN_GRIEFING, world, blockPos))
-                return ActionResult.FAIL;
+                return Test.FAIL;
         }
         
-        return ActionResult.PASS;
+        return Test.CONTINUE;
     }
-    public static ActionResult canEnderdragonBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
+    public static Test canEnderdragonBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         if (entity instanceof EnderDragonEntity) {
             /*
              * Prevent the dragon from breaking items within SPAWN
              */
             IClaimedChunk chunk = ((IClaimedChunk)world.getChunk(blockPos));
             if (Objects.equals(chunk.getOwnerId(blockPos), CoreMod.SPAWN_ID) && !chunk.canPlayerDo(blockPos, null, ClaimPermissions.BLOCKS))
-                return ActionResult.FAIL;
+                return Test.FAIL;
         }
         
-        return ActionResult.PASS;
+        return Test.CONTINUE;
     }
-    public static ActionResult canGhastsBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
+    public static Test canGhastsBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         if (entity instanceof GhastEntity) {
             /*
              * Prevent a ghast from breaking claimed blocks
              */
             if (!ClaimChunkUtils.isSetting(ClaimSettings.GHAST_GRIEFING, world, blockPos))
-                return ActionResult.FAIL;
+                return Test.FAIL;
         }
         
-        return ActionResult.PASS;
+        return Test.CONTINUE;
     }
-    public static ActionResult canCreepersBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
+    public static Test canCreepersBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         if (entity instanceof CreeperEntity) {
             /*
              * Prevent a creeper from breaking claimed blocks
              */
             if (!ClaimChunkUtils.isSetting(ClaimSettings.CREEPER_GRIEFING, world, blockPos))
-                return ActionResult.FAIL;
+                return Test.FAIL;
         }
         
-        return ActionResult.PASS;
+        return Test.CONTINUE;
     }
-    public static ActionResult canExplosiveBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
+    public static Test canExplosiveBlockBreak(@Nullable final Entity entity, @NotNull final ServerWorld world, @NotNull final Hand hand, @NotNull final BlockPos blockPos, @Nullable final Direction blockFace, @Nullable final Action action) {
         if (entity instanceof TntEntity) {
             OwnableEntity tnt = (OwnableEntity) entity;
             if (!ClaimChunkUtils.canPlayerBreakInChunk(tnt.getEntityOwner(), world, blockPos))
-                return ActionResult.FAIL;
+                return Test.FAIL;
         }
         else if (entity instanceof ConstructableEntity constructableEntity) {
             /*
@@ -235,7 +236,7 @@ public final class BlockBreak {
             UUID entitySource = constructableEntity.getEntityOwner();
             Optional<UUID> chunkOwner = ClaimChunkUtils.getPosOwner(world, blockPos);
             if (chunkOwner.isPresent() && !ClaimChunkUtils.canPlayerBreakInChunk(entitySource, world, blockPos))
-                return ActionResult.FAIL;
+                return Test.FAIL;
         }
         else if (entity instanceof ExplosiveProjectileEntity explosiveProjectile) {
             Entity owner = explosiveProjectile.getOwner();
@@ -252,6 +253,6 @@ public final class BlockBreak {
             }
         }
         
-        return ActionResult.PASS;
+        return Test.CONTINUE;
     }
 }

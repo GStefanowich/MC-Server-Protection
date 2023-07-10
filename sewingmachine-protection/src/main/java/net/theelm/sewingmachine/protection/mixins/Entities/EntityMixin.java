@@ -29,6 +29,7 @@ import net.minecraft.entity.LightningEntity;
 import net.minecraft.entity.damage.DamageSources;
 import net.minecraft.entity.damage.DamageTypes;
 import net.minecraft.server.world.ServerWorld;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
@@ -50,10 +51,10 @@ public abstract class EntityMixin implements EntityLike {
     
     @Inject(at = @At("HEAD"), method = "isInvulnerableTo", cancellable = true)
     public void onDamage(@NotNull DamageSource source, CallbackInfoReturnable<Boolean> callback) {
-        ActionResult result = DamageEntityCallback.EVENT.invoker()
+        Test result = DamageEntityCallback.EVENT.invoker()
             .interact((Entity)(EntityLike) this, this.world, source);
-        if (result != ActionResult.PASS)
-            callback.setReturnValue(result != ActionResult.SUCCESS);
+        if (result == Test.FAIL)
+            callback.setReturnValue(true);
     }
     
     /**
@@ -64,9 +65,9 @@ public abstract class EntityMixin implements EntityLike {
      */
     @Inject(at = @At("HEAD"), method = "onStruckByLightning", cancellable = true)
     public void onLightningHit(ServerWorld world, LightningEntity lightning, CallbackInfo callback) {
-        ActionResult result = DamageEntityCallback.EVENT.invoker()
+        Test result = DamageEntityCallback.EVENT.invoker()
             .interact((Entity)(Object) this, world, this.getDamageSources().create(DamageTypes.LIGHTNING_BOLT, lightning, lightning.getChanneler()));
-        if (result != ActionResult.PASS && result != ActionResult.SUCCESS)
+        if (result == Test.FAIL)
             callback.cancel();
     }
 }

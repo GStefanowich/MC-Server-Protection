@@ -44,7 +44,7 @@ import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
 import net.theelm.sewingmachine.utilities.ShopSignBuilder;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import org.jetbrains.annotations.NotNull;
 
 /*
@@ -93,7 +93,7 @@ public final class SignShopFree extends ShopSign.BuyTradeSell {
             
             // These should NOT be null
             if ((sign.getShopItem() == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemDisplay() == null))
-                return Either.left(TranslatableServerSide.text(player, "shop.error.database"));
+                return Either.left(ServerText.text(player, "shop.error.database"));
             
             /*
              * Check if chest is valid

@@ -38,7 +38,7 @@ import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.interfaces.SpawnerMob;
 import net.theelm.sewingmachine.base.mixins.Server.ServerWorldAccessor;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -285,15 +285,17 @@ public final class EntityUtils {
      */
     public static @Nullable ServerPlayerEntity getPlayer(@NotNull String username) {
         // If the player is online
-        return SewServer.get()
-            .getPlayerManager()
-            .getPlayer(username);
+        return Sew.tryGetServer()
+            .map(MinecraftServer::getPlayerManager)
+            .map(manager -> manager.getPlayer(username))
+            .orElse(null);
     }
     public static @Nullable ServerPlayerEntity getPlayer(@NotNull UUID playerId) {
         // If the player is online
-        return SewServer.get()
-            .getPlayerManager()
-            .getPlayer(playerId);
+        return Sew.tryGetServer()
+            .map(MinecraftServer::getPlayerManager)
+            .map(manager -> manager.getPlayer(playerId))
+            .orElse(null);
     }
     
     public static @NotNull PlayerAbilities modifiedAbilities(@NotNull PlayerEntity player, @NotNull Consumer<PlayerAbilities> consumer) {
@@ -448,7 +450,7 @@ public final class EntityUtils {
         EntityUtils.kickAllPlayers(null);
     }
     public static void kickAllPlayers(@Nullable Text reason) {
-        MinecraftServer server = SewServer.get();
+        MinecraftServer server = Sew.getServer();
         PlayerManager manager = server.getPlayerManager();
         if (reason == null)
             manager.disconnectAllPlayers();

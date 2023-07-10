@@ -55,7 +55,7 @@ import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.utilities.ChunkUtils;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -345,10 +345,10 @@ public final class ClaimChunkUtils {
     
     public static MutableText getPlayerWorldWilderness(@NotNull final PlayerEntity player) {
         if (World.END.equals(player.getEntityWorld().getRegistryKey()))
-            return TranslatableServerSide.text(player, "claim.wilderness.end").formatted(Formatting.BLACK);
+            return ServerText.text(player, "claim.wilderness.end").formatted(Formatting.BLACK);
         if (World.NETHER.equals(player.getEntityWorld().getRegistryKey()))
-            return TranslatableServerSide.text(player, "claim.wilderness.nether").formatted(Formatting.LIGHT_PURPLE);
-        return TranslatableServerSide.text(player, "claim.wilderness.general").formatted(Formatting.GREEN);
+            return ServerText.text(player, "claim.wilderness.nether").formatted(Formatting.LIGHT_PURPLE);
+        return ServerText.text(player, "claim.wilderness.general").formatted(Formatting.GREEN);
     }
     
     public static Optional<UUID> getPosOwner(World world, BlockPos pos) {

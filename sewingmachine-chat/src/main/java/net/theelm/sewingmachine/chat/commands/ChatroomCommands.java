@@ -49,7 +49,7 @@ import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.utilities.CommandUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import org.jetbrains.annotations.NotNull;
 
 public final class ChatroomCommands extends SewCommand {
@@ -122,7 +122,7 @@ public final class ChatroomCommands extends SewCommand {
         ServerPlayerEntity player = context.getSource().getPlayer();
 
         if ((room != ChatRooms.TOWN) && ((PlayerChat)player).isMuted()) {
-            player.sendMessage(TranslatableServerSide.text(
+            player.sendMessage(ServerText.text(
                 player,
                 "chat.muted",
                 room
@@ -149,7 +149,7 @@ public final class ChatroomCommands extends SewCommand {
         ((PlayerChat) player).setChatRoom(chatRoom);
         
         // Tell the player
-        player.sendMessage(TranslatableServerSide.text(player, "chat.change." + chatRoom.name().toLowerCase()));
+        player.sendMessage(ServerText.text(player, "chat.change." + chatRoom.name().toLowerCase()));
 
         return Command.SINGLE_SUCCESS;
     }
@@ -164,7 +164,7 @@ public final class ChatroomCommands extends SewCommand {
         ServerPlayerEntity target = EntityArgumentType.getPlayer( context, "player" );
         
         source.sendFeedback(
-            () -> TranslatableServerSide.text(
+            () -> ServerText.text(
                 source,
                 (self.toggleMute( target.getGameProfile() ) ? "chat.mute.player" : "chat.unmute.player"),
                 target.getDisplayName()
@@ -183,7 +183,7 @@ public final class ChatroomCommands extends SewCommand {
             throw MUTE_EXEMPT.create();
         else {
             source.sendFeedback(
-                () -> TranslatableServerSide.text(
+                () -> ServerText.text(
                     source,
                     (chatter.toggleMute() ? "chat.mute.global" : "chat.unmute.global"),
                     target.getDisplayName()

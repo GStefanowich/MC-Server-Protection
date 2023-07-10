@@ -31,17 +31,18 @@ import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.util.ActionResult;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.enums.Test;
 
 public interface DamageEntityCallback {
     Event<DamageEntityCallback> EVENT = EventFactory.createArrayBacked(DamageEntityCallback.class, (listeners) -> (target, world, source) -> {
         for (DamageEntityCallback event : listeners) {
-            ActionResult result = event.interact(target, world, source);
-            if (result != ActionResult.PASS)
+            Test result = event.interact(target, world, source);
+            if (result.isConclusive())
                 return result;
         }
         
-        return ActionResult.PASS;
+        return Test.CONTINUE;
     });
     
-    ActionResult interact(Entity target, World world, DamageSource source);
+    Test interact(Entity target, World world, DamageSource source);
 }

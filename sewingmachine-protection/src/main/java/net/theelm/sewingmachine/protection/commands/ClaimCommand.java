@@ -77,9 +77,9 @@ import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.EffectUtils;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import net.theelm.sewingmachine.utilities.MoneyUtils;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.theelm.sewingmachine.utilities.WarpUtils;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import net.minecraft.command.CommandSource;
@@ -128,19 +128,19 @@ import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 public final class ClaimCommand extends SewCommand {
-    private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = TranslatableServerSide.exception("town.found.poor", 1);
-    private static final ExceptionTranslatableServerSide SELF_RANK_CHANGE = TranslatableServerSide.exception("friends.rank.self");
-    public static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED_BY_PLAYER = TranslatableServerSide.exception("claim.chunk.error.not_players");
-    public static final ExceptionTranslatableServerSide CHUNK_ALREADY_OWNED = TranslatableServerSide.exception("claim.chunk.error.claimed");
-    public static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED = TranslatableServerSide.exception("claim.chunk.error.not_claimed");
-    private static final ExceptionTranslatableServerSide CHUNK_RADIUS_OWNED = TranslatableServerSide.exception("claim.chunk.error.radius_owned", 1 );
+    private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = ServerText.exception("town.found.poor", 1);
+    private static final ExceptionTranslatableServerSide SELF_RANK_CHANGE = ServerText.exception("friends.rank.self");
+    public static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED_BY_PLAYER = ServerText.exception("claim.chunk.error.not_players");
+    public static final ExceptionTranslatableServerSide CHUNK_ALREADY_OWNED = ServerText.exception("claim.chunk.error.claimed");
+    public static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED = ServerText.exception("claim.chunk.error.not_claimed");
+    private static final ExceptionTranslatableServerSide CHUNK_RADIUS_OWNED = ServerText.exception("claim.chunk.error.radius_owned", 1 );
     private static final SimpleCommandExceptionType WHITELIST_FAILED_EXCEPTION = new SimpleCommandExceptionType(Text.translatable("commands.whitelist.add.failed"));
-    private static final ExceptionTranslatableServerSide TOWN_INVITE_RANK = TranslatableServerSide.exception("town.invite.rank");
-    private static final ExceptionTranslatableServerSide TOWN_INVITE_FAIL = TranslatableServerSide.exception("town.invite.fail");
-    private static final ExceptionTranslatableServerSide TOWN_INVITE_MISSING = TranslatableServerSide.exception("town.invite.missing");
+    private static final ExceptionTranslatableServerSide TOWN_INVITE_RANK = ServerText.exception("town.invite.rank");
+    private static final ExceptionTranslatableServerSide TOWN_INVITE_FAIL = ServerText.exception("town.invite.fail");
+    private static final ExceptionTranslatableServerSide TOWN_INVITE_MISSING = ServerText.exception("town.invite.missing");
     private static final SimpleCommandExceptionType TOWN_NOT_EXISTS = new SimpleCommandExceptionType(Text.literal("That town does not exist."));
-    private static final ExceptionTranslatableServerSide PLAYER_NOT_FRIENDS = TranslatableServerSide.exception("friends.not_friends");
-    private static final ExceptionTranslatableServerSide PLAYER_DIFFERENT_WORLD = TranslatableServerSide.exception("player.target.different_world");
+    private static final ExceptionTranslatableServerSide PLAYER_NOT_FRIENDS = ServerText.exception("friends.not_friends");
+    private static final ExceptionTranslatableServerSide PLAYER_DIFFERENT_WORLD = ServerText.exception("player.target.different_world");
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
@@ -844,10 +844,10 @@ public final class ClaimCommand extends SewCommand {
             throw ClaimCommand.TOWN_INVITE_FAIL.create(player);
         
         // Send the notice to the inviter
-        TranslatableServerSide.send(player, "town.invite.sent", target.getDisplayName());
+        ServerText.send(player, "town.invite.sent", target.getDisplayName());
         
         // Send the notice to the invitee
-        TranslatableServerSide.send(target, "town.invite.receive", town.getName(), player.getDisplayName());
+        ServerText.send(target, "town.invite.receive", town.getName(), player.getDisplayName());
         
         return Command.SINGLE_SUCCESS;
     }
@@ -888,7 +888,7 @@ public final class ClaimCommand extends SewCommand {
         //claimant.setTown( town );
         
         // Tell the player
-        TranslatableServerSide.send(player, "town.invite.join", town.getName());
+        ServerText.send(player, "town.invite.join", town.getName());
         
         // Refresh the command tree
         server.getPlayerManager().sendCommandTree( player );
@@ -1093,7 +1093,7 @@ public final class ClaimCommand extends SewCommand {
         player.playSound(SoundEvents.ENTITY_VILLAGER_TRADE, SoundCategory.MASTER, 0.5f, 1f );
         
         // Find the entity of the friend
-        ServerPlayerEntity friendEntity = SewServer.getPlayer(source.getServer(), friend.getId());
+        ServerPlayerEntity friendEntity = Sew.getPlayer(source.getServer(), friend.getId());
         if ( friendEntity != null ) {
             // Notify the friend
             friendEntity.sendMessage(Text.literal("Player ").formatted(Formatting.WHITE)

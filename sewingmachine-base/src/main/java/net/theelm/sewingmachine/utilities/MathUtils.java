@@ -23,29 +23,16 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.events;
+package net.theelm.sewingmachine.utilities;
 
-import net.fabricmc.fabric.api.event.Event;
-import net.fabricmc.fabric.api.event.EventFactory;
-import net.minecraft.item.ItemStack;
-import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
-import net.minecraft.world.World;
-import net.theelm.sewingmachine.enums.Test;
-import org.jetbrains.annotations.NotNull;
-
-public interface BlockPlaceCallback {
-    Event<BlockPlaceCallback> EVENT = EventFactory.createArrayBacked( BlockPlaceCallback.class, (listeners) -> (player, world, blockPos, direction, itemStack) -> {
-        for (BlockPlaceCallback event : listeners) {
-            Test result = event.interact(player, world, blockPos, direction, itemStack);
-            if (result.isConclusive())
-                return result;
-        }
-        
-        return Test.CONTINUE;
-    });
+/**
+ * Created on Jul 09 2023 at 3:51 PM.
+ * By greg in sewingmachine
+ */
+public final class MathUtils {
+    private MathUtils() {}
     
-    Test interact(@NotNull ServerPlayerEntity player, @NotNull World world, @NotNull BlockPos blockPos, @NotNull Direction direction, @NotNull ItemStack itemStack);
+    public static int multipleOf(int value, int multiplier) {
+        return (value - (value % multiplier)) / multiplier;
+    }
 }

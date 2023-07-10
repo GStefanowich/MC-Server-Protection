@@ -31,6 +31,7 @@ import net.minecraft.sound.BlockSoundGroup;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
 import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.events.BlockInteractionCallback;
@@ -83,36 +84,36 @@ public final class BlockInteraction {
         event.register(BlockInteraction::blockInteract);
     }
     
-    private static ActionResult interactSwitches(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
+    private static Test interactSwitches(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
         final BlockPos blockPos = blockHitResult.getBlockPos();
         final BlockState blockState = world.getBlockState(blockPos);
         final Block block = blockState.getBlock();
         
         // Block must be a button or lever
         if (!(block instanceof ButtonBlock || block instanceof LeverBlock))
-            return ActionResult.PASS;
+            return Test.CONTINUE;
         
         // If allowed to bypass permissions in creative mode
         if (SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
-            return ActionResult.SUCCESS;
+            return Test.SUCCESS;
         
         WorldChunk chunk = player.getEntityWorld()
             .getWorldChunk(blockPos);
-        return ClaimChunkUtils.canPlayerToggleMechanisms(player, chunk, blockPos) ? ActionResult.SUCCESS : ActionResult.FAIL;
-    }
+        
+        return ClaimChunkUtils.canPlayerToggleMechanisms(player, chunk, blockPos) ? Test.SUCCESS : Test.FAIL;    }
     
-    private static ActionResult interactDoors(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
+    private static Test interactDoors(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
         final BlockPos blockPos = blockHitResult.getBlockPos();
         final BlockState blockState = world.getBlockState(blockPos);
         final Block block = blockState.getBlock();
         
         // If block is a door, trapdoor, or gate
         if (!(block instanceof DoorBlock || block instanceof FenceGateBlock || block instanceof TrapdoorBlock))
-            return ActionResult.PASS;
+            return Test.CONTINUE;
         
         // If allowed to bypass permissions in creative mode
         if (SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS) && player.isCreative())
-            return ActionResult.SUCCESS;
+            return Test.SUCCESS;
         
         WorldChunk chunk = player.getEntityWorld()
             .getWorldChunk(blockPos);
@@ -141,13 +142,13 @@ public final class BlockInteraction {
                 }
             }
             
-            return ActionResult.PASS;
+            return Test.CONTINUE;
         }
         
-        return ActionResult.FAIL;
+        return Test.FAIL;
     }
     
-    private static ActionResult blockInteract(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
+    private static Test blockInteract(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
         BlockPos blockPos = blockHitResult.getBlockPos();
         final BlockState blockState = world.getBlockState(blockPos);
         final Block block = blockState.getBlock();
@@ -158,7 +159,7 @@ public final class BlockInteraction {
         // If the block is something that can be accessed (Like a chest)
         if ( (!player.shouldCancelInteraction() || (!(itemStack.getItem() instanceof BlockItem || itemStack.getItem() instanceof BucketItem))) ) {
             if ( player.isSpectator() || (blockEntity instanceof EnderChestBlockEntity))
-                return ActionResult.PASS;
+                return Test.CONTINUE;
             
             // Get the permission of the block
             ClaimPermissions blockPermission;
@@ -168,21 +169,21 @@ public final class BlockInteraction {
                     // Check if the chest is NOT part of a shop, Or the player owns that shop
                     ShopSignData shopSign;
                     if ((!EntityUtils.isValidShopContainer(blockEntity)) || ((shopSign = EntityUtils.getAttachedShopSign(world, blockPos)) == null) || player.getUuid().equals(shopSign.getShopOwner()))
-                        return ActionResult.PASS;
+                        return Test.CONTINUE;
                 }
                 
                 // Play a sound to the player
                 EntityLockUtils.playLockSoundFromSource(blockEntity, blockState, player);
                 
                 // FAIL that the result is not allowed
-                return ActionResult.FAIL;
+                return Test.FAIL;
             }
         }
         
         // Test if the block can be placed
         return BlockInteraction.blockPlace(player, world, hand, itemStack, blockHitResult);
     }
-    private static ActionResult blockPlace(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
+    private static Test blockPlace(@NotNull ServerPlayerEntity player, @NotNull World world, Hand hand, @NotNull ItemStack itemStack, @NotNull BlockHitResult blockHitResult) {
         // Get the item being used
         final Item item = itemStack.getItem();
         
@@ -197,8 +198,8 @@ public final class BlockInteraction {
             blockPos = blockPos.offset(blockHitResult.getSide());
         
         // Test if allowed
-        ActionResult result;
-        if (((result = BlockInteraction.canBlockPlace(player, blockPos, blockHitResult)) != ActionResult.FAIL) && SewConfig.get(SewBaseConfig.LOG_BLOCKS_BREAKING)) {
+        Test result;
+        if (((result = BlockInteraction.canBlockPlace(player, blockPos, blockHitResult)) != Test.FAIL) && SewConfig.get(SewBaseConfig.LOG_BLOCKS_BREAKING)) {
             if (item instanceof BlockItem blockItem)
                 EventLogger.log(new BlockEvent(player, EventLogger.BlockAction.PLACE, blockItem.getBlock(), blockPos));
             else
@@ -206,13 +207,13 @@ public final class BlockInteraction {
         }
         return result;
     }
-    private static ActionResult canBlockPlace(@NotNull ServerPlayerEntity player, @NotNull BlockPos blockPos, @NotNull BlockHitResult blockHitResult) {
+    private static Test canBlockPlace(@NotNull ServerPlayerEntity player, @NotNull BlockPos blockPos, @NotNull BlockHitResult blockHitResult) {
         // Test the players permissions to the chunk
         if (ClaimChunkUtils.canPlayerBreakInChunk(player, blockPos))
-            return ActionResult.PASS;
+            return Test.CONTINUE;
         
         // If cannot break, prevent the action
-        return ActionResult.FAIL;
+        return Test.FAIL;
     }
     
 }

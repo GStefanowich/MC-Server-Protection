@@ -35,7 +35,7 @@ import net.theelm.sewingmachine.protection.objects.ClaimCache;
 import net.theelm.sewingmachine.protection.objects.ServerClaimCache;
 import net.theelm.sewingmachine.protection.objects.ClaimTag;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
@@ -138,7 +138,7 @@ public final class ClaimantPlayer extends Claimant {
     }
     
     public @Nullable ServerPlayerEntity getPlayer(@NotNull MinecraftServer server) {
-        return SewServer.getPlayer(server, this.getId());
+        return Sew.getPlayer(server, this.getId());
     }
     
     /* Claimed chunk options */

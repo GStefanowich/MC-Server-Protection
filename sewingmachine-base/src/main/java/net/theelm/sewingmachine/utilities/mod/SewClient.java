@@ -25,37 +25,24 @@
 
 package net.theelm.sewingmachine.utilities.mod;
 
-import net.minecraft.client.MinecraftClient;
 import net.minecraft.server.MinecraftServer;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Objects;
+import java.util.Optional;
 
 /**
- * Created on Jul 07 2023 at 9:41 PM.
- * By greg in sewingmachine
+ * Client static methods that the Server should not use
  */
 public final class SewClient {
     private SewClient() {}
     
-    /**
-     * Gets the MinecraftServer
-     *   If running as the server, will Exception
-     *   If running as the client, will return the IntegratedMinecraftServer
-     * @return
-     */
-    public static @NotNull MinecraftClient get() {
-        return Sew.getGameInstance()
-            .right()
-            .orElseThrow(() -> new RuntimeException("Called Client object from illegal position."));
-    }
-    
     public static @NotNull MinecraftServer getServer() {
-        return Objects.requireNonNull(SewClient.getServer(SewClient.get()));
+        return SewClient.tryGetServer()
+            .orElseThrow(() -> new RuntimeException("Could not access game server here."));
     }
     
-    public static @Nullable MinecraftServer getServer(@NotNull MinecraftClient client) {
-        return client.getServer();
+    public static @NotNull Optional<MinecraftServer> tryGetServer() {
+        return Sew.tryGetClient()
+            .map(client -> client.getServer());
     }
 }

@@ -33,6 +33,7 @@ import net.minecraft.entity.decoration.ItemFrameEntity;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
 import org.spongepowered.asm.mixin.Mixin;
 
@@ -46,10 +47,10 @@ public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
     public boolean handleAttack(Entity entity) {
         if (entity instanceof PlayerEntity player) {
             DamageSources damageSources = this.getDamageSources();
-            ActionResult result = DamageEntityCallback.EVENT.invoker()
+            Test result = DamageEntityCallback.EVENT.invoker()
                 .interact(this, this.getEntityWorld(), damageSources.playerAttack(player));
-            if (result != ActionResult.PASS)
-                return result == ActionResult.FAIL;
+            if (result == Test.FAIL)
+                return true;
         }
         return super.handleAttack(entity);
     }

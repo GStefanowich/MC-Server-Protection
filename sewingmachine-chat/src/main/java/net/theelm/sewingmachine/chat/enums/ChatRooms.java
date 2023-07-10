@@ -30,7 +30,7 @@ import net.theelm.sewingmachine.chat.objects.ChatFormat;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.interfaces.ServerTranslatable;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +53,7 @@ public enum ChatRooms implements ServerTranslatable {
     
     @Override
     public @NotNull MutableText translate(@NotNull Locale locale) {
-        return TranslatableServerSide.text(
+        return ServerText.text(
             locale,
             "chat.room." + this.name().toLowerCase()
         );

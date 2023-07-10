@@ -28,7 +28,7 @@ package net.theelm.sewingmachine.exceptions;
 import com.mojang.brigadier.ImmutableStringReader;
 import com.mojang.brigadier.exceptions.CommandExceptionType;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
-import net.theelm.sewingmachine.utilities.TranslatableServerSide;
+import net.theelm.sewingmachine.utilities.ServerText;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
@@ -47,15 +47,15 @@ public class ExceptionTranslatableServerSide implements CommandExceptionType {
     }
     
     public CommandSyntaxException create(@NotNull final CommandSource source, final Object... objects) {
-        return new CommandSyntaxException(this, TranslatableServerSide.text(source, this.translationKey, objects));
+        return new CommandSyntaxException(this, ServerText.text(source, this.translationKey, objects));
     }
     public CommandSyntaxException create(@NotNull final ServerPlayerEntity player, final Object... objects) {
-        return new CommandSyntaxException(this, TranslatableServerSide.text(player, this.translationKey, objects));
+        return new CommandSyntaxException(this, ServerText.text(player, this.translationKey, objects));
     }
     public CommandSyntaxException createWithContext(@NotNull final ImmutableStringReader reader, @NotNull final ServerPlayerEntity player, @NotNull final Object... objects) {
         if (objects.length != this.expectedArguments)
             throw new IllegalArgumentException("Invalid amount of arguments provided for ExceptionTranslatableServerSide");
-        return new CommandSyntaxException(this, TranslatableServerSide.text(player, this.translationKey, objects ), reader.getString(), reader.getCursor());
+        return new CommandSyntaxException(this, ServerText.text(player, this.translationKey, objects ), reader.getString(), reader.getCursor());
     }
     
 }

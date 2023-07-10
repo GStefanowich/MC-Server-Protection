@@ -293,6 +293,6 @@ public final class BlockUtils {
      * @return
      */
     public static int chunkPos(int pos) {
-        return (pos - (pos % 16)) / 16;
+        return MathUtils.multipleOf(pos, 16);
     }
 }

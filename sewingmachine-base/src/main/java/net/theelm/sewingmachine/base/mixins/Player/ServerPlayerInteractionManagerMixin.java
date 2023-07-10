@@ -32,6 +32,7 @@ import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.events.BlockInteractionCallback;
 import net.theelm.sewingmachine.interfaces.ItemUseCallback;
 import org.jetbrains.annotations.NotNull;
@@ -52,10 +53,10 @@ public abstract class ServerPlayerInteractionManagerMixin {
      */
     @Inject(at = @At("HEAD"), method = "interactItem", cancellable = true)
     private void beforeItemInteract(@NotNull final ServerPlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, CallbackInfoReturnable<ActionResult> callback) {
-        if (!player.getWorld().isClient) {
-            ActionResult result = ItemUseCallback.EVENT.invoker().use(player, world, hand, itemStack);
-            if (result != ActionResult.PASS)
-                callback.setReturnValue(result);
+        if (!player.getWorld().isClient()) {
+            Test result = ItemUseCallback.EVENT.invoker().use(player, world, hand, itemStack);
+            if (result == Test.FAIL)
+                callback.setReturnValue(result.toResult());
         }
     }
     
@@ -70,10 +71,11 @@ public abstract class ServerPlayerInteractionManagerMixin {
      */
     @Inject(at = @At("HEAD"), method = "interactBlock", cancellable = true)
     private void beforeBlockInteract(@NotNull final ServerPlayerEntity player, final World world, final ItemStack itemStack, final Hand hand, final BlockHitResult blockHitResult, CallbackInfoReturnable<ActionResult> callback) {
-        if (!player.getWorld().isClient) {
-            ActionResult result = BlockInteractionCallback.EVENT.invoker().interact(player, world, hand, itemStack, blockHitResult);
-            if (result != ActionResult.PASS)
-                callback.setReturnValue(result);
+        if (!player.getWorld().isClient()) {
+            Test test = BlockInteractionCallback.EVENT.invoker()
+                .interact(player, world, hand, itemStack, blockHitResult);
+            if (test == Test.FAIL)
+                callback.setReturnValue(test.toResult());
         }
     }
 }

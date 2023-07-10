@@ -28,12 +28,10 @@ package net.theelm.sewingmachine.protection.utilities;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.interfaces.PlayerData;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
-import net.theelm.sewingmachine.utilities.mod.SewServer;
+import net.theelm.sewingmachine.utilities.mod.Sew;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,7 +46,7 @@ public final class MessageClaimUtils {
     
     // Send a translation blob to a Town
     public static void sendToTown(@NotNull final ClaimantTown town, @NotNull Collection<ServerPlayerEntity> tags, @NotNull final String translationKey, final Object... objects) {
-        final MinecraftServer server = SewServer.get();
+        final MinecraftServer server = Sew.getServer();
         MessageUtils.sendSystem(
             server.getPlayerManager().getPlayerList().stream().filter((player) -> {
                 ClaimantPlayer claimant = ((PlayerClaimData) player).getClaim();
@@ -59,7 +57,7 @@ public final class MessageClaimUtils {
         );
     }
     public static boolean sendToTown(@NotNull final ClaimantTown town, @NotNull Collection<ServerPlayerEntity> tags, @NotNull final Text text) {
-        final MinecraftServer server = SewServer.get();
+        final MinecraftServer server = Sew.getServer();
         
         // Log to the server
         server.sendMessage(text);
