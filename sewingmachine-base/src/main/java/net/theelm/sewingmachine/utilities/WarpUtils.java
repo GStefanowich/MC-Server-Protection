@@ -555,8 +555,7 @@ public final class WarpUtils {
                 ServerWorld world = server.getWorld(warp.world);
                 
                 if (world != null)
-                    townName = RegionNameCallback.EVENT.invoker()
-                        .getName(world, warp.warpPos, null, true, false);
+                    townName = RegionNameCallback.getName(world, new ChunkPos(warp.warpPos), null, true, false);
             }
             
             TitleUtils.showPlayerTitle(player, townName, Text.literal(warp.name).formatted(Formatting.AQUA));

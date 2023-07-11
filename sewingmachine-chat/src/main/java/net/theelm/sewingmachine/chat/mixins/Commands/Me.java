@@ -51,7 +51,7 @@ public final class Me {
     @Overwrite
     public static void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("me")
-            .then(CommandManager.argument( "action", StringArgumentType.greedyString())
+            .then(CommandManager.argument("action", StringArgumentType.greedyString())
                 .executes((context) -> {
                     // Get player
                     ServerPlayerEntity player = context.getSource().getPlayer();

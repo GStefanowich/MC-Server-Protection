@@ -43,6 +43,7 @@ import net.minecraft.client.world.ClientWorld;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
@@ -67,6 +68,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -116,8 +120,6 @@ public final class MapWidget {
         
         this.chunkWidth = Math.round((float)this.frame.width() / this.chunksX);
         this.chunkHeight = Math.round((float)this.frame.height() / this.chunksZ);
-        
-        System.out.println("Each chunk is " + this.chunkWidth + "x" + this.chunkHeight + " pixels");
         
         this.startChunk = new ChunkPos(
             chunkPos.x - Math.round((float) chunksX / 2) + 1,
@@ -470,11 +472,14 @@ public final class MapWidget {
             return ((IClaimedChunk) this.chunk).getOwner();
         }
         
-        public @NotNull Text getName() {
+        public @NotNull List<Text> getName() {
             ClaimantPlayer owner = this.getOwner();
-            if (owner == null)
-                return Text.literal("Wilderness");
-            return owner.getName();
+            if (owner != null)
+                return Collections.singletonList(owner.getName());
+            return Arrays.asList(
+                Text.literal("Wilderness"),
+                Text.literal("Click to claim").formatted(Formatting.ITALIC, Formatting.DARK_PURPLE)
+            );
         }
         
         public @NotNull ChunkPos getPos() {

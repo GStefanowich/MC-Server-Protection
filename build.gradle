@@ -131,12 +131,12 @@ dependencies {
 }
 
 remapJar {
-	/*afterEvaluate {
+	afterEvaluate {
 		subprojects.each {
 			nestedJars.from project("${it.path}").tasks.getByName("remapJar")
 		}
-	}*/
+	}
 	
-	//addNestedDependencies = true
+	addNestedDependencies = true
 	archiveFileName = "${project.name}-${project.mod_version}_mc-${project.minecraft_version}.jar"
 }

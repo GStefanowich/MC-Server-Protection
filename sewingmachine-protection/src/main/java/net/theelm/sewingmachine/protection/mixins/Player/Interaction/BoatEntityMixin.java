@@ -32,6 +32,9 @@ import net.minecraft.entity.vehicle.BoatEntity;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.world.World;
+import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
+import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.EntityLockUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -47,6 +50,14 @@ public abstract class BoatEntityMixin extends Entity {
     @Inject(at = @At("HEAD"), method = "interact", cancellable = true)
     private void onCanAddPassenger(PlayerEntity player, Hand hand, CallbackInfoReturnable<ActionResult> callback) {
         if (!this.getWorld().isClient()) {
+            // Player is in creative
+            if ((player.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS)) || player.isSpectator())
+                return;
+            
+            // If player can enter Minecart
+            if (ClaimChunkUtils.canPlayerRideInChunk(player, this.getBlockPos()))
+                return;
+            
             // Make an angry sound at the player
             EntityLockUtils.playLockSoundFromSource(this, player);
             

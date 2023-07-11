@@ -61,19 +61,21 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Consumer;
 
 public abstract class Claimant {
     protected final ClaimCache claimCache;
-    protected final Map<UUID, ClaimRanks> userRanks = Collections.synchronizedMap(new HashMap<>());
+    protected final Map<UUID, ClaimRanks> userRanks = new ConcurrentHashMap<>();
     protected final Map<ClaimSettings, Boolean> chunkClaimOptions = Collections.synchronizedMap(new HashMap<>());
     protected final Map<ClaimPermissions, ClaimRanks> rankPermissions = Collections.synchronizedMap(new HashMap<>());
-    protected final Set<ClaimTag> claimedChunks = Collections.synchronizedSet(new LinkedHashSet<>());
+    protected final Set<ClaimTag> claimedChunks = new CopyOnWriteArraySet<>();
     
     private final @NotNull ClaimantType type;
     private final @NotNull UUID id;
     
-    private final @NotNull Set<PlayerVisitor> visitors = Collections.synchronizedSet(new LinkedHashSet<>());
+    private final @NotNull Set<PlayerVisitor> visitors = new CopyOnWriteArraySet<>();
     
     private final @Nullable ClaimCacheEntry<?> saveHandle;
     

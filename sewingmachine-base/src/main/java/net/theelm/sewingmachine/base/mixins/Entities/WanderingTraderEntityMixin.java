@@ -31,7 +31,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.world.gen.structure.StructureKeys;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.base.objects.WanderingTraderProfileCollection;
+import net.theelm.sewingmachine.base.objects.WanderingTraderPacket;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.IntUtils;
 import net.theelm.sewingmachine.utilities.TradeUtils;
@@ -40,7 +40,6 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.passive.MerchantEntity;
 import net.minecraft.entity.passive.WanderingTraderEntity;
 import net.minecraft.item.Items;
-import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.village.TradeOffer;
@@ -54,6 +53,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -69,28 +70,11 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
     /*
      * Created customized traders for the trader
      */
-    @Inject(at = @At("HEAD"), method = "fillRecipes", cancellable = true)
-    protected void fillRecipes(@NotNull CallbackInfo callback) {
-        // If replacing wandering trader trades with better items is enabled
-        if (SewConfig.isTrue(SewBaseConfig.IMPROVED_WANDERING_TRADER)) {
-            TradeOffers.Factory[] mainFactory = WANDERING_TRADER_TRADES.get(1);
-            TradeOffers.Factory[] rareFactory = WANDERING_TRADER_TRADES.get(2);
-            if (mainFactory != null && rareFactory != null) {
-                // Fill trades from the mainFactory
-                TradeOfferList tradeOffers = this.getOffers();
-                this.fillRecipesFromPool(tradeOffers, mainFactory, IntUtils.random(this.random, 4, 12));
-        
-                // Get one random trade from the rare factory
-                int randomTrade = this.random.nextInt(rareFactory.length);
-                TradeOffers.Factory factory = rareFactory[randomTrade];
-        
-                // Create a trade using the factory
-                TradeOffer tradeOffer = factory.create(this, this.random);
-                if (tradeOffer != null)
-                    tradeOffers.add(tradeOffer);
-            }
-            callback.cancel();
-        }
+    @Redirect(at = @At(value = "FIELD", target = "Lnet/minecraft/village/TradeOffers;WANDERING_TRADER_TRADES:Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;"), method = "fillRecipes")
+    protected Int2ObjectMap<TradeOffers.Factory[]> replaceTraders() {
+        if (SewConfig.isTrue(SewBaseConfig.IMPROVED_WANDERING_TRADER))
+            return WanderingTraderEntityMixin.WANDERING_TRADER_TRADES;
+        return TradeOffers.WANDERING_TRADER_TRADES;
     }
     
     /*
@@ -119,7 +103,7 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
             MinecraftServer server = this.getServer();
             if (server != null) {
                 server.getPlayerManager()
-                    .sendToAll(new WanderingTraderProfileCollection(this).getPacket());
+                    .sendToAll(WanderingTraderPacket.of(this));
             }
         }
     }
@@ -144,7 +128,7 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
             MinecraftServer server = this.getServer();
             if (server != null) {
                 server.getPlayerManager()
-                    .sendToAll(new WanderingTraderProfileCollection().getPacket());
+                    .sendToAll(WanderingTraderPacket.ofNull());
             }
         }
         super.remove(removalReason);

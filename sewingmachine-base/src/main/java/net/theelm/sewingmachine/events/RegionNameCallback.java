@@ -30,7 +30,9 @@ import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.entity.Entity;
 import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.World;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -38,9 +40,9 @@ import org.jetbrains.annotations.Nullable;
  */
 @FunctionalInterface
 public interface RegionNameCallback {
-    Event<RegionNameCallback> EVENT = EventFactory.createArrayBacked(RegionNameCallback.class, (listeners) -> (world, pos, entity, nameOnly, strict) -> {
+    Event<RegionNameCallback> EVENT = EventFactory.createArrayBacked(RegionNameCallback.class, (listeners) -> (world, chunkPos, blockPos, entity, nameOnly, strict) -> {
         for (RegionNameCallback callback : listeners) {
-            Text text = callback.getName(world, pos, entity, nameOnly, strict);
+            Text text = callback.getName(world, chunkPos, blockPos, entity, nameOnly, strict);
             if (text != null)
                 return text;
         }
@@ -50,11 +52,40 @@ public interface RegionNameCallback {
     /**
      * Get the name of a region
      * @param world The world
+     * @param chunkPos The region chunk
+     * @param blockPos The position of the region
+     * @param entity The entity located within the region
+     * @param nameOnly If no additional formatting should be done
+     * @param strict If a result MUST be returned
+     * @return The name of the Region
+     */
+    @Nullable Text getName(@NotNull World world, @NotNull ChunkPos chunkPos, @Nullable BlockPos blockPos, @Nullable Entity entity, boolean nameOnly, boolean strict);
+    
+    /**
+     * Get the name of a region
+     * @param world The world
      * @param pos The position of the region
      * @param entity The entity location within the region
      * @param nameOnly If no additional formatting should be done
-     * @param strict
+     * @param strict If a result MUST be returned
      * @return The name of the Region
      */
-    @Nullable Text getName(World world, BlockPos pos, Entity entity, boolean nameOnly, boolean strict);
+    static @Nullable Text getName(@NotNull World world, @NotNull BlockPos pos, @Nullable Entity entity, boolean nameOnly, boolean strict) {
+        return RegionNameCallback.EVENT.invoker()
+            .getName(world, new ChunkPos(pos), pos, entity, nameOnly, strict);
+    }
+    
+    /**
+     * Get the name of a region
+     * @param world The world
+     * @param pos The region chunk
+     * @param entity The entity location within the region
+     * @param nameOnly If no additional formatting should be done
+     * @param strict If a result MUST be returned
+     * @return The name of the Region
+     */
+    static @Nullable Text getName(@NotNull World world, @NotNull ChunkPos pos, @Nullable Entity entity, boolean nameOnly, boolean strict) {
+        return RegionNameCallback.EVENT.invoker()
+            .getName(world, pos, null, entity, nameOnly, strict);
+    }
 }

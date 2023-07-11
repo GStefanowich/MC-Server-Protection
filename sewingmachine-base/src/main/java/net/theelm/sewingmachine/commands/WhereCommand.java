@@ -73,8 +73,7 @@ public final class WhereCommand extends SewCommand {
             .append(" in ")
             .append(Text.literal(player.getWorld().getRegistryKey().getValue().toString()).formatted(Formatting.AQUA));
         
-        Text location = RegionNameCallback.EVENT.invoker()
-            .getName(
+        Text location = RegionNameCallback.getName(
                 source.getWorld(),
                 pos,
                 source.getEntity(),

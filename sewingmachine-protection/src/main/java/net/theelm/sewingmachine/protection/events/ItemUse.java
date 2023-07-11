@@ -51,7 +51,6 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.state.property.BooleanProperty;
 import net.minecraft.state.property.Properties;
 import net.minecraft.text.Text;
-import net.minecraft.util.ActionResult;
 import net.minecraft.util.BlockRotation;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Hand;
@@ -68,7 +67,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public final class ItemUse {
-    
     private static final int BLOCK_UPDATE_ROTATION_FLAG = 16;
     private static final int BLOCK_UPDATE_MAX_DEPTH = 512;
     

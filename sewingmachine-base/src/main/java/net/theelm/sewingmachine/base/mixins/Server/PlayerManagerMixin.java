@@ -30,7 +30,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.server.PlayerManager;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.base.objects.WanderingTraderProfileCollection;
+import net.theelm.sewingmachine.base.objects.WanderingTraderPacket;
 import net.theelm.sewingmachine.utilities.DimensionUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.InventoryUtils;
@@ -38,7 +38,6 @@ import net.theelm.sewingmachine.utilities.TeamUtils;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.ClientConnection;
 import net.minecraft.network.packet.s2c.play.ExperienceBarUpdateS2CPacket;
-import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -74,7 +73,7 @@ public abstract class PlayerManagerMixin {
             UUID uuid = EntityUtils.getWanderingTraderId(this.server);
             Entity entity = world.getEntity(uuid);
             if (entity != null)
-                player.networkHandler.sendPacket(new WanderingTraderProfileCollection(entity).getPacket());
+                player.networkHandler.sendPacket(WanderingTraderPacket.of(entity));
         }
     }
     

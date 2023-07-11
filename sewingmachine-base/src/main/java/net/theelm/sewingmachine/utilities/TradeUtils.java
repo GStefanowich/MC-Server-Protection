@@ -103,14 +103,18 @@ public class TradeUtils {
         @Override
         public TradeOffer create(Entity entity, Random random) {
             return new TradeOffer(
-                // Wants
+                // Wants (Item1)
                 new ItemStack(this.itemWants1, this.countWants1),
-                new ItemStack(this.itemWants2, this.countWants2),
+                // Wants (Item2)
+                this.itemWants2 == null ? ItemStack.EMPTY : new ItemStack(this.itemWants2, this.countWants2),
                 // Offers
                 new ItemStack(this.itemOffers, this.countOffers),
-                this.maxTrades, // Max trades
-                1, // Experience
-                0.05F // Multiplier
+                // Max trades
+                this.maxTrades,
+                // Experience given
+                1,
+                // Price Multiplier
+                0.05F
             );
         }
     }
@@ -143,6 +147,7 @@ public class TradeUtils {
             return new TradeOffer(
                 // Wants
                 new ItemStack(Items.EMERALD, IntUtils.random(random, this.minimumCost, 64)),
+                // All spawn-eggs require an Egg
                 new ItemStack(Items.EGG, 1),
                 // Offers
                 spawnEgg,
@@ -177,6 +182,7 @@ public class TradeUtils {
             return new TradeOffer(
                 // Wants
                 new ItemStack(Items.EMERALD, IntUtils.random(random, this.emeralds, 64)),
+                // Locator items require an ender eye
                 new ItemStack(Items.ENDER_EYE, 1),
                 // Offers
                 pearl,

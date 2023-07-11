@@ -31,13 +31,12 @@ import net.minecraft.util.math.random.Random;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.base.objects.WanderingTraderProfileCollection;
+import net.theelm.sewingmachine.base.objects.WanderingTraderPacket;
 import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.passive.WanderingTraderEntity;
-import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.world.ServerWorld;
@@ -141,7 +140,7 @@ public abstract class WanderingTraderManagerMixin implements Spawner {
                 
                 // Add the wandering trader to the players list
                 server.getPlayerManager()
-                    .sendToAll(new WanderingTraderProfileCollection(trader).getPacket());
+                    .sendToAll(WanderingTraderPacket.of(trader));
                 
                 return true;
             }

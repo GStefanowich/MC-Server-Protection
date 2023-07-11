@@ -89,6 +89,9 @@ public final class ProtectionClaimScreen extends SettingScreen {
     
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        context.drawTextWithShadow(this.textRenderer, "Left-click to Claim", 4, this.height - 24, ColorUtils.Argb.WHITE);
+        context.drawTextWithShadow(this.textRenderer, "Right-click to Unclaim", 4, this.height - 12, ColorUtils.Argb.WHITE);
+        
         // Run the parent render
         super.render(context, mouseX, mouseY, delta);
         

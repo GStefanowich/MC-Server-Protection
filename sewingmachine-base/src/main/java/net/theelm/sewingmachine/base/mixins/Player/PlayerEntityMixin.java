@@ -247,8 +247,11 @@ public abstract class PlayerEntityMixin extends LivingEntity implements MoneyHol
      */
     @Inject(at = @At("HEAD"), method = "canPlaceOn", cancellable = true)
     public void checkPlacement(BlockPos blockPos, Direction direction, ItemStack itemStack, CallbackInfoReturnable<Boolean> callback) {
-        Test result = BlockPlaceCallback.EVENT.invoker().interact((ServerPlayerEntity)(LivingEntity)this, this.getWorld(), blockPos, direction, itemStack);
-        if (result == Test.FAIL)
-            callback.setReturnValue(Boolean.FALSE);
+        if ((LivingEntity)this instanceof ServerPlayerEntity player) {
+            Test result = BlockPlaceCallback.EVENT.invoker()
+                .interact(player, this.getWorld(), blockPos, direction, itemStack);
+            if (result == Test.FAIL)
+                callback.setReturnValue(Boolean.FALSE);
+        }
     }
 }

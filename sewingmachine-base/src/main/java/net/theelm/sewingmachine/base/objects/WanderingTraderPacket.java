@@ -47,18 +47,12 @@ import java.util.UUID;
  * Created on Dec 02 2021 at 10:20 PM.
  * By greg in SewingMachineMod
  */
-public final class WanderingTraderProfileCollection {
+public final class WanderingTraderPacket {
     private final @NotNull GameProfile profile;
     private final @NotNull Text name;
     private final boolean show;
     
-    public WanderingTraderProfileCollection() {
-        this(null);
-    }
-    public WanderingTraderProfileCollection(@Nullable Entity entity) {
-        this(entity instanceof WanderingTraderEntity trader ? EntityUtils.wanderingTraderDepartureTime(trader) : Text.literal("Mob").formatted(Formatting.RED), entity != null);
-    }
-    private WanderingTraderProfileCollection(@NotNull Text text, boolean show) {
+    private WanderingTraderPacket(@NotNull Text text, boolean show) {
         this.profile = new GameProfile(UUID.fromString("bd482739-767c-45dc-a1f8-c33c40530952"), "MHF_VILLAGER");
         this.name = Text.literal("").formatted(Formatting.WHITE)
             .append(Text.translatable(EntityType.WANDERING_TRADER.getTranslationKey()).formatted(Formatting.BLUE))
@@ -67,10 +61,7 @@ public final class WanderingTraderProfileCollection {
         this.show = show;
     }
     
-    public @NotNull PlayerListS2CPacket getPacket() {
-        return this.getPacket(new Action[0]);
-    }
-    public @NotNull PlayerListS2CPacket getPacket(Action... actions) {
+    public @NotNull PlayerListS2CPacket get(Action... actions) {
         EnumSet<Action> set;
         if (!this.show)
             set = EnumSet.of(Action.UPDATE_LISTED);
@@ -81,9 +72,9 @@ public final class WanderingTraderProfileCollection {
             for (Action action : actions)
                 set.add(action);
         }
-        return this.getPacket(set);
+        return this.get(set);
     }
-    public @NotNull PlayerListS2CPacket getPacket(@NotNull EnumSet<Action> actions) {
+    public @NotNull PlayerListS2CPacket get(@NotNull EnumSet<Action> actions) {
         PacketByteBuf mimic = new PacketByteBuf(Unpooled.buffer());
         mimic.writeEnumSet(actions, Action.class);
         
@@ -111,5 +102,25 @@ public final class WanderingTraderProfileCollection {
         });
         
         return new PlayerListS2CPacket(mimic);
+    }
+    
+    public static @NotNull PlayerListS2CPacket of(@Nullable Entity entity, Action... actions) {
+        if (entity instanceof WanderingTraderEntity trader) {
+            WanderingTraderPacket packet = new WanderingTraderPacket(
+                EntityUtils.wanderingTraderDepartureTime(trader),
+                true
+            );
+            
+            return packet.get(actions);
+        }
+        return WanderingTraderPacket.ofNull();
+    }
+    public static @NotNull PlayerListS2CPacket ofNull() {
+        WanderingTraderPacket packet = new WanderingTraderPacket(
+            Text.literal("Mob").formatted(Formatting.RED),
+            false
+        );
+        
+        return packet.get();
     }
 }

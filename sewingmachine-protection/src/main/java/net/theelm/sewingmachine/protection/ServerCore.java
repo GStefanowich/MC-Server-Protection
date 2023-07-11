@@ -140,8 +140,8 @@ public final class ServerCore implements ModInitializer, SewPlugin {
         });
         
         // Create a callback for getting a players whereabouts
-        RegionNameCallback.EVENT.register((world, pos, entity, nameOnly, strict) -> {
-            IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(pos);
+        RegionNameCallback.EVENT.register((world, chunkPos, blockPos, entity, nameOnly, strict) -> {
+            IClaimedChunk chunk = (IClaimedChunk) world.getChunk(chunkPos.x, chunkPos.z);
             
             // If the chunk is a Town, return the Town
             ClaimantTown town = chunk.getTown();
@@ -149,7 +149,7 @@ public final class ServerCore implements ModInitializer, SewPlugin {
                 return town.getName();
             
             // If the position is unowned, return Wilderness
-            UUID owner = chunk.getOwnerId(pos);
+            UUID owner = chunk.getOwnerId(blockPos);
             if (owner == null) {
                 if (strict && entity instanceof PlayerEntity player)
                     return ClaimChunkUtils.getPlayerWorldWilderness(player);
