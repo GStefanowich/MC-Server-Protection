@@ -49,7 +49,10 @@ import net.minecraft.world.gen.structure.Structure;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.UUID;
+
 public class TradeUtils {
+    public static final @NotNull UUID WANDERING_TRADER = UUID.fromString("bd482739-767c-45dc-a1f8-c33c40530952");
     
     public static @NotNull TradeOffers.Factory createSellItem(int countWants, @NotNull Item itemWants, int countOffers, @NotNull Item itemOffers, int maxTrades) {
         return new SellTradeFactory(itemWants, countWants, itemOffers, countOffers, maxTrades);

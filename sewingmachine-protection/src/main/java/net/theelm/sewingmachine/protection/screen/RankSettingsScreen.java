@@ -38,6 +38,7 @@ import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
 import net.theelm.sewingmachine.screens.SettingScreen;
 import net.theelm.sewingmachine.screens.SettingScreenListWidget;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
+import net.theelm.sewingmachine.utilities.TradeUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -70,7 +71,9 @@ public final class RankSettingsScreen extends SettingScreen {
                 UUID self = this.client.getSession()
                     .getUuidOrNull();
                 UUID player = profile.getId();
-                if (self != null && self.equals(player))
+                
+                // Always skip over yourself, as well as the Wandering Trader (MHF_Villager)
+                if ((self != null && player.equals(self)) || player.equals(TradeUtils.WANDERING_TRADER))
                     continue;
                 
                 list.addCycleButton(

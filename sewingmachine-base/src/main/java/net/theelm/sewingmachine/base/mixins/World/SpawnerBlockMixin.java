@@ -25,9 +25,10 @@
 
 package net.theelm.sewingmachine.base.mixins.World;
 
+import net.minecraft.item.BlockItem;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
+import net.theelm.sewingmachine.base.utilities.SpawnerUtils;
 import net.theelm.sewingmachine.config.SewConfig;
-import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.BlockWithEntity;
 import net.minecraft.block.SpawnerBlock;
@@ -73,12 +74,6 @@ public abstract class SpawnerBlockMixin extends BlockWithEntity {
             ItemStack handItem = player.getMainHandStack();
             
             if (blockEntity instanceof MobSpawnerBlockEntity spawnerBlock) {
-                // Spawner Display
-                NbtList spawnEntities = new NbtList();
-                
-                // Load spawnEntities from the spawnerblock
-                NbtUtils.withSpawnerEntities(blockEntity.createNbtWithIdentifyingData(), spawnEntities::add);
-                
                 boolean doDrop = false;
                 
                 int toolDamage = SewConfig.get(SewBaseConfig.SPAWNER_PICKUP_DAMAGE);
@@ -103,11 +98,11 @@ public abstract class SpawnerBlockMixin extends BlockWithEntity {
                     dropStack.setCount(1);
                     
                     // Create the item tag
+                    NbtCompound blockTag = spawnerBlock.createNbt();
                     NbtCompound dropTag = dropStack.getOrCreateNbt();
                     
-                    //dropTag.put("EntityIds", itemNbt);
-                    dropTag.put("display", NbtUtils.getSpawnerDisplay(spawnEntities));
-                    dropTag.put("EntityIds", spawnEntities);
+                    dropTag.put("display", SpawnerUtils.getDisplay(blockTag));
+                    dropTag.put(BlockItem.BLOCK_ENTITY_TAG_KEY, blockTag);
                     
                     // Drop the spawner
                     ItemScatterer.spawn(world, blockPos.getX(), blockPos.getY(), blockPos.getZ(), dropStack);
@@ -117,7 +112,7 @@ public abstract class SpawnerBlockMixin extends BlockWithEntity {
                     
                     // Calculate XP to give for every mob in the spawner
                     int xpGive = 0;
-                    for (int i = 0; i < spawnEntities.size(); ++i) {
+                    for (int i = 0; i < SpawnerUtils.getCount(spawnerBlock); ++i) {
                         xpGive += 45 + world.random.nextInt(45) + world.random.nextInt(45);
                     }
                     
@@ -125,46 +120,6 @@ public abstract class SpawnerBlockMixin extends BlockWithEntity {
                     if (xpGive > 0 && world instanceof ServerWorld serverWorld)
                         this.dropExperience(serverWorld, blockPos, xpGive);
                 }
-            }
-        }
-    }
-    
-    @Override
-    public void onPlaced(@NotNull World world, @NotNull BlockPos blockPos, @NotNull BlockState blockState, @NotNull LivingEntity livingEntity, @NotNull ItemStack itemStack) {
-        NbtCompound tag = itemStack.getOrCreateNbt();
-        if (tag.contains("EntityIds", NbtElement.LIST_TYPE)) {
-            NbtList mob = tag.getList("EntityIds", NbtElement.STRING_TYPE);
-            
-            // Get the mob spawner entity
-            BlockEntity blockEntity = world.getBlockEntity(blockPos);
-            if (blockEntity instanceof MobSpawnerBlockEntity) {
-                NbtCompound spawnerTag = blockEntity.createNbtWithIdentifyingData();
-                
-                // Get the mobs to spawn
-                NbtList spawnPotentials = new NbtList();
-                
-                for (NbtElement spawn : mob) {
-                    String mobIdentifier = spawn.asString();
-                    NbtCompound mobTag = new NbtCompound();
-                    NbtCompound entity = new NbtCompound();
-                    NbtCompound data = new NbtCompound();
-                    
-                    entity.putString("id", mobIdentifier);
-                    mobTag.put("entity", entity);
-                    data.putInt("weight", 1);
-                    data.put("data", mobTag);
-                    
-                    spawnPotentials.add(data);
-                }
-                
-                // Update the tag
-                spawnerTag.getCompound("SpawnData")
-                    .getCompound("entity")
-                    .putString("id", mob.get(0).asString());
-                spawnerTag.put("SpawnPotentials", spawnPotentials);
-                
-                // Save to block
-                BlockEntity.createFromNbt(blockPos, blockState, spawnerTag);
             }
         }
     }

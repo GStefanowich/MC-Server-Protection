@@ -28,7 +28,9 @@ package net.theelm.sewingmachine.base.mixins.Entities;
 import net.minecraft.entity.damage.DamageTypes;
 import net.theelm.sewingmachine.base.ServerCore;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
+import net.theelm.sewingmachine.base.utilities.SpawnerUtils;
 import net.theelm.sewingmachine.config.SewConfig;
+import net.theelm.sewingmachine.utilities.DevUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.theelm.sewingmachine.utilities.WarpUtils;
 import net.theelm.sewingmachine.utilities.nbt.NbtUtils;
@@ -66,6 +68,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Objects;
+
 @Mixin(LivingEntity.class)
 public abstract class LivingEntityMixin extends Entity {
     @Shadow protected boolean dead;
@@ -96,24 +100,23 @@ public abstract class LivingEntityMixin extends Entity {
         if (!(damageSource.getAttacker() instanceof ServerPlayerEntity player))
             return;
         
-        NbtCompound spawnerTag;
-        
-        // Get the attacker
+        // Get the attacker stack
         ItemStack itemStack = player.getStackInHand(Hand.OFF_HAND);
-        if ((!(itemStack.getItem().equals(Items.SPAWNER))) || ((spawnerTag = itemStack.getNbt()) == null) || ((spawnerTag = spawnerTag.copy()) == null) || (!spawnerTag.contains("EntityIds", NbtElement.LIST_TYPE)))
-            return;
-        
-        // Check if mob type is allowed to be spawned
-        if (!EntityUtils.canBeSpawnered(this))
-            return;
+        if (
+            // If not a Spawner
+            !Objects.equals(Items.SPAWNER, itemStack.getItem())
+            
+            // Check if mob type is allowed to be spawned
+            || !EntityUtils.canBeSpawnered(this)
+        ) return;
         
         // Get the identifier of the mob we killed
         EntityType<?> type = this.getType();
-        NbtString mobId = NbtString.of(EntityType.getId(type).toString());
-        
-        // Get current entity IDs
-        NbtList entityIds = spawnerTag.getList("EntityIds", NbtElement.STRING_TYPE);
         int rolls = 1 + EnchantmentHelper.getLevel(Enchantments.LOOTING, player.getMainHandStack());
+        
+        // Should drop a new spawner
+        boolean dropNew = itemStack.getCount() > 1
+            && !SpawnerUtils.hasEntity(itemStack, type);
         
         // Spawn particles
         ((ServerWorld) this.getWorld()).spawnParticles(ParticleTypes.SOUL,
@@ -127,38 +130,30 @@ public abstract class LivingEntityMixin extends Entity {
             0.01D
         );
         
-        for (int roll = 0; roll < rolls; ++roll) {
-            // Test the odds
-            if ((!entityIds.contains(mobId)) && (player.getRandom().nextInt(800) == 0)) {
-                // Add mob to the list
-                entityIds.add(mobId);
+        // Test if trapping the entity is a success
+        boolean success = DevUtils.isDebugging();
+        while (!success && rolls-- > 0)
+            success = player.getRandom().nextInt(800) == 0;
+        
+        if (success) {
+            if (dropNew) {
+                itemStack.decrement(1);
                 
-                // Update the dropped items tag
-                spawnerTag.put("EntityIds", entityIds);
-                spawnerTag.put("display", NbtUtils.getSpawnerDisplay(entityIds));
-                
+                // Update a new item (NOT an entire stack)
+                itemStack = new ItemStack(Items.SPAWNER);
+            }
+            
+            if (SpawnerUtils.addEntity(itemStack, type, 1)) {
                 // Play sound
                 player.playSound(SoundEvents.UI_TOAST_CHALLENGE_COMPLETE, SoundCategory.MASTER, 1.0f, 1.0f);
                 this.addStatusEffect(new StatusEffectInstance(StatusEffects.GLOWING, 60, 1, false, false));
-                
-                // Should drop a new spawner
-                boolean dropNew = itemStack.getCount() > 1;
-                
-                // Update the existing item in hand
-                if (dropNew) {
-                    // Update a new item (NOT an entire stack)
-                    itemStack.decrement(1);
-                    itemStack = new ItemStack(Items.SPAWNER);
-                }
-                
-                // Update the itemstack
-                itemStack.setNbt(spawnerTag);
-                
+            }
+            
+            // Update the existing item in hand
+            if (dropNew) {
                 // Give the player
-                if (dropNew)
-                    player.getInventory()
-                        .offerOrDrop(itemStack);
-                break;
+                player.getInventory()
+                    .offerOrDrop(itemStack);
             }
         }
     }

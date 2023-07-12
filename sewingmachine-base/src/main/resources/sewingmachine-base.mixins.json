@@ -4,6 +4,7 @@
 	"compatibilityLevel": "JAVA_16",
 	"mixins": [
 		"Blocks.BeehiveBlockMixin",
+		"Blocks.BlockItemMixin",
 		"Blocks.LecternBlockMixin",
 		"Blocks.ShulkerBoxBlockEntityMixin",
 		"Blocks.ShulkerBoxBlockMixin",

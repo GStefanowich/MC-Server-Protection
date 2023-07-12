@@ -28,6 +28,7 @@ package net.theelm.sewingmachine.base.mixins.World;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.mixins.Interfaces.ItemEntityAccessor;
+import net.theelm.sewingmachine.base.utilities.SpawnerUtils;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.base.mixins.Interfaces.PowderBlockAccessor;
 import net.theelm.sewingmachine.events.ContainerAccessCallback;
@@ -94,7 +95,6 @@ public abstract class LeveledCauldronBlockMixin extends Block {
         
         // If not a spawner, return
         if (colliderStack.getItem() == Items.SPAWNER && waterLevel >= 3) {// Get person throwing the ingredients
-            
             // Get conduit
             ItemStack binderStack = null;
             
@@ -117,17 +117,9 @@ public abstract class LeveledCauldronBlockMixin extends Block {
             if ((binderStack == null) || (thrower == null))
                 return;
             
-            // Get the entity IDs on the spawner
-            NbtCompound spawnerTag = colliderStack.getOrCreateNbt();
-            NbtList entityIds;
-            if ((!spawnerTag.contains("EntityIds", NbtElement.LIST_TYPE)) || ((entityIds = spawnerTag.getList("EntityIds", NbtElement.STRING_TYPE)).size() < 2))
+            // Try removing an entity from the stack
+            if (!SpawnerUtils.removeEntity(colliderEntity, 0))
                 return;
-            
-            // Remove the first spawn type
-            entityIds.remove(0);
-            
-            // Update the display
-            spawnerTag.put("display", NbtUtils.getSpawnerDisplay(entityIds));
             
             // Take the emerald
             binderStack.decrement(1);
@@ -150,7 +142,7 @@ public abstract class LeveledCauldronBlockMixin extends Block {
             
             // If the block item is one of the Concrete Powder Blocks
             if (blockItem.getBlock() instanceof ConcretePowderBlock concretePowderBlock) {
-                BlockState hardened = ((PowderBlockAccessor)concretePowderBlock).getHardenedState();
+                BlockState hardened = ((PowderBlockAccessor) concretePowderBlock).getHardenedState();
                 Block solid = hardened.getBlock();
                 
                 Vec3d scatter = colliderEntity.getPos();

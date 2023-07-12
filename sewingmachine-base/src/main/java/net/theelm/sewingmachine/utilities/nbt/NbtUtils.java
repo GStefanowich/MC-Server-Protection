@@ -27,10 +27,23 @@ package net.theelm.sewingmachine.utilities.nbt;
 
 import com.google.gson.JsonObject;
 import com.mojang.serialization.DataResult;
+import net.minecraft.block.SpawnerBlock;
+import net.minecraft.block.entity.MobSpawnerBlockEntity;
+import net.minecraft.item.BlockItem;
+import net.minecraft.item.ItemStack;
+import net.minecraft.nbt.NbtByte;
+import net.minecraft.nbt.NbtByteArray;
+import net.minecraft.nbt.NbtDouble;
+import net.minecraft.nbt.NbtFloat;
+import net.minecraft.nbt.NbtInt;
+import net.minecraft.nbt.NbtLong;
+import net.minecraft.nbt.NbtShort;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.text.MutableText;
+import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.exceptions.NbtNotFoundException;
 import net.theelm.sewingmachine.objects.WorldPos;
@@ -69,13 +82,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 public final class NbtUtils {
     private NbtUtils() {}
@@ -372,56 +388,98 @@ public final class NbtUtils {
             .run(key);
     }
     
-    public static void withSpawnerEntities(final @NotNull NbtCompound base, final @NotNull Consumer<NbtString> consumer) {
-        NbtList list = base.getList("SpawnPotentials", NbtElement.COMPOUND_TYPE);
-        
-        // Save to the item (The mob)
-        if (list.isEmpty())
-            NbtUtils.withInnerSpawnerData(base.getCompound("SpawnData"), consumer);
-        else for (NbtElement tag : list)
-            NbtUtils.withInnerSpawnerData(((NbtCompound) tag), consumer);
+    public static boolean add(@NotNull NbtList list, @NotNull Text text) {
+        return NbtUtils.add(list, Text.Serializer.toJson(text));
     }
-    private static void withInnerSpawnerData(final @NotNull NbtCompound base, final @NotNull Consumer<NbtString> consumer) {
-        NbtCompound data = base.contains("data", NbtElement.COMPOUND_TYPE) ? base.getCompound("data") : base;
-        
-        // Get entity details
-        if (!data.contains("entity", NbtElement.COMPOUND_TYPE))
-            return;
-        NbtCompound entity = data.getCompound("entity");
-        
-        // Get entity Id
-        if (!entity.contains("id", NbtElement.STRING_TYPE))
-            return;
-        String entityId = entity.getString("id");
-        if (entityId != null && !entityId.isEmpty())
-            consumer.accept(NbtString.of(entityId));
+    public static boolean add(@NotNull NbtList list, @NotNull String string) {
+        return list.add(NbtString.of(string));
     }
     
-    /*
-     * Spawner Lore
-     */
-    public static @NotNull NbtCompound getSpawnerDisplay(@NotNull NbtList entityIdTag) {
-        // Create the lore tag
-        NbtList loreTag = new NbtList();
-        for (NbtElement entityTag : entityIdTag) {
-            // Get the mob entity name
-            String mobTag = entityTag.asString();
-            
-            Optional<EntityType<?>> entityType = EntityType.get(mobTag);
-            EntityType<?> entity;
-            if ((entity = entityType.orElse( null )) != null) {
-                // Create the display of mobs
-                JsonObject lore = new JsonObject();
-                lore.addProperty("translate", entity.getTranslationKey());
-                lore.addProperty("color", (entity.getSpawnGroup().isPeaceful() ? Formatting.GOLD : Formatting.RED).getName());
-                loreTag.add(NbtString.of(lore.toString()));
-            }
+    public static @NotNull NbtCompound getOrCreateSubNbt(@NotNull NbtCompound compound, @NotNull String key) {
+        return NbtUtils.getOrCreateSubNbt(compound, key, NbtCompound.class);
+    }
+    public static @NotNull NbtCompound getOrCreateSubNbt(@NotNull ItemStack stack, @NotNull String key) {
+        return stack.getOrCreateSubNbt(key);
+    }
+    
+    public static @NotNull NbtElement getOrCreateSubNbt(@NotNull NbtCompound compound, @NotNull String key, byte type) {
+        NbtElement out;
+        if (compound.contains(key, type))
+            out = compound.get(key);
+        else {
+            out = NbtUtils.createNbtOfType(type);
+            compound.put(key, out);
         }
-        
-        // Update the lore tag
-        NbtCompound displayTag = new NbtCompound();
-        displayTag.put("Lore", loreTag);
-        return displayTag;
+        return out;
+    }
+    public static <T extends NbtElement> @NotNull T getOrCreateSubNbt(@NotNull NbtCompound compound, @NotNull String key, Class<T> type) {
+        return (T) NbtUtils.getOrCreateSubNbt(compound, key, NbtUtils.getNbtType(type));
+    }
+    
+    public static <T extends NbtElement> @NotNull T getOrCreateSubNbt(@NotNull NbtList list, Class<T> type, Predicate<T> predicate) {
+        for (NbtElement entry : list) {
+            if (!type.isInstance(entry))
+                continue;
+            T cast = (T) entry;
+            if (predicate.test(cast))
+                return cast;
+        }
+        return NbtUtils.getSubNbt(list, type);
+    }
+    
+    public static @NotNull NbtCompound getSubNbt(@NotNull NbtList list) {
+        return NbtUtils.getSubNbt(list, NbtCompound.class);
+    }
+    public static <T extends NbtElement> @NotNull T getSubNbt(@NotNull NbtList list, Class<T> klass) {
+        T element = NbtUtils.createNbtOfType(klass);
+        list.add(element);
+        return element;
+    }
+    
+    public static @NotNull NbtElement createNbtOfType(byte type) {
+        return switch (type) {
+            case NbtElement.BYTE_TYPE -> throw new UnsupportedOperationException("Cannot instantiate NbtByte");
+            case NbtElement.SHORT_TYPE -> throw new UnsupportedOperationException("Cannot instantiate NbtShort");
+            case NbtElement.INT_TYPE -> throw new UnsupportedOperationException("Cannot instantiate NbtInt");
+            case NbtElement.LONG_TYPE -> throw new UnsupportedOperationException("Cannot instantiate NbtLong");
+            case NbtElement.FLOAT_TYPE -> throw new UnsupportedOperationException("Cannot instantiate NbtFloat");
+            case NbtElement.DOUBLE_TYPE -> throw new UnsupportedOperationException("Cannot instantiate NbtDouble");
+            case NbtElement.BYTE_ARRAY_TYPE -> throw new UnsupportedOperationException("Cannot instantiate NbtByteArray");
+            case NbtElement.STRING_TYPE -> throw new UnsupportedOperationException("Cannot instantiate NbtString (Use \"NbtString.of\")");
+            case NbtElement.LIST_TYPE -> new NbtList();
+            case NbtElement.COMPOUND_TYPE -> new NbtCompound();
+            default -> throw new UnsupportedOperationException("Cannot instantiate NbtElement[" + type + "]");
+        };
+    }
+    public static <T extends NbtElement> @NotNull T createNbtOfType(@NotNull Class<T> type) {
+        byte code = NbtUtils.getNbtType(type);
+        return (T) NbtUtils.createNbtOfType(code);
+    }
+    
+    public static byte getNbtType(Class<?> klass) {
+        if (klass == NbtByte.class)
+            return NbtElement.BYTE_TYPE;
+        if (klass == NbtShort.class)
+            return NbtElement.SHORT_TYPE;
+        if (klass == NbtInt.class)
+            return NbtElement.INT_TYPE;
+        if (klass == NbtLong.class)
+            return NbtElement.LONG_TYPE;
+        if (klass == NbtFloat.class)
+            return NbtElement.FLOAT_TYPE;
+        if (klass == NbtDouble.class)
+            return NbtElement.DOUBLE_TYPE;
+        if (klass == NbtByteArray.class)
+            return NbtElement.BYTE_ARRAY_TYPE;
+        if (klass == NbtString.class)
+            return NbtElement.STRING_TYPE;
+        if (klass == NbtList.class)
+            return NbtElement.LIST_TYPE;
+        if (klass == NbtCompound.class)
+            return NbtElement.COMPOUND_TYPE;
+        if (klass == Number.class)
+            return NbtElement.NUMBER_TYPE;
+        throw new UnsupportedOperationException("Cannot instantiate NbtElement[" + klass + "]");
     }
     
     /*

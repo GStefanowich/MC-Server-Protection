@@ -36,6 +36,7 @@ import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket;
 import net.minecraft.network.packet.s2c.play.PlayerListS2CPacket.Action;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.theelm.sewingmachine.utilities.TradeUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -53,7 +54,7 @@ public final class WanderingTraderPacket {
     private final boolean show;
     
     private WanderingTraderPacket(@NotNull Text text, boolean show) {
-        this.profile = new GameProfile(UUID.fromString("bd482739-767c-45dc-a1f8-c33c40530952"), "MHF_VILLAGER");
+        this.profile = new GameProfile(TradeUtils.WANDERING_TRADER, "MHF_VILLAGER");
         this.name = Text.literal("").formatted(Formatting.WHITE)
             .append(Text.translatable(EntityType.WANDERING_TRADER.getTranslationKey()).formatted(Formatting.BLUE))
             .append(" - ")
