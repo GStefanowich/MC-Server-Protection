@@ -191,22 +191,26 @@ public final class SpawnerUtils {
         // Add mob to the list
         NbtCompound base = stack.getOrCreateNbt();
         NbtCompound block = NbtUtils.getOrCreateSubNbt(base, BlockItem.BLOCK_ENTITY_TAG_KEY);
-        NbtCompound spawn = NbtUtils.getOrCreateSubNbt(block, "SpawnData");
-        NbtCompound entity = NbtUtils.getOrCreateSubNbt(spawn, "entity");
+        
+        NbtCompound spawnData = new NbtCompound();
+        NbtCompound entity = NbtUtils.getOrCreateSubNbt(spawnData, "entity");
         
         String id = identifier.toString();
         entity.put("id", NbtString.of(id));
         
         NbtList spawnPotentials = NbtUtils.getOrCreateSubNbt(block, "SpawnPotentials", NbtList.class);
         NbtCompound spawnPotential = NbtUtils.getOrCreateSubNbt(spawnPotentials, NbtCompound.class, entry
-            -> entry.getCompound("data").getCompound("entity").getString("id").equals(id));
+            -> Objects.equals(entry.getCompound("data").getCompound("entity").getString("id"), id));
+        
         if (spawnPotential.getInt("weight") != weight) {
-            spawnPotential.put("data", spawn);
+            block.put("SpawnData", spawnData);
+            spawnPotential.put("data", spawnData);
             spawnPotential.putInt("weight", weight);
             
             base.put("display", SpawnerUtils.getDisplay(stack));
             return true;
         }
+        
         return false;
     }
     
