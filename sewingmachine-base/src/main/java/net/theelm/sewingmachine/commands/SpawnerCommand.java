@@ -33,6 +33,7 @@ import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.RegistryEntryArgumentType;
 import net.minecraft.entity.EntityType;
+import net.minecraft.registry.Registries;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.text.Text;
@@ -51,6 +52,7 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Objects;
+import java.util.Optional;
 
 public final class SpawnerCommand extends SewCommand {
     @Override
@@ -83,6 +85,7 @@ public final class SpawnerCommand extends SewCommand {
         // Get item information
         RegistryKey<EntityType<?>> mob = RegistryEntryArgumentType.getEntityType(context, "type")
             .registryKey();
+        EntityType<?> type = Registries.ENTITY_TYPE.get(mob);
         
         ItemStack stack = player.getMainHandStack();
         boolean holdingSpawner = Objects.equals(stack.getItem(), Items.SPAWNER);
@@ -93,11 +96,30 @@ public final class SpawnerCommand extends SewCommand {
             if (!holdingSpawner) {
                 player.getInventory()
                     .offerOrDrop(spawner);
+                
+                source.sendFeedback(
+                    () -> Text.literal("Created a ")
+                        .append(Text.translatable(type.getTranslationKey()))
+                        .append(" spawner!"),
+                    false
+                );
+            } else {
+                source.sendFeedback(
+                    () -> Text.literal("Added ")
+                        .append(Text.translatable(type.getTranslationKey()))
+                        .append(" to your mob spawner"),
+                    false
+                );
             }
             
             return Command.SINGLE_SUCCESS;
         } else {
-            source.sendFeedback(() -> Text.literal(holdingSpawner ? "Failed to add mob to spawner" : "Failed to generate Spawner"), false);
+            source.sendFeedback(
+                () -> Text.literal(holdingSpawner ? "Failed to add " : "Failed to create ")
+                    .append(Text.translatable(type.getTranslationKey()))
+                    .append((holdingSpawner ? " to" : "") + " Spawner"),
+                false
+            );
             return 0;
         }
     }

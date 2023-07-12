@@ -30,6 +30,7 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
@@ -184,6 +185,9 @@ public final class SpawnerUtils {
         return SpawnerUtils.addEntity(stack, EntityType.getId(type), weight);
     }
     public static boolean addEntity(@NotNull ItemStack stack, @NotNull Identifier identifier, int weight) {
+        if (!Objects.equals(stack.getItem(), Items.SPAWNER))
+            return false;
+        
         // Add mob to the list
         NbtCompound base = stack.getOrCreateNbt();
         NbtCompound block = NbtUtils.getOrCreateSubNbt(base, BlockItem.BLOCK_ENTITY_TAG_KEY);
@@ -209,8 +213,10 @@ public final class SpawnerUtils {
     public static boolean removeEntity(@NotNull ItemEntity entity, int pos) {
         return SpawnerUtils.removeEntity(entity.getStack(), pos);
     }
-    
     public static boolean removeEntity(@NotNull ItemStack stack, int pos) {
+        if (!Objects.equals(stack.getItem(), Items.SPAWNER))
+            return false;
+        
         NbtCompound base = stack.getOrCreateNbt();
         NbtCompound block = NbtUtils.getOrCreateSubNbt(base, BlockItem.BLOCK_ENTITY_TAG_KEY);
         NbtList spawnPotentials = NbtUtils.getOrCreateSubNbt(block, "SpawnPotentials", NbtList.class);

@@ -6,6 +6,7 @@
 		"Blocks.BeehiveBlockMixin",
 		"Blocks.BlockItemMixin",
 		"Blocks.LecternBlockMixin",
+		"Blocks.MobSpawnerBlockEntityMixin",
 		"Blocks.ShulkerBoxBlockEntityMixin",
 		"Blocks.ShulkerBoxBlockMixin",
 		
