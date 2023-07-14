@@ -74,7 +74,7 @@ public final class GiveSelfCommand extends SewCommand {
     }
     private int giveSelfAmount(@NotNull CommandContext<ServerCommandSource> context, final int amount) throws CommandSyntaxException {
         final ServerCommandSource source = context.getSource();
-        final ServerPlayerEntity player = source.getPlayer();
+        final ServerPlayerEntity player = source.getPlayerOrThrow();
         final ItemStackArgument itemArg = ItemStackArgumentType.getItemStackArgument(context, "item");
         final Item item = itemArg.getItem();
         final int stackSize = Math.min(item.getMaxCount(), amount);

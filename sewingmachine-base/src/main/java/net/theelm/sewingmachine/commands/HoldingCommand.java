@@ -88,7 +88,7 @@ public final class HoldingCommand extends SewCommand {
     private @NotNull Text holding(@NotNull CommandContext<ServerCommandSource> context, @NotNull EquipmentSlot slot) throws CommandSyntaxException {
         // Get player information
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Get hand item
         ItemStack stack = player.getEquippedStack(slot);

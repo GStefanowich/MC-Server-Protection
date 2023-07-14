@@ -180,7 +180,7 @@ public final class TeleportsCommand extends SewCommand {
     private int toSpecificHomeCommand(@NotNull CommandContext<ServerCommandSource> context, @Nullable String location) throws CommandSyntaxException {
         // Get players info
         final ServerCommandSource source = context.getSource();
-        final ServerPlayerEntity porter = source.getPlayer();
+        final ServerPlayerEntity porter = source.getPlayerOrThrow();
         
         return this.tpaToPlayer(
             source.getServer(),
@@ -192,7 +192,7 @@ public final class TeleportsCommand extends SewCommand {
     
     private int renameHomeCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         final ServerCommandSource source = context.getSource();
-        final ServerPlayerEntity player = source.getPlayer();
+        final ServerPlayerEntity player = source.getPlayerOrThrow();
         final String oldName = StringArgumentType.getString(context, "location");
         final String newName = StringArgumentType.getString(context, "new");
         
@@ -234,7 +234,7 @@ public final class TeleportsCommand extends SewCommand {
     
     private int setHomePrimaryCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         final ServerCommandSource source = context.getSource();
-        final ServerPlayerEntity player = source.getPlayer();
+        final ServerPlayerEntity player = source.getPlayerOrThrow();
         
         final String favorite = StringArgumentType.getString(context, "location");
         
@@ -289,7 +289,7 @@ public final class TeleportsCommand extends SewCommand {
     private int tpaCommand(@NotNull CommandContext<ServerCommandSource> context, @Nullable String location) throws CommandSyntaxException {
         // Get players info
         final ServerCommandSource source = context.getSource();
-        final ServerPlayerEntity porter = source.getPlayer();
+        final ServerPlayerEntity porter = source.getPlayerOrThrow();
         
         // Get the reference of the player to request a teleport to
         Collection<GameProfile> profiles = GameProfileArgumentType.getProfileArgument(context, "player");
@@ -393,7 +393,7 @@ public final class TeleportsCommand extends SewCommand {
     private int tpAcceptCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get players info
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity target = source.getPlayer();
+        ServerPlayerEntity target = source.getPlayerOrThrow();
         
         // Get targets info
         ServerPlayerEntity porter = EntityArgumentType.getPlayer(context, "player");
@@ -420,7 +420,7 @@ public final class TeleportsCommand extends SewCommand {
     private int tpDenyCommand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get players info
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity target = source.getPlayer();
+        ServerPlayerEntity target = source.getPlayerOrThrow();
         
         // Get targets info
         ServerPlayerEntity porter = EntityArgumentType.getPlayer( context, "player" );

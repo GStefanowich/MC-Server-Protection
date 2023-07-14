@@ -53,7 +53,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(value = PlayerEntity.class, priority = 1)
 public abstract class PlayerEntityMixin extends LivingEntity implements BackpackCarrier, PvpEntity {
     @Shadow protected abstract void vanishCursedItems();
-    
     @Shadow @Final private PlayerInventory inventory;
     
     protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
@@ -66,22 +65,18 @@ public abstract class PlayerEntityMixin extends LivingEntity implements Backpack
      */
     @Inject(at = @At("HEAD"), method = "dropInventory", cancellable = true)
     public void onInventoryDrop(CallbackInfo callback) {
-        boolean keepInventory = this.getWorld().getGameRules().getBoolean(GameRules.KEEP_INVENTORY);
-        PlayerBackpack backpack = this.getBackpack();
-        
-        // Drop the backpack if we're not using death chests (And keep inventory is off)
-        if (!keepInventory) {
-            DeathChestUtils.createDeathSnapshotFor((PlayerEntity)(LivingEntity) this);
-
-            // Drop the contents of the backpack (Only if the player HAS one)
-            if (backpack != null)
-                backpack.dropAll(true);
-        }
+        if (this.isAlive())
+            return;
+        boolean keepInventory = this.getWorld()
+            .getGameRules()
+            .getBoolean(GameRules.KEEP_INVENTORY);
         
         // Only do if we're not keeping the inventory, and the player is actually dead! (Death Chest!)
-        if (!keepInventory && !this.isAlive()) {
+        if (!keepInventory) {
             DeathChestUtils.createDeathSnapshotFor((PlayerEntity)(LivingEntity) this);
             BlockPos chestPos;
+            
+            PlayerBackpack backpack = this.getBackpack();
             
             // Check if player is in combat
             if (SewConfig.get(SewDeathConfig.PVP_DISABLE_DEATH_CHEST) && this.inCombat()) {

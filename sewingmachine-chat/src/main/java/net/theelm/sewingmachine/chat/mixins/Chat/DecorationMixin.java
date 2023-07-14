@@ -26,24 +26,35 @@
 package net.theelm.sewingmachine.chat.mixins.Chat;
 
 import net.minecraft.network.message.MessageType;
-import net.minecraft.registry.Registerable;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
 import net.minecraft.text.Decoration;
-import net.theelm.sewingmachine.chat.ServerCore;
-import net.theelm.sewingmachine.utilities.mod.Sew;
+import net.minecraft.text.Text;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-@Mixin(MessageType.class)
-public class MessageTypeMixin {
-    @Inject(at = @At("TAIL"), method = "bootstrap")
-    private static void onBootstrap(Registerable<MessageType> messageTypeRegisterable, CallbackInfo callback) {
-        messageTypeRegisterable.register(
-            ServerCore.CUSTOM_FORMATTING,
-            new MessageType(Decoration.ofChat("%s"), Decoration.ofChat("%s"))
-        );
+/**
+ * Created on Jul 13 2023 at 3:26 PM.
+ * By greg in sewingmachine
+ */
+@Mixin(Decoration.class)
+public class DecorationMixin {
+    @Inject(at = @At("RETURN"), method = "apply")
+    public void onApply(Text content, MessageType.Parameters params, CallbackInfoReturnable<Text> callback) {
+        System.out.println("[Decoration::apply] " + callback.getReturnValue().getString());
+    }
+    
+    @Inject(at = @At("RETURN"), method = "collectArguments")
+    public void onCollectArguments(Text content, MessageType.Parameters params, CallbackInfoReturnable<Text[]> callback) {
+        Text[] texts = callback.getReturnValue();
+        for (int i = 0; i < texts.length; i++) {
+            Text text = texts[i];
+            System.out.println("[Decoration::collectArguments." + i + "] " + text.getString());
+        }
+    }
+    
+    @Inject(at = @At("RETURN"), method = "translationKey")
+    public void onGetTranslationKey(CallbackInfoReturnable<String> callback) {
+        System.out.println("[Decoration::translationKey]" + callback.getReturnValue());
     }
 }

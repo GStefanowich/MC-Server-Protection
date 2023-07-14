@@ -25,6 +25,9 @@
 
 package net.theelm.sewingmachine.protection.mixins.World;
 
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.network.PacketByteBuf;
+import net.minecraft.network.packet.s2c.play.ChunkData;
 import net.minecraft.registry.Registry;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
 import net.minecraft.server.world.ServerWorld;
@@ -42,6 +45,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+import java.util.function.Consumer;
 
 /**
  * Created on Dec 04 2021 at 11:57 AM.
@@ -63,5 +68,10 @@ public abstract class WorldChunkMixin extends Chunk implements IClaimedChunk {
         
         // Update the chunks town
         this.updateTownOwner(((IClaimedChunk)protoChunk).getTownId(), false);
+    }
+    
+    @Inject(at = @At("RETURN"), method = "loadFromPacket")
+    public void onLoadFromPacket(PacketByteBuf buf, NbtCompound nbt, Consumer<ChunkData.BlockEntityVisitor> consumer, CallbackInfo callback) {
+        // TODO: Sync chunk data from Server to Client on the chunk loadFromPacket
     }
 }

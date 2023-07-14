@@ -28,7 +28,7 @@ public final class RideCommand extends SewCommand {
     
     private int ride(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Get the new entity to ride
         Entity entity = EntityArgumentType.getEntity(context, "entity");

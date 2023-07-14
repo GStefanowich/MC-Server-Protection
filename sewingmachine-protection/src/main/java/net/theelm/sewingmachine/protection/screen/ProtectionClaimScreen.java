@@ -126,13 +126,13 @@ public final class ProtectionClaimScreen extends SettingScreen {
     
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return (this.widget != null && this.widget.mouseClicked(mouseX - this.frame.padding(), mouseY - this.frame.padding(), button))
+        return (this.widget != null && this.widget.mouseClicked(mouseX, mouseY, button))
             || super.mouseClicked(mouseX, mouseY, button);
     }
     
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        return (this.widget != null && this.widget.mouseReleased(mouseX - this.frame.padding(), mouseY - this.frame.padding(), button))
+        return (this.widget != null && this.widget.mouseReleased(mouseX, mouseY, button))
             || super.mouseReleased(mouseX, mouseY, button);
     }
     

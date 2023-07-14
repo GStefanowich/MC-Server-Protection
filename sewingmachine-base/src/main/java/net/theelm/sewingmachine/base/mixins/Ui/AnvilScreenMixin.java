@@ -23,35 +23,24 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.protection.mixins.Entities;
+package net.theelm.sewingmachine.base.mixins.Ui;
 
-import net.minecraft.entity.Entity;
-import net.minecraft.entity.EntityType;
-import net.minecraft.entity.damage.DamageSources;
-import net.minecraft.entity.decoration.AbstractDecorationEntity;
-import net.minecraft.entity.decoration.ItemFrameEntity;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.util.ActionResult;
-import net.minecraft.world.World;
-import net.theelm.sewingmachine.enums.Test;
-import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.screen.ingame.AnvilScreen;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
+import net.theelm.sewingmachine.config.SewConfig;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.injection.Constant;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
 
-@Mixin(value = ItemFrameEntity.class, priority = 1)
-public abstract class ItemFrameEntityMixin extends AbstractDecorationEntity {
-    protected ItemFrameEntityMixin(EntityType<? extends AbstractDecorationEntity> entityType, World world) {
-        super(entityType, world);
-    }
-    
-    @Override
-    public boolean handleAttack(Entity entity) {
-        if (entity instanceof PlayerEntity player) {
-            DamageSources damageSources = this.getDamageSources();
-            Test result = DamageEntityCallback.EVENT.invoker()
-                .interact(this, this.getEntityWorld(), damageSources.playerAttack(player));
-            if (result == Test.FAIL)
-                return true;
-        }
-        return super.handleAttack(entity);
+@Mixin(AnvilScreen.class)
+@Environment(EnvType.CLIENT)
+public abstract class AnvilScreenMixin {
+    @ModifyConstant(method = "drawForeground", constant = @Constant(intValue = 40))
+    private int anvilMaxLevelOverride(int oldValue) {
+        if (SewConfig.isTrue(SewBaseConfig.ANVIL_DISABLE_COST_LIMIT))
+            return Integer.MAX_VALUE;
+        return oldValue;
     }
 }

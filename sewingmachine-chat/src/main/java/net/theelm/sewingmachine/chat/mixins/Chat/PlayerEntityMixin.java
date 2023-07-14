@@ -49,7 +49,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin extends LivingEntity implements Nicknamable {
     // Nickname
-    private Text playerNickname = null;
+    private @Nullable Text playerNickname = null;
     
     protected PlayerEntityMixin(EntityType<? extends LivingEntity> entityType, World world) {
         super(entityType, world);
@@ -78,8 +78,8 @@ public abstract class PlayerEntityMixin extends LivingEntity implements Nicknama
         if (healthBar != null)
             healthBar.setName(Text.literal("Player ").append(this.getDisplayName()).formatted(Formatting.WHITE));
     }
-    @Nullable @Override
-    public Text getPlayerNickname() {
+    @Override
+    public @Nullable Text getPlayerNickname() {
         if (this.playerNickname == null)
             return null;
         return FormattingUtils.deepCopy(this.playerNickname);

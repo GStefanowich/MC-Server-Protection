@@ -27,11 +27,15 @@ package net.theelm.sewingmachine.chat.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.SimpleCommandExceptionType;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import me.lucko.fabric.api.permissions.v0.Permissions;
 import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.MessageArgumentType;
 import net.minecraft.server.command.CommandManager;
@@ -40,56 +44,33 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.theelm.sewingmachine.chat.config.SewChatConfig;
-import net.theelm.sewingmachine.chat.utilities.ChatRoomUtilities;
-import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.theelm.sewingmachine.objects.MessageRegion;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.ServerText;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
 
 public final class ChatroomCommands extends SewCommand {
     private static final SimpleCommandExceptionType MUTE_EXEMPT = new SimpleCommandExceptionType(Text.literal("That player is exempt from being muted."));
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        /*CommandUtils.register(dispatcher, "t", "Town Chat", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY).and(ClaimCommand::sourceInTown))
-            .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
-            .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
-        );*/
-        
-        CommandUtils.register(dispatcher, "g", "Global Chat", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY))
-            .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.GLOBAL)))
-            .executes((context -> switchToChatRoom(context, ChatRooms.GLOBAL)))
-        );
-        
-        CommandUtils.register(dispatcher, "l", "Local Chat", builder -> builder
-            .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY))
-            .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.LOCAL)))
-            .executes((context -> switchToChatRoom(context, ChatRooms.LOCAL)))
-        );
-        
         CommandUtils.register(dispatcher, "Chat", builder -> builder
-            /*.then(CommandManager.literal("town")
-                .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY).and(ClaimCommand::sourceInTown))
-                .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> sendToChatRoom(context, ChatRooms.TOWN)))
-                .executes((context -> switchToChatRoom(context, ChatRooms.TOWN)))
-            )*/
-            .then(CommandManager.literal("global")
-                .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY))
-                .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> this.sendToChatRoom(context, ChatRooms.GLOBAL)))
-                .executes((context -> switchToChatRoom(context, ChatRooms.GLOBAL)))
-            )
-            .then(CommandManager.literal("local")
-                .requires(CommandPredicate.isEnabled(SewChatConfig.CHAT_MODIFY))
-                .then(CommandManager.argument("text", MessageArgumentType.message()).executes((context) -> this.sendToChatRoom(context, ChatRooms.LOCAL)))
-                .executes((context -> switchToChatRoom(context, ChatRooms.LOCAL)))
+            .then(CommandManager.argument("room", StringArgumentType.word())
+                .suggests(this::getRoomSuggestions)
+                .then(CommandManager.argument("text", MessageArgumentType.message())
+                    .executes(this::sendToChatRoom)
+                )
+                .executes(this::switchToChatRoom)
             )
         );
         
@@ -118,42 +99,60 @@ public final class ChatroomCommands extends SewCommand {
         );
     }
     
-    private int sendToChatRoom(@NotNull final CommandContext<ServerCommandSource> context, final ChatRooms room) throws CommandSyntaxException {
-        ServerPlayerEntity player = context.getSource().getPlayer();
-
-        if ((room != ChatRooms.TOWN) && ((PlayerChat)player).isMuted()) {
-            player.sendMessage(ServerText.text(
-                player,
-                "chat.muted",
-                room
-            ).formatted(Formatting.RED));
-            return Command.SINGLE_SUCCESS;
+    private int sendToChatRoom(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource()
+            .getPlayerOrThrow();
+        MessageRegion room = this.getChatRoom(context);
+        if (room != null) {
+            if (((PlayerChat)player).isMuted()) {
+                player.sendMessage(ServerText.text(
+                    player,
+                    "chat.muted",
+                    room
+                ).formatted(Formatting.RED));
+            } else {
+                MessageArgumentType.getSignedMessage(context, "text", message -> {
+                    room.broadcast(player, null, Collections.emptyList(), message);
+                });
+            }
         }
         
-        // Format the text
-        Text chatText = ChatRoomUtilities.formatPlayerMessage(
-            player,
-            room,
-            MessageArgumentType.getMessage(context, "text")
+        return Command.SINGLE_SUCCESS;
+    }
+    
+    private int switchToChatRoom(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        ServerPlayerEntity player = context.getSource()
+            .getPlayerOrThrow();
+        MessageRegion room = this.getChatRoom(context);
+        
+        if (room != null) {
+            // Update the chat room
+            ((PlayerChat) player).setChatRoom(room);
+            
+            // Tell the player
+            player.sendMessage(ServerText.text(player, "chat.change." + room.name().toLowerCase()));
+        }
+        
+        return Command.SINGLE_SUCCESS;
+    }
+    
+    private @Nullable MessageRegion getChatRoom(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+        String room = StringArgumentType.getString(context, "room");
+        MessageRegion region = MessageRegion.get(room);
+        return region.enabled(context.getSource()) ? region : null;
+    }
+    
+    private @NotNull CompletableFuture<Suggestions> getRoomSuggestions(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) {
+        ServerCommandSource source = context.getSource();
+        return CommandSource.suggestMatching(
+            MessageRegion.get()
+                .stream()
+                .filter(region -> region.enabled(source))
+                .map(MessageRegion::name),
+            builder
         );
-
-        // Send the new chat message to the currently selected chat room
-        ChatRoomUtilities.sendTo(room, player, chatText);
-
-        return Command.SINGLE_SUCCESS;
     }
-    private int switchToChatRoom(@NotNull final CommandContext<ServerCommandSource> context, final ChatRooms chatRoom) throws CommandSyntaxException {
-        ServerPlayerEntity player = context.getSource().getPlayer();
-        
-        // Update the chat room
-        ((PlayerChat) player).setChatRoom(chatRoom);
-        
-        // Tell the player
-        player.sendMessage(ServerText.text(player, "chat.change." + chatRoom.name().toLowerCase()));
-
-        return Command.SINGLE_SUCCESS;
-    }
-
+    
     private int playerMute(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         if (!SewConfig.get(SewChatConfig.CHAT_MUTE_SELF))
             return this.opMute(context);

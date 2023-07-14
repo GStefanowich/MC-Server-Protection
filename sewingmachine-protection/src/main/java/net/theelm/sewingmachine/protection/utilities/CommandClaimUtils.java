@@ -81,7 +81,7 @@ public final class CommandClaimUtils {
     public static @NotNull CompletableFuture<Suggestions> getFriendPlayerNames(@NotNull CommandContext<ServerCommandSource> context, @NotNull SuggestionsBuilder builder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Get only a list of friends
         Set<String> userNames = new HashSet<>(CommandClaimUtils.getFriendNames(server, player));

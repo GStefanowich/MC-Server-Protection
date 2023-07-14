@@ -61,21 +61,21 @@ public final class MiscCommands extends SewCommand {
     
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        CommandUtils.register(dispatcher, "shrug", builder -> builder
+        /*CommandUtils.register(dispatcher, "shrug", builder -> builder
             .requires(CommandPredicate.isEnabled(SewBaseConfig.COMMAND_SHRUG))
             .then(CommandManager.argument("message", MessageArgumentType.message())
                 .executes(this::shrugMessage)
             )
             .executes(this::shrug)
-        );
+        );*/
         
-        CommandUtils.register(dispatcher, "tableflip", builder -> builder
+        /*CommandUtils.register(dispatcher, "tableflip", builder -> builder
             .requires(CommandPredicate.isEnabled(SewBaseConfig.COMMAND_TABLEFLIP))
             .then(CommandManager.argument("message", MessageArgumentType.message())
                 .executes(this::flipMessage)
             )
             .executes(this::flip)
-        );
+        );*/
         
         CommandUtils.register(dispatcher, "lightning", builder -> builder
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))

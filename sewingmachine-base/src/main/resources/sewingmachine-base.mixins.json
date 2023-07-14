@@ -27,6 +27,7 @@
 		"Entities.EndCrystalEntityMixin",
 		"Entities.EnderDragonEntityMixin",
 		"Entities.EntityMixin",
+		"Entities.ItemFrameEntityMixin",
 		"Entities.LimitedSkeletons",
 		"Entities.LivingEntityMixin",
 		"Entities.MobEntityMixin",
@@ -90,7 +91,8 @@
 	],
 	"client": [
 		"Client.MinecraftClientMixin",
-		"Screens.InventoryScreenMixin"
+		"Screens.InventoryScreenMixin",
+		"Ui.AnvilScreenMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

@@ -278,7 +278,7 @@ public final class AdminCommands extends SewCommand {
     
     private int selfRepair(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         ItemStack stack = player.getMainHandStack();
         if (stack.isDamageable()) {

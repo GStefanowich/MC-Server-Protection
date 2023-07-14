@@ -65,7 +65,7 @@ public final class RulerCommand extends SewCommand {
     private int ruler(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get the command information
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         ServerWorld world = source.getWorld();
         
         // Get the block that the player is facing

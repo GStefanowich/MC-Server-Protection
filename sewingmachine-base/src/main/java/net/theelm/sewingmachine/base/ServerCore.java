@@ -33,6 +33,7 @@ import net.minecraft.registry.RegistryKey;
 import net.minecraft.text.Text;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.base.objects.BalanceUpdateHandler;
+import net.theelm.sewingmachine.base.objects.ItemFrameTransfer;
 import net.theelm.sewingmachine.base.objects.signs.SignBackpack;
 import net.theelm.sewingmachine.base.objects.signs.SignBalance;
 import net.theelm.sewingmachine.base.objects.signs.SignGuide;
@@ -76,6 +77,7 @@ import net.theelm.sewingmachine.events.NetworkHandlerCallback;
 import net.theelm.sewingmachine.events.PlayerBalanceCallback;
 import net.theelm.sewingmachine.events.PlayerModsCallback;
 import net.theelm.sewingmachine.events.TaxCollection;
+import net.theelm.sewingmachine.interfaces.DamageEntityCallback;
 import net.theelm.sewingmachine.interfaces.ModUser;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
@@ -109,7 +111,11 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
     public void onInitialize() {
         super.initialize();
         
+        // Init Bluemap stuff
         BlueMapUtils.init();
+        
+        // Create registry based listeners
+        ItemFrameTransfer.register(DamageEntityCallback.EVENT);
         
         CoreMod.logInfo("Initializing Database.");
         try {
@@ -207,7 +213,7 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
             new GameModesCommand(),
             new GiveSelfCommand(),
             new HeadCommand(),
-            new HoldingCommand(),
+            //new HoldingCommand(),
             new LoggingCommand(),
             new MiscCommands(),
             new ModsCommand(),
@@ -216,7 +222,7 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
             new RideCommand(),
             new RulerCommand(),
             new SpawnerCommand(),
-            new StatsCommand(),
+            //new StatsCommand(),
             new TeleportsCommand(),
             new WaystoneCommand(),
             new WhereCommand(),

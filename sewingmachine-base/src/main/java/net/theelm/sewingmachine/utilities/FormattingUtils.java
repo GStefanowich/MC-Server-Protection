@@ -200,7 +200,6 @@ public final class FormattingUtils {
             if (text.getContent() instanceof VariableTextContent variable)
                 update = variable.execute(TextUtils.mutable(text), modifier);
             else {
-                System.out.println(text.getClass());
                 update = text;
             }
             

@@ -33,6 +33,7 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.annotations.Debug;
+import net.theelm.sewingmachine.annotations.Public;
 import net.theelm.sewingmachine.annotations.Server;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.config.ConfigArray;
@@ -207,8 +208,8 @@ public class SewBaseConfig {
     
     public static final ConfigOption<Boolean> EXTINGUISH_CAMPFIRES = ConfigOption.json("fun.world.extinguish_campfires", true);
     
-    public static final ConfigOption<Boolean> ANVIL_DISABLE_COST_LIMIT = ConfigOption.json("fun.anvil.disable_level_cap", false);
-    public static final ConfigOption<Boolean> ANVIL_DISABLE_COST_REPAIR = ConfigOption.json("fun.anvil.disable_repair_increment", false);
+    public static final @Public ConfigOption<Boolean> ANVIL_DISABLE_COST_LIMIT = ConfigOption.json("fun.anvil.disable_level_cap", false);
+    public static final @Public ConfigOption<Boolean> ANVIL_DISABLE_COST_REPAIR = ConfigOption.json("fun.anvil.disable_repair_increment", false);
     
     public static final ConfigOption<Boolean> ENDERMEN_FARMS_DROP_NO_LOOT = ConfigOption.json("fun.mobs.enderman.farms_no_loot", true);
     public static final ConfigOption<Boolean> PREVENT_NETHER_ENDERMEN = ConfigOption.json("fun.mobs.enderman.no_nether", false);

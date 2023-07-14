@@ -27,13 +27,16 @@ package net.theelm.sewingmachine.protection;
 
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.network.message.SignedMessage;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.ChunkStatus;
+import net.theelm.sewingmachine.base.objects.ItemFrameTransfer;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.events.ContainerAccessCallback;
 import net.theelm.sewingmachine.events.MessageDeployer;
@@ -52,6 +55,7 @@ import net.theelm.sewingmachine.interfaces.ItemUseCallback;
 import net.theelm.sewingmachine.interfaces.LogicalWorld;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.interfaces.variables.EntityVariableFunction;
+import net.theelm.sewingmachine.objects.MessageRegion;
 import net.theelm.sewingmachine.protection.claims.ClaimantTown;
 import net.theelm.sewingmachine.protection.commands.ClaimCommand;
 import net.theelm.sewingmachine.protection.config.SewProtectionConfig;
@@ -89,8 +93,10 @@ import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import net.theelm.sewingmachine.utilities.ShopSigns;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -183,15 +189,7 @@ public final class ServerCore implements ModInitializer, SewPlugin {
         });
         
         // Sending out messages
-        MessageDeployer.EVENT.register((room, player, tags, message) -> {
-            // Message to the players town
-            if (room instanceof Enum<?> e && "TOWN".equals(e.name())) {
-                ClaimantPlayer claimantPlayer = ((PlayerClaimData) player).getClaim();
-                return MessageClaimUtils.sendToTown(claimantPlayer.getTown(), tags, message);
-            }
-            
-            return false;
-        });
+        MessageRegion.add(new TownMessageRegion());
         
         // Container access permission
         ContainerAccessCallback.TEST.register((entity, world, pos) -> {
@@ -307,5 +305,28 @@ public final class ServerCore implements ModInitializer, SewPlugin {
     @Override
     public @NotNull Optional<Class<?>> getConfigClass() {
         return Optional.of(SewProtectionConfig.class);
+    }
+    
+    private final class TownMessageRegion extends MessageRegion {
+        public TownMessageRegion() {
+            super("town");
+        }
+        
+        @Override
+        public boolean enabled(@NotNull ServerCommandSource source) {
+            return ClaimCommand.sourceInTown(source);
+        }
+
+        @Override
+        public boolean enabled(@NotNull ServerPlayerEntity player) {
+            return ClaimCommand.sourceInTown(player);
+        }
+        
+        @Override
+        public boolean broadcast(@NotNull ServerPlayerEntity player, @Nullable ServerPlayerEntity target, @NotNull Collection<ServerPlayerEntity> tags, @NotNull SignedMessage message) {
+            ClaimantPlayer claimantPlayer = ((PlayerClaimData) player).getClaim();
+            //return MessageClaimUtils.sendToTown(claimantPlayer.getTown(), tags, message);
+            return false;
+        }
     }
 }

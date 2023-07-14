@@ -176,19 +176,6 @@ public final class ItemUse {
             ItemUse.syncedBlockStateChange(world, pos, state.with(HorizontalFacingBlock.FACING, rotation));
             
             return true;
-        } else {
-            /*BlockEntity entity = world.getBlockEntity(pos);
-            if (entity instanceof SignBlockEntity) {
-                SignBlockEntity sign = (SignBlockEntity) entity;
-                if (!player.isSneaking()) {
-                    System.out.println("Hello!");
-                } else if (block.isIn(BlockTags.STANDING_SIGNS)) {
-                    System.out.println("Standing sign!");
-                }
-                
-                sign.setEditor(player);
-                player.networkHandler.sendPacket(new SignEditorOpenS2CPacket(pos));
-            }*/
         }
         return false;
     }

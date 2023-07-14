@@ -42,8 +42,10 @@ import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
 import net.theelm.sewingmachine.chat.utilities.ChatRoomUtilities;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.theelm.sewingmachine.objects.MessageRegion;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
 
@@ -78,21 +80,11 @@ public final class TagUserCommand extends SewCommand {
     }
     private int sendTaggedMessage(@NotNull CommandContext<ServerCommandSource> context, @NotNull String text) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity from = source.getPlayer();
+        ServerPlayerEntity from = source.getPlayerOrThrow();
         ServerPlayerEntity to = EntityArgumentType.getPlayer(context, "player");
         
         // The chatroom to send the message in
-        ChatRooms room = ((PlayerChat)from).getChatRoom();
-        
-        // Create a chat message
-        Text chatText = ChatRoomUtilities.formatPlayerMessage(from, room, Text.literal(text)
-            .append(Text.literal(" @")
-                .formatted(Formatting.GREEN, Formatting.ITALIC)
-                .append(to.getDisplayName().getString())));
-        
-        // Send the new chat message to the currently selected chat room
-        ChatRoomUtilities.sendTo(room, from, Collections.singleton(to), chatText);
-        
+        MessageRegion room = ((PlayerChat)from).getChatRoom();
         return Command.SINGLE_SUCCESS;
     }
 }

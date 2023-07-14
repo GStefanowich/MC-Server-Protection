@@ -437,7 +437,7 @@ public final class ClaimCommand extends SewCommand {
         ServerCommandSource source = context.getSource();
         
         // Get the player running the command
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Claim the chunk for own player
         return this.claimChunk(
@@ -456,7 +456,7 @@ public final class ClaimCommand extends SewCommand {
         
         // Attempt to claim the chunk
         WorldChunk chunk = world.getWorldChunk(BlockPos.ofFloored(source.getPosition()));
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         if (!player.getUuid().equals(((IClaimedChunk) chunk).getOwnerId()))
             this.claimChunkSelf(context);
         
@@ -517,7 +517,7 @@ public final class ClaimCommand extends SewCommand {
     private int claimChunk(@NotNull final ServerCommandSource source, @Nullable UUID chunkFor) throws CommandSyntaxException {
         // Claiming chunks for self player
         if (chunkFor == null) {
-            ServerPlayerEntity player = source.getPlayer();
+            ServerPlayerEntity player = source.getPlayerOrThrow();
             chunkFor = player.getUuid();
         }
         
@@ -537,7 +537,7 @@ public final class ClaimCommand extends SewCommand {
         
         // Claiming chunks for self player
         if (chunkFor == null) {
-            player = source.getPlayer();
+            player = source.getPlayerOrThrow();
             chunkFor = player.getUuid();
         }
         
@@ -594,7 +594,7 @@ public final class ClaimCommand extends SewCommand {
     
     private int unclaimChunkSelf(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         return this.unclaimChunkAt(
             source,
             source.getWorld(),
@@ -605,7 +605,7 @@ public final class ClaimCommand extends SewCommand {
     }
     private int unclaimChunkTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         ServerWorld world = source.getWorld();
         
         ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
@@ -631,7 +631,7 @@ public final class ClaimCommand extends SewCommand {
     }
     private int unclaimChunkOther(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         return this.unclaimChunkAt(
             source,
             source.getWorld(),
@@ -642,7 +642,7 @@ public final class ClaimCommand extends SewCommand {
     }
     private int unclaimAll(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         final ServerCommandSource source = context.getSource();
-        final ServerPlayerEntity player = source.getPlayer();
+        final ServerPlayerEntity player = source.getPlayerOrThrow();
         final ServerWorld world = source.getWorld();
         
         // Update total count
@@ -757,7 +757,7 @@ public final class ClaimCommand extends SewCommand {
         return source.getEntity() instanceof ServerPlayerEntity player && ClaimCommand.sourceInTown(player);
     }
     @Deprecated
-    private static boolean sourceInTown(@NotNull final ServerPlayerEntity player) {
+    public static boolean sourceInTown(@NotNull final ServerPlayerEntity player) {
         ClaimantPlayer claim = ((PlayerClaimData) player).getClaim();
         return ((claim != null) && claim.getTown() != null);
     }
@@ -773,7 +773,7 @@ public final class ClaimCommand extends SewCommand {
         if (!(((ClaimsAccessor) server).getClaimManager() instanceof ServerClaimCache claimCache))
             return 0;
         
-        ServerPlayerEntity founder = source.getPlayer();
+        ServerPlayerEntity founder = source.getPlayerOrThrow();
         
         // Charge the player money
         try {
@@ -804,7 +804,7 @@ public final class ClaimCommand extends SewCommand {
         // Get player information
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
-        ServerPlayerEntity founder = source.getPlayer();
+        ServerPlayerEntity founder = source.getPlayerOrThrow();
         
         ClaimantPlayer claimantPlayer = ((PlayerClaimData) founder).getClaim();
         ClaimantTown claimantTown;
@@ -829,7 +829,7 @@ public final class ClaimCommand extends SewCommand {
     }
     private int townInvite(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         ClaimantPlayer claimant = ((PlayerClaimData) player).getClaim();
         ClaimantTown town = claimant.getTown();
         if (town == null) return -1; // Towns SHOULD always be set when reaching here
@@ -861,7 +861,7 @@ public final class ClaimCommand extends SewCommand {
         ServerWorld world = source.getWorld();
         IClaimedChunk claimedChunk = (IClaimedChunk) world.getChunk(BlockPos.ofFloored(source.getPosition()));
         
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         ClaimantTown town;
         if ((claimedChunk.getOwnerId() == null) || ((town = claimedChunk.getTown()) == null) || (!player.getUuid().equals(claimedChunk.getOwnerId())) || (!player.getUuid().equals( town.getOwnerId() )))
             throw ClaimCommand.CHUNK_NOT_OWNED_BY_PLAYER.create(player);
@@ -873,7 +873,7 @@ public final class ClaimCommand extends SewCommand {
     private int playerJoinsTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         ClaimantPlayer claimant = ((PlayerClaimData) player).getClaim();
         
         String townName = StringArgumentType.getString(context, "town");
@@ -898,7 +898,7 @@ public final class ClaimCommand extends SewCommand {
     private int playerPartsTown(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         MinecraftServer server = source.getServer();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         ClaimantPlayer claimaint = ((PlayerClaimData) player).getClaim();
         
         /*
@@ -983,7 +983,7 @@ public final class ClaimCommand extends SewCommand {
     }
     private CompletableFuture<Suggestions> listTownInvites(@NotNull CommandContext<ServerCommandSource> context, SuggestionsBuilder suggestionsBuilder) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         ClaimantPlayer claimant = ((PlayerClaimData) player).getClaim();
         
         // Suggestion set
@@ -1005,7 +1005,8 @@ public final class ClaimCommand extends SewCommand {
         ClaimRanks rank = EnumArgumentType.getEnum(ClaimRanks.class, StringArgumentType.getString(context, "rank"));
         
         // Get the player
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        ServerPlayerEntity player = context.getSource()
+            .getPlayerOrThrow();
         
         // Update the runtime
         this.updateSetting(player, permission, rank);
@@ -1018,7 +1019,8 @@ public final class ClaimCommand extends SewCommand {
         ClaimRanks rank = EnumArgumentType.getEnum(ClaimRanks.class, StringArgumentType.getString(context, "rank"));
         
         // Get the player
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        ServerPlayerEntity player = context.getSource()
+            .getPlayerOrThrow();
         
         for ( ClaimPermissions permission : ClaimPermissions.values() )
             this.updateSetting(player, permission, rank);
@@ -1044,7 +1046,8 @@ public final class ClaimCommand extends SewCommand {
         boolean enabled = BoolArgumentType.getBool(context, "bool");
         
         // Get the player
-        ServerPlayerEntity player = context.getSource().getPlayer();
+        ServerPlayerEntity player = context.getSource()
+            .getPlayerOrThrow();
         
         // Update the runtime
         ClaimPropertyUtils.updateSetting(player, setting, enabled);
@@ -1070,7 +1073,7 @@ public final class ClaimCommand extends SewCommand {
         ServerCommandSource source = context.getSource();
         
         // Get the player
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument( context, "friend" );
         GameProfile friend = gameProfiles.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
@@ -1113,7 +1116,7 @@ public final class ClaimCommand extends SewCommand {
         ServerCommandSource source = context.getSource();
         
         // Get the player
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         Collection<GameProfile> gameProfiles = GameProfileArgumentType.getProfileArgument(context, "friend");
         GameProfile friend = gameProfiles.stream().findAny()
             .orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
@@ -1158,7 +1161,7 @@ public final class ClaimCommand extends SewCommand {
     }
     private int findFriend(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         MinecraftServer server = source.getServer();
         
         // Get the GameProfile of the Target
@@ -1185,7 +1188,7 @@ public final class ClaimCommand extends SewCommand {
     private int findFriendWarp(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
         ServerWorld world = source.getWorld();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Get the GameProfile of the Target
         GameProfile friend = GameProfileArgumentType.getProfileArgument(context, "friend").stream()
@@ -1217,7 +1220,7 @@ public final class ClaimCommand extends SewCommand {
     }
     private int stopFindingPos(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         return this.pathPlayerToTarget(player, player);
     }
     private int pathPlayerToTarget(@NotNull ServerPlayerEntity player, @NotNull Entity target) {

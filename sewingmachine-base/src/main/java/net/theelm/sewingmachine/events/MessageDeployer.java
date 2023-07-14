@@ -27,24 +27,43 @@ package net.theelm.sewingmachine.events;
 
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
+import net.minecraft.network.message.MessageType;
+import net.minecraft.network.message.SignedMessage;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Collections;
 
 @FunctionalInterface
 public interface MessageDeployer {
-    Event<MessageDeployer> EVENT = EventFactory.createArrayBacked(
+    Event<MessageDeployer> EMIT = EventFactory.createArrayBacked(
         MessageDeployer.class,
-        (room, player, tags, message) -> false, // TODO: Create a fallback where the message is globally sent
-        (listeners) -> (room, player, tags, message) -> {
+        (room, player, tags, message) -> {
+            MinecraftServer server = player.getServer();
+            PlayerManager playerManager = server.getPlayerManager();
+            playerManager.broadcast(message, player, MessageType.params(MessageType.CHAT, player));
+            return true;
+        },
+        (listeners) -> (player, target, tags, message) -> {
             for (MessageDeployer deployer : listeners)
-                if (deployer.send(room, player, tags, message))
+                if (deployer.sendMessage(player, target, tags, message))
                     return true;
             return false;
         }
     );
     
-    boolean send(@NotNull Object room, @NotNull ServerPlayerEntity player, @NotNull Collection<ServerPlayerEntity> tags, @NotNull Text message);
+    boolean sendMessage(@NotNull ServerPlayerEntity player, @Nullable ServerPlayerEntity target, @NotNull Collection<ServerPlayerEntity> tags, @NotNull SignedMessage message);
+    
+    static boolean sendMessage(@NotNull ServerPlayerEntity player, @NotNull SignedMessage message) {
+        return MessageDeployer.EMIT.invoker()
+            .sendMessage(player, null, Collections.emptyList(), message);
+    }
+    static boolean sendWhisper(@NotNull ServerPlayerEntity player, @NotNull ServerPlayerEntity target, @NotNull SignedMessage message) {
+        return MessageDeployer.EMIT.invoker()
+            .sendMessage(player, target, Collections.emptyList(), message);
+    }
 }

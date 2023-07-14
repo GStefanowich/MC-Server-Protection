@@ -27,11 +27,13 @@ package net.theelm.sewingmachine.chat.interfaces;
 
 import com.mojang.authlib.GameProfile;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
+import net.theelm.sewingmachine.objects.MessageRegion;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public interface PlayerChat {
-    @NotNull ChatRooms getChatRoom();
-    void setChatRoom(@NotNull ChatRooms room);
+    @Nullable MessageRegion getChatRoom();
+    void setChatRoom(@NotNull MessageRegion room);
     
     boolean toggleMute();
     boolean toggleMute(boolean muted);

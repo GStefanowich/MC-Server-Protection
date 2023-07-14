@@ -33,7 +33,9 @@ import net.minecraft.server.network.ServerPlayerInteractionManager;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
 import net.theelm.sewingmachine.enums.PermissionNodes;
+import net.theelm.sewingmachine.objects.MessageRegion;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -48,16 +50,16 @@ public class ServerPlayerInteractionManagerMixin implements PlayerChat {
     /*
      * Chat Handlers
      */
-    private ChatRooms chatRoom = ChatRooms.GLOBAL;
+    private MessageRegion chatRoom = null;
     private HashSet<UUID> mutedPlayers = new HashSet<>();
     private boolean isGlobalMuted = false;
     
-    @Override @NotNull
-    public ChatRooms getChatRoom() {
+    @Override
+    public @Nullable MessageRegion getChatRoom() {
         return this.chatRoom;
     }
     @Override
-    public void setChatRoom(@NotNull ChatRooms room) {
+    public void setChatRoom(@NotNull MessageRegion room) {
         // Set the chat room
         this.chatRoom = room;
     }

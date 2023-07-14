@@ -45,6 +45,7 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -67,10 +68,10 @@ public abstract class MinecraftServerMixin {
     @Shadow public abstract boolean shouldEnforceSecureProfile();
     @Shadow protected abstract ServerMetadata.Players createMetadataPlayers();
     @Shadow @Final private Random random;
-
-    @Shadow @Nullable private String motd;
-    private final List<byte[]> base64 = new ArrayList<>();
-    private final List<String> motds = new ArrayList<>();
+    
+    @Shadow private @Nullable String motd;
+    private final @Unique List<byte[]> base64 = new ArrayList<>();
+    private final @Unique List<String> motds = new ArrayList<>();
     
     @Inject(at = @At("RETURN"), method = "<init> *")
     public void onConstruct(@NotNull CallbackInfo callback) {

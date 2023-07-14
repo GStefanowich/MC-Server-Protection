@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.base.mixins.Player;
 
+import net.minecraft.world.GameRules;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.Test;
@@ -78,11 +79,16 @@ public abstract class PlayerEntityMixin extends LivingEntity implements MoneyHol
      * After dropping the main inventory drop the backpack too
      * @param callback The Mixin Callback
      */
-    @Inject(at = @At("TAIL"), method = "dropInventory", cancellable = true)
+    @Inject(at = @At("TAIL"), method = "dropInventory")
     public void onInventoryDrop(CallbackInfo callback) {
+        boolean keepInventory = this.getWorld()
+            .getGameRules()
+            .getBoolean(GameRules.KEEP_INVENTORY);
+        
+        // Drop the contents of the backpack (Only if the player HAS one)
         PlayerBackpack backpack = this.getBackpack();
-        if (backpack != null)
-            backpack.dropAll();
+        if (!keepInventory && backpack != null)
+            backpack.dropAll(!this.isAlive());
     }
     
     /**

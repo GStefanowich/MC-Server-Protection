@@ -83,8 +83,8 @@ public final class GameModesCommand extends SewCommand {
         );
     }
     
-    private int setPlayerGameMode(@NotNull ServerCommandSource source, @NotNull GameMode gameMode) {
-        ServerPlayerEntity player = source.getPlayer();
+    private int setPlayerGameMode(@NotNull ServerCommandSource source, @NotNull GameMode gameMode) throws CommandSyntaxException {
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         Text gmText = Text.translatable("gameMode." + gameMode.getName());
         
         source.sendFeedback(() -> Text.translatable("commands.gamemode.success.self", gmText), true);

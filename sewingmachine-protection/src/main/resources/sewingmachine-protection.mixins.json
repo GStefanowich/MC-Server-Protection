@@ -16,7 +16,6 @@
 		"Entities.EntityMixin",
 		"Entities.ExplodingEntitiesMixin",
 		"Entities.ItemEntityMixin",
-		"Entities.ItemFrameEntityMixin",
 		"Entities.LightningEntityMixin",
 		"Entities.PhantomSpawnerMixin",
 		"Entities.TntEntityMixin",

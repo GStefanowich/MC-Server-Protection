@@ -26,9 +26,6 @@
 package net.theelm.sewingmachine.chat.mixins.Commands;
 
 import net.minecraft.network.message.SignedMessage;
-import net.theelm.sewingmachine.chat.enums.ChatRooms;
-import net.theelm.sewingmachine.chat.utilities.ChatRoomUtilities;
-import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.server.command.MessageCommand;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -38,7 +35,7 @@ import org.spongepowered.asm.mixin.Overwrite;
 import java.util.Collection;
 
 @Mixin(MessageCommand.class)
-public class Whisper {
+public class MessageCommandMixin {
     
     /**
      * @reason Changes vanilla formatting of whispers

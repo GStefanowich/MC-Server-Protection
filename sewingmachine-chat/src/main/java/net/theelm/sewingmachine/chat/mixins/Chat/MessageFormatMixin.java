@@ -25,25 +25,16 @@
 
 package net.theelm.sewingmachine.chat.mixins.Chat;
 
-import net.minecraft.network.message.MessageType;
-import net.minecraft.registry.Registerable;
-import net.minecraft.registry.RegistryKey;
-import net.minecraft.registry.RegistryKeys;
-import net.minecraft.text.Decoration;
-import net.theelm.sewingmachine.chat.ServerCore;
-import net.theelm.sewingmachine.utilities.mod.Sew;
+import net.minecraft.command.argument.MessageArgumentType;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(MessageType.class)
-public class MessageTypeMixin {
-    @Inject(at = @At("TAIL"), method = "bootstrap")
-    private static void onBootstrap(Registerable<MessageType> messageTypeRegisterable, CallbackInfo callback) {
-        messageTypeRegisterable.register(
-            ServerCore.CUSTOM_FORMATTING,
-            new MessageType(Decoration.ofChat("%s"), Decoration.ofChat("%s"))
-        );
+@Mixin(MessageArgumentType.MessageFormat.class)
+public abstract class MessageFormatMixin {
+    @Inject(at = @At("RETURN"), method = "<init>")
+    public void onInit(String contents, MessageArgumentType.MessageSelector[] selectors, CallbackInfo callback) {
+        System.out.println("[MessageFormat<init>.Contents] " + contents);
     }
 }

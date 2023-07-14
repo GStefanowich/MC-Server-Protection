@@ -299,7 +299,7 @@ public final class MoneyCommand extends SewCommand {
         int amount = IntegerArgumentType.getInteger( context, "amount" );
         
         // Get our player reference
-        ServerPlayerEntity player = commandSource.getPlayer();
+        ServerPlayerEntity player = commandSource.getPlayerOrThrow();
         
         boolean took = false;
         boolean sent = false;
@@ -334,8 +334,10 @@ public final class MoneyCommand extends SewCommand {
         GameProfile targetProfile = argumentType.stream().findAny().orElseThrow(GameProfileArgumentType.UNKNOWN_PLAYER_EXCEPTION::create);
         
         // Get our player reference
-        ServerPlayerEntity player = source.getPlayer();
-        ServerPlayerEntity target = source.getServer().getPlayerManager().getPlayer( targetProfile.getId() );
+        ServerPlayerEntity player = source.getPlayerOrThrow();
+        ServerPlayerEntity target = source.getServer()
+            .getPlayerManager()
+            .getPlayer(targetProfile.getId());
         
         // Get the amount to request
         int amount = IntegerArgumentType.getInteger(context, "amount");
@@ -360,10 +362,10 @@ public final class MoneyCommand extends SewCommand {
     }
     
     private int commandMoneyGet(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerCommandSource commandSource = context.getSource();
+        ServerCommandSource source = context.getSource();
         
         // Get our player reference
-        ServerPlayerEntity player = commandSource.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         try {
             

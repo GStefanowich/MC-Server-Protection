@@ -34,8 +34,10 @@ import net.minecraft.text.Text;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.Nicknamable;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
+import net.theelm.sewingmachine.objects.MessageRegion;
 import net.theelm.sewingmachine.utilities.FormattingUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -57,11 +59,11 @@ public abstract class ServerPlayerEntityMixin implements PlayerChat {
     @Shadow @Final public ServerPlayerInteractionManager interactionManager;
     
     @Override
-    public @NotNull ChatRooms getChatRoom() {
-        return ((PlayerChat)this.interactionManager).getChatRoom();
+    public @Nullable MessageRegion getChatRoom() {
+        return ((PlayerChat) this.interactionManager).getChatRoom();
     }
     @Override
-    public void setChatRoom(@NotNull ChatRooms room) {
+    public void setChatRoom(@NotNull MessageRegion room) {
         ((PlayerChat)this.interactionManager).setChatRoom( room );
     }
     

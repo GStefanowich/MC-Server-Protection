@@ -66,7 +66,6 @@ import java.util.Arrays;
 import java.util.Collections;
 
 public final class EntityAttack {
-    
     private EntityAttack() {}
     
     /**
@@ -91,103 +90,69 @@ public final class EntityAttack {
         if (target == attacker)
             return Test.SUCCESS;
         
-        if (attacker instanceof PlayerEntity player) {
-            // Always allow defending self from hostiles
-            if ((target instanceof Monster) && (!(target instanceof AbstractPiglinEntity abstractPiglin) || abstractPiglin.getTarget() instanceof PlayerEntity))
-                return Test.SUCCESS;
-            
-            // Do special item frame interaction if NOT CROUCHING and HOLDING A TOOL
-            if ((target instanceof ItemFrameEntity itemFrame) && (!(player.isSneaking() && player.getMainHandStack().isDamageable()))) {
-                Direction direction = itemFrame.getHorizontalFacing().getOpposite();
-                
-                // Get the item in the item frame
-                ItemStack itemStack = itemFrame.getHeldItemStack();
-                
-                // If the sign actually has an item on it
-                if (!itemStack.isEmpty()) {
-                    // Get blocks
-                    BlockPos containerPos = itemFrame.getBlockPos().offset(direction, 1);
-                    Block containerBlock = world.getBlockState(containerPos).getBlock();
-                    
-                    // If the block behind the item frame is a storage
-                    if (containerBlock instanceof ChestBlock || containerBlock instanceof BarrelBlock) {
-                        // Check chunk permissions
-                        if (!ClaimChunkUtils.canPlayerLootChestsInChunk(player, containerPos))
-                            return Test.FAIL;
-                        
-                        Inventory containerInventory = InventoryUtils.getInventoryOf(world, containerPos);
-                        if (containerInventory != null) {
-                            // The amount the player wants to take
-                            int takeStackSize = (player.isSneaking() ? Collections.min(Arrays.asList(64, itemStack.getMaxCount())) : 1);
-                            
-                            InventoryUtils.chestToPlayer((ServerPlayerEntity) player, containerPos, containerInventory, player.getInventory(), itemStack, takeStackSize);
-                            return Test.FAIL;
-                        }
-                    }
-                }
-                
-                // If player should be able to interact with the item frame
-                if (!ClaimChunkUtils.canPlayerBreakInChunk(player, itemFrame.getBlockPos()))
+        if (attacker instanceof ServerPlayerEntity player)
+            return EntityAttack.playerAttacks(player, target, world, source);
+        if (attacker instanceof CreeperEntity creeper)
+            return EntityAttack.creeperAttacks(creeper, target, world, source);
+        
+        // Pass for all other entity attackers
+        return Test.CONTINUE;
+    }
+    
+    private static Test playerAttacks(@NotNull ServerPlayerEntity attacker, @NotNull final Entity target, @NotNull final World world, @NotNull final DamageSource source) {
+        // Always allow defending self from hostiles
+        if ((target instanceof Monster) && (!(target instanceof AbstractPiglinEntity abstractPiglin) || abstractPiglin.getTarget() instanceof PlayerEntity))
+            return Test.SUCCESS;
+        
+        // If the player is in creative, allow
+        if (attacker.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS))
+            return Test.SUCCESS;
+        
+        // Get chunk protection
+        WorldChunk chunk = world.getWorldChunk(target.getBlockPos());
+        
+        // If entity is a player always allow PvP, and always allow defending self from hostiles
+        if ((target instanceof PlayerEntity)) {
+            if (chunk != null) {
+                // If PvP is disallowed, stop the swing
+                if (!((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.PLAYER_COMBAT))
                     return Test.FAIL;
-                
-                return Test.SUCCESS;
             }
             
-            // If the player is in creative, allow
-            if (player.isCreative() && SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS))
+            return Test.SUCCESS;
+        }
+        
+        // Check if the tamed entity is tamed
+        if ((target instanceof TameableEntity tameableEntity) && (((TameableEntity) target).getOwnerUuid() != null)) {
+            // Deny if the entity belongs to the attacker (Can't hurt friendlies)
+            if (attacker.getUuid().equals(tameableEntity.getOwnerUuid()))
+                return Test.FAIL;
+            
+            // If player can interact with tameable mobs
+            if ((chunk != null) && ((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.HURT_TAMED))
                 return Test.SUCCESS;
-            
-            // Get chunk protection
-            WorldChunk chunk = world.getWorldChunk(target.getBlockPos());
-            
-            // If entity is a player always allow PvP, and always allow defending self from hostiles
-            if ((target instanceof PlayerEntity)) {
-                if (chunk != null) {
-                    // If PvP is disallowed, stop the swing
-                    if (!((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.PLAYER_COMBAT))
-                        return Test.FAIL;
-                }
-                
-                return Test.SUCCESS;
-            }
-            
-            // Check if the tamed entity is tamed
-            if ((target instanceof TameableEntity tameableEntity) && (((TameableEntity) target).getOwnerUuid() != null)) {
-                // Deny if the entity belongs to the attacker (Can't hurt friendlies)
-                if (player.getUuid().equals(tameableEntity.getOwnerUuid()))
-                    return Test.FAIL;
-                
-                // If player can interact with tameable mobs
-                if ((chunk != null) && ((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.HURT_TAMED))
-                    return Test.SUCCESS;
-                
-            } else {
-                // If player can interact with docile mobs
-                if (ClaimChunkUtils.canPlayerInteractFriendlies(player, target.getBlockPos()))
-                    return Test.SUCCESS;
-            }
-            
-            if (target instanceof LivingEntity)
-                target.playSound(EntityLockUtils.getLockSound(target), 0.5f, 1);
-            
-        } else if (attacker instanceof CreeperEntity) {
-            // Protect item frames if creeper damage is off
-            if (target instanceof ItemFrameEntity itemFrame) {
-                WorldChunk chunk = world.getWorldChunk(itemFrame.getBlockPos());
-                if ((chunk == null) || ((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.CREEPER_GRIEFING))
-                    return Test.SUCCESS;
-            } else {
-                return Test.SUCCESS;
-            }
-            
-        } else {
-            // Pass for all other entity attackers
-            return Test.CONTINUE;
-            
         }
         
         // Fail as a callback
-        return Test.FAIL;
+        if (target instanceof LivingEntity) {
+            // If player can interact with docile mobs
+            if (ClaimChunkUtils.canPlayerInteractFriendlies(attacker, target.getBlockPos()))
+                return Test.SUCCESS;
+            
+            target.playSound(EntityLockUtils.getLockSound(target), 0.5f, 1);
+        }
+        
+        return Test.CONTINUE;
+    }
+    private static Test creeperAttacks(@NotNull CreeperEntity attacker, @NotNull final Entity target, @NotNull final World world, @NotNull final DamageSource source) {
+        // Protect item frames if creeper damage is off
+        if (target instanceof ItemFrameEntity itemFrame) {
+            WorldChunk chunk = world.getWorldChunk(itemFrame.getBlockPos());
+            if ((chunk != null) && !((IClaimedChunk) chunk).isSetting(target.getBlockPos(), ClaimSettings.CREEPER_GRIEFING))
+                return Test.FAIL;
+        }
+        
+        return Test.SUCCESS;
     }
     
     private static Entity getRootAttacker(@Nullable DamageSource source) {

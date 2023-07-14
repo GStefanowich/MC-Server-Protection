@@ -69,7 +69,7 @@ public final class BackpackCommand extends SewCommand {
     
     private int autoPickup(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         PlayerBackpack backpack = ((BackpackCarrier) player).getBackpack();
         if (backpack == null)
@@ -93,7 +93,7 @@ public final class BackpackCommand extends SewCommand {
     
     private int openBackpack(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Open the backpack screen on the client
         OptionalInt i = InventoryUtils.openBackpack(player);

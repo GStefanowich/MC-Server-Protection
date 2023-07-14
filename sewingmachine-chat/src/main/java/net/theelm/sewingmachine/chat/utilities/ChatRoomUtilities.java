@@ -33,8 +33,7 @@ import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
 import net.theelm.sewingmachine.chat.objects.ChatFormat;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.events.MessageDeployer;
-import net.theelm.sewingmachine.interfaces.PlayerData;
-import net.theelm.sewingmachine.utilities.text.MessageUtils;
+import net.theelm.sewingmachine.objects.MessageRegion;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -55,20 +54,16 @@ public final class ChatRoomUtilities {
     public static @NotNull Text formatPlayerMessage(ServerPlayerEntity player, Text text) {
         return ChatRoomUtilities.formatPlayerMessage(player, ((PlayerChat)player).getChatRoom(), text);
     }
-    public static @NotNull Text formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, String raw) {
-        return ChatRoomUtilities.formatPlayerMessage(player, chatRoom, Text.literal(raw));
+    public static @NotNull Text formatPlayerMessage(ServerPlayerEntity player, MessageRegion room, String raw) {
+        return ChatRoomUtilities.formatPlayerMessage(player, room, Text.literal(raw));
     }
-    public static @NotNull Text formatPlayerMessage(ServerPlayerEntity player, ChatRooms chatRoom, Text text) {
-        return ChatRoomUtilities.formatPlayerMessage(player.getCommandSource(), chatRoom, text);
+    public static @NotNull Text formatPlayerMessage(ServerPlayerEntity player, MessageRegion room, Text text) {
+        return ChatRoomUtilities.formatPlayerMessage(player.getCommandSource(), room, text);
     }
-    public static @NotNull Text formatPlayerMessage(@NotNull ServerCommandSource source, ChatRooms chatRoom, @NotNull Text text) {
-        try {
-            ChatFormat format = chatRoom.getFormat();
-            return format.format(source, chatRoom, text);
-        } catch (StackOverflowError e) {
-            CoreMod.logError(e);
-        }
-        return TextUtils.literal();
+    public static @NotNull Text formatPlayerMessage(@NotNull ServerCommandSource source, MessageRegion room, @NotNull Text text) {
+        /*ChatFormat format = room.getFormat();
+        return format.format(source, room, text);*/
+        return Text.literal("");
     }
     
     // General send
@@ -76,7 +71,7 @@ public final class ChatRoomUtilities {
         ChatRoomUtilities.sendTo(room, player, Collections.emptyList(), message);
     }
     public static void sendTo(@NotNull ChatRooms room, @NotNull ServerPlayerEntity player, @NotNull Collection<ServerPlayerEntity> tags, @NotNull Text message) {
-        MessageDeployer.EVENT.invoker()
-            .send(room, player, tags, message);
+        /*MessageDeployer.EMIT.invoker()
+            .sendMessage(room, player, tags, message);*/
     }
 }

@@ -212,7 +212,7 @@ public final class ModCommands extends SewCommand {
     }
     private int shopSignChangeItemToHand(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Change the item to that of the offhand
         return this.shopSignChangeItem(context, player.getOffHandStack());

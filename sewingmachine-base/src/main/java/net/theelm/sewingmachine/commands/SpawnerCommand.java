@@ -80,7 +80,7 @@ public final class SpawnerCommand extends SewCommand {
     private int giveWithWeight(@NotNull CommandContext<ServerCommandSource> context, int weight) throws CommandSyntaxException {
         // Get command information
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Get item information
         RegistryKey<EntityType<?>> mob = RegistryEntryArgumentType.getEntityType(context, "type")

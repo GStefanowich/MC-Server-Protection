@@ -78,7 +78,8 @@ public final class NickNameCommand extends SewCommand {
                     })
                 )
                 .executes((context) -> {
-                    ServerPlayerEntity player = context.getSource().getPlayer();
+                    ServerPlayerEntity player = context.getSource()
+                        .getPlayerOrThrow();
                     try {
                         return this.setNickForPlayer(player, null);
                     } catch (Exception e) {
@@ -106,7 +107,7 @@ public final class NickNameCommand extends SewCommand {
     
     private @Nullable String commandVerifyNick(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         String nick = StringArgumentType.getString(context, "nick");
         if (nick.isEmpty())
@@ -128,7 +129,7 @@ public final class NickNameCommand extends SewCommand {
     private int commandNickSet(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get command runtime information
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Get the nickname
         String nickname = this.commandVerifyNick(context);
@@ -139,7 +140,7 @@ public final class NickNameCommand extends SewCommand {
     }
     private int commandNickSetNamedColor(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Get the nickname
         String nickname = this.commandVerifyNick(context);
@@ -155,7 +156,7 @@ public final class NickNameCommand extends SewCommand {
     }
     private int commandNickSetNamedColorRange(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         // Get the nickname
         String nickname = this.commandVerifyNick(context);

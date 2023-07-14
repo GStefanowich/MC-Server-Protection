@@ -67,8 +67,9 @@ public final class PlayerSpawnCommand extends SewCommand {
     }
     
     private int moveSpawn(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerPlayerEntity player = context.getSource().getPlayer();
-        ServerWorld world = context.getSource().getWorld();
+        ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
+        ServerWorld world = source.getWorld();
         
         // Check that the position is a bed
         BlockPos bedPos = BlockPosArgumentType.getBlockPos( context, "bed_position" );

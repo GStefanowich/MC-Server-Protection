@@ -582,13 +582,13 @@ public final class StatsCommand extends SewCommand {
         if (updated > 0)
             player.increaseStat(stat, updated);
     }
-    private int sendMessageAs(@NotNull ServerCommandSource source, @Nullable Text text) {
+    private int sendMessageAs(@NotNull ServerCommandSource source, @Nullable Text text) throws CommandSyntaxException {
         if (text == null)
             return 0;
         
         MinecraftServer server = source.getServer();
         PlayerManager players = server.getPlayerManager();
-        ServerPlayerEntity player = source.getPlayer();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
         throw new UnsupportedOperationException();
         

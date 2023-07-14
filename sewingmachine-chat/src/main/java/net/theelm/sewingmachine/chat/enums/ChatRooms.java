@@ -37,6 +37,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Locale;
 
+@Deprecated(forRemoval = true)
 public enum ChatRooms implements ServerTranslatable {
     WHISPER(SewChatConfig.CHAT_WHISPER_FORMAT, Formatting.GRAY, Formatting.ITALIC),
     LOCAL(SewChatConfig.CHAT_LOCAL_FORMAT, Formatting.BLUE),
@@ -61,9 +62,5 @@ public enum ChatRooms implements ServerTranslatable {
     
     public ChatFormat getFormat() {
         return SewConfig.get(this.format);
-    }
-
-    public Formatting[] getFormatting() {
-        return this.formatting;
     }
 }
