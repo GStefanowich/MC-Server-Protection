@@ -36,10 +36,8 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.ChunkStatus;
-import net.theelm.sewingmachine.base.objects.ItemFrameTransfer;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.events.ContainerAccessCallback;
-import net.theelm.sewingmachine.events.MessageDeployer;
 import net.theelm.sewingmachine.events.PlayerModsCallback;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.events.RegionManageCallback;
@@ -85,12 +83,12 @@ import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
 import net.theelm.sewingmachine.protection.packets.ClaimedChunkPacket;
 import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
 import net.theelm.sewingmachine.protection.utilities.ClaimPropertyUtils;
-import net.theelm.sewingmachine.protection.utilities.MessageClaimUtils;
 import net.theelm.sewingmachine.utilities.ChunkUtils;
 import net.theelm.sewingmachine.utilities.EntityVariables;
 import net.theelm.sewingmachine.utilities.ModUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import net.theelm.sewingmachine.utilities.ShopSigns;
+import net.theelm.sewingmachine.utilities.WarpUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -175,7 +173,11 @@ public final class ServerCore implements ModInitializer, SewPlugin {
         });
         
         // Allow teleporting to warps and other locations if the player is within Spawn
-        PlayerTeleportCallback.TEST.register((server, player, uuid) -> ClaimChunkUtils.isPlayerWithinSpawn((ServerPlayerEntity) player));
+        PlayerTeleportCallback.TEST.register((server, player, uuid) -> {
+            if (uuid == null)
+                return ClaimChunkUtils.isPlayerWithinSpawn((ServerPlayerEntity) player);
+            return ClaimChunkUtils.canPlayerWarpTo(server, player.getUuid(), uuid);
+        });
         
         // Get town name
         EntityVariables.add("town", (EntityVariableFunction)(source, entity, casing) -> {

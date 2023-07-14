@@ -31,6 +31,7 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.PlayerManager;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.theelm.sewingmachine.enums.OpLevels;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

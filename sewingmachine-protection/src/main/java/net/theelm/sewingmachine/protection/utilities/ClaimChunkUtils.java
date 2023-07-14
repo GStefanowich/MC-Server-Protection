@@ -229,7 +229,7 @@ public final class ClaimChunkUtils {
      */
     public static boolean canPlayerWarpTo(@NotNull MinecraftServer server, @NotNull UUID player, @NotNull UUID target) {
         // Check our chunk permissions
-        ClaimantPlayer permissions = ((ClaimsAccessor)server).getClaimManager()
+        ClaimantPlayer permissions = ((ClaimsAccessor) server).getClaimManager()
             .getPlayerClaim(target);
         
         // Get the ranks of the user and the rank required for performing

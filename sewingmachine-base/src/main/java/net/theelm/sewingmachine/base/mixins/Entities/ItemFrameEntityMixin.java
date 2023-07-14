@@ -30,7 +30,6 @@ import net.minecraft.entity.EntityType;
 import net.minecraft.entity.damage.DamageSources;
 import net.minecraft.entity.decoration.AbstractDecorationEntity;
 import net.minecraft.entity.decoration.ItemFrameEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.enums.Test;
