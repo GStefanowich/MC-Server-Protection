@@ -59,7 +59,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 
-public final class ChatroomCommands extends SewCommand {
+public final class ChatroomCommands implements SewCommand {
     private static final SimpleCommandExceptionType MUTE_EXEMPT = new SimpleCommandExceptionType(Text.literal("That player is exempt from being muted."));
     
     @Override

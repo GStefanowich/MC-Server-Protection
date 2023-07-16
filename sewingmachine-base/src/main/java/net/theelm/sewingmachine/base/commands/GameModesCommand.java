@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -43,7 +43,7 @@ import net.minecraft.world.GameMode;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import org.jetbrains.annotations.NotNull;
 
-public final class GameModesCommand extends SewCommand {
+public final class GameModesCommand implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, "gms", builder -> builder

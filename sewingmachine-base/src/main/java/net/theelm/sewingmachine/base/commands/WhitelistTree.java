@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;

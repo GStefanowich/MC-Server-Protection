@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -51,7 +51,7 @@ import net.minecraft.util.hit.HitResult;
 import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
-public final class RulerCommand extends SewCommand {
+public final class RulerCommand implements SewCommand {
     private static final ExceptionTranslatableServerSide BLOCK_NOT_HIT = ServerText.exception("ruler.no_block");
     
     @Override

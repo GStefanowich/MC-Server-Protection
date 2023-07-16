@@ -38,6 +38,7 @@ import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.blocks.entities.LecternGuideBlockEntity;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.theelm.sewingmachine.commands.abstraction.SewCommandExt;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.PermissionNodes;
@@ -80,11 +81,11 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class ModCommands extends SewCommand {
-    private final @NotNull List<SewPlugin> plugins;
+public final class ModCommands implements SewCommand {
+    private final @NotNull List<SewCommandExt> subcommands;
     
-    public ModCommands(@NotNull List<SewPlugin> plugins) {
-        this.plugins = plugins;
+    public ModCommands(@NotNull List<SewCommandExt> subcommands) {
+        this.subcommands = subcommands;
     }
     
     @Override
@@ -143,8 +144,8 @@ public final class ModCommands extends SewCommand {
                     .executes(this::unsetLecternGuide)
                 );
                 
-                for (SewPlugin plugin : this.plugins)
-                    plugin.updatePrimaryCommand(builder, access);
+                for (SewCommandExt subcommand : this.subcommands)
+                    subcommand.register(builder, access);
             }
         );
     }

@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -66,7 +66,7 @@ import org.jetbrains.annotations.Nullable;
  * Created on Mar 08 2021 at 7:51 PM.
  * By greg in SewingMachineMod
  */
-public final class StatsCommand extends SewCommand {
+public final class StatsCommand implements SewCommand {
     private static final @NotNull SuggestionProvider<ServerCommandSource> KILLABLE_ENTITIES = (context, builder) -> CommandSource.suggestFromIdentifier(Registries.ENTITY_TYPE.stream().filter(t -> t.isSummonable() && !t.getSpawnGroup().equals(SpawnGroup.MISC)), builder, EntityType::getId, (entityType) -> {
         return Text.translatable(Util.createTranslationKey("entity", EntityType.getId(entityType)));
     });

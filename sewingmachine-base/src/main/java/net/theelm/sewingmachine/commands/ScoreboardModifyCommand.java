@@ -67,7 +67,7 @@ import java.util.List;
  * Created on Jun 27 2021 at 2:48 PM.
  * By greg in SewingMachineMod
  */
-public class ScoreboardModifyCommand extends SewCommand {
+public final class ScoreboardModifyCommand implements SewCommand {
     public static final String COMMAND_NAME = "scoreboard";
     public static final String COMMAND_OBJECTIVES = "objectives";
     private static final EntityType<?> ENTITY_TYPE = EntityType.ARMOR_STAND;

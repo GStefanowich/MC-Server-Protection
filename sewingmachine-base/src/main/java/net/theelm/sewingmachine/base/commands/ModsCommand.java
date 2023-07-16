@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -54,7 +54,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class ModsCommand extends SewCommand {
+public final class ModsCommand implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, "Mods", (builder) -> builder

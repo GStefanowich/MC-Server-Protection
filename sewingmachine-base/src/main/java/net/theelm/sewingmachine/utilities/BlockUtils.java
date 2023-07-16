@@ -176,6 +176,27 @@ public final class BlockUtils {
     }
 
     /**
+     * Check if a block position is over the void
+     * @param world
+     * @param pos
+     * @return
+     */
+    public static boolean isVoid(@NotNull ServerWorld world, @NotNull BlockPos pos) {
+        BlockPos.Mutable mutable = pos.mutableCopy();
+        
+        do {
+            BlockState state = world.getBlockState(mutable);
+            if (!state.isAir())
+                return false;
+            
+            // Shift down
+            mutable.move(Direction.DOWN);
+        } while (mutable.getY() > world.getBottomY());
+        
+        return true;
+    }
+    
+    /**
      * Attempt to get the LecternBlock that an entity is looking at
      * @param world The world the Entity is in
      * @param entity The entity that is looking in a direction

@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -55,7 +55,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 
-public final class WorldCommand extends SewCommand {
+public final class WorldCommand implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         final LiteralArgumentBuilder<ServerCommandSource> gamerules = CommandManager.literal("gamerule");

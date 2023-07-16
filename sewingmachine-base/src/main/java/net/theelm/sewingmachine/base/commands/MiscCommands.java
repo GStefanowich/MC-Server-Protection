@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -31,19 +31,9 @@ import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.command.argument.MessageArgumentType;
-import net.minecraft.entity.player.PlayerEntity;
-import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.hit.BlockHitResult;
-import net.minecraft.util.hit.HitResult;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.chunk.WorldChunk;
-import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
-import net.theelm.sewingmachine.interfaces.LogicalWorld;
-import net.theelm.sewingmachine.objects.ticking.Carver;
-import net.theelm.sewingmachine.utilities.BlockUtils;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.EntityUtils;
 import net.minecraft.command.argument.EntityArgumentType;
@@ -55,7 +45,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 
-public final class MiscCommands extends SewCommand {
+public final class MiscCommands implements SewCommand {
     private static final @NotNull String FLIP = "(╯°□°)╯︵ ┻━┻";
     private static final @NotNull String SHRUG = "¯\\_(ツ)_/¯";
     
@@ -88,16 +78,6 @@ public final class MiscCommands extends SewCommand {
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
             .then(CommandManager.argument("target", EntityArgumentType.entities())
                 .executes(this::extinguishTargets)
-            )
-        );
-        
-        CommandUtils.register(dispatcher, "destroy", builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
-            .then(CommandManager.literal("chunk")
-                .executes(this::destroyEntireChunk)
-            )
-            .then(CommandManager.literal("pos")
-                .executes(this::destroyBelowPosition)
             )
         );
     }
@@ -144,37 +124,6 @@ public final class MiscCommands extends SewCommand {
             "message",
             text -> this.playerSendsMessageAndData(context.getSource(), text, MiscCommands.FLIP)
         );
-        return Command.SINGLE_SUCCESS;
-    }
-    
-    private int destroyEntireChunk(@NotNull CommandContext<ServerCommandSource> context) {
-        ServerCommandSource source = context.getSource();
-        ServerWorld world = source.getWorld();
-        WorldChunk chunk = world.getWorldChunk(BlockPos.ofFloored(source.getPosition()));
-        
-        // Require that the player is in Creative mode
-        if (source.getEntity() instanceof PlayerEntity player && !player.isCreative())
-            return 0;
-        
-        ((LogicalWorld)world).addTickableEvent(new Carver(world, chunk));
-        
-        return Command.SINGLE_SUCCESS;
-    }
-    private int destroyBelowPosition(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        ServerCommandSource source = context.getSource();
-        ServerWorld world = source.getWorld();
-        Entity entity = source.getEntityOrThrow();
-
-        // Require that the player is in Creative mode
-        if (entity instanceof PlayerEntity player && !player.isCreative())
-            return 0;
-        
-        BlockHitResult lookingBlock = BlockUtils.getLookingBlock(source.getWorld(), entity);
-        if (lookingBlock.getType() == HitResult.Type.MISS)
-            return 0;
-        
-        ((LogicalWorld)world).addTickableEvent(new Carver(world, lookingBlock.getBlockPos()));
-        
         return Command.SINGLE_SUCCESS;
     }
 }

@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -52,7 +52,7 @@ import org.jetbrains.annotations.NotNull;
  * Created on Aug 13 2021 at 1:58 PM.
  * By greg in SewingMachineMod
  */
-public final class GiveSelfCommand extends SewCommand {
+public final class GiveSelfCommand implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, "I", "Give Self", builder -> builder

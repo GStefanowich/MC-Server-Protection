@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
@@ -80,7 +80,7 @@ import java.util.Collections;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public final class TeleportsCommand extends SewCommand {
+public final class TeleportsCommand implements SewCommand {
     public static final ExceptionTranslatableServerSide INVALID_HOME_CHARACTERS = ServerText.exception("warp.notice.name.invalid");
     public static final ExceptionTranslatableServerSide INVALID_HOME_LENGTH = ServerText.exception("warp.notice.name.too_long");
     public static final ExceptionTranslatableServerSide PLAYER_NOT_IN_SPAWN = ServerText.exception("warp.notice.player.outside_spawn");

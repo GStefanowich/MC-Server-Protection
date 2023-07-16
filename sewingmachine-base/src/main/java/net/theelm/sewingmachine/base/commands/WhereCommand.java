@@ -23,68 +23,77 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.chat.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
+import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.theelm.sewingmachine.enums.OpLevels;
+import net.theelm.sewingmachine.enums.PermissionNodes;
+import net.theelm.sewingmachine.events.RegionNameCallback;
+import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.theelm.sewingmachine.utilities.CommandUtils;
+import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
+import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
-import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.chat.enums.ChatRooms;
-import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
-import net.theelm.sewingmachine.chat.utilities.ChatRoomUtilities;
-import net.theelm.sewingmachine.commands.abstraction.SewCommand;
-import net.theelm.sewingmachine.objects.MessageRegion;
-import net.theelm.sewingmachine.utilities.CommandUtils;
+import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.Collections;
-
-/**
- * Created on Mar 18 2021 at 1:07 PM.
- * By greg in SewingMachineMod
- */
-public final class TagUserCommand implements SewCommand {
+public final class WhereCommand implements SewCommand {
+    public static final @NotNull String NAME = "Where";
+    
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        CommandUtils.register(dispatcher, "@", "tag user", builder -> builder
+        CommandUtils.register(dispatcher, WhereCommand.NAME, builder -> builder
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.LOCATE_PLAYERS))
             .then(CommandManager.argument("player", EntityArgumentType.player())
-                .then(CommandManager.argument("message", StringArgumentType.greedyString())
-                    .executes(this::tagPlayerMessage)
-                )
-                .executes(this::tagPlayer)
+                .executes(this::locatePlayer)
             )
         );
     }
-
-    private int tagPlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return this.sendTaggedMessage(
-            context,
-            ""
-        );
-    }
-    private int tagPlayerMessage(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
-        return this.sendTaggedMessage(
-            context,
-            StringArgumentType.getString(context, "message")
-        );
-    }
-    private int sendTaggedMessage(@NotNull CommandContext<ServerCommandSource> context, @NotNull String text) throws CommandSyntaxException {
+    
+    private int locatePlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity from = source.getPlayerOrThrow();
-        ServerPlayerEntity to = EntityArgumentType.getPlayer(context, "player");
+        ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
+        BlockPos pos = player.getBlockPos();
         
-        // The chatroom to send the message in
-        MessageRegion room = ((PlayerChat)from).getChatRoom();
+        MutableText feedback = Text.literal("")
+            .formatted(Formatting.YELLOW)
+            .append(player.getDisplayName())
+            .append(" is currently at ")
+            .append(MessageUtils.xyzToText(pos))
+            .append(" in ")
+            .append(Text.literal(player.getWorld().getRegistryKey().getValue().toString()).formatted(Formatting.AQUA));
+        
+        Text location = RegionNameCallback.getName(
+                source.getWorld(),
+                pos,
+                source.getEntity(),
+                false,
+                false
+            );
+        
+        if (location != null) {
+            feedback.append("\n")
+                .append("They are currently in ")
+                .append(location)
+                .append(".");
+        }
+        
+        source.sendFeedback(
+            () -> feedback,
+            false
+        );
+        
         return Command.SINGLE_SUCCESS;
     }
+    
 }

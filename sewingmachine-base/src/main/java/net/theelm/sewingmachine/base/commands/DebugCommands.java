@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -32,7 +32,10 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
+import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.theelm.sewingmachine.config.ConfigOption;
+import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.DragonLoot;
 import net.theelm.sewingmachine.base.mixins.Server.ServerWorldAccessor;
 import net.theelm.sewingmachine.base.objects.rewards.WeightedReward;
@@ -57,7 +60,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Optional;
 
-public class DebugCommands extends SewCommand {
+public final class DebugCommands implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess access) {
         CommandUtils.register(dispatcher, "Teleport Particles", builder -> builder
@@ -90,6 +93,17 @@ public class DebugCommands extends SewCommand {
                 context.getSource(),
                 1
             ))
+        );
+        
+        CommandUtils.register(dispatcher, "Dragon Players", builder -> builder
+            .then(CommandManager.argument("count", IntegerArgumentType.integer( 0 ))
+                .executes((context) -> {
+                    SewConfig.set(SewBaseConfig.DRAGON_PLAYERS, ConfigOption.convertToJSON(
+                        IntegerArgumentType.getInteger( context, "count" )
+                    ));
+                    return Command.SINGLE_SUCCESS;
+                })
+            )
         );
     }
     

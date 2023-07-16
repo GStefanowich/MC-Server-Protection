@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -51,7 +51,7 @@ import java.util.Base64;
  * Created on Aug 17 2021 at 9:25 AM.
  * By greg in SewingMachineMod
  */
-public class HeadCommand extends SewCommand {
+public final class HeadCommand implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, "skull", builder -> builder

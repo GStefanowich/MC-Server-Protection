@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
@@ -70,7 +70,7 @@ import java.util.Collection;
 import java.util.UUID;
 import java.util.function.UnaryOperator;
 
-public final class LoggingCommand extends SewCommand {
+public final class LoggingCommand implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess access) {
         if (( SewConfig.any(SewBaseConfig.LOG_CHUNKS_CLAIMED, SewBaseConfig.LOG_CHUNKS_UNCLAIMED) ) && ( SewConfig.any(SewBaseConfig.LOG_BLOCKS_BREAKING, SewBaseConfig.LOG_BLOCKS_PLACING) )) {

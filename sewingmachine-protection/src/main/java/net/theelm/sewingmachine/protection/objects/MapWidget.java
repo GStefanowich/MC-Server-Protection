@@ -150,8 +150,9 @@ public final class MapWidget {
                         // Update the chunk
                         mapChunk.update();
                         
-                        // Query the server
-                        NetworkingUtils.send(this.client, new ClaimQueryPacket(mapChunk.getPos()));
+                        // Query the server (If we don't know who the owner is)
+                        if (!mapChunk.hasOwner())
+                            NetworkingUtils.send(this.client, new ClaimQueryPacket(mapChunk.getPos()));
                     }
                 }
             }

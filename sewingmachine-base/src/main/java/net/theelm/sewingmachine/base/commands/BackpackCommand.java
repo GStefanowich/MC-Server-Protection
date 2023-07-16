@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -50,7 +50,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.OptionalInt;
 
-public final class BackpackCommand extends SewCommand {
+public final class BackpackCommand implements SewCommand {
     
     private static final ExceptionTranslatableServerSide PLAYERS_NO_BACKPACK = ServerText.exception("player.no_backpack");
     

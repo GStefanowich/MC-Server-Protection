@@ -61,7 +61,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.Color;
 
-public final class NickNameCommand extends SewCommand {
+public final class NickNameCommand implements SewCommand {
     private static final ExceptionTranslatableServerSide NAME_TOO_LONG = ServerText.exception("player.nick.too_long");
     private static final int NICK_MAX_LENGTH = 20;
     

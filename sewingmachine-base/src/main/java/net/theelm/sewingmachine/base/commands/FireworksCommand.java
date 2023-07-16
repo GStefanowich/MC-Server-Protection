@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -52,7 +52,7 @@ import org.jetbrains.annotations.NotNull;
  * Created on Aug 25 2021 at 2:30 AM.
  * By greg in SewingMachineMod
  */
-public final class FireworksCommand extends SewCommand {
+public final class FireworksCommand implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandUtils.register(dispatcher, "Fireworks", builder -> builder

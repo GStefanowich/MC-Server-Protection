@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.authlib.GameProfile;
 import com.mojang.brigadier.Command;
@@ -62,7 +62,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 
-public final class MoneyCommand extends SewCommand {
+public final class MoneyCommand implements SewCommand {
     private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = ServerText.exception("player.money.poor");
     private static final ExceptionTranslatableServerSide PLAYER_NOT_FOUND = ServerText.exception("player.not_found");
     

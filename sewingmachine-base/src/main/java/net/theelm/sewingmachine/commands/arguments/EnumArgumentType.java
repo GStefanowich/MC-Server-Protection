@@ -25,6 +25,7 @@
 
 package net.theelm.sewingmachine.commands.arguments;
 
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.exceptions.DynamicCommandExceptionType;
@@ -62,10 +63,14 @@ public class EnumArgumentType<E extends Enum<E>> implements SuggestionProvider<S
         this.tooltipFormatter = tooltips;
     }
     
-    public static <T extends Enum<T>> T getEnum(Class<T> tClass, String search) throws CommandSyntaxException {
+    public static <T extends Enum<T>> T getEnum(@NotNull Class<T> tClass, String search) throws CommandSyntaxException {
         return EnumSet.allOf(tClass).stream().filter((enumValue) -> {
             return enumValue.name().replace('_', '-').equalsIgnoreCase(search);
         }).findFirst().orElseThrow(() -> INVALID_COMPONENT_EXCEPTION.create(search));
+    }
+    public static <T extends Enum<T>> T getEnum(@NotNull CommandContext<?> context, @NotNull Class<T> tClass, @NotNull String name) throws CommandSyntaxException {
+        String search = StringArgumentType.getString(context, name);
+        return EnumArgumentType.getEnum(tClass, search);
     }
     
     @Override

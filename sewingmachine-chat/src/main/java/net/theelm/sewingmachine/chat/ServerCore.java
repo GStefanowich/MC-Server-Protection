@@ -34,21 +34,18 @@ import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.theelm.sewingmachine.chat.commands.ChatroomCommands;
 import net.theelm.sewingmachine.chat.commands.NickNameCommand;
-import net.theelm.sewingmachine.chat.commands.TagUserCommand;
 import net.theelm.sewingmachine.chat.enums.ChatRooms;
 import net.theelm.sewingmachine.chat.interfaces.ChatMessageFunction;
 import net.theelm.sewingmachine.chat.interfaces.PlayerChat;
 import net.theelm.sewingmachine.chat.utilities.PlayerNameUtils;
-import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.theelm.sewingmachine.commands.abstraction.AbstractSewCommand;
 import net.theelm.sewingmachine.events.MessageDeployer;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
 import net.theelm.sewingmachine.objects.MessageRegion;
 import net.theelm.sewingmachine.utilities.EntityVariables;
 import net.theelm.sewingmachine.utilities.mod.Sew;
-import net.theelm.sewingmachine.utilities.text.MessageUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -107,8 +104,8 @@ public final class ServerCore implements ModInitializer, SewPlugin {
     }
     
     @Override
-    public @NotNull SewCommand[] getCommands() {
-        return new SewCommand[] {
+    public @NotNull AbstractSewCommand<?>[] getCommands() {
+        return new AbstractSewCommand<?>[] {
             //new ChatroomCommands(),
             new NickNameCommand(),
             //new TagUserCommand()

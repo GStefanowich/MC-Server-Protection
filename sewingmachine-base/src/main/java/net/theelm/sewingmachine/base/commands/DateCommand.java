@@ -23,77 +23,47 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
-import net.theelm.sewingmachine.enums.OpLevels;
-import net.theelm.sewingmachine.enums.PermissionNodes;
-import net.theelm.sewingmachine.events.RegionNameCallback;
-import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.utilities.CommandUtils;
 import net.theelm.sewingmachine.utilities.text.MessageUtils;
-import net.minecraft.command.argument.EntityArgumentType;
-import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.text.Text;
-import net.minecraft.text.MutableText;
 import net.minecraft.util.Formatting;
-import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.NotNull;
 
-public final class WhereCommand extends SewCommand {
-    public static final @NotNull String NAME = "Where";
-    
+/**
+ * Created on Mar 11 2021 at 7:34 PM.
+ * By greg in SewingMachineMod
+ */
+public final class DateCommand implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        CommandUtils.register(dispatcher, WhereCommand.NAME, builder -> builder
-            .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.LOCATE_PLAYERS))
-            .then(CommandManager.argument("player", EntityArgumentType.player())
-                .executes(this::locatePlayer)
-            )
+        CommandUtils.register(dispatcher, "Date", builder -> builder
+            .executes(DateCommand::displayDate)
         );
     }
     
-    private int locatePlayer(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
+    /**
+     * Display to the player the current day and year of the world
+     * @param context Command context
+     * @return Success
+     */
+    private static int displayDate(@NotNull CommandContext<ServerCommandSource> context) {
         ServerCommandSource source = context.getSource();
-        ServerPlayerEntity player = EntityArgumentType.getPlayer(context, "player");
-        BlockPos pos = player.getBlockPos();
-        
-        MutableText feedback = Text.literal("")
-            .formatted(Formatting.YELLOW)
-            .append(player.getDisplayName())
-            .append(" is currently at ")
-            .append(MessageUtils.xyzToText(pos))
-            .append(" in ")
-            .append(Text.literal(player.getWorld().getRegistryKey().getValue().toString()).formatted(Formatting.AQUA));
-        
-        Text location = RegionNameCallback.getName(
-                source.getWorld(),
-                pos,
-                source.getEntity(),
-                false,
-                false
-            );
-        
-        if (location != null) {
-            feedback.append("\n")
-                .append("They are currently in ")
-                .append(location)
-                .append(".");
-        }
         
         source.sendFeedback(
-            () -> feedback,
+            () -> Text.literal("It is currently ")
+                .formatted(Formatting.YELLOW)
+                .append(MessageUtils.getWorldTime(source.getWorld())),
             false
         );
         
         return Command.SINGLE_SUCCESS;
     }
-    
 }

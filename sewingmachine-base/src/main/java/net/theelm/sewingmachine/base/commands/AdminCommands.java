@@ -23,24 +23,19 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
-import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
-import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
-import net.theelm.sewingmachine.config.ConfigOption;
-import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.PermissionNodes;
 import net.theelm.sewingmachine.exceptions.ExceptionTranslatableServerSide;
 import net.theelm.sewingmachine.interfaces.CommandPredicate;
 import net.theelm.sewingmachine.utilities.CommandUtils;
-import net.theelm.sewingmachine.utilities.DevUtils;
 import net.theelm.sewingmachine.utilities.ServerText;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.entity.player.HungerManager;
@@ -55,7 +50,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Collection;
 import java.util.stream.Stream;
 
-public final class AdminCommands extends SewCommand {
+public final class AdminCommands implements SewCommand {
     
     public static final @NotNull String FLIGHT = "Fly";
     public static final @NotNull String GOD = "God";
@@ -112,20 +107,6 @@ public final class AdminCommands extends SewCommand {
             .requires(CommandPredicate.opLevel(OpLevels.CHEATING).or(PermissionNodes.PLAYER_REPAIR))
             .executes(this::selfRepair)
         );
-        
-        // Create DEBUG commands
-        if (DevUtils.isDebugging()) {
-            CommandUtils.register(dispatcher, "Dragon Players", builder -> builder
-                .then(CommandManager.argument("count", IntegerArgumentType.integer( 0 ))
-                    .executes((context) -> {
-                        SewConfig.set(SewBaseConfig.DRAGON_PLAYERS, ConfigOption.convertToJSON(
-                            IntegerArgumentType.getInteger( context, "count" )
-                        ));
-                        return Command.SINGLE_SUCCESS;
-                    })
-                )
-            );
-        }
     }
     
     private int selfFlying(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {

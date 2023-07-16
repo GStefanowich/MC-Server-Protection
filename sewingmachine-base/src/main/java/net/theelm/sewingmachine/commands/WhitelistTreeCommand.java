@@ -36,6 +36,7 @@ import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.theelm.sewingmachine.base.commands.WhitelistTree;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.interfaces.WhitelistedPlayer;
 import org.jetbrains.annotations.NotNull;
@@ -53,7 +54,7 @@ import java.util.stream.Collectors;
  * Created on Jun 09 2023 at 2:17 AM.
  * By greg in sewingmachine
  */
-public class WhitelistTreeCommand extends SewCommand {
+public final class WhitelistTreeCommand implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
         CommandNode<ServerCommandSource> whitelist = dispatcher.getRoot()

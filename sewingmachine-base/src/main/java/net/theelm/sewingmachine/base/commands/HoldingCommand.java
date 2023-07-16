@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -52,7 +52,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
 
-public final class HoldingCommand extends SewCommand {
+public final class HoldingCommand implements SewCommand {
     private static final ExceptionTranslatableServerSide PLAYER_EMPTY_HAND = ServerText.exception("player.equipment.empty_hand");
     private static final ExceptionTranslatableServerSide PLAYER_EMPTY_SLOT = ServerText.exception("player.equipment.empty_slot");
     

@@ -25,38 +25,11 @@
 
 package net.theelm.sewingmachine.commands.abstraction;
 
-import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
-import net.minecraft.command.CommandRegistryAccess;
-import net.minecraft.network.message.MessageType;
-import net.minecraft.network.message.SignedMessage;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.theelm.sewingmachine.utilities.text.TextUtils;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Created on Jun 08 2023 at 11:47 PM.
  * By greg in sewingmachine
  */
-public abstract class SewCommand {
-    public abstract void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry);
-    
-    public int playerSendsMessageAndData(@NotNull ServerCommandSource source, @NotNull String main) {
-        return this.playerSendsMessageAndData(source, null, main);
-    }
-    public int playerSendsMessageAndData(@NotNull ServerCommandSource source, @Nullable SignedMessage message, @NotNull String main) {
-        return this.playerSendsMessageAndData(source, message, Text.literal(main));
-    }
-    public int playerSendsMessageAndData(@NotNull ServerCommandSource source, @Nullable SignedMessage message, @NotNull Text main) {
-        MinecraftServer server = source.getServer();
-        PlayerManager playerManager = server.getPlayerManager();
-        
-        playerManager.broadcast(message, source, MessageType.params(MessageType.EMOTE_COMMAND, source));
-        
-        return Command.SINGLE_SUCCESS;
-    }
-}
+public interface SewCommand extends AbstractSewCommand<CommandDispatcher<ServerCommandSource>> {}

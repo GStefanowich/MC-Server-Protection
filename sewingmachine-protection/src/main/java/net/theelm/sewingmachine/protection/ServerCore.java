@@ -36,7 +36,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.ChunkStatus;
-import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.theelm.sewingmachine.commands.abstraction.AbstractSewCommand;
 import net.theelm.sewingmachine.events.ContainerAccessCallback;
 import net.theelm.sewingmachine.events.PlayerModsCallback;
 import net.theelm.sewingmachine.events.PlayerNameCallback;
@@ -88,7 +88,6 @@ import net.theelm.sewingmachine.utilities.EntityVariables;
 import net.theelm.sewingmachine.utilities.ModUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import net.theelm.sewingmachine.utilities.ShopSigns;
-import net.theelm.sewingmachine.utilities.WarpUtils;
 import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -298,8 +297,8 @@ public final class ServerCore implements ModInitializer, SewPlugin {
     }
     
     @Override
-    public @NotNull SewCommand[] getCommands() {
-        return new SewCommand[] {
+    public @NotNull AbstractSewCommand<?>[] getCommands() {
+        return new AbstractSewCommand<?>[] {
             new ClaimCommand()
         };
     }

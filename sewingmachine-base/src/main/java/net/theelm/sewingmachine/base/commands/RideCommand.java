@@ -23,47 +23,47 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
-import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import net.minecraft.command.CommandRegistryAccess;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
-import net.theelm.sewingmachine.utilities.CommandUtils;
-import net.theelm.sewingmachine.utilities.text.MessageUtils;
+import net.theelm.sewingmachine.enums.OpLevels;
+import net.theelm.sewingmachine.interfaces.CommandPredicate;
+import net.minecraft.command.argument.EntityArgumentType;
+import net.minecraft.entity.Entity;
+import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.minecraft.text.Text;
-import net.minecraft.util.Formatting;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.theelm.sewingmachine.utilities.CommandUtils;
 import org.jetbrains.annotations.NotNull;
 
-/**
- * Created on Mar 11 2021 at 7:34 PM.
- * By greg in SewingMachineMod
- */
-public final class DateCommand extends SewCommand {
+public final class RideCommand implements SewCommand {
     @Override
     public void register(@NotNull CommandDispatcher<ServerCommandSource> dispatcher, @NotNull CommandRegistryAccess registry) {
-        CommandUtils.register(dispatcher, "Date", builder -> builder
-            .executes(DateCommand::displayDate)
+        CommandUtils.register(dispatcher, "ride", builder -> builder
+            .requires(CommandPredicate.opLevel(OpLevels.CHEATING))
+            .then(CommandManager.argument("entity", EntityArgumentType.entity())
+                .executes(this::ride)
+            )
         );
     }
     
-    /**
-     * Display to the player the current day and year of the world
-     * @param context Command context
-     * @return Success
-     */
-    private static int displayDate(@NotNull CommandContext<ServerCommandSource> context) {
+    private int ride(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         ServerCommandSource source = context.getSource();
+        ServerPlayerEntity player = source.getPlayerOrThrow();
         
-        source.sendFeedback(
-            () -> Text.literal("It is currently ")
-                .formatted(Formatting.YELLOW)
-                .append(MessageUtils.getWorldTime(source.getWorld())),
-            false
-        );
+        // Get the new entity to ride
+        Entity entity = EntityArgumentType.getEntity(context, "entity");
         
-        return Command.SINGLE_SUCCESS;
+        // If no entity was found, don't try riding
+        if (entity == null)
+            return 0;
+        
+        // Attempt to set the player as riding the entity
+        return player.startRiding(entity) ? 1 : 0;
     }
+    
 }

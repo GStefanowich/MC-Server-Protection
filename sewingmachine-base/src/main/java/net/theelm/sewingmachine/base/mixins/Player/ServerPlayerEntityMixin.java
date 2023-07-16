@@ -30,7 +30,7 @@ import com.mojang.datafixers.util.Either;
 import net.minecraft.registry.RegistryKey;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
-import net.theelm.sewingmachine.commands.PlayerSpawnCommand;
+import net.theelm.sewingmachine.base.commands.PlayerSpawnCommand;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.CompassDirections;
 import net.theelm.sewingmachine.interfaces.BackpackCarrier;

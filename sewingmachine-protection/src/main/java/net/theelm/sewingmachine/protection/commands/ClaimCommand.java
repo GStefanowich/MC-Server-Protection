@@ -40,7 +40,7 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import net.minecraft.command.CommandRegistryAccess;
 import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.base.config.SewBaseConfig;
-import net.theelm.sewingmachine.commands.TeleportsCommand;
+import net.theelm.sewingmachine.base.commands.TeleportsCommand;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.commands.arguments.EnumArgumentType;
 import net.theelm.sewingmachine.config.SewConfig;
@@ -127,7 +127,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-public final class ClaimCommand extends SewCommand {
+public final class ClaimCommand implements SewCommand {
     private static final ExceptionTranslatableServerSide NOT_ENOUGH_MONEY = ServerText.exception("town.found.poor", 1);
     private static final ExceptionTranslatableServerSide SELF_RANK_CHANGE = ServerText.exception("friends.rank.self");
     public static final ExceptionTranslatableServerSide CHUNK_NOT_OWNED_BY_PLAYER = ServerText.exception("claim.chunk.error.not_players");
@@ -1001,8 +1001,8 @@ public final class ClaimCommand extends SewCommand {
     
     private int updateSetting(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get enums
-        ClaimPermissions permission = EnumArgumentType.getEnum(ClaimPermissions.class, StringArgumentType.getString(context, "permission"));
-        ClaimRanks rank = EnumArgumentType.getEnum(ClaimRanks.class, StringArgumentType.getString(context, "rank"));
+        ClaimPermissions permission = EnumArgumentType.getEnum(context, ClaimPermissions.class, "permission");
+        ClaimRanks rank = EnumArgumentType.getEnum(context, ClaimRanks.class, "rank");
         
         // Get the player
         ServerPlayerEntity player = context.getSource()
@@ -1016,7 +1016,7 @@ public final class ClaimCommand extends SewCommand {
     }
     private int updateSettings(@NotNull CommandContext<ServerCommandSource> context) throws CommandSyntaxException {
         // Get enums
-        ClaimRanks rank = EnumArgumentType.getEnum(ClaimRanks.class, StringArgumentType.getString(context, "rank"));
+        ClaimRanks rank = EnumArgumentType.getEnum(context, ClaimRanks.class, "rank");
         
         // Get the player
         ServerPlayerEntity player = context.getSource()

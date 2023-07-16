@@ -23,25 +23,37 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.commands.abstraction;
 
-import com.mojang.brigadier.builder.ArgumentBuilder;
+import com.mojang.brigadier.Command;
 import net.minecraft.command.CommandRegistryAccess;
+import net.minecraft.network.message.MessageType;
+import net.minecraft.network.message.SignedMessage;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.PlayerManager;
 import net.minecraft.server.command.ServerCommandSource;
-import net.theelm.sewingmachine.commands.abstraction.AbstractSewCommand;
+import net.minecraft.text.Text;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Optional;
-
 /**
- * Created on Jun 08 2023 at 7:56 PM.
- * By greg in sewingmachine
+ * A dynamic command registration handling
  */
-public interface SewPlugin {
-    default @NotNull Optional<Class<?>> getConfigClass() {
-        return Optional.empty();
+public interface AbstractSewCommand<T> {
+    void register(@NotNull T container, @NotNull CommandRegistryAccess registry);
+    
+    default int playerSendsMessageAndData(@NotNull ServerCommandSource source, @NotNull String main) {
+        return this.playerSendsMessageAndData(source, null, main);
     }
-    default @Nullable AbstractSewCommand<?>[] getCommands() { return new AbstractSewCommand<?>[0]; }
-    default void updatePrimaryCommand(@NotNull ArgumentBuilder<ServerCommandSource, ?> builder, @NotNull CommandRegistryAccess access) {}
+    default int playerSendsMessageAndData(@NotNull ServerCommandSource source, @Nullable SignedMessage message, @NotNull String main) {
+        return this.playerSendsMessageAndData(source, message, Text.literal(main));
+    }
+    default int playerSendsMessageAndData(@NotNull ServerCommandSource source, @Nullable SignedMessage message, @NotNull Text main) {
+        MinecraftServer server = source.getServer();
+        PlayerManager playerManager = server.getPlayerManager();
+
+        playerManager.broadcast(message, source, MessageType.params(MessageType.EMOTE_COMMAND, source));
+
+        return Command.SINGLE_SUCCESS;
+    }
 }

@@ -23,25 +23,12 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.commands.abstraction;
 
 import com.mojang.brigadier.builder.ArgumentBuilder;
-import net.minecraft.command.CommandRegistryAccess;
 import net.minecraft.server.command.ServerCommandSource;
-import net.theelm.sewingmachine.commands.abstraction.AbstractSewCommand;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Optional;
 
 /**
- * Created on Jun 08 2023 at 7:56 PM.
- * By greg in sewingmachine
+ * A command extension on the mod "/sewing-machine" command
  */
-public interface SewPlugin {
-    default @NotNull Optional<Class<?>> getConfigClass() {
-        return Optional.empty();
-    }
-    default @Nullable AbstractSewCommand<?>[] getCommands() { return new AbstractSewCommand<?>[0]; }
-    default void updatePrimaryCommand(@NotNull ArgumentBuilder<ServerCommandSource, ?> builder, @NotNull CommandRegistryAccess access) {}
-}
+public interface SewCommandExt extends AbstractSewCommand<ArgumentBuilder<ServerCommandSource, ?>> {}

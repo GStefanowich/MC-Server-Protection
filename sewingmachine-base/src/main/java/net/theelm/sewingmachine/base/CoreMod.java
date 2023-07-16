@@ -41,6 +41,8 @@ import net.theelm.sewingmachine.base.objects.inventory.BackpackScreenHandler;
 import net.theelm.sewingmachine.blocks.entities.LecternGuideBlockEntity;
 import net.theelm.sewingmachine.blocks.entities.LecternWarpsBlockEntity;
 import net.theelm.sewingmachine.commands.ModCommands;
+import net.theelm.sewingmachine.commands.abstraction.AbstractSewCommand;
+import net.theelm.sewingmachine.commands.abstraction.SewCommandExt;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.commands.abstraction.SewCommand;
 import net.theelm.sewingmachine.interfaces.SewPlugin;
@@ -118,24 +120,27 @@ public abstract class CoreMod {
         ShopStats.init();
         
         List<SewCommand> commands = new ArrayList<>();
-        List<SewPlugin> plugins = this.getPlugins();
+        List<SewCommandExt> subcommands = new ArrayList<>();
         
-        commands.add(new ModCommands(plugins));
-        
-        for (SewPlugin plugin : plugins) {
+        for (SewPlugin plugin : this.getPlugins()) {
             CoreMod.logInfo("Sew Plugin: " + plugin.getClass());
             
             // Add the configs of any plugin
             plugin.getConfigClass()
                 .ifPresent(SewConfig::addConfigClass);
             
-            SewCommand[] pluginCommands = plugin.getCommands();
-            if (pluginCommands != null)
-                for (SewCommand command : pluginCommands)
-                    if (command != null)
+            AbstractSewCommand<?>[] pluginCommands = plugin.getCommands();
+            if (pluginCommands != null) {
+                for (AbstractSewCommand<?> abst : pluginCommands) {
+                    if (abst instanceof SewCommand command)
                         commands.add(command);
+                    else if (abst instanceof SewCommandExt subcommand)
+                        subcommands.add(subcommand);
+                }
+            }
         }
         
+        commands.add(0, new ModCommands(subcommands));
         SewConfig.firstInitialize();
         
         // Register the server commands

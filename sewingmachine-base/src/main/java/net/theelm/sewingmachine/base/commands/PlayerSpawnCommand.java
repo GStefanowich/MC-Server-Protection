@@ -23,7 +23,7 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.commands;
+package net.theelm.sewingmachine.base.commands;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.CommandDispatcher;
@@ -49,7 +49,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
-public final class PlayerSpawnCommand extends SewCommand {
+public final class PlayerSpawnCommand implements SewCommand {
     private static final ExceptionTranslatableServerSide SPAWN_NOT_AT_BED = ServerText.exception("spawn.set.missing_bed");
     public static final Set<UUID> commandRanUUIDs = Collections.synchronizedSet(new HashSet<>());
     public static final String COMMAND_NAME = "SetSpawn";

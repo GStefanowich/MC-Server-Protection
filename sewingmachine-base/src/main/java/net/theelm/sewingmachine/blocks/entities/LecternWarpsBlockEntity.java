@@ -27,7 +27,7 @@ package net.theelm.sewingmachine.blocks.entities;
 
 import net.minecraft.registry.RegistryKeys;
 import net.theelm.sewingmachine.base.ServerCore;
-import net.theelm.sewingmachine.commands.TeleportsCommand;
+import net.theelm.sewingmachine.base.commands.TeleportsCommand;
 import net.theelm.sewingmachine.base.objects.PlayerBookPropertyDelegate;
 import net.theelm.sewingmachine.utilities.CasingUtils;
 import net.theelm.sewingmachine.utilities.DimensionUtils;

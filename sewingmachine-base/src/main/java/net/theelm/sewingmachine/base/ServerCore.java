@@ -45,29 +45,29 @@ import net.theelm.sewingmachine.base.objects.signs.SignWaystone;
 import net.theelm.sewingmachine.base.packets.PlayerBackpackOpenPacket;
 import net.theelm.sewingmachine.base.packets.SewConfigPacket;
 import net.theelm.sewingmachine.base.packets.SewHelloPacket;
-import net.theelm.sewingmachine.commands.AdminCommands;
-import net.theelm.sewingmachine.commands.BackpackCommand;
-import net.theelm.sewingmachine.commands.DateCommand;
-import net.theelm.sewingmachine.commands.FireworksCommand;
-import net.theelm.sewingmachine.commands.GameModesCommand;
-import net.theelm.sewingmachine.commands.GiveSelfCommand;
-import net.theelm.sewingmachine.commands.HeadCommand;
-import net.theelm.sewingmachine.commands.LoggingCommand;
-import net.theelm.sewingmachine.commands.MiscCommands;
-import net.theelm.sewingmachine.commands.ModsCommand;
-import net.theelm.sewingmachine.commands.MoneyCommand;
-import net.theelm.sewingmachine.commands.PlayerSpawnCommand;
-import net.theelm.sewingmachine.commands.RideCommand;
-import net.theelm.sewingmachine.commands.RulerCommand;
+import net.theelm.sewingmachine.base.commands.AdminCommands;
+import net.theelm.sewingmachine.base.commands.BackpackCommand;
+import net.theelm.sewingmachine.base.commands.DateCommand;
+import net.theelm.sewingmachine.base.commands.FireworksCommand;
+import net.theelm.sewingmachine.base.commands.GameModesCommand;
+import net.theelm.sewingmachine.base.commands.GiveSelfCommand;
+import net.theelm.sewingmachine.base.commands.HeadCommand;
+import net.theelm.sewingmachine.base.commands.LoggingCommand;
+import net.theelm.sewingmachine.base.commands.MiscCommands;
+import net.theelm.sewingmachine.base.commands.ModsCommand;
+import net.theelm.sewingmachine.base.commands.MoneyCommand;
+import net.theelm.sewingmachine.base.commands.PlayerSpawnCommand;
+import net.theelm.sewingmachine.base.commands.RideCommand;
+import net.theelm.sewingmachine.base.commands.RulerCommand;
 import net.theelm.sewingmachine.commands.ScoreboardModifyCommand;
-import net.theelm.sewingmachine.commands.SpawnerCommand;
-import net.theelm.sewingmachine.commands.DebugCommands;
-import net.theelm.sewingmachine.commands.TeleportsCommand;
-import net.theelm.sewingmachine.commands.WaystoneCommand;
-import net.theelm.sewingmachine.commands.WhereCommand;
+import net.theelm.sewingmachine.base.commands.SpawnerCommand;
+import net.theelm.sewingmachine.base.commands.DebugCommands;
+import net.theelm.sewingmachine.base.commands.TeleportsCommand;
+import net.theelm.sewingmachine.base.commands.WaystoneCommand;
+import net.theelm.sewingmachine.base.commands.WhereCommand;
 import net.theelm.sewingmachine.commands.WhitelistTreeCommand;
-import net.theelm.sewingmachine.commands.WorldCommand;
-import net.theelm.sewingmachine.commands.abstraction.SewCommand;
+import net.theelm.sewingmachine.base.commands.WorldCommand;
+import net.theelm.sewingmachine.commands.abstraction.AbstractSewCommand;
 import net.theelm.sewingmachine.config.ConfigOption;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.events.BlockInteractionCallback;
@@ -202,8 +202,8 @@ public final class ServerCore extends CoreMod implements ModInitializer, SewPlug
     }
     
     @Override
-    public @Nullable SewCommand[] getCommands() {
-        return new SewCommand[]{
+    public @Nullable AbstractSewCommand<?>[] getCommands() {
+        return new AbstractSewCommand<?>[]{
             new AdminCommands(),
             new BackpackCommand(),
             new DateCommand(),
