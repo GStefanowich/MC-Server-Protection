@@ -185,6 +185,8 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
             TradeUtils.createSellItem(5, 1, Items.JUNGLE_SAPLING, 8),
             TradeUtils.createSellItem(5, 1, Items.OAK_SAPLING, 8),
             TradeUtils.createSellItem(5, 1, Items.SPRUCE_SAPLING, 8),
+            TradeUtils.createSellItem(5, 1, Items.MANGROVE_PROPAGULE, 8),
+            TradeUtils.createSellItem(5, 1, Items.CHERRY_SAPLING, 8),
             TradeUtils.createSellItem(5, 1, Items.NAUTILUS_SHELL, 5),
             /* Spawn Egg Trades */
             TradeUtils.createSellSpawnEgg(32, Items.BEE_SPAWN_EGG, 5),
@@ -207,6 +209,9 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
             TradeUtils.createSellSpawnEgg(32, Items.AXOLOTL_SPAWN_EGG, 5),
             TradeUtils.createSellSpawnEgg(32, Items.GOAT_SPAWN_EGG, 5),
             TradeUtils.createSellSpawnEgg(32, Items.GLOW_SQUID_SPAWN_EGG, 5),
+            TradeUtils.createSellSpawnEgg(32, Items.TADPOLE_SPAWN_EGG, 5),
+            TradeUtils.createSellSpawnEgg(32, Items.ALLAY_SPAWN_EGG, 5),
+            TradeUtils.createSellSpawnEgg(32, Items.SNIFFER_SPAWN_EGG, 5),
             /* Music Discs */
             TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_11, 1),
             TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_13, 1),
@@ -222,6 +227,8 @@ public abstract class WanderingTraderEntityMixin extends MerchantEntity {
             TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_WARD, 1),
             TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_PIGSTEP, 1),
             TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_OTHERSIDE, 1),
+            TradeUtils.createSellItem(16, 1, Items.MUSIC_DISC_RELIC, 1),
+            TradeUtils.createSellItem(16, 1, Items.DISC_FRAGMENT_5, 5),
             
             TradeUtils.createSellItem(14, 1, Items.NAME_TAG, 5),
             TradeUtils.createSellItem(2, 3, Items.LEAD, 5),

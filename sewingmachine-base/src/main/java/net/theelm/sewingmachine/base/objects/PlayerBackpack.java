@@ -187,10 +187,7 @@ public class PlayerBackpack extends SimpleInventory {
     }
     
     private boolean canStackAddMore(@NotNull ItemStack mainStack, @NotNull ItemStack otherStack) {
-        return !mainStack.isEmpty() && this.areItemsEqual(mainStack, otherStack) && mainStack.isStackable() && mainStack.getCount() < mainStack.getMaxCount() && mainStack.getCount() < this.getMaxCountPerStack();
-    }
-    private boolean areItemsEqual(@NotNull ItemStack mainStack, @NotNull ItemStack otherStack) {
-        return mainStack.getItem() == otherStack.getItem() && ItemStack.areEqual(mainStack, otherStack);
+        return !mainStack.isEmpty() && ItemStack.canCombine(mainStack, otherStack) && mainStack.isStackable() && mainStack.getCount() < mainStack.getMaxCount() && mainStack.getCount() < this.getMaxCountPerStack();
     }
     
     public int getEmptySlot() {
@@ -312,14 +309,18 @@ public class PlayerBackpack extends SimpleInventory {
         return null;
     }
     
-    public boolean addAutoPickup(@NotNull Item item) {
+    /**
+     * Toggles the Auto-Pickup setting for an Item
+     * @param item
+     * @return TRUE if the item was added, FALSE if it was removed
+     */
+    public boolean toggleAutoPickup(@NotNull Item item) {
         Identifier id = Registries.ITEM.getId(item);
-        boolean in;
-        if (in = this.autopickup.contains( id ))
-            this.autopickup.remove( id );
-        else
-            this.autopickup.add( id );
-        return !in;
+        if (!this.autopickup.remove(id)) {
+            this.autopickup.add(id);
+            return true;
+        }
+        return false;
     }
     public boolean shouldAutoPickup(@NotNull ItemStack stack) {
         return this.shouldAutoPickup(stack.getItem());

@@ -79,7 +79,7 @@ public final class BackpackCommand implements SewCommand {
             .getItem();
         
         // Add to autopickup
-        boolean added = backpack.addAutoPickup( item );
+        boolean added = backpack.toggleAutoPickup( item );
         
         player.sendMessage(
             Text.literal(added ?

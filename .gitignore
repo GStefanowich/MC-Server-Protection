@@ -24,3 +24,7 @@ bin/
 # fabric
 
 run/
+
+# testing stuff
+
+sewingmachine-custom/
