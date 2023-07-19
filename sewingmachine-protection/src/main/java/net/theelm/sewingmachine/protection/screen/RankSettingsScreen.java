@@ -28,22 +28,29 @@ package net.theelm.sewingmachine.protection.screen;
 import com.mojang.authlib.GameProfile;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.minecraft.client.gui.tooltip.Tooltip;
 import net.minecraft.client.network.PlayerListEntry;
+import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import net.theelm.sewingmachine.protection.claims.ClaimantPlayer;
+import net.theelm.sewingmachine.protection.enums.ClaimPermissions;
 import net.theelm.sewingmachine.protection.enums.ClaimRanks;
 import net.theelm.sewingmachine.interfaces.NameCache;
 import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.packets.ClaimRankPacket;
 import net.theelm.sewingmachine.screens.SettingScreen;
 import net.theelm.sewingmachine.screens.SettingScreenListWidget;
+import net.theelm.sewingmachine.utilities.ArrayUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import net.theelm.sewingmachine.utilities.TradeUtils;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +68,8 @@ public final class RankSettingsScreen extends SettingScreen {
     protected void addButtons(@NotNull SettingScreenListWidget list) {
         ClaimantPlayer claim = ((PlayerClaimData) this.client).getClaim();
         Map<ClaimRanks, Set<GameProfile>> ranked = this.getRankedPlayers(claim);
+        Map<ClaimRanks, Text> tooltips = this.getTooltips(claim);
+        
         for (ClaimRanks rank : ClaimRanks.values()) {
             Set<GameProfile> profiles = ranked.get(rank);
             if (profiles == null)
@@ -79,12 +88,86 @@ public final class RankSettingsScreen extends SettingScreen {
                 list.addCycleButton(
                     ClaimRanks.class,
                     Text.literal(profile.getName()),
-                    null,
+                    this.tooltip(tooltips, rank),
                     claim.getFriendRank(player),
-                    (button, state) -> NetworkingUtils.send(this.client, new ClaimRankPacket(player, state.get()))
+                    (button, state) -> {
+                        ClaimRanks current = state.get();
+                        
+                        // Update the button tooltip
+                        button.setTooltip(this.tooltip(tooltips, current));
+                        
+                        NetworkingUtils.send(this.client, new ClaimRankPacket(player, current));
+                    }
                 );
             }
         }
+    }
+    
+    private @NotNull Tooltip tooltip(@NotNull Map<ClaimRanks, Text> map, @NotNull ClaimRanks rank) {
+        MutableText base = Text.literal("Access:");
+        
+        Text text = map.get(rank);
+        if (text != null)
+            base.append(text);
+        else {
+            base.append(Text.literal("\n None")
+                .formatted(Formatting.GRAY, Formatting.ITALIC));
+        }
+        
+        return Tooltip.of(base);
+    }
+    
+    private @NotNull Map<ClaimRanks, Text> getTooltips(@NotNull ClaimantPlayer claim) {
+        Map<ClaimRanks, Text> map = new HashMap<>();
+        Map<ClaimRanks, EnumSet<ClaimPermissions>> permissions = new HashMap<>();
+        
+        for (ClaimRanks rank : ClaimRanks.values()) {
+            EnumSet<ClaimPermissions> set = EnumSet.noneOf(ClaimPermissions.class);
+            
+            for (ClaimPermissions permission : ClaimPermissions.values()) {
+                ClaimRanks required = claim.getPermissionRankRequirement(permission);
+                if (rank == required)
+                    set.add(permission);
+                
+                /*if (required.canPerform(rank)) {
+                    list.append("\n ")
+                        .append(Text.translatable(permission.getTranslationKey()));
+                }*/
+            }
+            
+            /*if (count == 0)
+                list.append(Text.literal("\n None")
+                    .formatted(Formatting.GRAY, Formatting.ITALIC));*/
+            
+            permissions.put(rank, set);
+        }
+        
+        for (ClaimRanks other : ClaimRanks.values()) {
+            MutableText text = null;
+            
+            for (ClaimRanks required : ClaimRanks.values()) {
+                if (!required.canPerform(other))
+                    continue;
+                EnumSet<ClaimPermissions> set = permissions.get(required);
+                if (set == null)
+                    continue;
+                for (ClaimPermissions permission : ArrayUtils.sortedEnum(set)) {
+                    Text line = Text.translatable(permission.getTranslationKey())
+                        .styled(style -> style.withColor(required.getColor()).withItalic(true));
+                    
+                    if (text == null)
+                        text = TextUtils.literal();
+                    
+                    text.append("\n ")
+                        .append(line);
+                }
+            }
+            
+            if (text != null)
+                map.put(other, text);
+        }
+        
+        return map;
     }
     
     private @NotNull Map<ClaimRanks, Set<GameProfile>> getRankedPlayers(@NotNull ClaimantPlayer claim) {

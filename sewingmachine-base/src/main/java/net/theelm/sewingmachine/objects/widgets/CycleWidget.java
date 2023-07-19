@@ -80,7 +80,7 @@ public final class CycleWidget<E extends Enum<E>> implements ButtonWidget.PressA
         E current = this.get();
         if (current instanceof TranslationDescriber provider)
             value = Text.translatable(provider.getTranslationKey())
-                .formatted(provider.getColor());
+                .styled(style -> style.withColor(provider.getColor()));
         else value = Text.literal(current.name());
         
         return this.initialText.copy()

@@ -155,7 +155,8 @@ public abstract class Claimant {
     }
     public final @NotNull MutableText getName(@Nullable UUID player) {
         ClaimRanks playerRank = this.getFriendRank(player);
-        return Text.literal(this.getName().getString()).formatted(playerRank.getColor());
+        return Text.literal(this.getName().getString())
+            .styled(style -> style.withColor(playerRank.getColor()));
     }
     
     /* Send Messages */

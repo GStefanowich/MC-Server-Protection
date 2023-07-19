@@ -26,25 +26,32 @@
 package net.theelm.sewingmachine.protection.enums;
 
 import net.minecraft.text.Text;
+import net.minecraft.text.TextColor;
 import net.minecraft.util.Formatting;
 import net.theelm.sewingmachine.interfaces.TranslationDescriber;
+import net.theelm.sewingmachine.utilities.ColorUtils;
 import org.jetbrains.annotations.NotNull;
 
+import java.awt.*;
+
 public enum ClaimRanks implements TranslationDescriber {
-    OWNER(2, "Restrict to Owners only", "Let this player do everything", Formatting.DARK_GREEN),
-    ALLY(1, "Restrict to Allies and Owners", "Make this player your Ally", Formatting.DARK_GREEN),
-    PASSIVE(0, "Restrict to anyone but Enemies", "This player is Nothing to you", Formatting.YELLOW),
-    ENEMY(-1, "Anyone can do this", "Make this player your Enemy", Formatting.DARK_RED);
+    OWNER(2, "Restrict to Owners only", "Let this player do everything", ColorUtils.getNearestTextColor(34, 139, 34)),
+    ALLY(1, "Restrict to Allies and Owners", "Make this player your Ally", ColorUtils.getNearestTextColor(80, 200, 120)),
+    PASSIVE(0, "Restrict to anyone but Enemies", "This player is Nothing to you", ColorUtils.getNearestTextColor(125, 249, 255)),
+    ENEMY(-1, "Anyone can do this", "Make this player your Enemy", ColorUtils.getNearestTextColor(228, 208, 10));
     
-    private final Formatting[] color;
+    private final @NotNull TextColor color;
     public final int power;
     
     private final String baseDescription;
     private final String setterDescription;
     
-    ClaimRanks(int power, String desc, String setter, Formatting... formatting ) {
+    ClaimRanks(int power, String desc, String setter, Color color) {
+        this(power, desc, setter, ColorUtils.getNearestTextColor(color));
+    }
+    ClaimRanks(int power, String desc, String setter, TextColor color) {
         this.power = power;
-        this.color = formatting;
+        this.color = color;
         
         this.baseDescription = desc;
         this.setterDescription = setter;
@@ -62,12 +69,12 @@ public enum ClaimRanks implements TranslationDescriber {
     }
     
     @Override
-    public String getTranslationKey() {
+    public @NotNull String getTranslationKey() {
         return "claim.rank." + this.name().toLowerCase();
     }
     
     @Override
-    public Formatting[] getColor() {
+    public @NotNull TextColor getColor() {
         return this.color;
     }
 }

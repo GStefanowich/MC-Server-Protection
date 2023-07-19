@@ -107,6 +107,10 @@ public enum ClaimSettings implements BoolEnums {
         return this.description;
     }
     
+    public @NotNull String getTranslationKey() {
+        return "claim.settings." + this.name().toLowerCase();
+    }
+    
     @Override
     public boolean isEnabled() {
         return this.configOption == null || SewConfig.get(this.configOption);

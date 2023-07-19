@@ -34,6 +34,7 @@ import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.packets.ClaimSettingPacket;
 import net.theelm.sewingmachine.screens.SettingScreen;
 import net.theelm.sewingmachine.screens.SettingScreenListWidget;
+import net.theelm.sewingmachine.utilities.ArrayUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -46,7 +47,7 @@ public class ProtectionSettingsScreen extends SettingScreen {
     @Override
     protected void addButtons(@NotNull SettingScreenListWidget list) {
         ClaimantPlayer claim = ((PlayerClaimData) this.client).getClaim();
-        for (ClaimSettings setting : ClaimSettings.values()) {
+        for (ClaimSettings setting : ArrayUtils.sortedEnum(ClaimSettings.class)) {
             if (!setting.isEnabled())
                 continue;
             
@@ -54,7 +55,7 @@ public class ProtectionSettingsScreen extends SettingScreen {
                 .toLowerCase();
             
             list.addToggleButton(
-                Text.translatable("claim.settings." + name),
+                Text.translatable(setting.getTranslationKey()),
                 Text.translatable("claim.settings.tooltip." + name),
                 claim == null ? setting.isEnabled() : claim.getProtectedChunkSetting(setting),
                 (button, state) -> NetworkingUtils.send(this.client, new ClaimSettingPacket(setting, state.get()))

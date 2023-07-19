@@ -1378,7 +1378,7 @@ public final class ClaimCommand implements SewCommand {
                 ClickEvent click = new ClickEvent(ClickEvent.Action.RUN_COMMAND, "/friends get " + name);
                 style = style.withClickEvent(click);
             }
-            return style.withFormatting(claim.getFriendRank(uuid).getColor());
+            return style.withColor(claim.getFriendRank(uuid).getColor());
         });
     }
 }

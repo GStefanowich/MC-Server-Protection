@@ -35,6 +35,7 @@ import net.theelm.sewingmachine.protection.interfaces.PlayerClaimData;
 import net.theelm.sewingmachine.protection.packets.ClaimPermissionPacket;
 import net.theelm.sewingmachine.screens.SettingScreen;
 import net.theelm.sewingmachine.screens.SettingScreenListWidget;
+import net.theelm.sewingmachine.utilities.ArrayUtils;
 import net.theelm.sewingmachine.utilities.NetworkingUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -48,13 +49,13 @@ public class PermissionSettingsScreen extends SettingScreen {
     protected void addButtons(@NotNull SettingScreenListWidget list) {
         ClaimantPlayer claim = ((PlayerClaimData) this.client).getClaim();
         
-        for (ClaimPermissions permission : ClaimPermissions.values()) {
+        for (ClaimPermissions permission : ArrayUtils.sortedEnum(ClaimPermissions.class)) {
             String name = permission.name()
                 .toLowerCase();
             
             list.addCycleButton(
                 ClaimRanks.class,
-                Text.translatable("claim.permissions." + name),
+                Text.translatable(permission.getTranslationKey()),
                 Text.translatable("claim.permissions.tooltip." + name),
                 claim == null ? permission.getDefault() : claim.getPermissionRankRequirement(permission),
                 (button, state) -> NetworkingUtils.send(this.client, new ClaimPermissionPacket(permission, state.get()))

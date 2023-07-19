@@ -23,18 +23,32 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.utilities;
 
-import net.minecraft.text.TextColor;
-import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.List;
+
 /**
- * Created on Jul 05 2023 at 1:40 AM.
+ * Created on Jul 18 2023 at 9:16 PM.
  * By greg in sewingmachine
  */
-public interface TranslationDescriber {
-    @NotNull String getTranslationKey();
+public final class ArrayUtils {
+    private ArrayUtils() {}
     
-    @NotNull TextColor getColor();
+    public static <T extends Enum<T>> Collection<T> sortedEnum(Class<T> e) {
+        EnumSet<T> set = EnumSet.allOf(e);
+        return ArrayUtils.sortedEnum(set);
+    }
+    public static <T extends Enum<T>> @NotNull Collection<T> sortedEnum(EnumSet<T> set) {
+        List<T> list = new ArrayList<>(set);
+        
+        list.sort(Comparator.comparing(Enum::name));
+        
+        return list;
+    }
 }

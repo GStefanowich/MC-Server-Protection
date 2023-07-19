@@ -52,8 +52,12 @@ public enum ClaimPermissions {
         this.description = Text.literal(description)
             .append(" (Default: ")
             .append(Text.literal(CasingUtils.sentence(this.defaultRank.name()))
-                .formatted(this.defaultRank.getColor()))
+                .styled(style -> style.withColor(this.defaultRank.getColor())))
             .append(")");
+    }
+    
+    public @NotNull String getTranslationKey() {
+        return "claim.permissions." + this.name().toLowerCase();
     }
     
     public @NotNull Text getDescription() {

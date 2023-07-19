@@ -70,27 +70,39 @@ public class SettingScreenListWidget extends EntryListWidget<SettingScreenListWi
     }
     
     public @NotNull ClickableWidget addButton(@NotNull Text text, @Nullable Text tooltip, ButtonWidget.@NotNull PressAction action) {
+        return this.addButton(text, this.tooltip(tooltip), action);
+    }
+    public @NotNull ClickableWidget addButton(@NotNull Text text, @Nullable Tooltip tooltip, ButtonWidget.@NotNull PressAction action) {
         ButtonWidget.Builder builder = ButtonWidget.builder(text, action);
         builder.size(100, 20);
         if (tooltip != null)
-            builder.tooltip(Tooltip.of(tooltip));
+            builder.tooltip(tooltip);
         
         // Add the drawable
         return this.addClickable(builder);
     }
+    
     public void addScreenButton(@NotNull Text text, @Nullable Text tooltip, @NotNull Supplier<@NotNull Screen> supplier) {
+        this.addScreenButton(text, this.tooltip(tooltip), supplier);
+    }
+    public void addScreenButton(@NotNull Text text, @Nullable Tooltip tooltip, @NotNull Supplier<@NotNull Screen> supplier) {
         this.addButton(text, tooltip, button -> this.client.setScreen(supplier.get()));
     }
+    
     public @NotNull ClickableWidget addToggleButton(@NotNull Text text, @Nullable Text tooltip, boolean state, ToggleWidget.@NotNull Change onChange) {
         ToggleWidget toggle = new ToggleWidget(state, onChange);
         ClickableWidget widget = this.addButton(text, tooltip, toggle);
         
         // Run the init method
         toggle.init(widget);
-
+        
         return widget;
     }
+    
     public <E extends Enum<E>> @NotNull ClickableWidget addCycleButton(@NotNull Class<E> clazz, @NotNull Text text, @Nullable Text tooltip, @NotNull E state, CycleWidget.@NotNull Change<E> onChange) {
+        return this.addCycleButton(clazz, text, this.tooltip(tooltip), state, onChange);
+    }
+    public <E extends Enum<E>> @NotNull ClickableWidget addCycleButton(@NotNull Class<E> clazz, @NotNull Text text, @Nullable Tooltip tooltip, @NotNull E state, CycleWidget.@NotNull Change<E> onChange) {
         CycleWidget cycle = new CycleWidget<>(clazz, state, onChange);
         ClickableWidget widget = this.addButton(text, tooltip, cycle);
         
@@ -98,6 +110,10 @@ public class SettingScreenListWidget extends EntryListWidget<SettingScreenListWi
         cycle.init(widget);
         
         return widget;
+    }
+    
+    private @Nullable Tooltip tooltip(@Nullable Text text) {
+        return text == null ? null : Tooltip.of(text);
     }
     
     @Override
