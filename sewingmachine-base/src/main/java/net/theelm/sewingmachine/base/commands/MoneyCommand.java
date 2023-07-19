@@ -370,7 +370,7 @@ public final class MoneyCommand implements SewCommand {
         try {
             
             int playerHas = MoneyUtils.getPlayerMoney(player.getUuid());
-            player.sendMessage(ServerText.text(player, "player.money",
+            player.sendMessage(ServerText.translatable(player, "player.money",
                 playerHas
             ));
             

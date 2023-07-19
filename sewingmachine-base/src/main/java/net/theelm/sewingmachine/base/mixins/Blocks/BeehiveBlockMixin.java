@@ -57,7 +57,7 @@ public abstract class BeehiveBlockMixin {
                 int bees = beehiveBlock.getBeeCount();
                 
                 // Get the translation key for the count of bees
-                MutableText hiveInfo = ServerText.text(player, "bee_hive." + bees);
+                MutableText hiveInfo = ServerText.translatable(player, "bee_hive." + bees);
                 
                 player.playSound(SoundEvents.BLOCK_BEEHIVE_WORK, SoundCategory.MASTER, ((float) bees / 3), 1.0F);
                 

@@ -105,7 +105,7 @@ public final class ChatroomCommands implements SewCommand {
         MessageRegion room = this.getChatRoom(context);
         if (room != null) {
             if (((PlayerChat)player).isMuted()) {
-                player.sendMessage(ServerText.text(
+                player.sendMessage(ServerText.translatable(
                     player,
                     "chat.muted",
                     room
@@ -130,7 +130,7 @@ public final class ChatroomCommands implements SewCommand {
             ((PlayerChat) player).setChatRoom(room);
             
             // Tell the player
-            player.sendMessage(ServerText.text(player, "chat.change." + room.name().toLowerCase()));
+            player.sendMessage(ServerText.translatable(player, "chat.change." + room.name().toLowerCase()));
         }
         
         return Command.SINGLE_SUCCESS;
@@ -163,7 +163,7 @@ public final class ChatroomCommands implements SewCommand {
         ServerPlayerEntity target = EntityArgumentType.getPlayer( context, "player" );
         
         source.sendFeedback(
-            () -> ServerText.text(
+            () -> ServerText.translatable(
                 source,
                 (self.toggleMute( target.getGameProfile() ) ? "chat.mute.player" : "chat.unmute.player"),
                 target.getDisplayName()
@@ -182,7 +182,7 @@ public final class ChatroomCommands implements SewCommand {
             throw MUTE_EXEMPT.create();
         else {
             source.sendFeedback(
-                () -> ServerText.text(
+                () -> ServerText.translatable(
                     source,
                     (chatter.toggleMute() ? "chat.mute.global" : "chat.unmute.global"),
                     target.getDisplayName()

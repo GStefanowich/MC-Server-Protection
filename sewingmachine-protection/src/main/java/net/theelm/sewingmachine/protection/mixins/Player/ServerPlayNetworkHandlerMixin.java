@@ -123,7 +123,7 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement, P
             MutableText popupText = ClaimChunkUtils.getPlayerWorldWilderness(player)
                 .append(
                     Text.literal(" [").formatted(Formatting.RED)
-                        .append(ServerText.text(player, "claim.chunk.pvp"))
+                        .append(ServerText.translatable(player, "claim.chunk.pvp"))
                         .append("]")
                 );
             
@@ -186,7 +186,7 @@ public abstract class ServerPlayNetworkHandlerMixin implements PlayerMovement, P
                     if (claimedChunk.isSetting(playerPos, ClaimSettings.PLAYER_COMBAT)) {
                         popupText.append(
                             Text.literal(" [").formatted(Formatting.RED)
-                                .append(ServerText.text(player, "claim.chunk.pvp"))
+                                .append(ServerText.translatable(player, "claim.chunk.pvp"))
                                 .append("]")
                         );
                     }

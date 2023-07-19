@@ -43,6 +43,7 @@
 		"Interfaces.InteractionManagerAccessor",
 		"Interfaces.ItemEntityAccessor",
 		"Interfaces.PowderBlockAccessor",
+		"Interfaces.SmithingTemplateItemAccessor",
 		"Interfaces.WhitelistAccessor",
 		
 		"Items.EnderEyeItemMixin",

@@ -59,27 +59,27 @@ public final class ServerText {
     }
     public static void send(@NotNull CommandSource source, boolean notify, String key, Object... objects) {
         if (source instanceof ServerCommandSource serverSource)
-            serverSource.sendFeedback(() -> ServerText.text(source, key, objects), notify);
+            serverSource.sendFeedback(() -> ServerText.translatable(source, key, objects), notify);
     }
     public static void send(@NotNull PlayerEntity player, String key, Object... objects) {
-        player.sendMessage(ServerText.text(player, key, objects));
+        player.sendMessage(ServerText.translatable(player, key, objects));
     }
     
-    public static @NotNull MutableText text(@NotNull CommandSource source, String key, Object... objects) {
+    public static @NotNull MutableText translatable(@NotNull CommandSource source, String key, Object... objects) {
         if (source instanceof ServerCommandSource serverSource && serverSource.getEntity() instanceof ServerPlayerEntity serverPlayer)
-            return ServerText.text(serverPlayer, key, objects );
-        return ServerText.text(Locale.getDefault(), key, objects);
+            return ServerText.translatable(serverPlayer, key, objects );
+        return ServerText.translatable(Locale.getDefault(), key, objects);
     }
-    public static @NotNull MutableText text(@NotNull PlayerEntity player, String key, Object... objects) {
+    public static @NotNull MutableText translatable(@NotNull PlayerEntity player, String key, Object... objects) {
         if (!(player instanceof ServerPlayerEntity serverPlayer))
             return Text.translatable(key, objects); // If done client side, return as a translation key to be handled clientside
-        return ServerText.text(serverPlayer, key, objects);
+        return ServerText.translatable(serverPlayer, key, objects);
     }
-    public static @NotNull MutableText text(@NotNull ServerPlayerEntity player, String key, Object... objects) {
-        return ServerText.text(((PlayerServerLanguage)player).getClientLanguage(), key, objects);
+    public static @NotNull MutableText translatable(@NotNull ServerPlayerEntity player, String key, Object... objects) {
+        return ServerText.translatable(((PlayerServerLanguage) player).getClientLanguage(), key, objects);
     }
-    public static @NotNull MutableText text(@NotNull Locale language, @NotNull String key, @NotNull Object... objects) {
-        String translation = ServerText.getTranslation(language, key);
+    public static @NotNull MutableText translatable(@NotNull Locale language, @NotNull String key, @NotNull Object... objects) {
+        String value = ServerText.getTranslation(language, key);
         
         for (int i = 0; i < objects.length; ++i) {
             Object obj = objects[i];
@@ -90,12 +90,21 @@ public final class ServerText {
             }
         }
         
-        return ServerText.replace(language, translation, objects);
+        return ServerText.replace(language, key, value, objects);
     }
-    private static @NotNull MutableText replace(@NotNull Locale language, @NotNull String value, @NotNull Object... objects) {
-        if ( objects.length <= 0 )
-            return Text.literal(value);
-        String[] separated = value.split( "((?<=%[a-z])|(?=%[a-z]))" );
+    
+    /**
+     * Convert our objects to be handled by the client
+     * @param language The user language
+     * @param key The translation key
+     * @param fallback tHe translation key value
+     * @param objects Values to be used in the translation key
+     * @return
+     */
+    private static @NotNull MutableText replace(@NotNull Locale language, @NotNull String key, @NotNull String fallback, @NotNull Object... objects) {
+        if ( objects.length == 0 )
+            return Text.translatableWithFallback(key, fallback);
+        String[] separated = fallback.split("((?<=%[a-z])|(?=%[a-z]))");
         
         // Get the formatter for numbers
         NumberFormat formatter = NumberFormat.getInstance(language);
@@ -104,7 +113,7 @@ public final class ServerText {
         MutableText out = null;
         for ( String seg : separated ) {
             // If is a variable
-            if ( matchAny( seg, "%s", "%d", "%f" ) ) {
+            if ( matchAny(seg, "%s", "%d", "%f") ) {
                 // Get the objects that were provided
                 Object obj = objects[c++];
                 if (obj instanceof ServerTranslatable translatable)
@@ -121,23 +130,26 @@ public final class ServerText {
                     out.append(text);
                 } else if ( ("%d".equalsIgnoreCase( seg )) && (obj instanceof Number number) ) {
                     // Create if null
-                    if (out == null) out = Text.literal("");
+                    if (out == null)
+                        out = Text.literal("");
                     // Append
                     out.append(Text.literal(formatter.format(number.longValue())).formatted(Formatting.AQUA));
                 } else {
                     // Create if null
-                    if (out == null) out = Text.literal(obj.toString());
+                    if (out == null)
+                        out = Text.literal(obj.toString());
                     // Append if not null
                     else out.append(obj.toString());
                 }
             } else {
                 // If not a variable
-                if (out == null) out = Text.literal(seg);
+                if (out == null)
+                    out = Text.literal(seg);
                 else out.append(seg);
             }
         }
         
-        return (out == null ? Text.literal("") : out);
+        return (out == null ? Text.translatable(key) : out);
     }
     
     public static @NotNull ExceptionTranslatableServerSide exception(String key) {
@@ -147,13 +159,13 @@ public final class ServerText {
         return new ExceptionTranslatableServerSide(key);
     }
     
-    private static String getTranslation(Locale language, String key) {
+    private static @NotNull String getTranslation(Locale language, String key) {
         JsonObject object = ServerText.readLanguageFile(language);
         if ( !Objects.equals(language, Locale.US) && !object.has(key))
             return ServerText.getTranslation(Locale.US, key);
-        JsonElement element = object.get( key );
+        JsonElement element = object.get(key);
         if ( element == null ) {
-            CoreMod.logInfo( "Missing translation key \"" + key + "\"!" );
+            CoreMod.logInfo("Missing translation key \"" + key + "\"!");
             return "";
         }
         return element.getAsString();

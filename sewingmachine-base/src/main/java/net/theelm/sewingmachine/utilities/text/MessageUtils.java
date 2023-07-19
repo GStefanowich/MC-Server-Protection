@@ -210,7 +210,7 @@ public final class MessageUtils {
     // Send a translation blob to a stream of players
     public static void sendSystem(@NotNull final Stream<ServerPlayerEntity> players, final String translationKey, final Object... objects) {
         players.forEach((player) -> player.sendMessage(
-            ServerText.text(player, translationKey, objects).formatted(Formatting.YELLOW)
+            ServerText.translatable(player, translationKey, objects).formatted(Formatting.YELLOW)
         ));
     }
     public static void sendChat(@NotNull final Stream<ServerPlayerEntity> players, final Text text) {

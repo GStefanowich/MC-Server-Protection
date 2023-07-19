@@ -68,7 +68,7 @@ public final class SignBalance extends ShopSign {
             return Either.right(Boolean.TRUE);
         
         long playerHas = MoneyUtils.getPlayerMoney( player );
-        player.sendMessage(ServerText.text( player, "player.money",
+        player.sendMessage(ServerText.translatable( player, "player.money",
             playerHas
         ));
         

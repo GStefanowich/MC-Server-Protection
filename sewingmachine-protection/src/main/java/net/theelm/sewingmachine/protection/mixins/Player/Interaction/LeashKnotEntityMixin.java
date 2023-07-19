@@ -61,7 +61,7 @@ public abstract class LeashKnotEntityMixin extends AbstractDecorationEntity {
             WorldChunk chunk = this.getEntityWorld().getWorldChunk(this.getBlockPos());
             
             // Display that this leash can't be removed
-            TitleUtils.showPlayerAlert(player, Formatting.WHITE, ServerText.text(player, "claim.block.locked",
+            TitleUtils.showPlayerAlert(player, Formatting.WHITE, ServerText.translatable(player, "claim.block.locked",
                 EntityLockUtils.getLockedName(this),
                 ( chunk == null ? Text.literal("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, this.getBlockPos()) )
             ));

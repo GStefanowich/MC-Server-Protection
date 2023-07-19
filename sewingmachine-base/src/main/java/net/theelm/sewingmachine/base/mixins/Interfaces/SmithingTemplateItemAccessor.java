@@ -23,11 +23,15 @@
  * SOFTWARE.
  */
 
-package net.theelm.sewingmachine.interfaces;
+package net.theelm.sewingmachine.base.mixins.Interfaces;
 
-import java.util.Locale;
+import net.minecraft.item.SmithingTemplateItem;
+import net.minecraft.text.Text;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.gen.Accessor;
 
-public interface PlayerServerLanguage {
-    Locale getClientLanguage();
-    
+@Mixin(SmithingTemplateItem.class)
+public interface SmithingTemplateItemAccessor {
+    @Accessor("titleText")
+    Text getTitle();
 }

@@ -95,7 +95,7 @@ public final class SignBackpack extends ShopSign {
     public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull ServerPlayerEntity player, @NotNull BlockPos signPos, ShopSignData sign) {
         // These should NOT be null
         if ((sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null))
-            return Either.left(ServerText.text(player, "shop.error.database"));
+            return Either.left(ServerText.translatable(player, "shop.error.database"));
         
         // Get the number of rows in the backpack
         int newPackRows = sign.getShopItemCount() / 9;
@@ -110,18 +110,18 @@ public final class SignBackpack extends ShopSign {
         try {
             // Check the current backpack size
             if ((backpack != null) && (newPackRows <= backpack.getRows()))
-                return Either.left(ServerText.text(player, "backpack.no_downsize"));
+                return Either.left(ServerText.translatable(player, "backpack.no_downsize"));
             
             // If backpacks must be purchased in order
             if ( SewConfig.get(SewBaseConfig.BACKPACK_SEQUENTIAL)) {
                 int currentRows = ( backpack == null ? 0 : backpack.getRows() );
                 if ((newPackRows - 1) > currentRows)
-                    return Either.left(ServerText.text(player, "backpack.need_previous"));
+                    return Either.left(ServerText.translatable(player, "backpack.need_previous"));
             }
             
             // Take the players money
             if (!MoneyUtils.takePlayerMoney(player, sign.getShopItemPrice()))
-                return Either.left(ServerText.text(player, "shop.error.money_player"));
+                return Either.left(ServerText.translatable(player, "shop.error.money_player"));
             
             backpackCarrier.setBackpack((backpack == null ?
                 new PlayerBackpack(player, newPackRows)
@@ -136,7 +136,7 @@ public final class SignBackpack extends ShopSign {
             CoreMod.logInfo(player.getName().getString() + " bought a " + FormattingUtils.format(sign.getShopItemCount()) + " slot backpack for $" + FormattingUtils.format(sign.getShopItemPrice()));
             
         } catch (NotEnoughMoneyException e) {
-            return Either.left(ServerText.text(player, "shop.error.money_player"));
+            return Either.left(ServerText.translatable(player, "shop.error.money_player"));
         }
         
         return Either.right(Boolean.TRUE);

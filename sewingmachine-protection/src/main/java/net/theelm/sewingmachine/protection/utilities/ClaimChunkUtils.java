@@ -345,10 +345,10 @@ public final class ClaimChunkUtils {
     
     public static MutableText getPlayerWorldWilderness(@NotNull final PlayerEntity player) {
         if (World.END.equals(player.getEntityWorld().getRegistryKey()))
-            return ServerText.text(player, "claim.wilderness.end").formatted(Formatting.BLACK);
+            return ServerText.translatable(player, "claim.wilderness.end").formatted(Formatting.BLACK);
         if (World.NETHER.equals(player.getEntityWorld().getRegistryKey()))
-            return ServerText.text(player, "claim.wilderness.nether").formatted(Formatting.LIGHT_PURPLE);
-        return ServerText.text(player, "claim.wilderness.general").formatted(Formatting.GREEN);
+            return ServerText.translatable(player, "claim.wilderness.nether").formatted(Formatting.LIGHT_PURPLE);
+        return ServerText.translatable(player, "claim.wilderness.general").formatted(Formatting.GREEN);
     }
     
     public static Optional<UUID> getPosOwner(World world, BlockPos pos) {

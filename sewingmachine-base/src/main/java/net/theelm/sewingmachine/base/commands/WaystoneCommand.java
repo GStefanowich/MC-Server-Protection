@@ -253,7 +253,7 @@ public class WaystoneCommand implements SewCommand {
                     TitleUtils.showPlayerAlert(
                         targetPlayer,
                         Formatting.YELLOW,
-                        ServerText.text(targetPlayer, "warp.notice.player", porter.getDisplayName())
+                        ServerText.translatable(targetPlayer, "warp.notice.player", porter.getDisplayName())
                     );
                     targetPlayer.playSound(SoundEvents.UI_TOAST_IN, SoundCategory.MASTER, 1.0f, 1.0f);
                 }

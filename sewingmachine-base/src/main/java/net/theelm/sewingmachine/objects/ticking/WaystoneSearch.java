@@ -69,7 +69,7 @@ public class WaystoneSearch implements TickingAction {
             this.warp = null;
         else {
             // Tell the player
-            this.player.sendMessage(ServerText.text(
+            this.player.sendMessage(ServerText.translatable(
                 this.player,
                 "warp.random.search"
             ));
@@ -111,7 +111,7 @@ public class WaystoneSearch implements TickingAction {
         boolean building  = unclaimed && (this.hasBuilt || (this.hasBuilt = this.claimAndBuild()));
         if (building) {
             // Build the return warp
-            this.player.sendMessage(ServerText.text(
+            this.player.sendMessage(ServerText.translatable(
                 this.player,
                 "warp.random.build"
             ));

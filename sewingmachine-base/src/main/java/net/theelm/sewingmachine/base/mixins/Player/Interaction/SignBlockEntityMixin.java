@@ -88,7 +88,6 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     @Shadow private boolean waxed;
     
     @Shadow protected abstract boolean setFrontText(SignText frontText);
-    
     @Shadow protected abstract SignText parseLines(SignText signText);
     
     @Shadow private SignText frontText;
@@ -156,6 +155,8 @@ public abstract class SignBlockEntityMixin extends BlockEntity implements ShopSi
     }
     @Override
     public boolean setSign(@NotNull SignText text) {
+        if (this.world != null)
+            return this.setFrontText(text);
         // Set the text directly on the property (When loading)
         this.frontText = this.parseLines(text);
         return true;

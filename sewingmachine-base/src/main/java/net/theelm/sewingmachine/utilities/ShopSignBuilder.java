@@ -27,9 +27,11 @@ package net.theelm.sewingmachine.utilities;
 
 import com.google.common.collect.Maps;
 import net.minecraft.block.entity.SignText;
+import net.minecraft.item.SmithingTemplateItem;
 import net.minecraft.registry.Registries;
 import net.minecraft.server.world.ServerWorld;
 import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.base.mixins.Interfaces.SmithingTemplateItemAccessor;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.exceptions.ShopBuilderException;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
@@ -294,31 +296,9 @@ public final class ShopSignBuilder implements ShopSignData {
     }
     public void textParseOwner(@NotNull Text text, @NotNull ServerPlayerEntity player) {
         String str = text.getString();
-        if ( "server".equalsIgnoreCase(str) && player.isCreative() ) {
-            // Set the owner
-            this.ownerUUID = CoreMod.SPAWN_ID;
-            //return Text.literal("");
-        } else {
-            // Set the owner
-            this.ownerUUID = player.getUuid();
-            //return ((MutableText)player.getName()).formatted(Formatting.DARK_GRAY);
-        }
-    }
-    public MutableText textParseItem() {
-        MutableText baseText = Text.literal(this.getShopItemCount() == 1 ? "" : (this.getShopItemCount() + " "));
-        MutableText translatable = Text.translatable(this.getShopItem().getTranslationKey());
-        
-        if (Items.ENCHANTED_BOOK.equals(this.tradeItem) && this.tradeItemEnchants.size() == 1) {
-            Optional<MutableText> optional = this.tradeItemEnchants.entrySet()
-                .stream()
-                .findFirst()
-                .map(MessageUtils::enchantmentToText);
-            if (optional.isPresent())
-                translatable = optional.get();
-        }
-        
-        return baseText.formatted(Formatting.BLACK)
-            .append(translatable.formatted(Formatting.DARK_AQUA));
+        // Set the owner
+        this.ownerUUID = ("server".equalsIgnoreCase(str) && player.isCreative())
+            ? CoreMod.SPAWN_ID : player.getUuid();
     }
     
     private void breakSign() {

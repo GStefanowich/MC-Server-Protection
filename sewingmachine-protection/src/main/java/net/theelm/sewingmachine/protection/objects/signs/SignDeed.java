@@ -66,7 +66,7 @@ public final class SignDeed extends ShopSign {
         
         // These should NOT be null
         if (sign.getWorld() == null)
-            throw new ShopBuilderException(ServerText.text(creator, "shop.error.database"));
+            throw new ShopBuilderException(ServerText.translatable(creator, "shop.error.database"));
         
         WorldChunk chunk = sign.getWorld().getWorldChunk( sign.getPos() );
         ClaimantTown town = null;

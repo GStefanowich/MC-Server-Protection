@@ -187,11 +187,11 @@ public final class NickNameCommand implements SewCommand {
         MutableText notifyMessage;
         Text newName = null;
         if (nickname == null)
-            notifyMessage = ServerText.text(player, "player.nick.reset");
+            notifyMessage = ServerText.translatable(player, "player.nick.reset");
         else {
             // Format the text with a color
             newName = TextUtils.literal(nickname, starts, ends);
-            notifyMessage = ServerText.text(player, "player.nick.updated", newName);
+            notifyMessage = ServerText.translatable(player, "player.nick.updated", newName);
         }
         
         // Update the players display name

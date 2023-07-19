@@ -107,11 +107,11 @@ public final class SignShopBuy extends ShopSign.BuyTradeSell {
         
         // These should NOT be null
         if (((sign.getShopItem()) == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null) || (sign.getShopItemDisplay() == null))
-            return Either.left(ServerText.text(player, "shop.error.database"));
+            return Either.left(ServerText.translatable(player, "shop.error.database"));
         
         // Refuse to trade with own player
         if (player.getUuid().equals(sign.getShopOwner()))
-            return Either.left(ServerText.text(player, "shop.error.self_buy"));
+            return Either.left(ServerText.translatable(player, "shop.error.self_buy"));
         
         // Check if the attached chest exists
         if (!sign.isInfinite() && (chest = InventoryUtils.getAttachedChest(player.getEntityWorld(), signPos)) == null)
@@ -125,20 +125,20 @@ public final class SignShopBuy extends ShopSign.BuyTradeSell {
             
             // If the chest is open
             if (ChestBlockEntity.getPlayersLookingInChestCount(player.getEntityWorld(), chest.getPos()) > 0)
-                return Either.left(ServerText.text(player, "shop.error.chest_open"));
+                return Either.left(ServerText.translatable(player, "shop.error.chest_open"));
             
             // If there is not enough of item in chest
             if (chestInventory == null || InventoryUtils.getInventoryCount(chestInventory, sign::itemMatchPredicate) < sign.getShopItemCount())
-                return Either.left(ServerText.text(player, "shop.error.stock_chest", sign.getShopItemDisplay()));
+                return Either.left(ServerText.translatable(player, "shop.error.stock_chest", sign.getShopItemDisplay()));
         }
         
         // Take the players money
         if (!PlayerBalanceCallback.hasBalance(player, sign.getShopItemPrice()))
-            return Either.left(ServerText.text(player, "shop.error.money_player"));
+            return Either.left(ServerText.translatable(player, "shop.error.money_player"));
         
         // Give item to player from chest
         if (!InventoryUtils.chestToPlayer(player, signPos, chestInventory, player.getInventory(), sign::itemMatchPredicate, sign.getShopItemCount(), true, sign::createItemStack))
-            return Either.left(ServerText.text(player, "shop.error.stock_chest", sign.getShopItemDisplay()));
+            return Either.left(ServerText.translatable(player, "shop.error.stock_chest", sign.getShopItemDisplay()));
         
         player.playSound(SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.BLOCKS, 1.0f, 1.0f);
         

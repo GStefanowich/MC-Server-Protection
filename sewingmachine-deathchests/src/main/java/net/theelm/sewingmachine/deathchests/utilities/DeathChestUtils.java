@@ -187,7 +187,7 @@ public final class DeathChestUtils {
         
         // Print the death chest coordinates
         if (SewConfig.get(SewDeathConfig.PRINT_DEATH_CHEST_LOC))
-            player.sendMessage(ServerText.text(player, "player.death_chest.location", Text.literal(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)));
+            player.sendMessage(ServerText.translatable(player, "player.death_chest.location", Text.literal(chestPos.getX() + ", " + (chestPos.getY() + 1 ) + ", " + chestPos.getZ()).formatted(Formatting.AQUA)));
         CoreMod.logInfo("Death chest for " + player.getName().getString() + " spawned at " + MessageUtils.xyzToString(chestPos.offset(Direction.UP, 1)));
         
         // Add the entity to the world

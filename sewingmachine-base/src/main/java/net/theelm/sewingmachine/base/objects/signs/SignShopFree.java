@@ -93,7 +93,7 @@ public final class SignShopFree extends ShopSign.BuyTradeSell {
             
             // These should NOT be null
             if ((sign.getShopItem() == null) || (sign.getShopOwner() == null) || (sign.getShopItemCount() == null) || (sign.getShopItemDisplay() == null))
-                return Either.left(ServerText.text(player, "shop.error.database"));
+                return Either.left(ServerText.translatable(player, "shop.error.database"));
             
             /*
              * Check if chest is valid

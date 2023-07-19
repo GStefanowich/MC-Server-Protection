@@ -90,7 +90,7 @@ public final class SignPlots extends ShopSign {
     public Either<Text, Boolean> onInteract(@NotNull MinecraftServer server, @NotNull ServerPlayerEntity player, @NotNull BlockPos signPos, ShopSignData sign) {
         // These should NOT be null
         if ((sign.getShopItemCount() == null) || (sign.getShopItemPrice() == null))
-            return Either.left(ServerText.text(player, "shop.error.database"));
+            return Either.left(ServerText.translatable(player, "shop.error.database"));
         
         // If shops disabled
         if ( !this.isEnabled() )
@@ -101,7 +101,7 @@ public final class SignPlots extends ShopSign {
         try {
             // Take the players money
             if (!MoneyUtils.takePlayerMoney(player, sign.getShopItemPrice()))
-                return Either.left(ServerText.text(player, "shop.error.money_player"));
+                return Either.left(ServerText.translatable(player, "shop.error.money_player"));
             
             if ((SewConfig.get(SewProtectionConfig.PLAYER_CLAIM_BUY_LIMIT) > 0) && ((claim.getMaxChunkLimit() + sign.getShopItemCount()) > SewConfig.get(SewProtectionConfig.PLAYER_CLAIM_BUY_LIMIT)))
                 return Either.left(Text.translatable("Can't buy any more of that."));
@@ -114,7 +114,7 @@ public final class SignPlots extends ShopSign {
             CoreMod.logInfo(player.getName().getString() + " bought " + FormattingUtils.format( sign.getShopItemCount() ) + " chunks for $" + FormattingUtils.format(sign.getShopItemPrice()));
             
         } catch (NotEnoughMoneyException e) {
-            return Either.left(ServerText.text(player, "shop.error.money_player"));
+            return Either.left(ServerText.translatable(player, "shop.error.money_player"));
         }
         
         // Send a network update packet

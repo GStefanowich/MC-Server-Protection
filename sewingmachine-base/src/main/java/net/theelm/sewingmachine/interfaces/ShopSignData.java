@@ -28,6 +28,7 @@ package net.theelm.sewingmachine.interfaces;
 import com.mojang.authlib.GameProfile;
 import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.block.entity.SignText;
+import net.minecraft.item.SmithingTemplateItem;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.LiteralTextContent;
@@ -37,6 +38,7 @@ import net.minecraft.util.Hand;
 import net.minecraft.util.hit.BlockHitResult;
 import net.minecraft.world.World;
 import net.theelm.sewingmachine.base.CoreMod;
+import net.theelm.sewingmachine.base.mixins.Interfaces.SmithingTemplateItemAccessor;
 import net.theelm.sewingmachine.base.objects.ShopSign;
 import net.theelm.sewingmachine.enums.Test;
 import net.theelm.sewingmachine.utilities.DevUtils;
@@ -63,6 +65,7 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
+import net.theelm.sewingmachine.utilities.text.TextUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -115,11 +118,12 @@ public interface ShopSignData {
         Text[] render = new Text[4];
         ShopSign shop = this.getShopType();
         
+        // Set line 1 to the shop type
         render[0] = MutableText.of(new LiteralTextContent("[" + shop.name + "]" )).styled(shop.getApplicator());
         
-        for (int i = 0; i < 3; i++) {
-            render[i + 1] = i >= text.length ? Text.literal("") : text[i];
-        }
+        // Set lines 2, 3, and 4 to the provided Text
+        for (int i = 0; i < 3; i++)
+            render[i + 1] = i >= text.length ? TextUtils.literal() : text[i];
         
         return this.setSign(new SignText(render, render, DyeColor.BLACK, false));
     }
@@ -177,12 +181,12 @@ public interface ShopSignData {
      * Read the Item from the Sign and return the Formatting of the item
      * @return The formatted item name
      */
-    default MutableText textParseItem() {
+    default @NotNull MutableText textParseItem() {
         Integer itemSize = this.getShopItemCount();
         Item tradeItem = this.getShopItem();
         Map<Enchantment, Integer> enchantments = this.getShopItemEnchantments();
         if (itemSize == null || tradeItem == null || enchantments == null)
-            return null;
+            return TextUtils.literal();
         
         MutableText baseText = Text.translatable(itemSize == 1 ? "" : (itemSize + " "));
         MutableText translatable = Text.translatable(tradeItem.getTranslationKey());
@@ -194,6 +198,9 @@ public interface ShopSignData {
                 .map(MessageUtils::enchantmentToText);
             if (optional.isPresent())
                 translatable = optional.get();
+        } else if (tradeItem instanceof SmithingTemplateItem templateItem) {
+            translatable = ((SmithingTemplateItemAccessor) templateItem).getTitle()
+                .copyContentOnly();
         }
         
         return baseText.formatted(Formatting.BLACK)
@@ -207,7 +214,7 @@ public interface ShopSignData {
     default MutableText textParseOwner() {
         Optional<GameProfile> lookup = this.getShopOwnerProfile();
         return lookup.map(profile -> Objects.equals(CoreMod.SPAWN_ID, profile.getId()) ? null : Text.literal(profile.getName()))
-            .orElseGet(() -> Text.literal(""));
+            .orElseGet(() -> Text.literal("Nobody"));
     }
     
     /**

@@ -324,7 +324,7 @@ public final class EntityLockUtils {
             }
             
             // Display that this item can't be opened
-            TitleUtils.showPlayerAlert(player, Formatting.WHITE, ServerText.text(player, "claim.block.locked",
+            TitleUtils.showPlayerAlert(player, Formatting.WHITE, ServerText.translatable(player, "claim.block.locked",
                 EntityLockUtils.getLockedName(source),
                 owner
             ));
@@ -349,7 +349,7 @@ public final class EntityLockUtils {
             WorldChunk chunk = world.getWorldChunk(blockPos);
             
             // Display that this item can't be opened
-            TitleUtils.showPlayerAlert(player, Formatting.WHITE, ServerText.text(player, "claim.block.locked",
+            TitleUtils.showPlayerAlert(player, Formatting.WHITE, ServerText.translatable(player, "claim.block.locked",
                 EntityLockUtils.getLockedName(block),
                 (chunk == null ? Text.literal("unknown player").formatted(Formatting.LIGHT_PURPLE) : ((IClaimedChunk) chunk).getOwnerName(player, blockPos))
             ));

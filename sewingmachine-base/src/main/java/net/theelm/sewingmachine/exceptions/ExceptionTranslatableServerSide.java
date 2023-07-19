@@ -47,15 +47,15 @@ public class ExceptionTranslatableServerSide implements CommandExceptionType {
     }
     
     public CommandSyntaxException create(@NotNull final CommandSource source, final Object... objects) {
-        return new CommandSyntaxException(this, ServerText.text(source, this.translationKey, objects));
+        return new CommandSyntaxException(this, ServerText.translatable(source, this.translationKey, objects));
     }
     public CommandSyntaxException create(@NotNull final ServerPlayerEntity player, final Object... objects) {
-        return new CommandSyntaxException(this, ServerText.text(player, this.translationKey, objects));
+        return new CommandSyntaxException(this, ServerText.translatable(player, this.translationKey, objects));
     }
     public CommandSyntaxException createWithContext(@NotNull final ImmutableStringReader reader, @NotNull final ServerPlayerEntity player, @NotNull final Object... objects) {
         if (objects.length != this.expectedArguments)
             throw new IllegalArgumentException("Invalid amount of arguments provided for ExceptionTranslatableServerSide");
-        return new CommandSyntaxException(this, ServerText.text(player, this.translationKey, objects ), reader.getString(), reader.getCursor());
+        return new CommandSyntaxException(this, ServerText.translatable(player, this.translationKey, objects ), reader.getString(), reader.getCursor());
     }
     
 }

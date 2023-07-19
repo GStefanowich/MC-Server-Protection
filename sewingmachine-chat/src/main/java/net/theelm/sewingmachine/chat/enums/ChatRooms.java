@@ -54,7 +54,7 @@ public enum ChatRooms implements ServerTranslatable {
     
     @Override
     public @NotNull MutableText translate(@NotNull Locale locale) {
-        return ServerText.text(
+        return ServerText.translatable(
             locale,
             "chat.room." + this.name().toLowerCase()
         );
