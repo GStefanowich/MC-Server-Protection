@@ -355,27 +355,4 @@ public final class EntityLockUtils {
             ));
         }
     }
-    
-    public static Text getEntityRegionName(@NotNull Entity entity) {
-        World world = entity.getEntityWorld();
-        IClaimedChunk chunk = (IClaimedChunk) world.getWorldChunk(entity.getBlockPos());
-        
-        if (CoreMod.SPAWN_ID.equals(chunk.getOwnerId()))
-            return Text.literal("Spawn")
-                .formatted(Formatting.AQUA);
-        
-        ClaimantTown town;
-        if ((town = chunk.getTown()) != null)
-            return town.getName()
-                .styled(style -> style.withHoverEvent(town.getHoverText()).withColor(Formatting.AQUA));
-        
-        if (chunk.getOwnerId() != null)
-            return Text.literal("")
-                .append(chunk.getOwnerName()
-                    .formatted(Formatting.AQUA))
-                .append("'s");
-        
-        return MessageUtils.xyzToText(entity.getBlockPos())
-            .formatted(Formatting.AQUA);
-    }
 }

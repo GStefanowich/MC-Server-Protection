@@ -35,6 +35,7 @@ import net.theelm.sewingmachine.base.config.SewBaseConfig;
 import net.theelm.sewingmachine.config.SewConfig;
 import net.theelm.sewingmachine.enums.OpLevels;
 import net.theelm.sewingmachine.enums.PermissionNodes;
+import net.theelm.sewingmachine.events.RegionNameCallback;
 import net.theelm.sewingmachine.interfaces.ShopSignData;
 import net.theelm.sewingmachine.interfaces.SpawnerMob;
 import net.theelm.sewingmachine.base.mixins.Server.ServerWorldAccessor;
@@ -314,32 +315,63 @@ public final class EntityUtils {
      * Wandering Traders
      */
     public static void wanderingTraderArrival(@NotNull WanderingTraderEntity trader) {
-        MessageUtils.sendToAll(Text.literal("The ")
+        Text location = RegionNameCallback.getName(trader, false, false);
+        MutableText message = Text.literal("The ")
             .formatted(Formatting.YELLOW)
             .append(Text.literal("Wandering Trader").formatted(Formatting.BOLD, Formatting.BLUE))
-            .append(" has arrived at ")
-            .append(EntityUtils.getEntityRegionName(trader))
-            .append("."));
+            .append(" has arrived");
+        
+        if (location != null) {
+            message.append(" at ")
+                .append(location);
+        }
+        
+        message.append(".");
+        MessageUtils.sendToAll(message);
+        
         EntityUtils.wanderingTraderTimeRemaining(trader);
     }
     public static void wanderingTraderTimeRemaining(@NotNull WanderingTraderEntity trader) {
         if (trader.getDespawnDelay() <= 0)
             return;
-        MessageUtils.sendToAll(Text.literal("The ")
+        Text location = RegionNameCallback.getName(trader, false, false);
+        EntityUtils.wanderingTraderTimeRemaining(trader, location);
+    }
+    private static void wanderingTraderTimeRemaining(@NotNull WanderingTraderEntity trader, @Nullable Text location) {
+        MutableText message = Text.literal("The ")
             .formatted(Formatting.YELLOW, Formatting.ITALIC)
             .append(Text.literal("Wandering Trader").formatted(Formatting.BOLD, Formatting.BLUE))
-            .append(" will depart in ")
+            .append(" will depart");
+        
+        if (location != null) {
+            message.append(" from ")
+                .append(location);
+        }
+        
+        message
+            .append(" in ")
             .append(MessageUtils.formatNumber((double)trader.getDespawnDelay() / 1200, " minutes"))
-            .append("."));
+            .append(".");
+        
+        MessageUtils.sendToAll(message);
     }
     public static void wanderingTraderDeparture(@NotNull WanderingTraderEntity trader) {
         BlockUtils.extinguishNearbyLightSources((ServerWorld) trader.getWorld(), trader.getBlockPos());
-        MessageUtils.sendToAll(Text.literal("The ")
+        
+        Text location = RegionNameCallback.getName(trader, false, false);
+        MutableText message = Text.literal("The ")
             .formatted(Formatting.YELLOW)
             .append(Text.literal("Wandering Trader").formatted(Formatting.BOLD, Formatting.BLUE))
-            .append(" has departed from ")
-            .append(EntityUtils.getEntityRegionName(trader))
-            .append("."));
+            .append(" has departed");
+        
+        if (location != null) {
+            message.append(" from ")
+                .append(location);
+        }
+        
+        message.append(".");
+        
+        MessageUtils.sendToAll(message);
     }
     public static @NotNull Text wanderingTraderDepartureTime(@NotNull WanderingTraderEntity trader) {
         int despawn = trader.getDespawnDelay();
@@ -361,12 +393,6 @@ public final class EntityUtils {
         ServerWorld overworld = server.getOverworld();
         ServerWorldProperties properties = ((ServerWorldAccessor)overworld).getProperties();
         return properties.getWanderingTraderId();
-    }
-    
-    @Deprecated(forRemoval = true)
-    public static Text getEntityRegionName(@NotNull Entity entity) {
-        // Moved to EntityLockUtils
-        return Text.of("");
     }
     
     /*

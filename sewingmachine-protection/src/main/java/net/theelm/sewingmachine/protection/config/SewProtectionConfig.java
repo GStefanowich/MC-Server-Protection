@@ -49,6 +49,8 @@ public final class SewProtectionConfig {
     public static final @Public ConfigOption<Boolean> CLAIM_ALLOW_PLAYER_COMBAT = ConfigOption.json("claims.allow_player_override.player_pvp", true);
     public static final @Public ConfigOption<Boolean> CLAIM_ALLOW_CROP_AUTOREPLANT = ConfigOption.json("claims.allow_player_override.crop_autoreplant", true);
     public static final @Public ConfigOption<Boolean> CLAIM_ALLOW_FIRE_SPREAD = ConfigOption.json("claims.allow_player_override.fire_spread", false);
+    public static final @Public ConfigOption<Boolean> CLAIM_ALLOW_PHANTOMS = ConfigOption.json("claims.allow_player_override.phantom_spawns", false);
+    public static final @Public ConfigOption<Boolean> CLAIM_ALLOW_HOSTILES = ConfigOption.json("claims.allow_player_override.hostile_spawns", false);
     
     /*
      * Protections

@@ -333,17 +333,17 @@ public final class ClaimChunkUtils {
      * Get data about where the player is
      */
     
-    public static @Nullable UUID getPlayerLocation(@NotNull final ServerPlayerEntity player) {
+    public static @Nullable UUID getPlayerLocation(@NotNull ServerPlayerEntity player) {
         PlayerVisitor visitor = ((PlayerTravel) player).getLocation();
         return visitor == null ? null : visitor.get();
     }
-    public static boolean isPlayerWithinSpawn(@NotNull final ServerPlayerEntity player) {
+    public static boolean isPlayerWithinSpawn(@NotNull ServerPlayerEntity player) {
         // If player is in creative/spectator, or is within Spawn
         return (SewConfig.get(SewProtectionConfig.CLAIM_CREATIVE_BYPASS) && (player.isCreative() || player.isSpectator()))
             || CoreMod.SPAWN_ID.equals(ClaimChunkUtils.getPlayerLocation(player));
     }
     
-    public static MutableText getPlayerWorldWilderness(@NotNull final PlayerEntity player) {
+    public static MutableText getPlayerWorldWilderness(@NotNull PlayerEntity player) {
         if (World.END.equals(player.getEntityWorld().getRegistryKey()))
             return ServerText.translatable(player, "claim.wilderness.end").formatted(Formatting.BLACK);
         if (World.NETHER.equals(player.getEntityWorld().getRegistryKey()))

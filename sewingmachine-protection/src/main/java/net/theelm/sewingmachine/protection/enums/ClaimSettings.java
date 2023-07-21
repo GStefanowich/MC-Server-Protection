@@ -43,21 +43,23 @@ import java.util.UUID;
 
 public enum ClaimSettings implements BoolEnums {
     // "False positives"
-    ENDERMAN_GRIEFING(SewProtectionConfig.CLAIM_ALLOW_GRIEFING_ENDERMAN, "Allow Endermen to pickup blocks", false, true, false),
-    WEATHER_GRIEFING(SewProtectionConfig.CLAIM_ALLOW_GRIEFING_WEATHER, "Allow weather to damage blocks", false, true, false),
-    CREEPER_GRIEFING(SewProtectionConfig.CLAIM_ALLOW_GRIEFING_CREEPER, "Allow Creepers to destroy blocks", false, true, false),
-    GHAST_GRIEFING(SewProtectionConfig.CLAIM_ALLOW_GRIEFING_GHAST, "Allow Ghasts to destroy blocks", false, true, false),
-    PLAYER_COMBAT(SewProtectionConfig.CLAIM_ALLOW_PLAYER_COMBAT, "Allow Player vs Player", false, true, false) {
+    ENDERMAN_GRIEFING(Group.FALSEY, SewProtectionConfig.CLAIM_ALLOW_GRIEFING_ENDERMAN, "Allow Endermen to pickup blocks"),
+    WEATHER_GRIEFING(Group.FALSEY, SewProtectionConfig.CLAIM_ALLOW_GRIEFING_WEATHER, "Allow weather to damage blocks"),
+    CREEPER_GRIEFING(Group.FALSEY, SewProtectionConfig.CLAIM_ALLOW_GRIEFING_CREEPER, "Allow Creepers to destroy blocks"),
+    GHAST_GRIEFING(Group.FALSEY, SewProtectionConfig.CLAIM_ALLOW_GRIEFING_GHAST, "Allow Ghasts to destroy blocks"),
+    PLAYER_COMBAT(Group.FALSEY, SewProtectionConfig.CLAIM_ALLOW_PLAYER_COMBAT, "Allow Player vs Player") {
         @Override
         public boolean hasSettingSet(@NotNull Claim claimant) {
             return this.hasSettingSet(claimant, true);
         }
     },
-    FIRE_SPREAD(SewProtectionConfig.CLAIM_ALLOW_FIRE_SPREAD, "Allow fire to spread and destroy blocks", false, true, false),
-    HURT_TAMED("Allow Players to harm Wolves, Cats and other tamed pets", false, false, false),
+    FIRE_SPREAD(Group.FALSEY, SewProtectionConfig.CLAIM_ALLOW_FIRE_SPREAD, "Allow fire to spread and destroy blocks"),
+    HURT_TAMED(Group.FALSEY, "Allow Players to harm Wolves, Cats and other tamed pets", false),
+    PHANTOM_SPAWNS(Group.FALSEY, SewProtectionConfig.CLAIM_ALLOW_PHANTOMS, "Allow Phantoms to spawn on Insomnia players"),
+    HOSTILE_SPAWNS(Group.FALSEY, SewProtectionConfig.CLAIM_ALLOW_HOSTILES, "Allow Hostile mobs to spawn"),
     
     // "True positives"
-    CROP_AUTOREPLANT(SewProtectionConfig.CLAIM_ALLOW_CROP_AUTOREPLANT, "Automatically replant harvested crops", true, false, true);
+    CROP_AUTOREPLANT(Group.TRUTHY, SewProtectionConfig.CLAIM_ALLOW_CROP_AUTOREPLANT, "Automatically replant harvested crops");
     
     protected final @NotNull Text description;
     protected final @Nullable ConfigOption<Boolean> configOption;
@@ -65,8 +67,14 @@ public enum ClaimSettings implements BoolEnums {
     private final boolean playrDef;
     private final boolean spawnDef;
     
-    ClaimSettings(@NotNull String description, boolean valueShouldBe, boolean playerDefault, boolean spawnDefault) {
-        this(null, description, valueShouldBe, playerDefault, spawnDefault);
+    ClaimSettings(@NotNull Group group, @NotNull String description, boolean playerDefault) {
+        this(group, null, description, playerDefault);
+    }
+    ClaimSettings(@NotNull Group group, @NotNull ConfigOption<Boolean> config, @NotNull String description) {
+        this(group, config, description, group.playerDefault());
+    }
+    ClaimSettings(@NotNull Group group, @NotNull ConfigOption<Boolean> config, @NotNull String description, boolean playerDefault) {
+        this(config, description, group.value, playerDefault, group.spawnDefault());
     }
     ClaimSettings(@NotNull ConfigOption<Boolean> config, @NotNull String description, boolean valueShouldBe, boolean playerDefault, boolean spawnDefault) {
         this.valueShouldBe = valueShouldBe;
@@ -151,5 +159,23 @@ public enum ClaimSettings implements BoolEnums {
         
         // Fallback to the default
         return this.getDefault(null);
+    }
+    
+    private enum Group {
+        TRUTHY(true),
+        FALSEY(false);
+        
+        private final boolean value;
+        
+        Group(boolean value) {
+            this.value = value;
+        }
+        
+        public boolean playerDefault() {
+            return !this.value;
+        }
+        public boolean spawnDefault() {
+            return this.value;
+        }
     }
 }

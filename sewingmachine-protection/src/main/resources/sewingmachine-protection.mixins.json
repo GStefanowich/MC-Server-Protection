@@ -18,6 +18,7 @@
 		"Entities.ItemEntityMixin",
 		"Entities.LightningEntityMixin",
 		"Entities.PhantomSpawnerMixin",
+		"Entities.SpawnHelperMixin",
 		"Entities.TntEntityMixin",
 		"Entities.VillagerEntityMixin",
 		

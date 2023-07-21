@@ -55,7 +55,7 @@ public interface RegionNameCallback {
      * @param chunkPos The region chunk
      * @param blockPos The position of the region
      * @param entity The entity located within the region
-     * @param nameOnly If no additional formatting should be done
+     * @param nameOnly If no arbitrary text should be added ("TheElm" vs "TheElm's claim")
      * @param strict If a result MUST be returned
      * @return The name of the Region
      */
@@ -65,8 +65,8 @@ public interface RegionNameCallback {
      * Get the name of a region
      * @param world The world
      * @param pos The position of the region
-     * @param entity The entity location within the region
-     * @param nameOnly If no additional formatting should be done
+     * @param entity The entity located within the region
+     * @param nameOnly If no arbitrary text should be added ("TheElm" vs "TheElm's claim")
      * @param strict If a result MUST be returned
      * @return The name of the Region
      */
@@ -79,13 +79,27 @@ public interface RegionNameCallback {
      * Get the name of a region
      * @param world The world
      * @param pos The region chunk
-     * @param entity The entity location within the region
-     * @param nameOnly If no additional formatting should be done
+     * @param entity The entity located within the region
+     * @param nameOnly If no arbitrary text should be added ("TheElm" vs "TheElm's claim")
      * @param strict If a result MUST be returned
      * @return The name of the Region
      */
     static @Nullable Text getName(@NotNull World world, @NotNull ChunkPos pos, @Nullable Entity entity, boolean nameOnly, boolean strict) {
         return RegionNameCallback.EVENT.invoker()
             .getName(world, pos, null, entity, nameOnly, strict);
+    }
+    
+    /**
+     * Get the name of a region that an entity is in
+     * @param entity The entity to find the location of
+     * @param nameOnly If no arbitrary text should be added ("TheElm" vs "TheElm's claim")
+     * @param strict If a result MUST be returned
+     * @return The name of the Region
+     */
+    static @Nullable Text getName(@NotNull Entity entity, boolean nameOnly, boolean strict) {
+        World world = entity.getWorld();
+        if (world.isClient())
+            return null;
+        return RegionNameCallback.getName(world, entity.getBlockPos(), entity, nameOnly, strict);
     }
 }

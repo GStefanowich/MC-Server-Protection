@@ -25,38 +25,37 @@
 
 package net.theelm.sewingmachine.protection.mixins.Entities;
 
-import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.entity.SpawnGroup;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.spawner.PhantomSpawner;
+import net.minecraft.world.SpawnHelper;
+import net.minecraft.world.chunk.Chunk;
 import net.theelm.sewingmachine.protection.enums.ClaimSettings;
 import net.theelm.sewingmachine.protection.interfaces.IClaimedChunk;
-import net.theelm.sewingmachine.protection.utilities.ClaimChunkUtils;
-import org.jetbrains.annotations.NotNull;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(PhantomSpawner.class)
-public abstract class PhantomSpawnerMixin {
+@Mixin(SpawnHelper.class)
+public abstract class SpawnHelperMixin {
     /**
-     * Don't spawn Phantoms if the player is considered "within spawn"
-     * @param player The player to test
-     * @return Whether the player is a spectator or inside of Spawn chunks
+     * Test if we should prevent hostile mobs from spawning in a chunk
+     * @param group
+     * @param world
+     * @param chunk
+     * @param pos
+     * @param checker
+     * @param runner
+     * @param callback
      */
-    @Redirect(at = @At(value = "INVOKE", target = "net/minecraft/server/network/ServerPlayerEntity.isSpectator()Z"), method = "spawn")
-    public boolean spawn(@NotNull ServerPlayerEntity player) {
-        if (player.isSpectator())
-            return true;
-        
-        // Player location
-        ServerWorld world = player.getServerWorld();
-        BlockPos pos = player.getBlockPos();
-        
-        // Claimed chunk
-        IClaimedChunk chunk = (IClaimedChunk) world.getChunk(pos);
-        
-        // Check if Phantoms are FALSE -> return TRUE
-        return !chunk.isSetting(pos, ClaimSettings.PHANTOM_SPAWNS);
+    @Inject(at = @At("HEAD"), method = "spawnEntitiesInChunk(Lnet/minecraft/entity/SpawnGroup;Lnet/minecraft/server/world/ServerWorld;Lnet/minecraft/world/chunk/Chunk;Lnet/minecraft/util/math/BlockPos;Lnet/minecraft/world/SpawnHelper$Checker;Lnet/minecraft/world/SpawnHelper$Runner;)V", cancellable = true)
+    private static void onSpawnEntitiesInChunk(SpawnGroup group, ServerWorld world, Chunk chunk, BlockPos pos, SpawnHelper.Checker checker, SpawnHelper.Runner runner, CallbackInfo callback) {
+        if (group == SpawnGroup.MONSTER) {
+            // Check if hostiles are prevented
+            boolean hostiles = ((IClaimedChunk) chunk).isSetting(pos, ClaimSettings.HOSTILE_SPAWNS);
+            if (!hostiles)
+                callback.cancel();
+        }
     }
 }

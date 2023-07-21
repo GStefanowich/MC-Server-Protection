@@ -34,8 +34,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.ActionResult;
+import net.minecraft.util.Formatting;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.chunk.ChunkStatus;
+import net.theelm.sewingmachine.base.CoreMod;
 import net.theelm.sewingmachine.commands.abstraction.AbstractSewCommand;
 import net.theelm.sewingmachine.events.ContainerAccessCallback;
 import net.theelm.sewingmachine.events.PlayerModsCallback;
@@ -145,6 +147,11 @@ public final class ServerCore implements ModInitializer, SewPlugin {
         // Create a callback for getting a players whereabouts
         RegionNameCallback.EVENT.register((world, chunkPos, blockPos, entity, nameOnly, strict) -> {
             IClaimedChunk chunk = (IClaimedChunk) world.getChunk(chunkPos.x, chunkPos.z);
+            
+            // If the region is Spawn, return Spawn
+            if (CoreMod.SPAWN_ID.equals(chunk.getOwnerId()))
+                return Text.literal("Spawn")
+                    .formatted(Formatting.AQUA);
             
             // If the chunk is a Town, return the Town
             ClaimantTown town = chunk.getTown();
